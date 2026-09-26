@@ -43,6 +43,13 @@ public class 任务管理器 : MonoBehaviour
 
     [Tooltip("演出用的等待条件靠它计时：任务id → 这一阶段是什么时候开始的")]
     readonly Dictionary<string, float> 阶段开始时间 = new Dictionary<string, float>();
+
+    /// <summary>
+    /// 阻塞式演出（黑幕白字 / 强制对话）正在进行中。
+    /// 这期间**不推进任何阶段** —— 否则「条件=无」的演出阶段会立刻算完成，
+    /// 任务直接走到下一阶段（比如「切换场景」），演出被切走甚至随旧场景一起销毁。
+    /// </summary>
+    bool 演出中;
     readonly HashSet<string> 已完成任务 = new HashSet<string>();
     readonly List<NpcInstance> 已订阅 = new List<NpcInstance>();
     float 计时;
@@ -234,6 +241,7 @@ public class 任务管理器 : MonoBehaviour
 
         var db = 取库();
         if (db == null || 当前阶段.Count == 0) return;
+        if (演出中) return;      // ★ 有阻塞式演出在跑：先别推进阶段
 
         var 快照 = new List<string>(当前阶段.Keys);
         foreach (var 任务id in 快照)
@@ -429,17 +437,21 @@ public class 任务管理器 : MonoBehaviour
         // 对话关掉之后再按「等待秒」停一下（策划：点完「仙人，我准备好了」停留 2 秒再起黑幕）
         if (阶段.等待秒 > 0f) yield return new WaitForSeconds(阶段.等待秒);
 
+        演出中 = true;      // ★ 从这一刻起不推进阶段，黑幕才不会被下一阶段切走
         Debug.Log("[任务] 调度：黑幕白字 " + 行.Count + " 行");
         yield return 黑幕字幕.说(行.ToArray());
         黑幕字幕.收幕();
-        黑幕字幕.强制解锁();   // 兜底：万一「说」的协程被打断（例如切场景），黑幕锁不会漏下来把玩家锁死
+        黑幕字幕.强制解锁();
+        演出中 = false;   // 兜底：万一「说」的协程被打断（例如切场景），黑幕锁不会漏下来把玩家锁死
     }
 
     /// <summary>强制对话（不用玩家按 F）：说话人 / 台词 / 情绪 全从阶段里取</summary>
     System.Collections.IEnumerator 播对话(QuestDefinition 阶段)
     {
         Debug.Log("[任务] 调度：强制对话（" + 阶段.说话人 + "）「" + 阶段.台词 + "」情绪=" + 阶段.情绪);
+        演出中 = true;      // ★ 对话期间不推进阶段（三幕「啊啊啊是妖怪」之后才该轮到野猪攻击）
         yield return DialogueUI.演出(阶段.说话人, 阶段.台词, 阶段.情绪, 阶段.情绪强度);
+        演出中 = false;
     }
 
     /// <summary>把玩家挪到坐标（四幕切到宗门后把主角放到大师兄旁边）</summary>
