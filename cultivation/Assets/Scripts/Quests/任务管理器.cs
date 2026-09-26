@@ -464,17 +464,29 @@ public class 任务管理器 : MonoBehaviour
     {
         yield return null;
         yield return null;
-        for (int 次 = 0; 次 < 3; 次++)
+        // 持续 30 帧强行把玩家按在目标点上：切场景进来时场景自身的出生/摆放逻辑、
+        // 以及「到达」类判定都可能晚几帧才跑完，只改一次的时机根本抢不过它们。
+        // 这 30 帧（约 0.5s）玩家本来就被演出锁着，不会被玩家操作干扰。
+        bool 报过 = false;
+        for (int i = 0; i < 30; i++)
         {
             var 玩家 = 物品使用器.取玩家物体();
-            if (玩家 == null) { Debug.LogWarning("[任务] 移动玩家：场景里找不到玩家", this); yield break; }
-            var cc = 玩家.GetComponent<CharacterController>();
-            if (cc != null) cc.enabled = false;
-            玩家.transform.position = 位;
-            if (cc != null) cc.enabled = true;
-            if (次 == 0) Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F3") + " → " + 玩家.name + " 实际 " + 玩家.transform.position.ToString("F3"));
+            if (玩家 != null)
+            {
+                var cc = 玩家.GetComponent<CharacterController>();
+                if (cc != null) cc.enabled = false;
+                玩家.transform.position = 位;
+                if (cc != null) cc.enabled = true;
+                if (!报过)
+                {
+                    报过 = true;
+                    Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F3") + " → " + 玩家.name + " 实际 " + 玩家.transform.position.ToString("F3"), this);
+                }
+            }
             yield return null;
         }
+        var 末 = 物品使用器.取玩家物体();
+        Debug.Log("[任务] 移动玩家结束：玩家最终 " + (末 != null ? 末.transform.position.ToString("F3") : "无"), this);
     }
 
     /// <summary>
