@@ -98,6 +98,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4268305140228077040}
   - component: {fileID: 7821567791984099427}
+  - component: {fileID: 4173123908785144333}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: "\u4EFB\u52A1\u89E6\u53D1\u533A"
@@ -140,8 +141,26 @@ MonoBehaviour:
   "\u5B8C\u6210\u9636\u6BB5\u4EFB\u52A1id": 
   "\u52A0\u6807\u8BB0": 
   "\u9700\u8981\u4EFB\u52A1id": 
+  "\u9700\u8981\u6807\u8BB0": 
+  "\u9700\u8981\u5B8C\u6210\u4EFB\u52A1id": 
+  "\u672A\u89E3\u9501\u65F6\u9690\u85CF\u8303\u56F4\u5708": 1
+  "\u6E38\u620F\u91CC\u9690\u85CF\u8303\u56F4\u5708": 1
   "\u53EA\u89E6\u53D1\u4E00\u6B21": 1
   "\u6F14\u51FA\u4E2D\u4E0D\u89E6\u53D1": 1
   "\u663E\u793A\u8303\u56F4": 1
   "\u8303\u56F4\u989C\u8272": {r: 1, g: 0.78, b: 0.12, a: 0.9}
   "\u6253\u65E5\u5FD7": 1
+--- !u!114 &4173123908785144333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9052696824544961119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 588ce76380a477148b9f36b6766801e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  "\u8FDB\u6E38\u620F\u5C31\u9690\u85CF": 1
+  "\u987A\u4FBF\u5173\u78B0\u649E\u4F53": 0

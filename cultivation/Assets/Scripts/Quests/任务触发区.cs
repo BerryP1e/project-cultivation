@@ -47,6 +47,9 @@ public class 任务触发区 : MonoBehaviour
     [Tooltip("勾上 = 条件没满足时把「范围圈」隐藏起来（你看不到圈就说明这一环还没解锁）")]
     public bool 未解锁时隐藏范围圈 = true;
 
+    [Tooltip("勾上 = **游戏运行时**把范围圈整个藏起来（编辑器里照样显示，方便摆位置）。实机观感更干净")]
+    public bool 游戏里隐藏范围圈 = true;
+
     [Tooltip("勾上 = 触发过一次就不再触发")]
     public bool 只触发一次 = true;
 
@@ -110,7 +113,9 @@ public class 任务触发区 : MonoBehaviour
 
     void 刷新范围圈()
     {
-        if (范围圈 == null || !未解锁时隐藏范围圈) return;
+        if (范围圈 == null) return;
+        if (游戏里隐藏范围圈 && Application.isPlaying) { 范围圈.enabled = false; return; }
+        if (!未解锁时隐藏范围圈) return;              // 一直显示
         范围圈.enabled = 条件满足();
     }
 
