@@ -464,13 +464,17 @@ public class 任务管理器 : MonoBehaviour
     {
         yield return null;
         yield return null;
-        var 玩家 = 物品使用器.取玩家物体();
-        if (玩家 == null) { Debug.LogWarning("[任务] 移动玩家：场景里找不到玩家", this); yield break; }
-        var cc = 玩家.GetComponent<CharacterController>();
-        if (cc != null) cc.enabled = false;
-        玩家.transform.position = 位;
-        if (cc != null) cc.enabled = true;
-        Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F2") + "（实际 " + 玩家.transform.position.ToString("F2") + "）");
+        for (int 次 = 0; 次 < 3; 次++)
+        {
+            var 玩家 = 物品使用器.取玩家物体();
+            if (玩家 == null) { Debug.LogWarning("[任务] 移动玩家：场景里找不到玩家", this); yield break; }
+            var cc = 玩家.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            玩家.transform.position = 位;
+            if (cc != null) cc.enabled = true;
+            if (次 == 0) Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F3") + " → " + 玩家.name + " 实际 " + 玩家.transform.position.ToString("F3"));
+            yield return null;
+        }
     }
 
     /// <summary>
