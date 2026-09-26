@@ -350,7 +350,7 @@ public class 任务管理器 : MonoBehaviour
             case 任务动作.黑幕字幕:    StartCoroutine(播黑幕(阶段)); return;
             case 任务动作.闪白:        黑幕字幕.闪白(); Debug.Log("[任务] 调度：白屏闪一下"); return;
             case 任务动作.播放对话:    StartCoroutine(播对话(阶段)); return;
-            case 任务动作.移动玩家:    移动玩家到(阶段.坐标); return;
+            case 任务动作.移动玩家:    StartCoroutine(移动玩家到(阶段.坐标)); return;
             case 任务动作.切换场景:    StartCoroutine(切到场景(阶段)); return;
             case 任务动作.接取任务:
                 if (string.IsNullOrEmpty(阶段.动作参数)) { Debug.LogWarning("[任务] 接取任务没填「动作参数」= 要接的任务id", 阶段); return; }
@@ -454,16 +454,23 @@ public class 任务管理器 : MonoBehaviour
         演出中 = false;
     }
 
-    /// <summary>把玩家挪到坐标（四幕切到宗门后把主角放到大师兄旁边）</summary>
-    void 移动玩家到(Vector3 位)
+    /// <summary>
+    /// 把玩家挪到坐标（四幕切到宗门后把主角放到大师兄旁边）。
+    /// **先等两帧**：切场景进来的那一阶段是在新场景 Awake 期间由 跨场景数据 恢复的，
+    /// 那时场景自己的出生/摆放逻辑还没跑完，立刻改位置会被它覆盖
+    /// （实测玩家落在场景默认出生点 (-83.6,18.05,89.9)，而不是策划标的宗门点）。
+    /// </summary>
+    System.Collections.IEnumerator 移动玩家到(Vector3 位)
     {
+        yield return null;
+        yield return null;
         var 玩家 = 物品使用器.取玩家物体();
-        if (玩家 == null) { Debug.LogWarning("[任务] 移动玩家：场景里找不到玩家", this); return; }
+        if (玩家 == null) { Debug.LogWarning("[任务] 移动玩家：场景里找不到玩家", this); yield break; }
         var cc = 玩家.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
         玩家.transform.position = 位;
         if (cc != null) cc.enabled = true;
-        Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F2"));
+        Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F2") + "（实际 " + 玩家.transform.position.ToString("F2") + "）");
     }
 
     /// <summary>
