@@ -131,7 +131,12 @@ public class 任务触发区 : MonoBehaviour
         var 玩家 = 物品使用器.取玩家物体();
         if (玩家 == null) return;
 
-        Vector3 差 = 玩家.transform.position - transform.position;
+        // ★ 用玩家**碰撞体中心**判断高度，而不是根坐标（脚底）：
+        //   地面不平时脚底会明显低于圈心，用根坐标容易被「高度容差」误挡。
+        Vector3 玩家点 = 玩家.transform.position;
+        var 玩家碰撞体 = 玩家.GetComponent<Collider>();
+        if (玩家碰撞体 != null) 玩家点 = 玩家碰撞体.bounds.center;
+        Vector3 差 = 玩家点 - transform.position;
         if (高度容差 > 0f && Mathf.Abs(差.y) > 高度容差)
         {
             if (Time.time - 上次提示 > 1f)
@@ -143,7 +148,18 @@ public class 任务触发区 : MonoBehaviour
             return;
         }
         差.y = 0f;
-        if (差.sqrMagnitude > 半径 * 半径) return;
+        if (差.sqrMagnitude > 半径 * 半径)
+        {
+            // 还在圈外：已经接近（半径 3 倍以内）时每秒报一次实际距离，
+            // 这样「到底要走到多近才触发」在 Console 里能直接看出来。
+            if (差.sqrMagnitude < 半径 * 半径 * 9f && Time.time - 上次提示 > 1f)
+            {
+                上次提示 = Time.time;
+                Debug.Log("[触发区] " + name + "：还差 " + 差.magnitude.ToString("F2") + "m 进圈（半径 " + 半径
+                    + "，圈心 " + transform.position.ToString("F1") + "，玩家 " + 玩家点.ToString("F1") + "）", this);
+            }
+            return;
+        }
 
         // ★ 人已经进圈：不管最不触发，都把原因打出来（每秒最多一条），免得「没反应」查不出原因
         if (Time.time - 上次提示 > 1f)
