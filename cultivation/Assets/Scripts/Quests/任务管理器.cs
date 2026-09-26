@@ -421,6 +421,14 @@ public class 任务管理器 : MonoBehaviour
             foreach (var s in 阶段.台词.Split('|'))
                 if (!string.IsNullOrWhiteSpace(s)) 行.Add(s.Trim());
         if (行.Count == 0) yield break;
+
+        // ★ 先等对话框收起来再起黑幕：任务条件「对话」是在这一段刚显示时就判定的，
+        //   不等的话黑幕会直接盖在对话框上，看起来像「话还没说完就被切走了」。
+        float 上限 = Time.time + 20f;
+        while (DialogueUI.正在显示 && Time.time < 上限) yield return null;
+        // 对话关掉之后再按「等待秒」停一下（策划：点完「仙人，我准备好了」停留 2 秒再起黑幕）
+        if (阶段.等待秒 > 0f) yield return new WaitForSeconds(阶段.等待秒);
+
         Debug.Log("[任务] 调度：黑幕白字 " + 行.Count + " 行");
         yield return 黑幕字幕.说(行.ToArray());
         黑幕字幕.收幕();
