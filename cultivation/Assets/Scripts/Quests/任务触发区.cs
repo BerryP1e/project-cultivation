@@ -133,6 +133,22 @@ public class 任务触发区 : MonoBehaviour
         return 半径;
     }
 
+#if UNITY_EDITOR
+    /// <summary>
+    /// 编辑器里把「实际检测半径」同步到 半径 字段上显示 —— 你缩放范围圈 / 触发区实例时，
+    /// Inspector 里的 半径 数字会跟着变，一眼就能看出检测范围是多少，不用去猜。
+    /// （只影响显示；运行时判定始终由 有效半径() 现算，不受这个数字影响。）
+    /// </summary>
+    void OnValidate()
+    {
+        if (!半径跟随范围圈) return;
+        var r = 取范围圈();
+        if (r == null) return;
+        float 直径 = r.transform.lossyScale.x;
+        if (直径 > 0.001f) 半径 = 直径 * 0.5f;
+    }
+#endif
+
     /// <summary>所有前置条件是否都满足（不含「玩家是否在圈内」）</summary>
     public bool 条件满足()
     {
