@@ -113566,7 +113566,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7821567791984099427, guid: 091a917e5462cb347a20ca322b9c5732, type: 3}
       propertyPath: "\u9700\u8981\u6807\u8BB0"
-      value: q_xiaomei_done
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7821567791984099427, guid: 091a917e5462cb347a20ca322b9c5732, type: 3}
       propertyPath: "\u89E6\u53D1\u4EFB\u52A1id"
@@ -113575,6 +113575,10 @@ PrefabInstance:
     - target: {fileID: 7821567791984099427, guid: 091a917e5462cb347a20ca322b9c5732, type: 3}
       propertyPath: "\u9700\u8981\u4EFB\u52A1id"
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7821567791984099427, guid: 091a917e5462cb347a20ca322b9c5732, type: 3}
+      propertyPath: "\u9700\u8981\u5B8C\u6210\u4EFB\u52A1id"
+      value: q_main_002
       objectReference: {fileID: 0}
     - target: {fileID: 9052696824544961119, guid: 091a917e5462cb347a20ca322b9c5732, type: 3}
       propertyPath: m_Name

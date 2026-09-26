@@ -38,8 +38,14 @@ public class 任务触发区 : MonoBehaviour
     [Tooltip("要求这个任务正在进行中才触发（留空 = 不要求）。注意：任务**已完成**就不算进行中")]
     public string 需要任务id = "";
 
-    [Tooltip("需要全部具备这些标记才触发，分号分隔（留空 = 不要求）。\n★ 想表达「某个任务做完之后才触发」要用这个，不要用 需要任务id —— 任务做完就不在「进行中」了")]
+    [Tooltip("需要全部具备这些标记才触发，分号分隔（留空 = 不要求）。\n⚠ 标记只存在内存里、**不存档**，重开游戏就没了 —— 想表达「某个任务做完之后才触发」，请用下面的 需要完成任务id")]
     public string 需要标记 = "";
+
+    [Tooltip("要求这个任务**已经完成**才触发（留空 = 不要求）。\n★ 推荐用这个：任务完成状态会跟着存档走，重启游戏也还在")]
+    public string 需要完成任务id = "";
+
+    [Tooltip("勾上 = 条件没满足时把「范围圈」隐藏起来（你看不到圈就说明这一环还没解锁）")]
+    public bool 未解锁时隐藏范围圈 = true;
 
     [Tooltip("勾上 = 触发过一次就不再触发")]
     public bool 只触发一次 = true;
@@ -57,12 +63,36 @@ public class 任务触发区 : MonoBehaviour
     public bool 打日志 = true;
 
     bool 已触发;
+    Renderer 范围圈;
+
+    void Awake()
+    {
+        var t = transform.Find("\u8303\u56f4\u5708");
+        if (t != null) 范围圈 = t.GetComponent<Renderer>();
+    }
+
+    /// <summary>所有前置条件是否都满足（不含「玩家是否在圈内」）</summary>
+    public bool 条件满足()
+    {
+        var 任务 = 任务管理器.实例 != null ? 任务管理器.实例 : Object.FindObjectOfType<任务管理器>();
+        if (!string.IsNullOrEmpty(需要任务id) && (任务 == null || !任务.进行中(需要任务id))) return false;
+        if (!string.IsNullOrEmpty(需要完成任务id) && (任务 == null || !任务.已完成(需要完成任务id))) return false;
+        if (!有全部标记(需要标记)) return false;
+        return true;
+    }
+
+    void 刷新范围圈()
+    {
+        if (范围圈 == null || !未解锁时隐藏范围圈) return;
+        范围圈.enabled = 条件满足();
+    }
 
     /// <summary>外部想手动复位（例如重开一段剧情）</summary>
     public void 复位() { 已触发 = false; }
 
     void Update()
     {
+        刷新范围圈();
         if (只触发一次 && 已触发) return;
         if (演出中不触发 && (黑幕字幕.演出中 || DialogueUI.正在显示)) return;
 
@@ -85,8 +115,7 @@ public class 任务触发区 : MonoBehaviour
             Debug.LogWarning("[触发区] " + name + " 进圈了，但场景里没有任务管理器", this);
             return;
         }
-        if (!string.IsNullOrEmpty(需要任务id) && !任务.进行中(需要任务id)) return;
-        if (!有全部标记(需要标记)) return;
+        if (!条件满足()) return;
 
         已触发 = true;
         if (打日志) Debug.Log("[触发区] " + name + " 触发（玩家距 " + Vector3.Distance(玩家.transform.position, transform.position).ToString("F2") + "m）", this);
