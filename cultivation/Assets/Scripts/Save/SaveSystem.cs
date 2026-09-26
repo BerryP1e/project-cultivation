@@ -119,7 +119,7 @@ public static class SaveSystem
         {
             角色名 = string.IsNullOrEmpty(角色名) ? "无名散修" : 角色名,
             境界 = "炼气期一层",
-            场景名 = "3C_Testbed",
+            场景名 = "village",
             位置 = Vector3.zero,
             朝向Y = 0f,
             当前气血 = -1f,      // -1 = 用满值

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -212,7 +212,8 @@ public class MainMenuUI : MonoBehaviour
 
     void 进游戏(SaveData 数据)
     {
-        string 场景 = string.IsNullOrEmpty(数据.场景名) ? "3C_Testbed" : 数据.场景名;
+        // 新存档默认进「古古镇」；老存档里存的 3C_Testbed 是开发测试场景，一并迁到 village
+        string 场景 = (string.IsNullOrEmpty(数据.场景名) || 数据.场景名 == "3C_Testbed") ? "village" : 数据.场景名;
         Debug.Log("[MainMenu] 进入场景 " + 场景 + "（槽位 " + SaveSystem.当前槽位 + "）");
         SceneManager.LoadScene(场景);
     }

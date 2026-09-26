@@ -21,7 +21,7 @@ public class SaveData
     public string 最后存档时间 = "";
 
     [Header("进度")]
-    public string 场景名 = "3C_Testbed";
+    public string 场景名 = "village";
     public Vector3 位置 = Vector3.zero;
     public float 朝向Y = 0f;
 
