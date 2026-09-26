@@ -91,6 +91,8 @@ public class 黑幕字幕 : MonoBehaviour
     {
         if (实例 != null && 实例 != this) { Destroy(gameObject); return; }
         实例 = this;
+        // 过场黑幕要能跨场景：四幕是「黑屏 + 白字 → 切到宗门」，加载时不能把画面露出来
+        DontDestroyOnLoad(gameObject);
         搭界面();
         收起();
     }

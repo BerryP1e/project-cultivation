@@ -26,7 +26,12 @@ public enum 任务动作
     处决,       // ★ 直接把目标 NPC 打死（三幕大师兄一刀劈野猪：配合 闪白）
     镜头看目标, // ★ 镜头平滑推向目标 NPC（时长见 镜头时长）
     镜头回玩家, // ★ 镜头平滑回到玩家身上
-    生成NPC     // ★ 生成一个 NPC：**动作参数 = 预制体资源路径**（如 `NPC/Demon/YeZhu/YeZhu`），位置 = `坐标`
+    生成NPC,    // ★ 生成一个 NPC：**动作参数 = 预制体资源路径**（如 `NPC/Demon/YeZhu/YeZhu`），位置 = `坐标`
+    播放对话,   // ★ 强制弹一段对话（不用玩家按 F）：说话人列 / 台词列 / 情绪列（三幕主角惊叫、四幕大师兄招募都用它）
+    黑幕字幕,   // ★ 黑幕白字：台词列写词，多行用 | 分隔；逐字打出后自动收幕
+    闪白,       // ★ 黑屏白屏闪一下（三幕大师兄一刀劈野猪：配合 处决）
+    切换场景,   // ★ 切到「场景名」列写的场景（单场景加载，任务进度靠 跨场景数据 带过去）
+    移动玩家    // ★ 把玩家挪到「坐标」（四幕切到宗门后把主角放到大师兄旁边）
 }
 
 /// <summary>
@@ -115,8 +120,25 @@ public class QuestDefinition : ScriptableObject
     [Tooltip("动作的目标 NPC：NpcDefinition.id")]
     public string 动作目标npcId = "";
 
-    [Tooltip("动作参数：播动画时填动作名（如 swagger / angry_01 / walk）")]
+    [Tooltip("动作参数：播动画时填动作名（如 swagger / angry_01 / walk / Yufeng_Forward）")]
     public string 动作参数 = "";
+
+    [Header("演出（动作=播放对话 / 黑幕字幕 / 切换场景 用）")]
+    [Tooltip("播放对话 / 黑幕字幕 的台词。黑幕字幕多行用 | 分隔")]
+    [TextArea(2, 6)]
+    public string 台词 = "";
+
+    [Tooltip("动作=播放对话：谁在说。写「主角」= 玩家立绘放大并显示玩家名字")]
+    public string 说话人 = "主角";
+
+    [Tooltip("动作=播放对话：情绪名（震动 / 冒泡 / 发怒 / 害羞 / 惊讶，留空=不播）")]
+    public string 情绪 = "";
+
+    [Tooltip("动作=播放对话：情绪强度")]
+    [Min(0f)] public float 情绪强度 = 1f;
+
+    [Tooltip("动作=切换场景：目标场景名（如 Sect）")]
+    public string 场景名 = "";
 
     [Header("接取")]
     [Tooltip("勾上 = 进游戏就自动接这个任务（测试用最方便）")]

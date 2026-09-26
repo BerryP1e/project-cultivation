@@ -141,11 +141,66 @@ public class DialogueUI : MonoBehaviour
         显示分段(段);
     }
 
+    // ============================================================ 强制演出（任务过场用）
+
+    string 临时说话人 = "";
+    string 临时台词 = "";
+    string 临时情绪 = "";
+    float 临时强度 = 1f;
+    bool 是临时演出;
+
+    /// <summary>
+    /// **不依赖 NPC 的强制对话**：直接给「说话人 / 台词 / 情绪」弹一段对话框，
+    /// 等玩家点「继续」或按 F / 空格收起来。任务阶段用它演剧情
+    /// （三幕主角惊叫「啊啊啊是妖怪！救命啊」就是 说话人=主角 + 情绪=震动）。
+    /// </summary>
+    public static IEnumerator 演出(string 说话人, string 台词, string 情绪 = "", float 强度 = 1f)
+    {
+        var ui = 确保();
+        ui.临时说话人 = 说话人;
+        ui.临时台词 = 台词;
+        ui.临时情绪 = 情绪;
+        ui.临时强度 = 强度;
+        ui.是临时演出 = true;
+        当前NPC = null;
+        ui.当前NpcId = "";
+        NpcDialogue.当前对话中 = null;
+        if (ui.根 != null) ui.根.SetActive(true);
+        ui.显示临时();
+        int 起帧 = Time.frameCount;
+        while (ui.是临时演出 && 正在显示)
+        {
+            if (Time.frameCount > 起帧 + 2 &&
+                (Input.GetKeyDown(ui.继续键) || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)))
+            { ui.是临时演出 = false; ui.收起来(); break; }
+            yield return null;
+        }
+    }
+
+    void 显示临时()
+    {
+        清回答();
+        bool 玩家在说 = !string.IsNullOrEmpty(临时说话人) &&
+                        (临时说话人 == "主角" || 临时说话人 == "玩家" ||
+                         (!string.IsNullOrEmpty(起名界面.当前名字) && 临时说话人 == 起名界面.当前名字));
+        名字文本.text = 玩家在说
+            ? (string.IsNullOrEmpty(起名界面.当前名字) ? "主角" : 起名界面.当前名字)
+            : 临时说话人;
+        内容文本.text = 临时台词;
+        贴立绘(左立绘, 左立绘提示, null, "人物立绘");
+        贴立绘(右立绘, 右立绘提示, null, "玩家立绘");
+        if (左立绘 != null) 左立绘.rectTransform.localScale = Vector3.one * (玩家在说 ? 非说话方缩放 : 说话方缩放);
+        if (右立绘 != null) 右立绘.rectTransform.localScale = Vector3.one * (玩家在说 ? 说话方缩放 : 非说话方缩放);
+        加按钮("继续 ▸", () => { 是临时演出 = false; 收起来(); });
+        播放情绪(临时情绪, 临时强度);
+    }
+
     void 收起来()
     {
         if (根 != null) 根.SetActive(false);
         清回答();
         当前NPC = null;
+        是临时演出 = false;
         NpcDialogue.当前对话中 = null;
     }
 

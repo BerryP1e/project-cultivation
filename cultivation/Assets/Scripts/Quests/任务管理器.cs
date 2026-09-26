@@ -97,6 +97,15 @@ public class 任务管理器 : MonoBehaviour
             if (阶段号 <= 0) 已完成任务.Add(p[0]);
             else 当前阶段[p[0]] = 阶段号;
         }
+        // 接手的阶段要立刻执行它的动作：切场景进来的那一阶段可能带着「移动玩家 / 生成NPC」等调度
+        // ⚠ 同时必须补上「阶段开始时间」——否则接手的这一阶段若是「等待秒数」条件，
+        //   计时器永远不会开始，任务就卡死在这里（四幕切到宗门后卡在第 4 阶段就是这个原因）。
+        foreach (var kv in 当前阶段)
+        {
+            阶段开始时间[kv.Key] = Time.time;
+            var q = 取当前阶段(kv.Key);
+            if (q != null && q.动作 != 任务动作.无) 执行动作(q);
+        }
         Debug.Log("[任务] 已接手上一场景的进度：" + 当前阶段.Count + " 个任务推进中、" + 已完成任务.Count + " 个已完成");
     }
 
@@ -325,6 +334,18 @@ public class 任务管理器 : MonoBehaviour
     {
         if (阶段.动作 == 任务动作.无) return;
 
+        // ---- 过场演出类：不需要目标 NPC，先处理掉 ----
+        switch (阶段.动作)
+        {
+            case 任务动作.生成NPC:     生成NPC(阶段); return;
+            case 任务动作.镜头回玩家:  StartCoroutine(镜头回玩家(阶段.镜头时长, 阶段.镜头高度)); return;
+            case 任务动作.黑幕字幕:    StartCoroutine(播黑幕(阶段)); return;
+            case 任务动作.闪白:        黑幕字幕.闪白(); Debug.Log("[任务] 调度：白屏闪一下"); return;
+            case 任务动作.播放对话:    StartCoroutine(播对话(阶段)); return;
+            case 任务动作.移动玩家:    移动玩家到(阶段.坐标); return;
+            case 任务动作.切换场景:    StartCoroutine(切到场景(阶段)); return;
+        }
+
         var npc = 找NPC(阶段.动作目标npcId);
         if (npc == null)
         {
@@ -386,6 +407,68 @@ public class 任务管理器 : MonoBehaviour
                 Destroy(npc.gameObject);
                 break;
         }
+    }
+
+    /// <summary>黑幕白字：台词列按 | 拆行，逐字打出（左键长按加速）后自动收幕</summary>
+    System.Collections.IEnumerator 播黑幕(QuestDefinition 阶段)
+    {
+        var 行 = new List<string>();
+        if (!string.IsNullOrEmpty(阶段.台词))
+            foreach (var s in 阶段.台词.Split('|'))
+                if (!string.IsNullOrWhiteSpace(s)) 行.Add(s.Trim());
+        if (行.Count == 0) yield break;
+        Debug.Log("[任务] 调度：黑幕白字 " + 行.Count + " 行");
+        yield return 黑幕字幕.说(行.ToArray());
+        黑幕字幕.收幕();
+        黑幕字幕.强制解锁();   // 兜底：万一「说」的协程被打断（例如切场景），黑幕锁不会漏下来把玩家锁死
+    }
+
+    /// <summary>强制对话（不用玩家按 F）：说话人 / 台词 / 情绪 全从阶段里取</summary>
+    System.Collections.IEnumerator 播对话(QuestDefinition 阶段)
+    {
+        Debug.Log("[任务] 调度：强制对话（" + 阶段.说话人 + "）「" + 阶段.台词 + "」情绪=" + 阶段.情绪);
+        yield return DialogueUI.演出(阶段.说话人, 阶段.台词, 阶段.情绪, 阶段.情绪强度);
+    }
+
+    /// <summary>把玩家挪到坐标（四幕切到宗门后把主角放到大师兄旁边）</summary>
+    void 移动玩家到(Vector3 位)
+    {
+        var 玩家 = 物品使用器.取玩家物体();
+        if (玩家 == null) { Debug.LogWarning("[任务] 移动玩家：场景里找不到玩家", this); return; }
+        var cc = 玩家.GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = false;
+        玩家.transform.position = 位;
+        if (cc != null) cc.enabled = true;
+        Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F2"));
+    }
+
+    /// <summary>
+    /// 切场景：黑幕台词 → 等待 → **先把阶段推进一格再加载**（旧场景马上被销毁，
+    /// 导出的进度必须是"下一阶段"，否则新场景接上会重复触发切换）→ 单场景异步加载。
+    /// </summary>
+    System.Collections.IEnumerator 切到场景(QuestDefinition 阶段)
+    {
+        if (string.IsNullOrEmpty(阶段.场景名)) { Debug.LogWarning("[任务] 切换场景没填「场景名」", 阶段); yield break; }
+
+        if (!string.IsNullOrEmpty(阶段.台词))
+        {
+            var 行 = new List<string>();
+            foreach (var s in 阶段.台词.Split('|'))
+                if (!string.IsNullOrWhiteSpace(s)) 行.Add(s.Trim());
+            if (行.Count > 0) yield return 黑幕字幕.说(行.ToArray());
+        }
+        yield return new WaitForSeconds(阶段.等待秒 > 0f ? 阶段.等待秒 : 0.2f);
+
+        当前阶段[阶段.任务id] = 阶段.阶段 + 1;
+        Debug.Log("[任务] 调度：切换到场景「" + 阶段.场景名 + "」，进度先推进到第 " + (阶段.阶段 + 1) + " 阶段");
+
+        var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(阶段.场景名, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        if (op == null)
+        {
+            Debug.LogError("[任务] LoadSceneAsync 失败：「" + 阶段.场景名 + "」要加进 Build Settings", 阶段);
+            yield break;
+        }
+        while (!op.isDone) yield return null;
     }
 
     /// <summary>走过去：走行走状态 + 平移到坐标，到位切回待机</summary>
