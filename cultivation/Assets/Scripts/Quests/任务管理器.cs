@@ -344,6 +344,10 @@ public class 任务管理器 : MonoBehaviour
             case 任务动作.播放对话:    StartCoroutine(播对话(阶段)); return;
             case 任务动作.移动玩家:    移动玩家到(阶段.坐标); return;
             case 任务动作.切换场景:    StartCoroutine(切到场景(阶段)); return;
+            case 任务动作.接取任务:
+                if (string.IsNullOrEmpty(阶段.动作参数)) { Debug.LogWarning("[任务] 接取任务没填「动作参数」= 要接的任务id", 阶段); return; }
+                接取(阶段.动作参数);
+                return;
         }
 
         var npc = 找NPC(阶段.动作目标npcId);
