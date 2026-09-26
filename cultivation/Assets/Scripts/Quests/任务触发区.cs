@@ -50,6 +50,9 @@ public class 任务触发区 : MonoBehaviour
     [Tooltip("勾上 = **游戏运行时**把范围圈整个藏起来（编辑器里照样显示，方便摆位置）。实机观感更干净")]
     public bool 游戏里隐藏范围圈 = true;
 
+    [Tooltip("★ 勾上（默认）= 检测半径**直接跟随「范围圈」在场景里的实际大小**：你缩放触发区实例，检测范围跟着变，所见即所得。关掉才用上面的「半径」数字。")]
+    public bool 半径跟随范围圈 = true;
+
     [Tooltip("勾上 = 触发过一次就不再触发")]
     public bool 只触发一次 = true;
 
@@ -97,8 +100,37 @@ public class 任务触发区 : MonoBehaviour
 
     void Awake()
     {
-        var t = transform.Find("\u8303\u56f4\u5708");
-        if (t != null) 范围圈 = t.GetComponent<Renderer>();
+        取范围圈();
+    }
+
+    /// <summary>拿「范围圈」（编辑器里也拿得到，Gizmo 要用）</summary>
+    Renderer 取范围圈()
+    {
+        if (范围圈 == null)
+        {
+            var t = transform.Find("\u8303\u56f4\u5708");
+            if (t != null) 范围圈 = t.GetComponent<Renderer>();
+        }
+        return 范围圈;
+    }
+
+    /// <summary>
+    /// **实际检测半径**。默认直接由「范围圈」的场景实际大小算出来：
+    /// 范围圈模型是直径 1 的圆柱，所以 lossyScale.x = 直径，半径 = 直径 / 2。
+    /// 这样策划缩放触发区实例就等于调范围，不会出现「看到的圈」和「检测范围」脱钩。
+    /// </summary>
+    public float 有效半径()
+    {
+        if (半径跟随范围圈)
+        {
+            var r = 取范围圈();
+            if (r != null)
+            {
+                float 直径 = r.transform.lossyScale.x;
+                if (直径 > 0.001f) return 直径 * 0.5f;
+            }
+        }
+        return 半径;
     }
 
     /// <summary>所有前置条件是否都满足（不含「玩家是否在圈内」）</summary>
@@ -148,15 +180,17 @@ public class 任务触发区 : MonoBehaviour
             return;
         }
         差.y = 0f;
-        if (差.sqrMagnitude > 半径 * 半径)
+        float R = 有效半径();
+        if (差.sqrMagnitude > R * R)
         {
             // 还在圈外：已经接近（半径 3 倍以内）时每秒报一次实际距离，
             // 这样「到底要走到多近才触发」在 Console 里能直接看出来。
-            if (差.sqrMagnitude < 半径 * 半径 * 9f && Time.time - 上次提示 > 1f)
+            if (差.sqrMagnitude < R * R * 9f && Time.time - 上次提示 > 1f)
             {
                 上次提示 = Time.time;
-                Debug.Log("[触发区] " + name + "：还差 " + 差.magnitude.ToString("F2") + "m 进圈（半径 " + 半径
-                    + "，圈心 " + transform.position.ToString("F1") + "，玩家 " + 玩家点.ToString("F1") + "）", this);
+                Debug.Log("[触发区] " + name + "：还差 " + 差.magnitude.ToString("F2") + "m 进圈（实际半径 " + R.ToString("F2")
+                    + (半径跟随范围圈 ? "＝范围圈直径/2" : "＝半径字段") + "，圈心 " + transform.position.ToString("F1")
+                    + "，玩家 " + 玩家点.ToString("F1") + "）", this);
             }
             return;
         }
@@ -213,13 +247,14 @@ public class 任务触发区 : MonoBehaviour
     {
         if (!显示范围) return;
         Gizmos.color = 范围颜色;
+        float R = 有效半径();
         var 中心 = transform.position;
         int N = 64;
-        var 前 = 中心 + Vector3.forward * 半径;
+        var 前 = 中心 + Vector3.forward * R;
         for (int i = 1; i <= N; i++)
         {
             float a = i / (float)N * Mathf.PI * 2f;
-            var 点 = 中心 + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 半径;
+            var 点 = 中心 + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * R;
             Gizmos.DrawLine(前, 点);
             前 = 点;
         }
