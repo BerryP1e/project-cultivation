@@ -50,6 +50,16 @@ public class 任务管理器 : MonoBehaviour
     /// 任务直接走到下一阶段（比如「切换场景」），演出被切走甚至随旧场景一起销毁。
     /// </summary>
     bool 演出中;
+
+    /// <summary>接手过来的阶段，动作要等场景激活完的第一帧才发（见 导入进度 的注释）</summary>
+    readonly List<string> 待发动作 = new List<string>();
+
+    /// <summary>
+    /// **跨场景**待补发的动作。切场景时旧的管理器会随旧场景销毁，实例字段带不过去，
+    /// 所以用静态队列存着，由新场景的管理器在第一帧取出来执行。
+    /// （四幕「切到宗门 → 移动玩家到落点」就靠它；之前依赖 导入进度 发动作，实测发不出来。）
+    /// </summary>
+    static readonly List<string> 跨场景待发动作 = new List<string>();
     readonly HashSet<string> 已完成任务 = new HashSet<string>();
     readonly List<NpcInstance> 已订阅 = new List<NpcInstance>();
     float 计时;
@@ -104,14 +114,15 @@ public class 任务管理器 : MonoBehaviour
             if (阶段号 <= 0) 已完成任务.Add(p[0]);
             else 当前阶段[p[0]] = 阶段号;
         }
-        // 接手的阶段要立刻执行它的动作：切场景进来的那一阶段可能带着「移动玩家 / 生成NPC」等调度
-        // ⚠ 同时必须补上「阶段开始时间」——否则接手的这一阶段若是「等待秒数」条件，
-        //   计时器永远不会开始，任务就卡死在这里（四幕切到宗门后卡在第 4 阶段就是这个原因）。
+        // 补上「阶段开始时间」——否则接手的这一阶段若是「等待秒数」条件，计时器永远不会开始。
+        // ⚠ 动作**不在这里直接发**：导入进度 是在新场景 Awake 期间被 跨场景数据 调用的，
+        //   那时场景还没激活完，StartCoroutine 会失败并抛异常，把整个 Awake 打断 ——
+        //   表现就是「玩家没被移动到落点、后面的强制对话也不触发」。改由第一帧 Update 发。
+        待发动作.Clear();
         foreach (var kv in 当前阶段)
         {
             阶段开始时间[kv.Key] = Time.time;
-            var q = 取当前阶段(kv.Key);
-            if (q != null && q.动作 != 任务动作.无) 执行动作(q);
+            待发动作.Add(kv.Key);
         }
         Debug.Log("[任务] 已接手上一场景的进度：" + 当前阶段.Count + " 个任务推进中、" + 已完成任务.Count + " 个已完成");
     }
@@ -242,6 +253,35 @@ public class 任务管理器 : MonoBehaviour
         var db = 取库();
         if (db == null || 当前阶段.Count == 0) return;
         if (演出中) return;      // ★ 有阻塞式演出在跑：先别推进阶段
+
+        // ★ 接手过来的阶段，动作在这里（场景激活完之后的第一帧）才发
+        if (待发动作.Count > 0)
+        {
+            var 待 = new List<string>(待发动作);
+            待发动作.Clear();
+            foreach (var id in 待)
+            {
+                var q = 取当前阶段(id);
+                if (q != null && q.动作 != 任务动作.无)
+                {
+                    Debug.Log("[任务] 补发接手阶段的动作：" + q.id + " 动作=" + q.动作);
+                    执行动作(q);
+                }
+            }
+        }
+
+        // ★ 跨场景队列（切场景前存下的），同样在第一帧发
+        if (跨场景待发动作.Count > 0)
+        {
+            var 待 = new List<string>(跨场景待发动作);
+            跨场景待发动作.Clear();
+            foreach (var id in 待)
+            {
+                var q = 取当前阶段(id);
+                Debug.Log("[任务] 跨场景补发动作：" + (q != null ? q.id + " 动作=" + q.动作 : id + "（这个任务在新场景里没有当前阶段）"));
+                if (q != null && q.动作 != 任务动作.无) 执行动作(q);
+            }
+        }
 
         var 快照 = new List<string>(当前阶段.Keys);
         foreach (var 任务id in 快照)
@@ -462,6 +502,8 @@ public class 任务管理器 : MonoBehaviour
     /// </summary>
     System.Collections.IEnumerator 移动玩家到(Vector3 位)
     {
+        Debug.Log("[任务] 移动玩家到 协程已启动，目标 " + 位.ToString("F3")
+            + " 玩家=" + (物品使用器.取玩家物体() != null ? 物品使用器.取玩家物体().name : "取不到"), this);
         yield return null;
         yield return null;
         // 持续 30 帧强行把玩家按在目标点上：切场景进来时场景自身的出生/摆放逻辑、
@@ -507,7 +549,8 @@ public class 任务管理器 : MonoBehaviour
         yield return new WaitForSeconds(阶段.等待秒 > 0f ? 阶段.等待秒 : 0.2f);
 
         当前阶段[阶段.任务id] = 阶段.阶段 + 1;
-        Debug.Log("[任务] 调度：切换到场景「" + 阶段.场景名 + "」，进度先推进到第 " + (阶段.阶段 + 1) + " 阶段");
+        跨场景待发动作.Add(阶段.任务id);      // ★ 存进静态队列，交给新场景的管理器发
+        Debug.Log("[任务] 调度：切换到场景「" + 阶段.场景名 + "」，进度先推进到第 " + (阶段.阶段 + 1) + " 阶段（动作已存入跨场景队列）");
 
         var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(阶段.场景名, UnityEngine.SceneManagement.LoadSceneMode.Single);
         if (op == null)
