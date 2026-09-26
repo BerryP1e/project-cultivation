@@ -64,6 +64,33 @@ public class 任务触发区 : MonoBehaviour
 
     bool 已触发;
     Renderer 范围圈;
+    float 上次提示;
+
+    /// <summary>前置没满足时，说清楚是哪一条没满足（进圈后 1 秒一条日志）</summary>
+    string 未满足原因()
+    {
+        var 任务 = 任务管理器.实例 != null ? 任务管理器.实例 : Object.FindObjectOfType<任务管理器>();
+        var 缺 = new System.Collections.Generic.List<string>();
+        if (!string.IsNullOrEmpty(需要任务id) && (任务 == null || !任务.进行中(需要任务id)))
+            缺.Add("需要任务「" + 需要任务id + "」正在进行中（现在：" + (任务 == null ? "没有任务管理器" : 任务.已完成(需要任务id) ? "已完成，不算进行中" : "未接取") + "）");
+        if (!string.IsNullOrEmpty(需要完成任务id) && (任务 == null || !任务.已完成(需要完成任务id)))
+            缺.Add("需要完成任务「" + 需要完成任务id + "」（现在：" + (任务 == null ? "没有任务管理器" : 任务.进行中(需要完成任务id) ? "正在进行中，还没完成" : "未接取") + "）");
+        if (!string.IsNullOrEmpty(需要标记))
+        {
+            var 有 = 对话标记.全部标记();
+            var 少的 = new System.Collections.Generic.List<string>();
+            foreach (var m in 需要标记.Split(';'))
+            {
+                var k = m.Trim();
+                if (k.Length == 0) continue;
+                bool 找到 = false;
+                foreach (var x in 有) if (x == k) { 找到 = true; break; }
+                if (!找到) 少的.Add(k);
+            }
+            if (少的.Count > 0) 缺.Add("缺少标记「" + string.Join("、", 少的) + "」（标记不存档，重开游戏会没）");
+        }
+        return 缺.Count == 0 ? "（没有前置要求，可能是别的问题）" : string.Join("；", 缺);
+    }
 
     void Awake()
     {
@@ -100,9 +127,27 @@ public class 任务触发区 : MonoBehaviour
         if (玩家 == null) return;
 
         Vector3 差 = 玩家.transform.position - transform.position;
-        if (高度容差 > 0f && Mathf.Abs(差.y) > 高度容差) return;
+        if (高度容差 > 0f && Mathf.Abs(差.y) > 高度容差)
+        {
+            if (Time.time - 上次提示 > 1f)
+            {
+                上次提示 = Time.time;
+                Debug.Log("[触发区] " + name + "：玩家水平位置已经在圈里，但高度差 " + Mathf.Abs(差.y).ToString("F1")
+                    + "m 超过容差 " + 高度容差 + "m（圈在 y=" + transform.position.y.ToString("F1") + "，玩家在 y=" + 玩家.transform.position.y.ToString("F1") + "）", this);
+            }
+            return;
+        }
         差.y = 0f;
         if (差.sqrMagnitude > 半径 * 半径) return;
+
+        // ★ 人已经进圈：不管最不触发，都把原因打出来（每秒最多一条），免得「没反应」查不出原因
+        if (Time.time - 上次提示 > 1f)
+        {
+            上次提示 = Time.time;
+            if (只触发一次 && 已触发) Debug.Log("[触发区] " + name + "：已触发过（只触发一次已勾上），不再重复", this);
+            else if (!条件满足()) Debug.Log("[触发区] " + name + "：玩家已进圈，但前置未满足 —— " + 未满足原因(), this);
+            else Debug.Log("[触发区] " + name + "：条件已满足，正在触发", this);
+        }
 
         触发(玩家);
     }
