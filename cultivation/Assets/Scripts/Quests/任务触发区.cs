@@ -35,8 +35,11 @@ public class 任务触发区 : MonoBehaviour
     public string 加标记 = "";
 
     [Header("条件")]
-    [Tooltip("要求这个任务正在进行中才触发（留空 = 不要求）")]
+    [Tooltip("要求这个任务正在进行中才触发（留空 = 不要求）。注意：任务**已完成**就不算进行中")]
     public string 需要任务id = "";
+
+    [Tooltip("需要全部具备这些标记才触发，分号分隔（留空 = 不要求）。\n★ 想表达「某个任务做完之后才触发」要用这个，不要用 需要任务id —— 任务做完就不在「进行中」了")]
+    public string 需要标记 = "";
 
     [Tooltip("勾上 = 触发过一次就不再触发")]
     public bool 只触发一次 = true;
@@ -83,6 +86,7 @@ public class 任务触发区 : MonoBehaviour
             return;
         }
         if (!string.IsNullOrEmpty(需要任务id) && !任务.进行中(需要任务id)) return;
+        if (!有全部标记(需要标记)) return;
 
         已触发 = true;
         if (打日志) Debug.Log("[触发区] " + name + " 触发（玩家距 " + Vector3.Distance(玩家.transform.position, transform.position).ToString("F2") + "m）", this);
@@ -92,6 +96,22 @@ public class 任务触发区 : MonoBehaviour
         if (!string.IsNullOrEmpty(加标记)) 对话标记.添加一批(加标记);
 
         if (!string.IsNullOrEmpty(完成阶段任务id)) 任务.完成当前阶段(完成阶段任务id);
+    }
+
+    /// <summary>分号分隔的标记串是否全都有（空串 = 直接通过）</summary>
+    public static bool 有全部标记(string 标记串)
+    {
+        if (string.IsNullOrEmpty(标记串)) return true;
+        var 有 = 对话标记.全部标记();
+        foreach (var m in 标记串.Split(';'))
+        {
+            var k = m.Trim();
+            if (k.Length == 0) continue;
+            bool 找到 = false;
+            foreach (var x in 有) if (x == k) { 找到 = true; break; }
+            if (!找到) return false;
+        }
+        return true;
     }
 
     void OnDrawGizmos()
