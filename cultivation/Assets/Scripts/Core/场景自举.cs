@@ -44,6 +44,49 @@ public static class 场景自举
 
         补单例(场景);
         补玩家与相机(场景);
+        查装配(场景);
+    }
+
+    // ---------------------------------------------------------------- 装配检查
+
+    /// <summary>
+    /// 查**补不了但必须有**的装配，缺了就**明确报错**（不静默）。
+    ///
+    /// 为什么不直接运行时补（踩过的坑 2026-09-27）：
+    ///   `跨场景数据` 靠 `OnDestroy` **在旧场景销毁前**把数据拍成快照。
+    ///   如果等新场景 `Awake` 才发现缺、临时补一个，那它已经错过了"拍快照"的时机
+    ///   （旧的 `OnDestroy` 早跑过了）→ **补了也没用，数据照样丢**。
+    ///   而且它必须和 `UIPanelData` 同物件（`GetComponent<UIPanelData>()`）。
+    ///   所以这一项只能**编辑器里装配好** —— 由 `CharacterPanelBuilder` 生成，
+    ///   这里负责在缺的时候喊出来。
+    /// </summary>
+    static void 查装配(Scene 场景)
+    {
+        var 面板 = 找组件<UIPanelData>(场景);
+        if (面板 == null) return;                       // 本来就没面板的场景不管
+
+        bool 有 = 面板.GetComponent<跨场景数据>() != null;
+        if (有) return;
+
+        if (报过缺接力) return;
+        报过缺接力 = true;
+        Debug.LogError("[场景自举] 「" + 场景.name + "」的「" + 面板.gameObject.name +
+            "」缺 跨场景数据 组件 —— **切场景时背包/已学功法/神通会全丢**。\n" +
+            "  它靠 OnDestroy 在旧场景销毁前拍快照，所以运行时补不了。\n" +
+            "  修法：跑一次菜单「修仙/构建角色面板 UI」（builder 现在会带上它），" +
+            "或用「修仙/体检/场景一致性（并补齐缺失）」。");
+    }
+
+    static bool 报过缺接力;
+
+    static T 找组件<T>(Scene 场景) where T : Component
+    {
+        foreach (var g in 场景.GetRootGameObjects())
+        {
+            var c = g.GetComponentInChildren<T>(true);
+            if (c != null) return c;
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------- 单例

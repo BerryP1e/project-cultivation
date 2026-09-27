@@ -99,6 +99,19 @@ public static class CharacterPanelBuilder
         panelHint.label = hintText;
         panelHint.background = hintBg;
 
+        // ★ 跨场景接力宿主，**必须和 UIPanelData 挂在同一个物件上**。
+        //
+        //   ⚠️ 踩过的坑（2026-09-27）：这个组件原来靠**手工**挂在 CharacterUI 上，
+        //      而本 builder 是「DestroyImmediate(旧 CharacterUI) → 重建」的 ——
+        //      一跑 builder 就把它连旧物件一起删掉，**而且再也不会有**。
+        //      表现：「场景一致性体检」报 跨场景数据 = 0（5 个场景全缺）。
+        //      之所以当时没立刻出症状，是因为 场景自举 起作用的那些天里接力还在跑；
+        //      一旦自举没覆盖到，**背包/已学功法/神通就全丢了**。
+        //      所以它必须由 builder 生成，不能依赖人记得手工挂。
+        var 接力 = canvasGo.AddComponent<跨场景数据>();
+        接力.打日志 = true;
+        接力.新开局时清空 = false;      // 新档清空由 SaveSystem 负责，这里别抢
+
         // ================= 侧边栏 =================
         var sidebar = UIBuildUtils.CreateImage("Sidebar", window.rectTransform, UIBuildUtils.ColorSidebar);
         sidebar.rectTransform.anchorMin = new Vector2(0f, 0f);
