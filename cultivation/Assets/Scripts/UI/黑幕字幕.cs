@@ -52,7 +52,8 @@ public class 黑幕字幕 : MonoBehaviour
     Image 幕;
     Image 闪;
     Text 文本;
-    bool 在打字;
+    // 注：原来有个 `在打字` 字段判断"字打完没"，现在统一走 `打字完成时刻`
+    //（见 逐行打 / 下落并定时收起 / Update 的自动收幕），所以那个字段已无用、删掉。
 
     /// <summary>黑幕是否在显示</summary>
     public bool 幕在显示 => 幕 != null && 幕.gameObject.activeSelf;
@@ -191,7 +192,6 @@ public class 黑幕字幕 : MonoBehaviour
     {
         全句 = 整句 ?? "";
         文本.text = "";
-        在打字 = true;
 
         float 出 = 0f;
         while (出 < 全句.Length)
@@ -214,7 +214,6 @@ public class 黑幕字幕 : MonoBehaviour
             yield return null;
             while (!Input.GetMouseButtonDown(0)) yield return null;
         }
-        在打字 = false;
         打字完成时刻 = Time.time;      // ★ 自动收幕要等这个时刻出现
     }
 

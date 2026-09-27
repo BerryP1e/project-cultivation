@@ -48,9 +48,9 @@ public class Teleporter : MonoBehaviour
     public bool 打印日志 = false;
 
     bool 面板开着;
-    bool 在圈内;
     float 冷却到;
-    int 上次选项 = -1;
+    // 注：原来有 `在圈内` 和 `上次选项` 两个字段，都只写不读（进圈/出圈的判定
+    // 实际是靠 面板开着 + 冷却到 做的），已删掉以消掉编译警告。
     GameObject 面板;
     readonly List<Button> 按钮s = new List<Button>();
     Text 文本;
@@ -80,14 +80,12 @@ public class Teleporter : MonoBehaviour
         var p = 找玩家(其他);
         if (p == null) return;
         玩家 = p;
-        在圈内 = true;
         if (!面板开着) 开面板();
     }
 
     void OnTriggerExit(Collider 其他)
     {
         if (找玩家(其他) == null) return;
-        在圈内 = false;
         冷却到 = Time.unscaledTime + 冷却;
         关面板();
     }

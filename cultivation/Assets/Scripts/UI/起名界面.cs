@@ -48,8 +48,8 @@ public class 起名界面 : MonoBehaviour
     /// <summary>界面上正在输入的内容</summary>
     public string 缓冲 { get; private set; } = "";
 
-    bool 在输入;
     bool 已确认;
+    // 注：原有一个 `在输入` 字段只写不读（输入状态实际看 已确认 与 缓冲），已删。
     Canvas 画布;
     Image 幕;
     Text 标题文本;
@@ -84,7 +84,6 @@ public class 起名界面 : MonoBehaviour
         标题文本.text = 标题 ?? "";
         缓冲 = "";
         已确认 = false;
-        在输入 = true;
         幕.gameObject.SetActive(true);
         画布.enabled = true;
         // 演出期间别让玩家乱跑
@@ -124,14 +123,12 @@ public class 起名界面 : MonoBehaviour
         }
 
         当前名字 = 缓冲;
-        在输入 = false;
         Debug.Log("[起名] 玩家名字确定为「" + 当前名字 + "」");
         收起();
     }
 
     public void 收起()
     {
-        在输入 = false;
         if (幕 != null) 幕.gameObject.SetActive(false);
         if (画布 != null) 画布.enabled = false;
         黑幕字幕.结束演出();

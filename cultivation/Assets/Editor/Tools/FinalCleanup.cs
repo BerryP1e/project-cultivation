@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -84,7 +84,7 @@ public static class FinalCleanup
     public static void Run()
     {
         var 报告 = new StringBuilder("[FinalCleanup] 执行结果\n\n");
-        int 删材质 = 0, 删文件 = 0;
+        int 删材质 = 0;      // 注：原来还有个 `删文件` 计数器，从未被使用，已删
 
         // ---------- 1. 垃圾材质（要确认没被引用） ----------
         var 垃圾 = 找垃圾材质();
