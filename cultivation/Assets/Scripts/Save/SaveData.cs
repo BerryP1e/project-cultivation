@@ -12,7 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public const int 当前版本 = 4;   // 2：加了修炼系统（总灵气/修炼次数/已学功法）；3：加了战阵站位；4：加了「已获得的能力」
+    public const int 当前版本 = 5;   // 2：修炼系统；3：战阵站位；4：已获得的能力；5：背包/装备/任务进度/对话标记
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -58,6 +58,42 @@ public class SaveData
     [Header("战阵")]
     [Tooltip("战阵站位：固定 9 个格子的真灵 id，空位写空字符串。读档时按 id 还原")]
     public List<string> 战阵站位 = new List<string>();
+
+    [Header("背包 / 装备（版本 5 起）")]
+    [Tooltip("背包物品的 id。**一件物品有 N 个就在列表里出现 N 次**（和 UIPanelData.物品 一致）")]
+    public List<string> 背包物品 = new List<string>();
+
+    [Tooltip("拥有的法宝 id")]
+    public List<string> 法宝 = new List<string>();
+
+    [Tooltip("拥有的灵阵 id")]
+    public List<string> 灵阵 = new List<string>();
+
+    [Tooltip("拥有的坐骑 id")]
+    public List<string> 坐骑 = new List<string>();
+
+    [Tooltip("当前乘骑的坐骑 id，空 = 没骑")]
+    public string 当前坐骑 = "";
+
+    [Tooltip("6 个主动技能槽的内容 id，空槽写空字符串")]
+    public List<string> 主动技能槽 = new List<string>();
+
+    [Tooltip("被玩家停用的被动神通 id（列表里没有的=启用中）")]
+    public List<string> 已停用被动 = new List<string>();
+
+    [Tooltip("已获得的真灵 id")]
+    public List<string> 已获得真灵 = new List<string>();
+
+    [Header("主线进度（版本 5 起）")]
+    [Tooltip("任务进度，格式同 任务管理器.导出进度()：`任务id:阶段;任务id:阶段`，阶段 0 = 已完成")]
+    public string 任务进度 = "";
+
+    [Tooltip("对话标记（分号分隔）。任务条件、对话分支都靠它")]
+    public string 对话标记 = "";
+
+    [Header("境界经验（版本 5 起）")]
+    public long 当前经验 = 0;
+    public long 突破所需总经验 = 0;
 
     public List<string> 属性键 = new List<string>();
     public List<float> 属性值 = new List<float>();

@@ -135,7 +135,35 @@ public static class SaveSystem
         };
         foreach (var (键, 值) in 默认) 数据.写属性(键, 值);
 
+        // ★ 新档：背包必须是空的（用户 2026-09-27）。
+        //   场景里的 CharacterUI 可能被预先塞了东西（例如跑过
+        //   「修仙/物品/把能力物品塞进当前场景背包」那个调试菜单），
+        //   这里显式清一次，保证新角色背包里什么都没有。
+        面板内容全清(数据);
+
         return 数据;
+    }
+
+    /// <summary>
+    /// 新档：把面板相关的进度全部置空。
+    /// 背包 / 法宝 / 灵阵 / 坐骑 / 技能槽 / 停用被动 / 已获真灵 / 战阵 / 经验 / 任务进度 / 对话标记
+    /// —— 全部按"什么都没有"起手（用户要求：最开始创建的角色背包里是没东西的）。
+    /// </summary>
+    static void 面板内容全清(SaveData 数据)
+    {
+        数据.背包物品.Clear();
+        数据.法宝.Clear();
+        数据.灵阵.Clear();
+        数据.坐骑.Clear();
+        数据.当前坐骑 = "";
+        数据.主动技能槽.Clear();
+        数据.已停用被动.Clear();
+        数据.已获得真灵.Clear();
+        数据.战阵站位.Clear();
+        数据.当前经验 = 0;
+        数据.突破所需总经验 = 0;
+        数据.任务进度 = "";
+        数据.对话标记 = "";
     }
 
     /// <summary>把一份档套到当前场景里的角色身上。属性结算系统做好前，只恢复能恢复的那几项</summary>
@@ -212,11 +240,25 @@ public static class SaveSystem
                 + "｜境界 " + 修炼.境界名, 玩家);
         }
 
+        // ---- 面板数据（背包 / 装备 / 战阵都挂在它上面）----
+        var 面板数据 = UnityEngine.Object.FindObjectOfType<UIPanelData>();
+        if (面板数据 != null)
+        {
+            // 背包 / 法宝 / 灵阵 / 坐骑 / 技能槽 / 停用被动 / 已获真灵 / 经验（版本 5）
+            恢复面板(数据, 面板数据);
+
+            // ★ 任务进度不能在这里恢复：`应用到角色` 是游戏场景加载**之前**跑的，
+            //   那时 任务管理器 还不存在。挂起来，等它的 Start() 来取。
+            待恢复任务进度 = 数据.任务进度;
+            待恢复对话标记 = 数据.对话标记;
+            if (!string.IsNullOrEmpty(待恢复任务进度) || !string.IsNullOrEmpty(待恢复对话标记))
+                Debug.Log("[存档] 主线进度已挂起，等 任务管理器 就绪后恢复：[" + 待恢复任务进度 + "]");
+        }
+
         // ---- 战阵 ----
         // 「已获得的真灵」= `Assets/Data/Generated/NpcDefinition` 里所有 demon / human
         //（由 DataTableImporter 自动收集），所以按 id 在「已获得列表 + 场上 NPC」里就能找到。
         // 兽宠 / 驯服那套玩法已经取消，不需要再存"已获得"进度。
-        var 面板数据 = UnityEngine.Object.FindObjectOfType<UIPanelData>();
         if (面板数据 != null && 数据.战阵站位 != null && 数据.战阵站位.Count > 0)
         {
             面板数据.EnsureLists();
@@ -310,6 +352,199 @@ public static class SaveSystem
                 数据.战阵站位.Add(d != null ? d.id : "");
             }
         }
+
+        // ---- 背包 / 装备（版本 5）----
+        if (战阵面板 != null) 采集面板(数据, 战阵面板);
+
+        // ---- 主线进度 + 对话标记（版本 5）----
+        // ⚠ 任务进度必须在这里抓：任务管理器会随场景重建，它的静态状态也只在运行时有意义
+        var 任务 = UnityEngine.Object.FindObjectOfType<任务管理器>();
+        if (任务 != null)
+        {
+            数据.任务进度 = 任务.导出进度();
+        }
+        else if (string.IsNullOrEmpty(数据.任务进度))
+        {
+            数据.任务进度 = "";     // 场景里没有任务管理器（例如在主菜单存档）——保留旧值
+        }
+        var 标记 = 对话标记.全部标记();
+        数据.对话标记 = 标记 != null && 标记.Length > 0 ? string.Join(";", 标记) : "";
+
+        Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["
+            + 数据.任务进度 + "]、对话标记 " + 标记.Length + " 个");
+    }
+
+    /// <summary>采集面板上的玩法数据（背包 / 法宝 / 灵阵 / 坐骑 / 技能槽 / 停用被动 / 已获真灵 / 经验）</summary>
+    static void 采集面板(SaveData 数据, UIPanelData 面板)
+    {
+        面板.EnsureLists();
+
+        数据.背包物品.Clear();
+        if (面板.物品 != null)
+            foreach (var it in 面板.物品) if (it != null) 数据.背包物品.Add(it.物品id);
+
+        数据.法宝.Clear();
+        if (面板.法宝 != null)
+            foreach (var t in 面板.法宝) if (t != null) 数据.法宝.Add(t.法宝id);
+
+        数据.灵阵.Clear();
+        if (面板.灵阵 != null)
+            foreach (var a in 面板.灵阵) if (a != null) 数据.灵阵.Add(a.灵阵id);
+
+        数据.坐骑.Clear();
+        if (面板.坐骑 != null)
+            foreach (var m in 面板.坐骑) if (m != null) 数据.坐骑.Add(m.坐骑id);
+        数据.当前坐骑 = 面板.当前坐骑 != null ? 面板.当前坐骑.坐骑id : "";
+
+        数据.主动技能槽.Clear();
+        if (面板.主动技能 != null)
+            for (int i = 0; i < 面板.主动技能.Count; i++)
+                数据.主动技能槽.Add(取内容id(面板.主动技能[i]));
+
+        数据.已停用被动.Clear();
+        if (面板.已停用被动 != null)
+            foreach (var p in 面板.已停用被动) if (p != null) 数据.已停用被动.Add(p.神通id);
+
+        数据.已获得真灵.Clear();
+        if (面板.已获得真灵 != null)
+            foreach (var s in 面板.已获得真灵) if (s != null) 数据.已获得真灵.Add(s.id);
+
+        数据.当前经验 = 面板.当前经验;
+        数据.突破所需总经验 = 面板.突破所需总经验;
+    }
+
+    /// <summary>主动技能槽里放的是 Object（神通/法宝/灵阵共用），按类型取 id</summary>
+    static string 取内容id(UnityEngine.Object o)
+    {
+        if (o == null) return "";
+        var a = o as ActiveDivineAbility; if (a != null) return a.神通id;
+        var t = o as TreasureDefinition; if (t != null) return t.法宝id;
+        var s = o as SpiritArrayDefinition; if (s != null) return s.灵阵id;
+        return o.name;      // 兜底：拿资源名，读档时按名字再找一次
+    }
+
+    /// <summary>把存档里的面板数据（背包/装备/经验）套回 UIPanelData</summary>
+    static void 恢复面板(SaveData 数据, UIPanelData 面板)
+    {
+        面板.EnsureLists();
+
+        // ---- 背包：一件物品有几个就是几条（和 采集面板 对称）----
+        面板.物品 = new System.Collections.Generic.List<ItemDefinition>();
+        var 物品库 = 取物品库();
+        if (数据.背包物品 != null && 物品库 != null)
+        {
+            var 表 = new System.Collections.Generic.Dictionary<string, ItemDefinition>();
+            foreach (var it in 物品库) if (it != null && !string.IsNullOrEmpty(it.物品id)) 表[it.物品id] = it;
+            foreach (var id in 数据.背包物品)
+            {
+                ItemDefinition it;
+                if (id != null && 表.TryGetValue(id, out it)) 面板.物品.Add(it);
+                else if (!string.IsNullOrEmpty(id)) Debug.LogWarning("[存档] 背包物品找不到定义：" + id);
+            }
+        }
+
+        // ---- 法宝 / 灵阵 / 坐骑：按 id 在「当前场景面板自带的表」里找 ----
+        面板.法宝 = 按id还原(数据.法宝, 面板.法宝,
+            (t) => t != null ? t.法宝id : null);
+        面板.灵阵 = 按id还原(数据.灵阵, 面板.灵阵,
+            (t) => t != null ? t.灵阵id : null);
+        面板.坐骑 = 按id还原(数据.坐骑, 面板.坐骑,
+            (t) => t != null ? t.坐骑id : null);
+
+        // 当前坐骑（走 设置当前坐骑，互斥规则写在那一处）
+        面板.当前坐骑 = null;
+        if (!string.IsNullOrEmpty(数据.当前坐骑) && 面板.坐骑 != null)
+            foreach (var m in 面板.坐骑)
+                if (m != null && m.坐骑id == 数据.当前坐骑) { 面板.当前坐骑 = m; break; }
+
+        // ---- 已停用被动 ----
+        面板.已停用被动 = new System.Collections.Generic.List<PassiveDivineAbility>();
+        if (数据.已停用被动 != null)
+            foreach (var id in 数据.已停用被动)
+                foreach (var a in 面板.神通)
+                    if (a is PassiveDivineAbility ps && ps.神通id == id && !面板.已停用被动.Contains(ps))
+                        面板.已停用被动.Add(ps);
+
+        // ---- 已获得真灵 ----
+        面板.已获得真灵 = new System.Collections.Generic.List<NpcDefinition>();
+        if (数据.已获得真灵 != null)
+            foreach (var id in 数据.已获得真灵)
+            {
+                var d = 找真灵定义(id, 面板);
+                if (d != null && !面板.已获得真灵.Contains(d)) 面板.已获得真灵.Add(d);
+            }
+
+        // ---- 主动技能槽（空槽写空字符串）----
+        if (数据.主动技能槽 != null && 数据.主动技能槽.Count > 0)
+        {
+            while (面板.主动技能.Count < 数据.主动技能槽.Count) 面板.主动技能.Add(null);
+            for (int i = 0; i < 数据.主动技能槽.Count && i < 面板.主动技能.Count; i++)
+                面板.主动技能[i] = 找内容(数据.主动技能槽[i], 面板);
+        }
+
+        // ---- 境界经验 ----
+        面板.当前经验 = 数据.当前经验;
+        面板.突破所需总经验 = 数据.突破所需总经验;
+
+        面板.RaiseChanged();
+        Debug.Log("[存档] 已恢复背包 " + 面板.物品.Count + " 件、法宝 " + 面板.法宝.Count
+            + "、坐骑 " + 面板.坐骑.Count + "、技能槽 " + 面板.主动技能.Count + " 格");
+    }
+
+    /// <summary>把一串 id 还原成当前面板里的定义列表（按 id 匹配，忽略找不到的）</summary>
+    static System.Collections.Generic.List<T> 按id还原<T>(
+        System.Collections.Generic.List<string> ids,
+        System.Collections.Generic.List<T> 来源,
+        System.Func<T, string> 取id) where T : UnityEngine.Object
+    {
+        var 出 = new System.Collections.Generic.List<T>();
+        if (ids == null || ids.Count == 0 || 来源 == null) return 出;
+        foreach (var id in ids)
+        {
+            if (string.IsNullOrEmpty(id)) continue;
+            foreach (var o in 来源)
+                if (o != null && 取id(o) == id && !出.Contains(o)) { 出.Add(o); break; }
+        }
+        return 出;
+    }
+
+    /// <summary>找主动技能槽里的内容：先按神通/法宝/灵阵的 id，再按资源名兜底</summary>
+    static UnityEngine.Object 找内容(string id, UIPanelData 面板)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        foreach (var a in 面板.神通)
+            if (a is ActiveDivineAbility act && act.神通id == id) return act;
+        foreach (var t in 面板.法宝) if (t != null && t.法宝id == id) return t;
+        foreach (var s in 面板.灵阵) if (s != null && s.灵阵id == id) return s;
+        foreach (var a in 面板.神通) if (a != null && a.name == id) return a;
+        return null;
+    }
+
+    /// <summary>物品库（背包按 id 还原用）。任务库顺带收了物品，没有再退到 Resources</summary>
+    static System.Collections.Generic.List<ItemDefinition> 取物品库()
+    {
+        var 库 = QuestDatabase.取();
+        if (库 != null && 库.物品库 != null && 库.物品库.Count > 0) return 库.物品库;
+        return null;
+    }
+
+    // ---------------------------------------------------------------- 任务进度的延迟恢复
+
+    /// <summary>
+    /// 挂起的任务进度 / 对话标记。`应用到角色` 跑在游戏场景加载之前，
+    /// 那时 任务管理器 还不存在，所以先存这里，由 任务管理器.Start() 来取
+    /// （见 <see cref="取挂起的进度"/>）。
+    /// </summary>
+    public static string 待恢复任务进度 = "";
+    public static string 待恢复对话标记 = "";
+
+    /// <summary>任务管理器就绪后调它，取走挂起的进度（取完即清，只恢复一次）</summary>
+    public static void 取挂起的进度(out string 任务进度, out string 对话标记)
+    {
+        任务进度 = 待恢复任务进度;
+        对话标记 = 待恢复对话标记;
+        待恢复任务进度 = "";
+        待恢复对话标记 = "";
     }
 
     /// <summary>当前正在玩的这份档（菜单里选完带进游戏场景）</summary>

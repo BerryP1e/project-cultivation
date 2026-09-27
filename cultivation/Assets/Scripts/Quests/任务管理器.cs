@@ -211,7 +211,32 @@ public class 任务管理器 : MonoBehaviour
         if (面板 == null) 面板 = FindObjectOfType<UIPanelData>();
         取库();
         订阅死亡();
+        恢复存档进度();      // ★ 读档进来的主线进度（必须在 Awake 之后才能恢复）
         自动接取();
+    }
+
+    /// <summary>
+    /// 读档进来的任务进度 / 对话标记。
+    ///
+    /// 为什么放在 Start 而不是直接在 SaveSystem.应用到角色 里恢复：
+    /// `应用到角色` 是**游戏场景加载之前**跑的，那时本组件还不存在。
+    /// 所以 SaveSystem 把进度挂起，这里来取（取完即清，只恢复一次）。
+    /// </summary>
+    void 恢复存档进度()
+    {
+        string 任务进度, 标记串;
+        SaveSystem.取挂起的进度(out 任务进度, out 标记串);
+        if (string.IsNullOrEmpty(任务进度) && string.IsNullOrEmpty(标记串)) return;
+
+        if (!string.IsNullOrEmpty(标记串))
+        {
+            对话标记.清空();
+            foreach (var m in 标记串.Split(';'))
+                if (!string.IsNullOrWhiteSpace(m)) 对话标记.添加(m.Trim());
+        }
+        if (!string.IsNullOrEmpty(任务进度)) 导入进度(任务进度);
+
+        Debug.Log("[任务] 已从存档恢复主线进度：[" + 任务进度 + "]");
     }
 
     // ================================================================ 查询
