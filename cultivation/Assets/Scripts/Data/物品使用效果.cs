@@ -40,3 +40,50 @@ public abstract class 物品使用效果 : ScriptableObject
     /// <summary>真正使用。返回 true = **消耗掉一个**；返回 false = 什么都不做（物品留着）</summary>
     public abstract bool 使用(物品使用请求 请求);
 }
+
+/// <summary>
+/// **按 id 找能力资产**（功法 / 主动神通 / 被动神通 / 外观）。
+///
+/// 为什么需要它：物品表现在是**唯一的物品来源**，而 CSV 里只能填字符串（id），
+/// 没法引用资产。所以「学功法 / 学主动神通 / 学被动神通 / 学外观」这几个效果
+/// 都支持只填 id，运行时按 id 反查成资产。
+///
+/// 查法：按 id 在 `Assets/Data/Generated/&lt;类型名&gt;/` 里扫一遍。
+/// 用 AssetDatabase 只在编辑器下可用；打包后那条分支不编译返回 null，
+/// 所以**正式打包前要保证效果资产上的引用已经填好**（可以在编辑器里跑一次
+/// `修仙/调试/回填物品效果引用`，或直接进 Inspector 看有没有漏）。
+/// </summary>
+public static class 能力查找
+{
+    /// <summary>按 id 找一个 ScriptableObject（限定类型 T）</summary>
+    public static T 按id<T>(string id) where T : ScriptableObject
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+#if UNITY_EDITOR
+        string 目录 = "Assets/Data/Generated/" + typeof(T).Name;
+        // 先只在这个类型自己的目录里找
+        var guids = UnityEditor.AssetDatabase.FindAssets("t:" + typeof(T).Name, new[] { 目录 });
+        foreach (var g in guids)
+        {
+            var o = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+            if (o != null && 取id(o) == id) return o;
+        }
+        // 退一步：全工程扫（资产被挪到别处也能找到）
+        foreach (var g in UnityEditor.AssetDatabase.FindAssets("t:" + typeof(T).Name))
+        {
+            var o = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+            if (o != null && 取id(o) == id) return o;
+        }
+#endif
+        return null;
+    }
+
+    static string 取id(ScriptableObject o)
+    {
+        var g = o as GongFaDefinition; if (g != null) return g.功法id;
+        var a = o as ActiveDivineAbility; if (a != null) return a.神通id;
+        var p = o as PassiveDivineAbility; if (p != null) return p.神通id;
+        var ap = o as AppearanceDefinition; if (ap != null) return ap.id;
+        return o.name;
+    }
+}

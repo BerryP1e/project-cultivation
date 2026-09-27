@@ -144,10 +144,17 @@ public static class DataTableImporter
 
                 if (so is ItemDefinition item)
                 {
+                    // ★ 物品表的效果列：列名**不是** ItemDefinition 的字段名
+                    //   （效果类型 / 效果参数id / 效果说明），ApplyRow 认不出来会跳过，
+                    //   所以这里显式处理：按 效果类型 建/复用对应效果资产并挂上去。
+                    //   这样「所有物品都从物品表出发」——包括便服和各类学习物品。
+                    物品效果导入.处理物品(item, row, header, report);
+
                     string iid = idField != null ? (string)spec.Type.GetField(idField).GetValue(item) : id;
                     if (string.IsNullOrEmpty(iid)) iid = item.物品id;
                     if (!string.IsNullOrEmpty(iid)) itemById[iid] = item;
                     if (!string.IsNullOrEmpty(item.物品id)) itemById[item.物品id] = item;
+                    EditorUtility.SetDirty(item);
                 }
             }
             report.Append(spec.Csv).Append(": 新建 ").Append(created).Append(" 更新 ").Append(updated).Append("\n");
