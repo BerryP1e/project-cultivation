@@ -64,12 +64,23 @@
 import { spawn } from 'node:child_process';
 import readline from 'node:readline';
 import fs from 'node:fs';
+import { dirname as pathDirname, join as pathJoin } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// 默认值刻意硬编码：这两个路径都含空格和全角冒号，靠 argv 传容易被
-// 中间层（Start-Process、cmd 之类）按空格拆开。DSH 的 MCP 客户端按数组
-// 传参不会拆，但少一个出错点总是好的。
-const DEFAULT_CODELY = 'D:\\Tuanjie Cowork\\cli\\bin\\win32-x64\\codely.exe';
-const DEFAULT_PROJECT = 'D:\\project：cultivation\\cultivation';
+// 默认值不再写死盘符 —— 仓库在两台机器上位置不同（家里 D:\project：cultivation，
+// 工作电脑 E:\game project），写死会让另一台直接跑不起来。
+// 仍然保留 argv 覆盖：DSH 的 MCP 客户端按数组传参，不会把含空格路径拆开。
+const HERE = pathDirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = pathDirname(HERE);
+const DEFAULT_PROJECT = pathJoin(REPO_ROOT, 'cultivation');
+
+// Cowork CLI 的位置也随机器而变，按优先级找第一个存在的。
+const DEFAULT_CODELY = [
+    pathJoin(process.env.LOCALAPPDATA ?? '', 'Programs', 'Tuanjie Cowork', 'cli', 'bin', 'win32-x64', 'codely.exe'),
+    'D:\\Tuanjie Cowork\\cli\\bin\\win32-x64\\codely.exe',
+    'C:\\Program Files\\Tuanjie Cowork\\cli\\bin\\win32-x64\\codely.exe',
+].find((p) => { try { return fs.existsSync(p); } catch { return false; } })
+    ?? 'codely.exe';
 
 const log = (m) => process.stderr.write(`[unity-mcp-proxy] ${m}\n`);
 

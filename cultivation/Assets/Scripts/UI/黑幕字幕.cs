@@ -62,9 +62,20 @@ public class 黑幕字幕 : MonoBehaviour
     static int 锁层数;
     /// <summary>正在演出（过场/黑幕/强制对话…）—— 玩家移动与攻击应该听它的</summary>
     public static bool 演出中 => 锁层数 > 0;
+
+    /// <summary>
+    /// 有人从**协程之外**动过黑幕锁（目前只有 播黑幕 会）。
+    /// 用来判断「锁还在、但驱动它的协程可能已经随切场景被销毁」——那种情况下
+    /// 切场景前要自己把幕收掉，否则会留下"该黑屏却没黑屏"的漏洞。
+    /// </summary>
+    static bool 协程持锁;
+    public static bool 幕被协程持锁 => 协程持锁;
+    public static void 标记协程持锁() { 协程持锁 = true; }
+    public static void 清除协程持锁() { 协程持锁 = false; }
+
     public static void 开始演出() => 锁层数++;
     public static void 结束演出() { 锁层数 = Mathf.Max(0, 锁层数 - 1); }
-    public static void 强制解锁() { 锁层数 = 0; }
+    public static void 强制解锁() { 锁层数 = 0; 协程持锁 = false; }
 
     // ============================================================ 门面
 
@@ -82,6 +93,42 @@ public class 黑幕字幕 : MonoBehaviour
 
     /// <summary>黑幕+白字一起收掉（露出场景）</summary>
     public static void 收幕() { if (实例 != null) 实例.收起(); }
+
+    /// <summary>只落下黑幕（不打字），供「纯黑幕遮罩」用</summary>
+    public static void 落下幕() { 确保().落下(); }
+
+    /// <summary>
+    /// 落下黑幕、逐行打字，然后**由黑幕自己**收起。
+    ///
+    /// 为什么不让调用方用协程等：落黑幕的那段代码往往挂在**会被切场景销毁**的对象上
+    /// （四幕第 3 阶段就是在古古镇落的幕、随后立刻切到宗门）。协程一死就没人收幕，
+    /// 而黑幕对象是 `DontDestroyOnLoad` 的 —— 表现就是「换场景后一直黑着、也不解除」。
+    /// 把倒计时挂在黑幕自己的 Update 上，谁都杀不掉。
+    ///
+    /// 收幕条件：**字全部打完**（不在打字了）**并且**打完后又停留了 `至少停留秒`。
+    /// 所以字一定会打完，0.5 秒只是"读一眼"的停留时间。
+    /// </summary>
+    public static void 下落并定时收起(float 至少停留秒, string[] 行)
+    {
+        var c = 确保();
+        c.落幕后自动收 = true;
+        c.打完后的停留 = Mathf.Max(0f, 至少停留秒);
+        c.打字完成时刻 = -1f;
+        // 死线兜底：按"最长一行的字数 / 打字速度"再放宽 15 秒，防止打字卡住导致永远黑屏
+        int 最长 = 0;
+        if (行 != null) foreach (var s in 行) if (s != null && s.Length > 最长) 最长 = s.Length;
+        c.自动收幕死线 = Time.time + (最长 / Mathf.Max(1f, c.每秒字数)) + Mathf.Max(2f, 至少停留秒) + 15f;
+        c.StartCoroutine(c.逐行打(行 ?? new string[0], 0f));
+    }
+
+    /// <summary>打字结束时刻（-1 = 还没打完）；自动收幕要等它出现</summary>
+    float 打字完成时刻 = -1f;
+    /// <summary>打字打完后再停留多久才收幕</summary>
+    float 打完后的停留 = 0.5f;
+    /// <summary>是否处于"打完就自动收幕"模式</summary>
+    bool 落幕后自动收;
+    /// <summary>兜底：万一打字卡住，最多黑屏这么久也要收幕</summary>
+    float 自动收幕死线 = -1f;
 
     public static IEnumerator 闪白(float 时长 = 0.3f) => 确保().做闪白(时长);
 
@@ -101,6 +148,25 @@ public class 黑幕字幕 : MonoBehaviour
 
     void Update()
     {
+        // ★ 自动收幕：由黑幕自己判断，谁都杀不掉（落黑幕的协程会随切场景销毁）
+        //   收幕条件 = 字打完 + 打完后又停留了 打完后的停留 秒；
+        //   另有死线兜底，防止打字卡住导致永远黑屏。
+        if (落幕后自动收)
+        {
+            bool 到点 = 打字完成时刻 > 0f && Time.time >= 打字完成时刻 + 打完后的停留;
+            bool 超时 = 自动收幕死线 > 0f && Time.time >= 自动收幕死线;
+            if (到点 || 超时)
+            {
+                落幕后自动收 = false;
+                自动收幕死线 = -1f;
+                Debug.Log("[黑幕] 自动收幕（" + (到点 ? "字已打完 + 停留 " + 打完后的停留.ToString("F1") + "s" : "超时兜底")
+                    + "）t=" + Time.time.ToString("F2"));
+                收起();
+                强制解锁();
+                任务管理器.清演出中();      // 黑幕收掉 = 演出结束，放行阶段推进
+            }
+        }
+
         // 整段演出期间也上锁（防止黑幕期间玩家乱跑）
         if (幕在显示 && !演出中) 开始演出();
         else if (!幕在显示 && 演出中) 结束演出();
@@ -149,6 +215,7 @@ public class 黑幕字幕 : MonoBehaviour
             while (!Input.GetMouseButtonDown(0)) yield return null;
         }
         在打字 = false;
+        打字完成时刻 = Time.time;      // ★ 自动收幕要等这个时刻出现
     }
 
     [Tooltip("当前这一行的完整文本（打字机内部用）")]
@@ -253,7 +320,7 @@ public class 黑幕字幕 : MonoBehaviour
         var go = new GameObject(名, typeof(RectTransform), typeof(Text));
         go.transform.SetParent(transform, false);
         var t = go.GetComponent<Text>();
-        t.font = 字体 != null ? 字体 : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        t.font = 取字体();
         t.fontSize = 号;
         t.color = 字色;
         t.alignment = TextAnchor.MiddleCenter;
@@ -261,6 +328,34 @@ public class 黑幕字幕 : MonoBehaviour
         t.verticalOverflow = VerticalWrapMode.Overflow;
         t.raycastTarget = false;
         return t;
+    }
+
+    /// <summary>
+    /// 取字体。**必须优先中文字体** —— 内置的 `LegacyRuntime.ttf` 不含中文，
+    /// 而黑幕多半是运行时 `确保()` 新建的、Inspector 上没挂字体，
+    /// 于是「黑幕起了、字一个都不显示」（四幕实测）。
+    ///
+    /// `SimHei.ttf` 不在 Resources 下（运行时 `Resources.Load` 取不到），
+    /// 所以这里照抄 `DeathScreenUI` / `CultivationUI` 已验证的写法：
+    /// 编辑器里用 AssetDatabase 按路径/名字找。（真机打包场景另说，那要走 Resources。）
+    /// </summary>
+    Font 取字体()
+    {
+        if (字体 != null) return 字体;
+#if UNITY_EDITOR
+        字体 = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/SimHei.ttf");
+        if (字体 == null)
+        {
+            foreach (var g in UnityEditor.AssetDatabase.FindAssets("t:Font"))
+            {
+                var f = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+                if (f != null && f.name.ToLowerInvariant().Contains("simhei")) { 字体 = f; break; }
+            }
+        }
+        if (字体 == null)
+            Debug.LogError("[黑幕字幕] 找不到中文字体 SimHei，黑幕文字会显示不出来", this);
+#endif
+        return 字体 != null ? 字体 : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
     }
 
     // ---- ASCII 别名 ----

@@ -1,7 +1,7 @@
-﻿# .dsh/health.ps1 —— Unity 控制管线体检（只读，不改任何东西）
+# .dsh/health.ps1 —— Unity 控制管线体检（只读，不改任何东西）
 #
 # 用法:
-#   pwsh -File "D:\project：cultivation\.dsh\health.ps1"
+#   pwsh -File "<仓库根>\.dsh\health.ps1"
 #
 # 检查四段链路：
 #   1. Tuanjie/Unity 编辑器进程
@@ -17,8 +17,16 @@ $UnityProj = Join-Path $Root 'cultivation'
 $PortFile  = Join-Path $UnityProj 'Temp\.com-unity-codely.json'
 $AliveFile = Join-Path $DshDir 'alive.txt'
 $PatchFile = Join-Path $env:USERPROFILE '.dsh\profiles\desktop\cordis.patch.yml'
-$CodelyExe = 'D:\Tuanjie Cowork\cli\bin\win32-x64\codely.exe'
-$NodeExe   = 'D:\Tuanjie Cowork\cli\bin\win32-x64\node.exe'
+# Cowork CLI 的安装位置随机器而变（家里在 D:，这台在工作电脑的用户目录下）。
+# 按优先级找一个存在的，别再写死盘符。
+$Cowork = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\Tuanjie Cowork\cli\bin\win32-x64'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Tuanjie Cowork\cli'),
+    'D:\Tuanjie Cowork\cli\bin\win32-x64',
+    'C:\Program Files\Tuanjie Cowork\cli\bin\win32-x64'
+) | Where-Object { Test-Path (Join-Path $_ 'codely.exe') } | Select-Object -First 1
+$CodelyExe = if ($Cowork) { Join-Path $Cowork 'codely.exe' } else { 'codely.exe' }
+$NodeExe   = if ($Cowork) { Join-Path $Cowork 'node.exe' }   else { 'node.exe' }
 $ProxyFile = Join-Path $DshDir 'unity-mcp-proxy.mjs'
 
 function Test-TcpPort {

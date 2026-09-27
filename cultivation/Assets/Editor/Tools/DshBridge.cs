@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -12,8 +13,13 @@ using UnityEngine;
 /// 之后每帧检查命令文件，有命令就执行，把结果写回结果文件。
 /// 这样不需要任何外部进程/端口，只要 Unity 活着就能被驱动。
 ///
-/// 命令文件  D:\project：cultivation\.dsh\cmd.txt     每行一条命令
-/// 结果文件  D:\project：cultivation\.dsh\result.txt
+/// 命令文件  <仓库根>\.dsh\cmd.txt     每行一条命令
+/// 结果文件  <仓库根>\.dsh\result.txt
+///
+/// 路径**不写死盘符** —— 家里电脑在 D:\project：cultivation，工作电脑在
+/// E:\game project，写死会让另一台整个桥失效（轮询一个不存在的路径，
+/// 表现就是「alive.txt 不更新、cmd.txt 没人消费」）。
+/// 这里从 Application.dataPath 反推仓库根，两台机器都不用改。
 ///
 /// 支持的命令：
 ///   refresh                 AssetDatabase.Refresh()
@@ -30,9 +36,15 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class DshBridge
 {
-    const string CmdPath = @"D:\project：cultivation\.dsh\cmd.txt";
-    const string ResultPath = @"D:\project：cultivation\.dsh\result.txt";
-    const string HeartbeatPath = @"D:\project：cultivation\.dsh\alive.txt";
+    // Unity 工程在 <仓库根>\cultivation\，所以 dataPath = <仓库根>\cultivation\Assets，
+    // 上推两级就是仓库根。
+    static readonly string 仓库根 =
+        Path.GetDirectoryName(Path.GetDirectoryName(Application.dataPath));
+
+    static string 命令文件   => Path.Combine(仓库根, @".dsh\cmd.txt");
+    static string 结果文件   => Path.Combine(仓库根, @".dsh\result.txt");
+    static string 心跳文件   => Path.Combine(仓库根, @".dsh\alive.txt");
+    static string 截图目录   => Path.Combine(仓库根, @"cultivation\screenshots");
 
     static double 上次心跳;
     static readonly List<string> 日志缓存 = new List<string>();
@@ -45,7 +57,7 @@ public static class DshBridge
             if (日志缓存.Count > 400) 日志缓存.RemoveRange(0, 200);
         };
         EditorApplication.update += 轮询;
-        Debug.Log("[DshBridge] 文件控制通道已启动");
+        Debug.Log("[DshBridge] 文件控制通道已启动，仓库根 = " + 仓库根);
     }
 
     static void 轮询()
@@ -54,17 +66,17 @@ public static class DshBridge
         if (EditorApplication.timeSinceStartup - 上次心跳 > 2.0)
         {
             上次心跳 = EditorApplication.timeSinceStartup;
-            try { File.WriteAllText(HeartbeatPath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")); } catch { }
+            try { File.WriteAllText(心跳文件, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")); } catch { }
         }
 
-        if (!File.Exists(CmdPath)) return;
+        if (!File.Exists(命令文件)) return;
 
         string 内容;
-        try { 内容 = File.ReadAllText(CmdPath); }
+        try { 内容 = File.ReadAllText(命令文件); }
         catch { return; }
 
         // 读完立刻删掉，避免重复执行
-        try { File.Delete(CmdPath); } catch { }
+        try { File.Delete(命令文件); } catch { }
 
         var 输出 = new StringBuilder();
         foreach (var 原始行 in 内容.Split('\n'))
@@ -75,7 +87,7 @@ public static class DshBridge
             catch (Exception e) { 输出.Append("!! ").Append(行).Append(" 异常: ").Append(e.Message).Append('\n'); }
         }
 
-        try { File.WriteAllText(ResultPath, 输出.ToString()); } catch { }
+        try { File.WriteAllText(结果文件, 输出.ToString()); } catch { }
     }
 
     static void 执行(string 行, StringBuilder 输出)
@@ -154,7 +166,7 @@ public static class DshBridge
                     cam.targetTexture = 旧target;
                     RenderTexture.active = null;
                     var png = tex.EncodeToPNG();
-                    string outPath = 参数.Length > 0 ? 参数 : @"D:\project：cultivation\cultivation\screenshots\dsh_shot.png";
+                    string outPath = 参数.Length > 0 ? 参数 : Path.Combine(截图目录, "dsh_shot.png");
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outPath));
                     System.IO.File.WriteAllBytes(outPath, png);
                     foreach (var g in 关掉的Canvas) g.SetActive(true);
@@ -200,7 +212,7 @@ public static class DshBridge
                     var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
                     tex.ReadPixels(new Rect(0, 0, w, h), 0, 0); tex.Apply();
                     cam.targetTexture = null; RenderTexture.active = null;
-                    string op = @"D:\project：cultivation\cultivation\screenshots\bird.png";
+                    string op = Path.Combine(截图目录, "bird.png");
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(op));
                     System.IO.File.WriteAllBytes(op, tex.EncodeToPNG());
                     UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex);
@@ -215,7 +227,7 @@ public static class DshBridge
                 {
                     // 用 Unity 自己的截图路径（ScreenCapture）作对照，
                     // 验证我那个 Camera.Render() 版本是不是渲染得偏暗。
-                    string outPath = 参数.Length > 0 ? 参数 : @"D:\project：cultivation\cultivation\screenshots\dsh_shot2.png";
+                    string outPath = 参数.Length > 0 ? 参数 : Path.Combine(截图目录, "dsh_shot2.png");
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outPath));
                     ScreenCapture.CaptureScreenshot(outPath);
                     输出.Append("OK shot2 (ScreenCapture): ").Append(outPath)
@@ -254,6 +266,147 @@ public static class DshBridge
                 }
                 break;
 
+            case "quest":
+                {
+                    // 查主线的真实运行时状态：进度字符串 + 各任务当前阶段。
+                    // 「导入进度没接上」和「导出的串是空的」表现一样，必须直接看串。
+                    输出.Append("=== 任务管理器 ===\n");
+                    Type 类型 = null;
+                    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        var t = asm.GetType("任务管理器", false);
+                        if (t != null) { 类型 = t; break; }
+                    }
+                    输出.Append("类型 = ").Append(类型 != null ? 类型.FullName : "找不到").Append('\n');
+                    if (类型 == null) break;
+
+                    var 实例属性 = 类型.GetProperty("实例",
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var 实例 = 实例属性?.GetValue(null);
+                    输出.Append("实例 = ").Append(实例 != null ? "存在" : "null（场景里没有任务管理器）").Append('\n');
+                    if (实例 == null) break;
+
+                    var m导 = 类型.GetMethod("导出进度");
+                    var 串 = m导?.Invoke(实例, null) as string;
+                    输出.Append("导出进度() = [").Append(串 ?? "(null)").Append("]\n");
+                    输出.Append("串长度 = ").Append(串?.Length ?? -1).Append('\n');
+
+                    var f当前 = 类型.GetField("当前阶段",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var d当前 = f当前?.GetValue(实例) as System.Collections.IDictionary;
+                    输出.Append("当前阶段 条目数 = ").Append(d当前?.Count ?? -1).Append('\n');
+                    if (d当前 != null)
+                        foreach (System.Collections.DictionaryEntry e in d当前)
+                            输出.Append("   ").Append(e.Key).Append(" : ").Append(e.Value).Append('\n');
+
+                    var f完成 = 类型.GetField("已完成任务",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var s完成 = f完成?.GetValue(实例) as System.Collections.IEnumerable;
+                    输出.Append("已完成任务 = ");
+                    if (s完成 != null) foreach (var x in s完成) 输出.Append(x).Append("  ");
+                    输出.Append('\n');
+
+                    var f已执 = 类型.GetField("已执行动作",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                    var s已执 = f已执?.GetValue(null) as System.Collections.IEnumerable;
+                    输出.Append("已执行动作 = ");
+                    if (s已执 != null) foreach (var x in s已执) 输出.Append(x).Append("  ");
+                    输出.Append('\n');
+                }
+                break;
+
+            case "stages":
+                {
+                    // 读任务定义资产（只读，不改任何状态）：确认 CSV 改完重导后真的生效。
+                    // 参数可给任务id，默认 q_main_004。
+                    string 任务id = string.IsNullOrEmpty(参数) ? "q_main_004" : 参数;
+                    Type 库类 = null;
+                    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        var t = asm.GetType("QuestDatabase", false);
+                        if (t != null) { 库类 = t; break; }
+                    }
+                    if (库类 == null) { 输出.Append("找不到 QuestDatabase\n"); break; }
+
+                    var m取 = 库类.GetMethod("取", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var m任务 = 库类.GetMethod("取任务");
+                    if (m取 == null || m任务 == null) { 输出.Append("取/取任务 方法找不到\n"); break; }
+                    var 库 = m取.Invoke(null, null);
+                    if (库 == null) { 输出.Append("QuestDatabase.取() 返回 null\n"); break; }
+
+                    var 列表 = m任务.Invoke(库, new object[] { 任务id }) as System.Collections.IEnumerable;
+                    if (列表 == null) { 输出.Append("取任务 返回 null\n"); break; }
+
+                    输出.Append("=== ").Append(任务id).Append(" 的阶段（资产实读） ===\n");
+                    foreach (var q in 列表)
+                    {
+                        if (q == null) continue;
+                        var ty = q.GetType();
+                        object 取(string n) => ty.GetField(n)?.GetValue(q) ?? ty.GetProperty(n)?.GetValue(q);
+                        输出.Append("  阶段 ").Append(取("阶段")).Append("  ").Append(取("阶段名"))
+                            .Append("  条件=").Append(取("条件"))
+                            .Append("  动作=").Append(取("动作"))
+                            .Append("  目标=").Append(取("动作目标npcId"))
+                            .Append("  参数=").Append(取("动作参数"))
+                            .Append("  坐标=").Append(取("坐标"))
+                            .Append("  速度=").Append(取("动作速度"))
+                            .Append('\n');
+                    }
+                }
+                break;
+
+            case "curtain":
+                {
+                    // 查运行时黑幕字幕的状态：字体是不是中文字体、文本有没有内容、幕/字是否可见。
+                    // 症状「黑幕起了但一个字都没有」多半是字体回落到了
+                    // LegacyRuntime.ttf（内置字体，不含中文）。
+                    Type 类型 = null;
+                    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        var t = asm.GetType("黑幕字幕", false);
+                        if (t != null) { 类型 = t; break; }
+                    }
+                    输出.Append("黑幕字幕 类型 = ").Append(类型 != null ? "找到" : "找不到").Append('\n');
+                    if (类型 == null) break;
+
+                    var 实例属性 = 类型.GetProperty("实例",
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var 实例 = 实例属性?.GetValue(null);
+                    输出.Append("实例 = ").Append(实例 != null ? "存在" : "null（还没建过黑幕）").Append('\n');
+                    if (实例 == null) break;
+
+                    var F = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                    var f文本 = 类型.GetField("文本", F);
+                    var f幕 = 类型.GetField("幕", F);
+                    var f画布 = 类型.GetField("画布", F);
+                    var f字体 = 类型.GetField("字体", F);
+                    var f全句 = 类型.GetField("全句", F);
+                    var f色 = 类型.GetField("字色", F);
+
+                    var 字体 = f字体?.GetValue(实例) as Font;
+                    输出.Append("字体字段 = ").Append(字体 != null ? 字体.name : "(空)").Append('\n');
+                    输出.Append("字色 = ").Append(f色?.GetValue(实例)).Append('\n');
+                    输出.Append("全句 = [").Append(f全句?.GetValue(实例)).Append("]\n");
+
+                    var 文本 = f文本?.GetValue(实例) as UnityEngine.UI.Text;
+                    if (文本 != null)
+                    {
+                        输出.Append("文本.text = [").Append(文本.text).Append("]\n");
+                        输出.Append("文本.font = ").Append(文本.font != null ? 文本.font.name : "(null)").Append('\n');
+                        输出.Append("文本.color = ").Append(文本.color).Append('\n');
+                        输出.Append("文本.enabled = ").Append(文本.enabled)
+                            .Append("  go.activeInHierarchy = ").Append(文本.gameObject.activeInHierarchy).Append('\n');
+                        输出.Append("文本 尺寸 = ").Append(文本.rectTransform.rect.size).Append('\n');
+                    }
+                    else 输出.Append("文本 组件取不到\n");
+
+                    var 幕 = f幕?.GetValue(实例) as UnityEngine.UI.Image;
+                    输出.Append("幕 = ").Append(幕 != null ? (幕.gameObject.activeSelf ? "显示中" : "隐藏") : "(null)").Append('\n');
+                    var 画布 = f画布?.GetValue(实例) as Canvas;
+                    输出.Append("画布.enabled = ").Append(画布 != null ? 画布.enabled.ToString() : "(null)").Append('\n');
+                }
+                break;
+
             default:
                 输出.Append("?? 未知命令: ").Append(行).Append('\n');
                 break;
@@ -265,6 +418,6 @@ public static class DshBridge
     [MenuItem("Cultivation/Test Dsh Bridge")]
     public static void 测试()
     {
-        Debug.Log("[DshBridge] 控制通道正常，心跳文件 " + HeartbeatPath);
+        Debug.Log("[DshBridge] 控制通道正常，心跳文件 " + 心跳文件);
     }
 }

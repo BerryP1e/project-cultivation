@@ -49,7 +49,18 @@ public class 任务管理器 : MonoBehaviour
     /// 这期间**不推进任何阶段** —— 否则「条件=无」的演出阶段会立刻算完成，
     /// 任务直接走到下一阶段（比如「切换场景」），演出被切走甚至随旧场景一起销毁。
     /// </summary>
-    bool 演出中;
+    /// <summary>
+    /// 阻塞式演出（黑幕白字 / 强制对话）正在进行中。
+    /// 这期间**不推进任何阶段** —— 否则「条件=无」的演出阶段会立刻算完成，
+    /// 任务直接走到下一阶段（比如「切换场景」），演出被切走甚至随旧场景一起销毁。
+    ///
+    /// ⚠ 必须是 **static**：黑幕是跨场景的（`DontDestroyOnLoad`），而 任务管理器 会随场景重建。
+    ///   如果它是实例字段，切场景后新的管理器读到 `false`，黑幕还盖着阶段就自己推进了。
+    /// </summary>
+    static bool 演出中;
+
+    /// <summary>外部（黑幕自动收幕）通知：演出结束，放行阶段推进</summary>
+    public static void 清演出中() { 演出中 = false; }
 
     /// <summary>接手过来的阶段，动作要等场景激活完的第一帧才发（见 导入进度 的注释）</summary>
     readonly List<string> 待发动作 = new List<string>();
@@ -63,6 +74,133 @@ public class 任务管理器 : MonoBehaviour
     readonly HashSet<string> 已完成任务 = new HashSet<string>();
     readonly List<NpcInstance> 已订阅 = new List<NpcInstance>();
     float 计时;
+
+    /// <summary>
+    /// 已经**执行过动作**的 `任务id#阶段`。
+    ///
+    /// 切场景那一帧会有三条路径碰到同一个阶段：`进入阶段()` 自己、`导入进度` 的待发动作、
+    /// 以及跨场景队列。实测「生成NPC」因此跑两遍 —— 后一个大师兄顶掉前一个，
+    /// 症状就是「到宗门后大师兄的对话不出现」。
+    ///
+    /// 判据必须用**独立**的一份记录：早先我拿 `阶段开始时间` 当判据是错的 ——
+    /// `导入进度` 会给所有接手阶段写那个时间戳（「等待秒数」条件要靠它计时），
+    /// 于是本该补发的动作全被当成"已执行"跳过了，主线直接卡死不推进。
+    ///
+    /// 用静态是因为 `进入阶段()`（旧场景）执行动作、队列（新场景）还要再判一次。
+    /// </summary>
+    static readonly HashSet<string> 已执行动作 = new HashSet<string>();
+
+    static string 动作键(string 任务id, int 阶段) => 任务id + "#" + 阶段;
+
+    /// <summary>
+    /// 跨场景带过去的「等待秒数」剩余量：`任务id#剩余秒`。
+    ///
+    /// 为什么需要：`导入进度` 会把 `阶段开始时间` 重置成当前时间，于是一旦在等待期间
+    /// 切场景（例如四幕第 10 阶段「等候大师兄禀报」等 60 秒时走进传送门），
+    /// 计时就被清零重来 —— 玩家看到的是「剧情卡住不动」。
+    /// 切场景前把剩余量记下来，新场景导回时按剩余量续上。
+    /// </summary>
+    /// <summary>跨场景带过去的「等待秒数」剩余量：任务id → 还剩多少秒</summary>
+    static readonly Dictionary<string, float> 剩余等待 = new Dictionary<string, float>();
+
+    /// <summary>
+    /// **落点待执行状态**（四幕：切到宗门后把主角放到大师兄旁边）。
+    ///
+    /// 为什么是静态而不是协程：`切换场景` 这个动作是在**旧场景**的 任务管理器 上跑的，
+    /// `LoadSceneAsync` 一完成旧场景就卸载，挂在该实例上的协程随之被销毁 ——
+    /// 实测「协程入口日志有、协程体内日志一条都没有」，玩家因此停在场景初始摆放处
+    /// `(-83.6, 18.13, 89.9)`（= P1 bug）。
+    ///
+    /// 改成静态坐标后由**活着的**管理器在 Update 里每帧按，跨场景也不会被销毁。
+    /// 持续若干帧是为了压过场景自身的出生/摆放逻辑（它可能晚几帧才跑完）。
+    /// </summary>
+    static Vector3 落点目标;
+    static float 落点截止时刻;
+    static bool 落点报过;
+    static bool 落点已执行;
+
+    /// <summary>
+    /// 落点流程是否还在进行（登记后为 true，接管结束或超时放权后为 false）。
+    /// 「条件=落点结束」靠它判定 —— 用来让下一阶段等到主角真的被放到落点。
+    /// </summary>
+    static bool 落点进行中;
+    static int 落点起始帧 = -1;
+
+    /// <summary>偏离这么大（米）才纠正。给足余量，避免把玩家"粘"在落点上走不动。</summary>
+    const float 落点容差 = 1.0f;
+
+    /// <summary>
+    /// 登记落点。**只负责把玩家放到位，不负责按住他** ——
+    /// 之前每帧硬写 position + 反复开关 CharacterController，表现是
+    /// 「一直被卡在落点上、往外跑又被拉回来」，所以改成：
+    ///   · 就绪后放置一次；
+    ///   · 只在玩家偏离超过 落点容差 时才纠正（用来压过场景晚几帧的出生/摆放逻辑）；
+    ///   · 用时间封顶（默认 1.2 秒），到点立即放权。
+    /// </summary>
+    public static void 请求落点(Vector3 位, float 接管秒 = 1.2f)
+    {
+        落点目标 = 位;
+        落点截止时刻 = Time.time + Mathf.Max(0.1f, 接管秒);
+        落点报过 = false;
+        落点已执行 = false;
+        落点进行中 = true;
+        落点起始帧 = Time.frameCount;
+        Debug.Log("[任务] 已登记落点：" + 位.ToString("F3") + "（接管 " + 接管秒.ToString("F1") + " 秒）");
+    }
+
+    /// <summary>
+    /// 找玩家：优先按名字找（文档建议），再退到按 PlayerVitals 组件找。
+    /// 不能只依赖 物品使用器.取玩家物体() 的静态缓存 —— 它跨场景可能还指向旧场景的玩家。
+    /// </summary>
+    static GameObject 找玩家物体()
+    {
+        var go = GameObject.Find("Player");
+        if (go != null && go.activeInHierarchy) return go;
+        return 物品使用器.取玩家物体();
+    }
+
+    /// <summary>每帧处理落点；由 Update 调用</summary>
+    void 处理落点()
+    {
+        if (落点起始帧 < 0) return;                                  // 没有待处理落点
+        if (落点起始帧 == Time.frameCount) return;                   // 登记当帧不动，让场景先摆完
+
+        // 时间到就放权：不管放没放成功，都不能把玩家一直按着
+        if (Time.time >= 落点截止时刻)
+        {
+            if (落点已执行) Debug.Log("[任务] 落点接管结束，交还操作");
+            落点起始帧 = -1;
+            落点进行中 = false;
+            return;
+        }
+
+        var 玩家 = 找玩家物体();
+        if (玩家 == null)
+        {
+            if (!落点报过) { 落点报过 = true; Debug.LogWarning("[任务] 落点：暂时取不到玩家，等它就绪"); }
+            return;
+        }
+
+        var 当前 = 玩家.transform.position;
+        float 偏离 = Vector3.Distance(new Vector3(当前.x, 0f, 当前.z),
+                                      new Vector3(落点目标.x, 0f, 落点目标.z));
+        bool 第一次 = !落点已执行;
+        if (!第一次 && 偏离 <= 落点容差) return;      // 已经在落点上，别动他
+
+        var cc = 玩家.GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = false;
+        玩家.transform.position = 落点目标;
+        if (cc != null) cc.enabled = true;
+        落点已执行 = true;
+
+        if (!落点报过)
+        {
+            落点报过 = true;
+            Debug.Log("[任务] 调度：玩家移动到 " + 落点目标.ToString("F3") + " → " + 玩家.name
+                + " 实际 " + 玩家.transform.position.ToString("F3")
+                + (第一次 ? "（首次放置）" : "（偏离 " + 偏离.ToString("F2") + "m，纠正）"));
+        }
+    }
 
     public QuestDatabase 取库() => 库 != null ? 库 : (库 = QuestDatabase.取());
 
@@ -98,10 +236,39 @@ public class 任务管理器 : MonoBehaviour
         return 串.ToString();
     }
 
+    /// <summary>
+    /// 切场景前调用：把「等待秒数」还没走完的剩余量记下来，交给新场景续上。
+    /// 只记**当前阶段**且**条件=等待秒数**的任务 —— 别的任务没有等待在跑。
+    /// 直接记「剩余秒」，不依赖 取库()（它在 Awake 期间可能还没加载）。
+    /// </summary>
+    public void 准备切场景()
+    {
+        剩余等待.Clear();
+        foreach (var kv in 当前阶段)
+        {
+            var 阶段 = 取当前阶段(kv.Key);
+            if (阶段 == null || 阶段.条件 != 任务条件.等待秒数) continue;
+            if (阶段.等待秒 <= 0f) continue;
+
+            float 起;
+            if (!阶段开始时间.TryGetValue(kv.Key, out 起)) continue;
+            float 剩 = 阶段.等待秒 - (Time.time - 起);
+            if (剩 <= 0f) continue;                       // 已经等够了，不用带
+            剩余等待[kv.Key] = 剩;
+        }
+        if (剩余等待.Count > 0)
+        {
+            var 串 = new System.Text.StringBuilder();
+            foreach (var kv in 剩余等待) { if (串.Length > 0) 串.Append(';'); 串.Append(kv.Key).Append('#').Append(kv.Value.ToString("F2")); }
+            Debug.Log("[任务] 切场景前记下未走完的等待：[" + 串 + "]");
+        }
+    }
+
     /// <summary>从 <see cref="导出进度"/> 的字符串恢复进度</summary>
     public void 导入进度(string 串)
     {
         if (string.IsNullOrEmpty(串)) return;
+        取库();          // 下面换算剩余等待要用到阶段定义，先确保库已加载
         当前阶段.Clear();
         已完成任务.Clear();
         foreach (var 段 in 串.Split(';'))
@@ -114,17 +281,34 @@ public class 任务管理器 : MonoBehaviour
             if (阶段号 <= 0) 已完成任务.Add(p[0]);
             else 当前阶段[p[0]] = 阶段号;
         }
-        // 补上「阶段开始时间」——否则接手的这一阶段若是「等待秒数」条件，计时器永远不会开始。
+        // 把「阶段开始时间」补上 —— 「等待秒数」条件靠它计时，没有就永远不推进。
+        // ⚠ 它**不能**兼作「动作是否已执行」的判据（见 已执行动作 的注释）。
         // ⚠ 动作**不在这里直接发**：导入进度 是在新场景 Awake 期间被 跨场景数据 调用的，
-        //   那时场景还没激活完，StartCoroutine 会失败并抛异常，把整个 Awake 打断 ——
-        //   表现就是「玩家没被移动到落点、后面的强制对话也不触发」。改由第一帧 Update 发。
+        //   那时场景还没激活完，StartCoroutine 会失败并抛异常，把整个 Awake 打断。
+        //   改由第一帧 Update 发（待发动作）。
         待发动作.Clear();
         foreach (var kv in 当前阶段)
         {
             阶段开始时间[kv.Key] = Time.time;
             待发动作.Add(kv.Key);
         }
-        Debug.Log("[任务] 已接手上一场景的进度：" + 当前阶段.Count + " 个任务推进中、" + 已完成任务.Count + " 个已完成");
+
+        // 切场景前没走完的等待：把开始时间往前挪，让 Update 的
+        // `Time.time - 起 >= 阶段.等待秒` 按真实剩余量判定，而不是从零重数。
+        // 放在这里依赖 取库()，所以前面先确保库已加载。
+        if (剩余等待.Count > 0)
+        {
+            foreach (var kv in 剩余等待)
+            {
+                var q = 取当前阶段(kv.Key);
+                if (q == null || q.条件 != 任务条件.等待秒数) continue;
+                阶段开始时间[kv.Key] = Time.time - (q.等待秒 - kv.Value);
+            }
+            Debug.Log("[任务] 续上未走完的等待 " + 剩余等待.Count + " 个");
+            剩余等待.Clear();
+        }
+        Debug.Log("[任务] 已接手上一场景的进度：" + 当前阶段.Count + " 个任务推进中、"
+            + 已完成任务.Count + " 个已完成  [" + 串 + "]");
     }
 
     public bool 进行中(string 任务id) => !string.IsNullOrEmpty(任务id) && 当前阶段.ContainsKey(任务id);
@@ -250,6 +434,9 @@ public class 任务管理器 : MonoBehaviour
         if (计时 < 检查间隔) return;
         计时 = 0f;
 
+        // ★ 落点：不受检查间隔限制，每帧都看（但只在偏离超容差时才动手）
+        处理落点();
+
         var db = 取库();
         if (db == null || 当前阶段.Count == 0) return;
         if (演出中) return;      // ★ 有阻塞式演出在跑：先别推进阶段
@@ -264,6 +451,8 @@ public class 任务管理器 : MonoBehaviour
                 var q = 取当前阶段(id);
                 if (q != null && q.动作 != 任务动作.无)
                 {
+                    // ★ 动作已经执行过的阶段不要再执行一次（见 已执行动作 的注释）
+                    if (已执行动作.Contains(动作键(id, q.阶段))) { Debug.Log("[任务] 跳过重复派发（动作已执行过）：" + 动作键(id, q.阶段)); continue; }
                     Debug.Log("[任务] 补发接手阶段的动作：" + q.id + " 动作=" + q.动作);
                     执行动作(q);
                 }
@@ -279,7 +468,12 @@ public class 任务管理器 : MonoBehaviour
             {
                 var q = 取当前阶段(id);
                 Debug.Log("[任务] 跨场景补发动作：" + (q != null ? q.id + " 动作=" + q.动作 : id + "（这个任务在新场景里没有当前阶段）"));
-                if (q != null && q.动作 != 任务动作.无) 执行动作(q);
+                if (q != null && q.动作 != 任务动作.无)
+                {
+                    // 同 待发动作：动作执行过的阶段不要再跑一遍
+                    if (已执行动作.Contains(动作键(id, q.阶段))) { Debug.Log("[任务] 跳过重复派发（动作已执行过）：" + 动作键(id, q.阶段)); continue; }
+                    执行动作(q);
+                }
             }
         }
 
@@ -317,9 +511,50 @@ public class 任务管理器 : MonoBehaviour
                 case 任务条件.击杀:
                     检查击杀(任务id, 阶段);
                     break;
+                case 任务条件.NPC到位:
+                    {
+                        // ★ 等目标 NPC 走到落点附近才推进。
+                        //   四幕：大师兄飞回来要**到位之后**再跳对话，
+                        //   用「等待秒数」只能碰运气（飞得慢还没到、飞得快就白等）。
+                        //   判定基准优先取「飞到」记下的动态落点（飞向玩家时它是实时算的），
+                        //   取不到才退回任务表里的坐标。
+                        var npc = 查找在场NPC(阶段.目标npcId);
+                        if (npc != null)
+                        {
+                            Vector3 目标位;
+                            if (string.IsNullOrEmpty(阶段.目标npcId) || !NPC落点.TryGetValue(阶段.目标npcId, out 目标位))
+                                目标位 = 阶段.坐标;
+                            var 平 = npc.transform.position - 目标位;
+                            平.y = 0f;
+                            if (平.magnitude <= 到位判定距离) 完成当前阶段(任务id);
+                        }
+                        break;
+                    }
+                case 任务条件.落点结束:
+                    {
+                        // ★ 等落点流程结束（主角已被放到策划落点）才推进。
+                        //   四幕用它保证「黑幕结束 ≈ 主角已经站在宗门落点上」。
+                        if (!落点进行中) 完成当前阶段(任务id);
+                        break;
+                    }
             }
         }
     }
+
+    /// <summary>只读地在场查找：找不到就返回 null，**不会重建**（重建是 找NPC 的职责）</summary>
+    static GameObject 查找在场NPC(string npcId)
+    {
+        if (string.IsNullOrEmpty(npcId)) return null;
+        foreach (var npc in FindObjectsOfType<NpcInstance>())
+        {
+            if (npc == null) continue;
+            if (npc.定义 != null && npc.定义.id == npcId) return npc.gameObject;
+        }
+        return null;
+    }
+
+    /// <summary>「NPC到位」条件用的判定距离（米）</summary>
+    const float 到位判定距离 = 1.5f;
 
     void 检查击杀(string 任务id, QuestDefinition 阶段)
     {
@@ -382,6 +617,10 @@ public class 任务管理器 : MonoBehaviour
     {
         if (阶段.动作 == 任务动作.无) return;
 
+        // ★ 登记「这个阶段的动作已经跑过」：跨场景队列 / 待发动作据此跳过重复派发
+        //   （重复执行会让「生成NPC」多生成一个大师兄，把前一个顶掉 → 对话不出现）
+        已执行动作.Add(动作键(阶段.任务id, 阶段.阶段));
+
         // ---- 过场演出类：不需要目标 NPC，先处理掉 ----
         switch (阶段.动作)
         {
@@ -390,8 +629,32 @@ public class 任务管理器 : MonoBehaviour
             case 任务动作.黑幕字幕:    StartCoroutine(播黑幕(阶段)); return;
             case 任务动作.闪白:        黑幕字幕.闪白(); Debug.Log("[任务] 调度：白屏闪一下"); return;
             case 任务动作.播放对话:    StartCoroutine(播对话(阶段)); return;
-            case 任务动作.移动玩家:    StartCoroutine(移动玩家到(阶段.坐标)); return;
+            // ★ 落点不走协程：切场景时协程会随旧场景一起被销毁（P1 的根因），
+            //   改成登记一个静态目标，由活着的那份管理器在 Update 里按住若干帧。
+            case 任务动作.移动玩家:    请求落点(阶段.坐标); return;
+            case 任务动作.移动玩家且黑幕:
+                {
+                    // ★ 四幕专用：先落黑幕、**同一帧**登记落点，用黑幕盖住
+                    //   「切到宗门 → 主角被拉到策划落点」这段拉扯（用户要求看不到）。
+                    //
+                    // 收幕**不能靠协程**：这个动作是在古古镇执行的，随后立刻切场景，
+                    // 协程会随旧场景销毁 → 没人收幕 → 一直黑着。
+                    // 所以交给黑幕自己按截止时间收（见 黑幕字幕.下落并定时收起）。
+                    // 黑幕时长：**等字打完**之后再停留 0.5 秒才收（0.5 是"读一眼"的时间）
+                    var 行 = new List<string>();
+                    if (!string.IsNullOrEmpty(阶段.台词))
+                        foreach (var s in 阶段.台词.Split('|'))
+                            if (!string.IsNullOrWhiteSpace(s)) 行.Add(s.Trim());
+                    演出中 = true;                       // 这一刻起不推进阶段（静态，跨场景有效）
+                    黑幕字幕.下落并定时收起(0.5f, 行.ToArray());
+                    请求落点(阶段.坐标, 0.6f);          // 接管时间也收短：黑幕一收就该放权
+                    Debug.Log("[任务] 调度：黑幕遮罩 + 移动玩家 → " + 阶段.坐标.ToString("F2")
+                        + "（字打完后停 0.5 秒自动收）");
+                    return;
+                }
             case 任务动作.切换场景:    StartCoroutine(切到场景(阶段)); return;
+            // ★ 必须在「先找目标 NPC」之前处理：它的整个意义就是目标可能已经不在场了
+            case 任务动作.确保NPC:     确保NPC(阶段); return;
             case 任务动作.接取任务:
                 if (string.IsNullOrEmpty(阶段.动作参数)) { Debug.LogWarning("[任务] 接取任务没填「动作参数」= 要接的任务id", 阶段); return; }
                 接取(阶段.动作参数);
@@ -440,8 +703,28 @@ public class 任务管理器 : MonoBehaviour
                 StartCoroutine(走过去(npc, 阶段.坐标, 阶段.动作速度));
                 break;
             case 任务动作.飞到:
-                Debug.Log("[任务] 调度：" + npc.name + " 飞到 " + 阶段.坐标);
-                StartCoroutine(飞过去(npc, 阶段.坐标, 阶段.动作速度, 阶段.动作参数));
+                {
+                    // 「坐标」留空(0,0,0) = **飞向玩家当时所在的位置**，而不是飞回原点。
+                    // 四幕：大师兄禀报完要飞回主角身边，用写死坐标会因为主角走动而飞错地方。
+                    var 位 = 阶段.坐标;
+                    if (位 == Vector3.zero)
+                    {
+                        var 玩家 = 物品使用器.取玩家物体();
+                        if (玩家 != null)
+                        {
+                            var p = 玩家.transform.position;
+                            var 朝向 = 玩家.transform.forward;
+                            位 = new Vector3(p.x + 朝向.x * 2f, p.y, p.z + 朝向.z * 2f);   // 停在玩家身前 2 米
+                            Debug.Log("[任务] " + npc.name + " 飞向玩家实时位置 " + 位.ToString("F2"));
+                        }
+                    }
+                    Debug.Log("[任务] 调度：" + npc.name + " 飞到 " + 位.ToString("F2"));
+                    // 记下落点：下一阶段若用「条件=NPC到位」，判定基准就是它
+                    if (!string.IsNullOrEmpty(阶段.动作目标npcId)) NPC落点[阶段.动作目标npcId] = 位;
+                    // 这里**不阻塞**阶段推进（执行动作是同步流程，没法 yield）；
+                    // 「到位之后才播对话」由下一阶段的 `条件=NPC到位` 保证。
+                    StartCoroutine(飞过去(npc, 位, 阶段.动作速度, 阶段.动作参数));
+                }
                 break;
             case 任务动作.镜头看目标:
                 Debug.Log("[任务] 调度：镜头对焦 " + (npc != null ? npc.name : "null"));
@@ -468,21 +751,49 @@ public class 任务管理器 : MonoBehaviour
         if (!string.IsNullOrEmpty(阶段.台词))
             foreach (var s in 阶段.台词.Split('|'))
                 if (!string.IsNullOrWhiteSpace(s)) 行.Add(s.Trim());
-        if (行.Count == 0) yield break;
+        if (行.Count == 0)
+        {
+            // 没台词也允许当**纯黑幕遮罩**用（例如只想挡住落点拉扯）：
+            // 落幕 → 停「等待秒」→ 收幕，而不是直接什么都不做。
+            if (阶段.等待秒 <= 0f) yield break;
+            演出中 = true;
+            黑幕字幕.标记协程持锁();
+            黑幕字幕.落下幕();
+            Debug.Log("[任务] 调度：纯黑幕遮罩 " + 阶段.等待秒.ToString("F1") + " 秒");
+            yield return new WaitForSeconds(阶段.等待秒);
+            黑幕字幕.收幕();
+            黑幕字幕.强制解锁();
+            演出中 = false;
+            yield break;
+        }
 
-        // ★ 先等对话框收起来再起黑幕：任务条件「对话」是在这一段刚显示时就判定的，
-        //   不等的话黑幕会直接盖在对话框上，看起来像「话还没说完就被切走了」。
-        float 上限 = Time.time + 20f;
-        while (DialogueUI.正在显示 && Time.time < 上限) yield return null;
-        // 对话关掉之后再按「等待秒」停一下（策划：点完「仙人，我准备好了」停留 2 秒再起黑幕）
-        if (阶段.等待秒 > 0f) yield return new WaitForSeconds(阶段.等待秒);
+        // ★ 顺序很重要（原来这里是反的，导致「从此，一个平凡的少年踏上了修仙路」整段被漏掉）：
+        //   先落下黑幕 + 开始打字，再按「等待秒」停。
+        //   下面几条带 (t=) 的日志是用来定位"黑幕出现了但字要等一会儿才出"的时序问题的。
+        if (DialogueUI.正在显示)
+        {
+            Debug.Log("[黑幕时序] 进入播黑幕时对话框还在显示 (t=" + Time.time.ToString("F2") + ") → 先关掉它再落黑幕");
+            DialogueUI.关闭();
+        }
 
-        演出中 = true;      // ★ 从这一刻起不推进阶段，黑幕才不会被下一阶段切走
-        Debug.Log("[任务] 调度：黑幕白字 " + 行.Count + " 行");
-        yield return 黑幕字幕.说(行.ToArray());
+        演出中 = true;                            // ★ 从这一刻起不推进阶段
+        黑幕字幕.标记协程持锁();
+        Debug.Log("[任务] 调度：黑幕白字 " + 行.Count + " 行 (t=" + Time.time.ToString("F2") + ")");
+
+        // 打字协程与"等待秒"并行跑（先启动它，幕会在第一帧就落下）
+        var 打字 = 黑幕字幕.说(行.ToArray());
+        打字.MoveNext();                          // ★ 先推进一次：让 落下() + 第一行文本立刻生效
+        Debug.Log("[黑幕时序] 幕已落下、开始打字 (t=" + Time.time.ToString("F2") + ")");
+
+        // ★ 先保证**字全打完**（用户要求），再看"等待秒"是否也到了 —— 取两者较晚的
+        float 等待截止 = Time.time + (阶段.等待秒 > 0f ? 阶段.等待秒 : 0f);
+        while (打字.MoveNext()) yield return 打字.Current;
+        while (Time.time < 等待截止) yield return null;
+        Debug.Log("[黑幕时序] 字已打完且等待结束 (t=" + Time.time.ToString("F2") + ") → 收幕");
+
         黑幕字幕.收幕();
         黑幕字幕.强制解锁();
-        演出中 = false;   // 兜底：万一「说」的协程被打断（例如切场景），黑幕锁不会漏下来把玩家锁死
+        演出中 = false;
     }
 
     /// <summary>强制对话（不用玩家按 F）：说话人 / 台词 / 情绪 全从阶段里取</summary>
@@ -495,40 +806,15 @@ public class 任务管理器 : MonoBehaviour
     }
 
     /// <summary>
-    /// 把玩家挪到坐标（四幕切到宗门后把主角放到大师兄旁边）。
-    /// **先等两帧**：切场景进来的那一阶段是在新场景 Awake 期间由 跨场景数据 恢复的，
-    /// 那时场景自己的出生/摆放逻辑还没跑完，立刻改位置会被它覆盖
-    /// （实测玩家落在场景默认出生点 (-83.6,18.05,89.9)，而不是策划标的宗门点）。
+    /// 【已废弃】原来是协程版落点，切场景时协程会随旧场景销毁，实测玩家停在场景初始摆放处。
+    /// 现在走 <see cref="请求落点"/> + Update 的静态方案（跨场景安全）。
+    /// 保留这个签名只为兼容可能的旧引用，不要再用它做落点。
     /// </summary>
+    [System.Obsolete("落点改用 请求落点()，协程版在切场景时会被销毁")]
     System.Collections.IEnumerator 移动玩家到(Vector3 位)
     {
-        Debug.Log("[任务] 移动玩家到 协程已启动，目标 " + 位.ToString("F3")
-            + " 玩家=" + (物品使用器.取玩家物体() != null ? 物品使用器.取玩家物体().name : "取不到"), this);
-        yield return null;
-        yield return null;
-        // 持续 30 帧强行把玩家按在目标点上：切场景进来时场景自身的出生/摆放逻辑、
-        // 以及「到达」类判定都可能晚几帧才跑完，只改一次的时机根本抢不过它们。
-        // 这 30 帧（约 0.5s）玩家本来就被演出锁着，不会被玩家操作干扰。
-        bool 报过 = false;
-        for (int i = 0; i < 30; i++)
-        {
-            var 玩家 = 物品使用器.取玩家物体();
-            if (玩家 != null)
-            {
-                var cc = 玩家.GetComponent<CharacterController>();
-                if (cc != null) cc.enabled = false;
-                玩家.transform.position = 位;
-                if (cc != null) cc.enabled = true;
-                if (!报过)
-                {
-                    报过 = true;
-                    Debug.Log("[任务] 调度：玩家移动到 " + 位.ToString("F3") + " → " + 玩家.name + " 实际 " + 玩家.transform.position.ToString("F3"), this);
-                }
-            }
-            yield return null;
-        }
-        var 末 = 物品使用器.取玩家物体();
-        Debug.Log("[任务] 移动玩家结束：玩家最终 " + (末 != null ? 末.transform.position.ToString("F3") : "无"), this);
+        请求落点(位);
+        yield break;
     }
 
     /// <summary>
@@ -548,8 +834,27 @@ public class 任务管理器 : MonoBehaviour
         }
         yield return new WaitForSeconds(阶段.等待秒 > 0f ? 阶段.等待秒 : 0.2f);
 
+        // ★ 兜底收幕：如果黑幕锁还在、而且是被「播黑幕」的协程持着的，
+        //   说明那个协程多半已经随本场景销毁（它跑不到收幕那几行）——
+        //   此时自己收掉，免得黑幕残留、或该黑屏的过场直接白屏切走。
+        if (黑幕字幕.演出中 && 黑幕字幕.幕被协程持锁)
+        {
+            Debug.LogWarning("[任务] 切场景前发现黑幕仍被协程持锁（协程可能已随场景销毁）→ 兜底收幕");
+            黑幕字幕.收幕();
+            黑幕字幕.强制解锁();
+        }
+
         当前阶段[阶段.任务id] = 阶段.阶段 + 1;
         跨场景待发动作.Add(阶段.任务id);      // ★ 存进静态队列，交给新场景的管理器发
+
+        // ★ 加载之前：把没走完的「等待秒数」剩余量记下来，交给新场景续上
+        //   （否则「等候大师兄禀报」那 60 秒会被 导入进度 清零重来）
+        准备切场景();
+
+        // ★ 在加载之前把进度钉进快照：OnDestroy 里那次 FindObjectOfType 可能抓到
+        //   新旧场景共存期间即将销毁的旧管理器，导出残缺 → 新场景主线不推进。
+        跨场景数据.钉住任务进度(导出进度());
+
         Debug.Log("[任务] 调度：切换到场景「" + 阶段.场景名 + "」，进度先推进到第 " + (阶段.阶段 + 1) + " 阶段（动作已存入跨场景队列）");
 
         var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(阶段.场景名, UnityEngine.SceneManagement.LoadSceneMode.Single);
@@ -706,6 +1011,29 @@ public class 任务管理器 : MonoBehaviour
     /// **动作参数 = 预制体资源路径**（`Assets/resources/` 下、不带扩展名），位置取 `坐标`。
     /// 走 <see cref="NpcPrefabs.加载"/> —— 它内部处理了"同目录有同名 FBX 时 Resources.Load 会挑错"的坑。
     /// </summary>
+    /// <summary>
+    /// 任务生成过的 NPC：`npcId → 预制体路径`。
+    ///
+    /// 用途：`生成NPC` 造出来的是**场景内对象**，玩家一切场景它就随旧场景销毁。
+    /// 四幕实测：大师兄在第 4 阶段生成，玩家在「等候大师兄禀报」那 60 秒里走进传送门
+    /// （Sect → 3C_Testbed → Sect）→ 大师兄没了 → 之后「飞到」因为找不到目标而静默跳过，
+    /// 表现就是「大师兄模型不见了、也没飞过来带我走」。
+    ///
+    /// 记下预制体路径后，任何动作找不到该 NPC 都能就地重建（见 找NPC），
+    /// 不需要在任务表里额外插一行。
+    /// </summary>
+    static readonly Dictionary<string, string> 生成过的NPC = new Dictionary<string, string>();
+
+    /// <summary>NPC 不在场时的兜底生成位置（一般是玩家身边，不至于生成到天边）</summary>
+    static Vector3 NPC兜底位置;
+
+    /// <summary>
+    /// 最近一次「飞到」给每个 NPC 定的落点：`npcId → 目标位置`。
+    /// 「条件=NPC到位」靠它判定 —— 因为 `飞到` 的落点可能是**动态**的
+    /// （坐标留空 = 飞向玩家当时的实时位置），事后没法从任务表里读回来。
+    /// </summary>
+    static readonly Dictionary<string, Vector3> NPC落点 = new Dictionary<string, Vector3>();
+
     GameObject 生成NPC(QuestDefinition 阶段)
     {
         if (string.IsNullOrEmpty(阶段.动作参数))
@@ -721,11 +1049,14 @@ public class 任务管理器 : MonoBehaviour
         }
         var go = Instantiate(预制, 阶段.坐标, Quaternion.identity);
         go.name = 预制.name + "_任务生成";
+        // ★ 记住「这个任务 NPC 是用哪个预制体造的」，供 找NPC 在它被切场景销毁后重建
+        if (!string.IsNullOrEmpty(阶段.动作目标npcId)) 生成过的NPC[阶段.动作目标npcId] = 阶段.动作参数;
+        NPC兜底位置 = 阶段.坐标;
         Debug.Log("[任务] 生成 " + go.name + " 于 " + 阶段.坐标, 阶段);
         return go;
     }
 
-    static GameObject 找NPC(string npcId)
+    GameObject 找NPC(string npcId)
     {
         if (string.IsNullOrEmpty(npcId)) return null;
         foreach (var npc in FindObjectsOfType<NpcInstance>())
@@ -733,7 +1064,59 @@ public class 任务管理器 : MonoBehaviour
             if (npc == null) continue;
             if (npc.定义 != null && npc.定义.id == npcId) return npc.gameObject;
         }
+
+        // ★ 不在场：如果这个 NPC 是任务生成过的，就地重建一个。
+        //   （切场景会销毁生成出来的 NPC，不重建的话后续「飞到/播动画」全都静默失败）
+        string 预制路径;
+        if (生成过的NPC.TryGetValue(npcId, out 预制路径))
+        {
+            var 位 = 兜底位置();
+            Debug.LogWarning("[任务] 找NPC：" + npcId + " 不在场（多半被切场景销毁了）→ 就地重建于 " + 位.ToString("F2"));
+            var 预制 = NpcPrefabs.加载(预制路径);
+            if (预制 != null)
+            {
+                var go = Instantiate(预制, 位, Quaternion.identity);
+                go.name = 预制.name + "_任务生成";
+                // 兜底位置更新到「这次重建的地方」，免得反复重建时位置乱跳
+                NPC兜底位置 = 位;
+                return go;
+            }
+            Debug.LogWarning("[任务] 找NPC：重建失败，载不到预制体 " + 预制路径);
+        }
         return null;
+    }
+
+    /// <summary>重建位置：优先玩家附近（大师兄是回来找玩家的），否则用上次生成点</summary>
+    static Vector3 兜底位置()
+    {
+        var 玩家 = 物品使用器.取玩家物体();
+        if (玩家 != null)
+        {
+            var p = 玩家.transform.position;
+            var 朝向 = 玩家.transform.forward;
+            return new Vector3(p.x + 朝向.x * 2f, p.y, p.z + 朝向.z * 2f);
+        }
+        return NPC兜底位置;
+    }
+
+    /// <summary>
+    /// 确保目标 NPC 在场：在就什么都不做，不在就按「动作参数」的预制体路径重建到「坐标」。
+    ///
+    /// 为什么需要：`生成NPC` 生成的是**场景内对象**，玩家一旦切场景它就随旧场景销毁。
+    /// 四幕实测：大师兄在第 4 阶段生成，玩家在「等候大师兄禀报」那 60 秒里走进传送门
+    /// （Sect → 3C_Testbed → Sect），大师兄就没了 —— 之后第 11/13 阶段的「飞到」
+    /// 因为 `找NPC` 返回 null 而静默跳过，表现就是「大师兄模型不见了、也没飞过来带我走」。
+    /// </summary>
+    GameObject 确保NPC(QuestDefinition 阶段)
+    {
+        var 已存在 = 找NPC(阶段.动作目标npcId);
+        if (已存在 != null)
+        {
+            Debug.Log("[任务] 确保NPC：" + 阶段.动作目标npcId + " 在场，无需重建");
+            return 已存在;
+        }
+        Debug.LogWarning("[任务] 确保NPC：" + 阶段.动作目标npcId + " 不在场（多半是切场景销毁了）→ 重建");
+        return 生成NPC(阶段);
     }
 
     // ================================================================ 自动接取

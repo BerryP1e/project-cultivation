@@ -1,4 +1,4 @@
-﻿# .dsh/serve-unity-mcp.ps1 —— 手动启动 Unity MCP 服务器的 HTTP 通道
+# .dsh/serve-unity-mcp.ps1 —— 手动启动 Unity MCP 服务器的 HTTP 通道
 #
 # 这是【可选】通道。主通道是 stdio：harness 按 profiles/desktop/cordis.patch.yml
 # 里的 mcp-unity 行自己拉起 `codely serve unity-mcp --stdio`，不需要本脚本。
@@ -7,10 +7,10 @@
 #   - 想在 harness 之外直接点 Unity 工具（配合 .dsh\mcp.ps1 发 tools/call）
 #   - 排查 MCP 服务器本身的问题（stdio 模式看不到它的启动日志）
 #
-# 用法:
-#   pwsh -File "D:\project：cultivation\.dsh\serve-unity-mcp.ps1"              # 前台
-#   pwsh -File "D:\project：cultivation\.dsh\serve-unity-mcp.ps1" -Background  # 后台
-#   pwsh -File "D:\project：cultivation\.dsh\serve-unity-mcp.ps1" -Port 8766
+# 用法（路径随仓库位置变，别写死盘符）:
+#   pwsh -File "<仓库根>\.dsh\serve-unity-mcp.ps1"              # 前台
+#   pwsh -File "<仓库根>\.dsh\serve-unity-mcp.ps1" -Background  # 后台
+#   pwsh -File "<仓库根>\.dsh\serve-unity-mcp.ps1" -Port 8766
 
 param(
     [int]$Port = 8765,
@@ -19,7 +19,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$CodelyExe = 'D:\Tuanjie Cowork\cli\bin\win32-x64\codely.exe'
+
+# Cowork CLI 的位置随机器而变（家里在 D:，这台在工作电脑的用户目录下）。
+$Cowork = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\Tuanjie Cowork\cli\bin\win32-x64'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Tuanjie Cowork\cli'),
+    'D:\Tuanjie Cowork\cli\bin\win32-x64',
+    'C:\Program Files\Tuanjie Cowork\cli\bin\win32-x64'
+) | Where-Object { Test-Path (Join-Path $_ 'codely.exe') } | Select-Object -First 1
+if (-not $Cowork) { throw "找不到 Tuanjie Cowork CLI（找过 LOCALAPPDATA\Programs\Tuanjie Cowork 与 D:\Tuanjie Cowork）" }
+$CodelyExe = Join-Path $Cowork 'codely.exe'
 
 if (-not (Test-Path $CodelyExe)) { throw "找不到 codely.exe: $CodelyExe" }
 if (-not (Test-Path (Join-Path $ProjectPath 'Assets'))) { throw "不像 Unity 工程（没有 Assets/）: $ProjectPath" }

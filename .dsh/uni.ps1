@@ -1,13 +1,28 @@
 # Drive Unity through the file bridge (replaces the dead MCP bridge).
 #
-#   . ([scriptblock]::Create((Get-Content "D:\project：cultivation\.dsh\uni.ps1" -Raw)))
+#   . ([scriptblock]::Create((Get-Content "$PWD\.dsh\uni.ps1" -Raw)))
 #   Uni "menu:Cultivation/Build Main Menu Scene"
 #   Uni @("refresh","console:get:20")
 #
 # ASCII only on purpose: this file gets read back as GBK sometimes and
 # non-ASCII would break string literals.
+#
+# DshDir is derived from this script's own location, so the same file works
+# on every machine (the repo lives at different paths on each one).
+#
+# NOTE: $PSScriptRoot is EMPTY when this file is dot-sourced from memory
+# (Invoke-Expression / [scriptblock]::Create), which is the documented usage
+# above. So fall back to $MyInvocation.MyCommand.Path, then to the CWD.
 
-$script:DshDir     = "D:\project：cultivation\.dsh"
+$script:DshDir = if ($PSScriptRoot) {
+    $PSScriptRoot
+} elseif ($MyInvocation.MyCommand.Path) {
+    Split-Path -Parent $MyInvocation.MyCommand.Path
+} elseif (Test-Path (Join-Path $PWD '.dsh')) {
+    Join-Path $PWD '.dsh'
+} else {
+    $PWD.Path
+}
 $script:CmdPath    = Join-Path $script:DshDir "cmd.txt"
 $script:ResultPath = Join-Path $script:DshDir "result.txt"
 
