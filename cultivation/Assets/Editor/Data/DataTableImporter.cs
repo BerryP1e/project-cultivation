@@ -203,6 +203,16 @@ public static class DataTableImporter
         // ---- 顺手把 UI 数据源指向生成的资产 ----
         RewirePanelData();
 
+        // ---- 顺手回填「学习类」物品的资产引用 ----
+        // 为什么必须在这里做（2026-09-27 实锤的隐患）：
+        //   学习类效果（学功法 / 学主动神通 / 学被动神通 / 学外观）身上有一个**直接引用**，
+        //   物品表里只写了 id，导入后引用是空的；代码会退到 能力查找.按id&lt;T&gt;() 兜底，
+        //   而那个函数整段在 `#if UNITY_EDITOR` 里、用 AssetDatabase ——
+        //   **打包后返回 null ⇒ 点学习道具毫无反应**，而且 AssetDatabase 加载的资产
+        //   不会被记进构建。实测 23 件物品里 12 个学习类引用全为 null。
+        //   放在这里 = 每次导入都自动填好，不靠人记得跑菜单。
+        回填效果引用.回填(true);
+
         EditorSceneManager_MarkAndSave();
         Debug.Log("[DataTableImporter] 导入完成：\n" + report);
     }
@@ -244,7 +254,17 @@ public static class DataTableImporter
 
             var field = type.GetField(col, BindingFlags.Public | BindingFlags.Instance);
             if (field == null) continue;   // 多余列（例如纯注释列）直接忽略
-            if (!string.IsNullOrEmpty(val)) SetFieldValue(so, field, val);
+
+            // ★ CSR 空值**也要写**（用户 2026-09-27 踩到的坑）。
+            //   原来这里是 `if (!string.IsNullOrEmpty(val)) SetFieldValue(...)` ——
+            //   只在非空时写，于是**清空一个单元格不会撤回资产里的旧值**。
+            //   实测：q_main_003 第 1 阶段的 等待秒 早就从表里删了，资产里却还留着 3，
+            //   表现成「进触发区后要干等 3 秒才生成野猪」，查了半天以为是逻辑问题。
+            //   现在空值也写入（string→""、数值→0、bool→false、枚举→0、Vector3→zero），
+            //   让**配置表真正成为唯一真相源**。
+            //   注意：策划改表时不要留空想表达"沿用上次"——没有那个语义了。
+            //   只有「属性列」保持"空 = 不设该属性"（AttributeSet 先 Clear 过，语义正确）。
+            SetFieldValue(so, field, val);
         }
     }
 

@@ -21,7 +21,16 @@ using UnityEngine;
 public static class 回填效果引用
 {
     [MenuItem("修仙/修复/回填学习类物品的效果引用", false, 300)]
-    public static void 回填()
+    public static void 回填() => 回填(false);
+
+    /// <summary>
+    /// 回填主逻辑。<paramref name="静默"/> = true 时不弹对话框（供导入器自动调用）。
+    ///
+    /// ★ 导入器在 `ImportAll` 结尾会调它（见 DataTableImporter）。
+    ///   这样**新建学习类道具时，引用会被自动填上**，
+    ///   不用再靠人记得跑菜单 —— 也就不会再出现"打包后点学习道具没反应"。
+    /// </summary>
+    public static void 回填(bool 静默)
     {
         var 映射 = new Dictionary<string, ScriptableObject>();
 
@@ -102,7 +111,8 @@ public static class 回填效果引用
         AssetDatabase.SaveAssets();
         var 报 = "[回填效果引用] 查过 " + 查过 + " 件、回填 " + 填了 + " 件、找不到 " + 找不到 + " 件";
         if (缺的.Count > 0) 报 += "\n  找不到对应资产的：\n    " + string.Join("\n    ", 缺的);
-        Debug.Log(报);
-        EditorUtility.DisplayDialog("回填效果引用", 报, "好");
+        if (找不到 > 0) Debug.LogError(报);      // 找不到 = 配置写错了，要显眼
+        else Debug.Log(报);
+        if (!静默) EditorUtility.DisplayDialog("回填效果引用", 报, "好");
     }
 }
