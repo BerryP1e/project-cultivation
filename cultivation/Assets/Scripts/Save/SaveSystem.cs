@@ -110,11 +110,31 @@ public static class SaveSystem
     // ---------------------------------------------------------------- 新档
 
     /// <summary>
+    /// **这一局是从"新游戏"开起来的**（主菜单点了空槽 → <see cref="建新档"/>）。
+    ///
+    /// 用途：`主线开场` 只在**新开局**演那三句黑幕 + 起名；
+    /// 读档进来、或者从别的场景回到古古镇，都**不该**再演。
+    ///
+    /// ⚠️ 不能用 `当前存档 != null` 来判断"是不是新开局"（踩过的坑 2026-09-27）：
+    ///   新游戏模式下 `MainMenuUI` 也会先 `建新档()` 再赋给 `当前存档`，
+    ///   所以 `当前存档` 两种情况下都非 null —— 用它判断会把**新开局的开场也挡掉**
+    ///   （用户报："开新存档又没有开局简介的黑幕了"）。
+    ///
+    /// `主线开场` 消费（读）这个标记，读完不影响它 —— 因为 `建新档` 只在主菜单调，
+    /// 一局里不会再调第二次；重进 Play 由 `RuntimeInitializeOnLoadMethod` 归零。
+    /// </summary>
+    public static bool 本局是新开局;
+
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void 重置新开局标记() { 本局是新开局 = false; }
+
+    /// <summary>
     /// 建一份新档并初始化角色数据。
     /// 属性快照这一层等「属性结算系统」做好后会替换掉。
     /// </summary>
     public static SaveData 建新档(string 角色名 = null)
     {
+        本局是新开局 = true;                  // ★ 打上"这是新开局"的标志（供 主线开场 判断）
         var 数据 = new SaveData
         {
             角色名 = string.IsNullOrEmpty(角色名) ? "无名散修" : 角色名,
@@ -124,7 +144,13 @@ public static class SaveSystem
             朝向Y = 0f,
             当前气血 = -1f,      // -1 = 用满值
             当前灵气 = -1f,
-            功法id = "gongfa_taixu_lianqi",
+            // ★ 新档**没有功法**（用户 2026-09-27 确认的设计）：
+            //   主角开局什么功法都没有，第一门功法要靠在背包里「使用」秘籍类物品学会，
+            //   学会第一门时它才会成为「当前修炼的功法」（见 学功法效果.使用）。
+            //   原来这里写死 "gongfa_taixu_lianqi" —— 那和"已学功法为空"自相矛盾，
+            //   而且 应用到角色 里有 `if (功法 != null) 面板.当前功法 = 功法;`，
+            //   一旦取得到就会让主角**凭空多出一门功法**。
+            功法id = "",
         };
 
         // 太虚炼气诀自带的基础属性快照（对应 PlayerDefaultStats 的一组值）
@@ -177,7 +203,19 @@ public static class SaveSystem
 
         var cc = 玩家.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
-        玩家.transform.position = 数据.位置 == Vector3.zero ? 玩家.transform.position : 数据.位置;
+        // ★ 切场景接力期间**不要**用存档里的位置覆盖玩家：
+        //   跨场景传送的目标是「传送到目的地的落点」，而存档位置是"上次存档时站的地方"。
+        //   用存档位置盖会**把玩家从落点搬回存档点**（用户 2026-09-27 报的
+        //   「传送到个人洞府后没生成在应该在的落点上」就是这个）。
+        //   落点由 黑幕字幕 的场景过渡负责，读档时才用存档位置。
+        if (跨场景数据.正在接力)
+        {
+            Debug.Log("[存档] 正在跨场景接力 → 跳过「按存档位置摆放玩家」（落点由切场景过渡负责）");
+        }
+        else
+        {
+            玩家.transform.position = 数据.位置 == Vector3.zero ? 玩家.transform.position : 数据.位置;
+        }
         玩家.transform.rotation = Quaternion.Euler(0f, 数据.朝向Y, 0f);
         if (cc != null) cc.enabled = true;
 
@@ -244,6 +282,26 @@ public static class SaveSystem
         var 面板数据 = UnityEngine.Object.FindObjectOfType<UIPanelData>();
         if (面板数据 != null)
         {
+            // ★ 新档：**先把场景面板清干净**，再按存档恢复。
+            //   为什么必须清：场景里的 CharacterUI 可能被预置过东西
+            //   （编辑器调试菜单「用物品表填满当前场景背包」会写进场景并保存），
+            //   那份数据是**场景资产**的一部分 —— 存档里背包是空的也盖不掉它。
+            //   判定：存档里的背包/法宝/灵阵/坐骑/真灵全空 = 这是一份新档。
+            bool 是新档 = (数据.背包物品 == null || 数据.背包物品.Count == 0)
+                       && (数据.法宝 == null || 数据.法宝.Count == 0)
+                       && (数据.灵阵 == null || 数据.灵阵.Count == 0)
+                       && (数据.坐骑 == null || 数据.坐骑.Count == 0)
+                       && (数据.已获得真灵 == null || 数据.已获得真灵.Count == 0);
+            if (是新档)
+            {
+                bool 场景里本来有东西 = !面板数据.玩法数据为空();
+                面板数据.清空玩法数据();
+                对话标记.清空();                   // 静态残留：新档不该继承上一局的标记
+                Debug.Log("[存档] 判定为新档：已清空场景面板"
+                    + (场景里本来有东西 ? "（**场景里原本预置了东西**，已一并清掉）" : "")
+                    + " 并清掉对话标记");
+            }
+
             // 背包 / 法宝 / 灵阵 / 坐骑 / 技能槽 / 停用被动 / 已获真灵 / 经验（版本 5）
             恢复面板(数据, 面板数据);
 

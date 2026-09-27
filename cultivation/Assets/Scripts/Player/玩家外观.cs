@@ -84,8 +84,28 @@ public class 玩家外观 : MonoBehaviour
     {
         库 = AppearanceDatabase.取();
         对话标记.变化 += 处理标记变化;
-        按规则选一件();
+
+        // ★ 先把上一次会话记下的外观装上（跨场景保持玩家自己换的那身）。
+        //   踩过的坑（用户 2026-09-27："我用村中少年的外观进镇妖塔，出来就变成宗门便服了"）：
+        //   原来这里无条件调 按规则选一件()，而 按规则挑() 选的是"表里最靠后的解锁即装备外观"。
+        //   一旦门派便服解锁了「修仙者」(app_player)，**每次进场景都会强制换成它**，
+        //   把玩家手动选的村中少年覆盖掉。
+        if (已选外观 != null)
+        {
+            装备(已选外观);
+        }
+        else
+        {
+            按规则选一件();          // 本局第一次进场景：按规则挑一件，并记下来
+        }
     }
+
+    /// <summary>
+    /// **跨场景保持的"玩家当前外观"**。
+    /// 为什么用静态：`玩家外观` 挂在 Player 上，每次切场景都重新构造，
+    /// 实例字段活不过切场景；而"玩家选了什么外观"是这一局的会话状态。
+    /// </summary>
+    static AppearanceDefinition 已选外观;
 
     void OnDestroy() { 对话标记.变化 -= 处理标记变化; }
 
@@ -131,6 +151,7 @@ public class 玩家外观 : MonoBehaviour
         网格.sharedMesh = 源网格.sharedMesh;
         网格.sharedMaterials = 源网格.sharedMaterials;
         当前外观 = 外观;
+        已选外观 = 外观;          // ★ 记住，切场景时不再被规则覆盖
         Debug.Log("[外观] 换上「" + 外观.DisplayName + "」（网格 " + 源网格.sharedMesh.name + "）", 外观);
         外观变化?.Invoke(外观);
         return true;
@@ -145,6 +166,7 @@ public class 玩家外观 : MonoBehaviour
             网格.sharedMaterials = 原材质;
         }
         当前外观 = null;
+        已选外观 = null;
         外观变化?.Invoke(null);
     }
 

@@ -42,11 +42,51 @@ public class 主线开场 : MonoBehaviour
     [Tooltip("每次黑幕停留的额外时间（秒）")]
     public float 行间额外停顿 = 0f;
 
-    bool 演过;
+    /// <summary>
+    /// **本局是否已经演过开场**。
+    ///
+    /// ★★ 必须是 static（用户 2026-09-27 报的 bug）：
+    ///   原来是实例字段 `bool 演过`，而 `LoadSceneMode.Single` **每次进古古镇都会把这个组件
+    ///   重建一遍** → `演过` 归零 → **每次从别的场景回到古古镇都重演一遍开场**
+    ///   （三句黑幕 + 起名界面）。用户从宗门回古古镇就撞上了。
+    ///
+    ///   开场的语义是"**新游戏开局演一次**"，不是"每次进古古镇都演"。
+    ///   用 static 让它跨场景存活；`RuntimeInitializeOnLoadMethod` 保证重进 Play 时归零。
+    /// </summary>
+    static bool 演过;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void 重置静态() { 演过 = false; }
 
     void Start()
     {
-        if (进游戏就播 && !演过) { 演过 = true; StartCoroutine(开始开场()); }
+        if (演过) return;                       // 本局已经演过（或正在演），别再演
+        if (!进游戏就播) return;
+
+        // ★ 只有**新开局**才演开场。判据：**存档里没有任何主线进度**。
+        //
+        //   为什么用这个判据（踩过的坑 2026-09-27，两次）：
+        //     ① 原来没有任何判据 → `演过` 又是实例字段 → **每次回古古镇都重演开场** ✗
+        //     ② 我改成判 `SaveSystem.当前存档 != null` → 但主菜单点「新游戏」时
+        //        **也会先 建新档() 再赋给 当前存档**，于是**新开局的开场也被挡掉了** ✗
+        //        （用户报："开新存档又没有开局简介的黑幕了"）
+        //     ③ 改成判 `SaveSystem.本局是新开局`（建新档时置真）→ 但那个静态字段
+        //        在**编辑器里按 Play 时会被 RuntimeInitializeOnLoadMethod 归零**，
+        //        而主菜单是在 Play **里面**点的，于是又演不出来 ✗
+        //
+        //   现在的判据同时满足两边：
+        //     · 新开局：存档是空档（`建新档` 会 `面板内容全清` → 任务进度为空）→ 演 ✓
+        //     · 读档：存档里有进度 → 不演 ✓
+        //     · 从别的场景回古古镇：`演过` 已经是 true（static）→ 不演 ✓
+        if (SaveSystem.当前存档 != null && !string.IsNullOrEmpty(SaveSystem.当前存档.任务进度))
+        {
+            Debug.Log("[主线] 开场：存档里已有主线进度（读档/切场景回来）→ 跳过开场演出");
+            演过 = true;
+            return;
+        }
+
+        演过 = true;
+        StartCoroutine(开始开场());
     }
 
     /// <summary>整段开场。外部也可以手动调（例如从主菜单"新游戏"进来时）</summary>
@@ -71,6 +111,9 @@ public class 主线开场 : MonoBehaviour
         把玩家放到出生点();
 
         // 5) 打下一句，然后收幕
+        //    ★ 这里要带上**玩家刚起的名字**（用户 2026-09-27：原来这一句完全没用上名字）
+        string 名字 = string.IsNullOrEmpty(主角名) ? "少年" : 主角名;
+        yield return 黑幕字幕.说("这个少年的名字叫做「" + 名字 + "」");
         yield return 黑幕字幕.说("在古古镇上……");
         if (行间额外停顿 > 0f) yield return new WaitForSeconds(行间额外停顿);
         黑幕字幕.收幕();

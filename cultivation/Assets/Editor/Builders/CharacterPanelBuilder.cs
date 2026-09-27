@@ -495,6 +495,12 @@ public static class CharacterPanelBuilder
         gongFaInfo.tierText = gfTier;
         gongFaInfo.descriptionText = gfDesc;
         gongFaInfo.emptyHint = "（未设定当前功法）";
+        // ★ 这块**不是列表项详情**，而是"当前修炼的功法"常驻展示。
+        //   踩过的坑（用户 2026-09-27）：原来没接线，而 UIEntryInfo.Show() 只由
+        //   UIEntryList.选中某行() 调用 —— 于是它永远显示占位「（未设定当前功法）」，
+        //   玩家学完秘籍也看不到自己的功法。
+        gongFaInfo.data = data;
+        gongFaInfo.显示当前功法 = true;
 
         var realmPanel = CreatePanel("RealmShow", page, font, "境界展示", UIBuildUtils.ColorPanel);
         PlacePanel(realmPanel, new Vector2(0.32f, 0f), new Vector2(1f, 0.40f));

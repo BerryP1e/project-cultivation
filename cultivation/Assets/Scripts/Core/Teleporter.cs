@@ -218,43 +218,27 @@ public class Teleporter : MonoBehaviour
     }
 
     /// <summary>
-    /// ★★ 跨场景传送必须交给一个**不随场景销毁的宿主**去做。
+    /// ★★ 跨场景传送必须走**统一的切场景过渡**（用户 2026-09-27 要求：
+    /// 「黑幕 + 场景名应该成为切换场景的惯例」）。
     ///
-    /// 【为什么不能用本组件自己的协程】`LoadSceneMode.Single` 会销毁旧场景里所有物体 ——
-    /// 包括**挂在本光圈上的这个组件**。协程是挂在组件上的，组件没了协程当场中断 ✗，
-    /// 于是"加载完成后找落点、把玩家放过去"那段**永远不会执行**。
-    /// 症状极具迷惑性：场景确实切过去了、目标物体也确实存在，但玩家留在**新场景里保存的位置**
-    /// （实测：从 3C 传到 Sect，玩家落在 Sect 存档点 (-83.6, 14.2, 89.9)，离目标 91m ✗）。
+    /// 历史教训（两条，都踩过）：
+    ///   ① 用本组件自己的协程 ✗ —— `LoadSceneMode.Single` 会销毁旧场景里所有物体，
+    ///      包括挂本组件的光圈，协程当场中断，"加载完找落点、把玩家放过去"永不执行。
+    ///   ② 后来改成自己造一个 `传送宿主`（DontDestroyOnLoad）**直接 LoadSceneAsync** ——
+    ///      落点是能找到了，但**完全绕过了黑幕+场景名**，而且没有把主线进度钉进快照，
+    ///      玩家会在新场景里被"重新接续旧进度"，表现成剧情重放（师兄又带你进一次宗门）。
+    ///
+    /// 现在只调 `黑幕字幕.开始场景过渡`：它会把【落黑幕+场景名 → 加载 → 摆位 →
+    /// 停 2 秒 → 淡出】整条跑完，而且宿主就是黑幕自己（DontDestroyOnLoad），
+    /// 落点名交给它在**新场景**里解析。
     /// </summary>
     void 跨场景传送(传送选项 o)
     {
-        var 宿主物体 = new GameObject("传送宿主");
-        Object.DontDestroyOnLoad(宿主物体);
-        var 宿主 = 宿主物体.AddComponent<传送宿主>();
-        宿主.开始(o.场景, o.落点);
-    }
+        // 进度先钉住：新场景里的任务管理器会接手这份进度，不会从头再来
+        var 任务 = Object.FindObjectOfType<任务管理器>();
+        if (任务 != null) 任务.切场景前钉进度();
 
-    /// <summary>跨场景传送的宿主：活在 DontDestroyOnLoad 上，加载完新场景后落地，然后自毁</summary>
-    public class 传送宿主 : MonoBehaviour
-    {
-        public void 开始(string 场景, string 落点) { StartCoroutine(跑(场景, 落点)); }
-
-        System.Collections.IEnumerator 跑(string 场景, string 落点)
-        {
-            yield return null;                                   // 让确认框先收起来
-            var op = SceneManager.LoadSceneAsync(场景, LoadSceneMode.Single);
-            if (op == null) { Debug.LogError("[传送] 加载场景「" + 场景 + "」失败 —— 它加进 Build Settings 了吗？"); 自毁(); yield break; }
-            while (!op.isDone) yield return null;
-            yield return null;                                   // 等新场景 Awake/Start
-            yield return new WaitForEndOfFrame();
-
-            var 点 = 找落点(落点, SceneManager.GetActiveScene());
-            if (点 == null) { Debug.LogWarning("[传送] 新场景「" + 场景 + "」里找不到落点「" + 落点 + "」"); 自毁(); yield break; }
-            放下玩家(点);
-            自毁();
-        }
-
-        void 自毁() { if (this != null && gameObject != null) Destroy(gameObject); }
+        黑幕字幕.开始场景过渡(o.场景, 任务管理器.取场景显示名(o.场景), Vector3.zero, o.落点);
     }
 
     static Transform 找落点(string 名, Scene 场景)

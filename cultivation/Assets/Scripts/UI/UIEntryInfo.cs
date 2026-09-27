@@ -28,6 +28,22 @@ public class UIEntryInfo : MonoBehaviour
     [Tooltip("数据源，用于读写被动神通的启用状态")]
     public UIPanelData data;
 
+    /// <summary>
+    /// **固定显示"当前修炼的功法"**（境界页上半块「功法展示」用）。
+    ///
+    /// 为什么需要它（用户 2026-09-27 报的 bug）：
+    ///   这块原来是"列表选中项详情"，`Show()` 只由 `UIEntryList.选中某行()` 调用 ——
+    ///   而「功法展示」**不在任何列表里**，`infoTarget` 也没人指向它，
+    ///   于是 `Show()` 从没被调用过，**永远显示占位「（未设定当前功法）」**，
+    ///   玩家学完秘籍也看不到自己的功法。
+    ///
+    /// 填上这个引用后：本组件会**订阅 `data.Changed`**（转修、学会都会触发），
+    /// 一直显示 `data.当前功法`。没设当前功法时显示 <see cref="emptyHint"/>。
+    /// 不填 = 保持原行为（由列表选中驱动）。
+    /// </summary>
+    [Tooltip("固定显示「当前功法」。留空 = 由列表选中驱动（原行为）")]
+    public bool 显示当前功法 = false;
+
     [Header("占位")]
     [Tooltip("没有选中内容时显示的提示")]
     public string emptyHint = "（未选中）";
@@ -46,12 +62,33 @@ public class UIEntryInfo : MonoBehaviour
 
     void OnEnable()
     {
-        if (data != null) data.Changed += RefreshActionState;
+        if (data != null)
+        {
+            // 防重复订阅：先退再订
+            data.Changed -= 处理数据变化;
+            data.Changed += 处理数据变化;
+        }
+        刷新固定显示();
+        RefreshActionState();
     }
 
     void OnDisable()
     {
-        if (data != null) data.Changed -= RefreshActionState;
+        if (data != null) data.Changed -= 处理数据变化;
+    }
+
+    /// <summary>数据变了：固定显示模式要跟着换内容，所有模式都要刷新按钮可用状态</summary>
+    void 处理数据变化()
+    {
+        刷新固定显示();
+        RefreshActionState();
+    }
+
+    /// <summary>「显示当前功法」模式下，把展示内容同步成 data.当前功法</summary>
+    void 刷新固定显示()
+    {
+        if (!显示当前功法 || data == null) return;
+        Show(data.当前功法);      // 可能在 Awake/OnEnable 阶段，asset 引用已就绪，安全
     }
 
     void OnActionClicked()
@@ -78,6 +115,11 @@ public class UIEntryInfo : MonoBehaviour
     /// <summary>展示某个条目；传 null 清空</summary>
     public void Show(IPanelEntry entry)
     {
+        // ★ 「显示当前功法」模式下，内容**只认** data.当前功法 ——
+        //   不能被列表选中覆盖（这块不是列表项详情，是常驻展示）。
+        //   这样无论是"数据变了"还是"面板被打开时刷新"，显示的都是当前功法。
+        if (显示当前功法 && data != null) entry = data.当前功法;
+
         Current = entry;
 
         if (entry == null)

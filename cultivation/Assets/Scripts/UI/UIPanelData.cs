@@ -24,12 +24,17 @@ public class UIPanelData : MonoBehaviour
 
     [Header("持有内容")]
     public List<ItemDefinition> 物品 = new List<ItemDefinition>();
+
+    [Tooltip("神通目录（所有主动+被动）。**运行时从 面板库.取() 灌**，场景里存的会被覆盖 —— " +
+             "因为「目录」每个场景一份必然漂移（实测古古镇 11 条、宗门 0 条）")]
     public List<DivineAbilityDefinition> 神通 = new List<DivineAbilityDefinition>();
+    [Tooltip("法宝目录。运行时从 面板库 灌")]
     public List<TreasureDefinition> 法宝 = new List<TreasureDefinition>();
+    [Tooltip("灵阵目录。运行时从 面板库 灌")]
     public List<SpiritArrayDefinition> 灵阵 = new List<SpiritArrayDefinition>();
 
     [Header("坐骑")]
-    [Tooltip("拥有的坐骑（坐骑表.csv 生成）。由 DataTableImporter.RewirePanelData 自动收集")]
+    [Tooltip("坐骑目录。运行时从 面板库 灌（按门槛排序）")]
     public List<MountDefinition> 坐骑 = new List<MountDefinition>();
 
     [Tooltip("当前乘骑的坐骑。null = 没骑。\n" +
@@ -195,7 +200,71 @@ public class UIPanelData : MonoBehaviour
         if (已停用被动 == null) 已停用被动 = new List<PassiveDivineAbility>();
         if (已获得真灵 == null) 已获得真灵 = new List<NpcDefinition>();
         EnsureFormationSlots();
+        从面板库灌目录();
     }
+
+    /// <summary>
+    /// 把**目录**（神通 / 法宝 / 灵阵 / 坐骑 / 可获真灵）从运行时聚合库灌进来。
+    ///
+    /// 为什么必须这么做（用户 2026-09-27 报的 bug）：
+    ///   这些目录原本是**序列化在场景文件里**的，而 `UIPanelData` 每个场景各一份 ⇒
+    ///   只有当初被灌过表的场景是对的。实测：古古镇 神通全表=11、宗门=0，
+    ///   于是在宗门打开神通页一片空白。
+    ///   改成运行时从 `PanelDatabase.取()` 读，**唯一源头**，哪个场景进都一样。
+    ///
+    /// ⚠️ **只灌"目录"**，绝不碰玩家自己的数据：
+    ///    物品（背包）/ 已获得主动·被动神通 / 已学功法 / 已停用被动 / 技能槽 / 战阵站位。
+    ///    那些是玩家的，由**存档**负责恢复。
+    ///
+    /// 幂等：每次调都按库重灌一遍（库是常量，重灌不丢东西）。
+    /// </summary>
+    void 从面板库灌目录()
+    {
+        var 库 = PanelDatabase.取();
+
+        // ★ `Resources.Load` 读不到就是 **null** —— 以前这里直接 `return`（静默失败），
+        //   表现成"神通页 / 法宝页一片空白"，而且**一句日志都没有**，极难排查。
+        //   现在：第一次读不到就**明确报错并说怎么修**，之后不再刷屏。
+        if (库 == null)
+        {
+            if (!报过缺面板库)
+            {
+                报过缺面板库 = true;
+                Debug.LogError("[面板库] 读不到 Assets/resources/面板/面板库.asset —— " +
+                    "神通/法宝/灵阵/坐骑/真灵 目录会是空的（面板页空白）。" +
+                    "修法：菜单「修仙/面板/收集面板目录」生成它。");
+            }
+            return;
+        }
+
+        // 列表本身也要防 null（ScriptableObject 被手改过 / 旧版本资产可能字段为空）
+        if (库.神通 != null && 库.神通.Count > 0)
+        {
+            神通 = new List<DivineAbilityDefinition>(库.神通);
+        }
+        if (库.法宝 != null && 库.法宝.Count > 0)
+        {
+            法宝 = new List<TreasureDefinition>(库.法宝);
+        }
+        if (库.灵阵 != null && 库.灵阵.Count > 0)
+        {
+            灵阵 = new List<SpiritArrayDefinition>(库.灵阵);
+        }
+        if (库.坐骑 != null && 库.坐骑.Count > 0)
+        {
+            坐骑 = new List<MountDefinition>(库.坐骑);
+            if (坐骑.Count > 1) 坐骑.Sort(比坐骑);       // 和编辑器同一套排序，避免两处各排一套
+        }
+        if (库.真灵 != null && 库.真灵.Count > 0)
+        {
+            // 「已获得真灵」这个名字有点误导 —— 它其实是**可获真灵目录**
+            // （谁已经获得由 战阵站位 决定）。这里同样是"目录"，跟着库走。
+            已获得真灵 = new List<NpcDefinition>(库.真灵);
+        }
+    }
+
+    /// <summary>「读不到面板库」只报一次，别每帧刷屏</summary>
+    static bool 报过缺面板库;
 
     /// <summary>战阵站位列表永远保持 9 格（缺的补 null）</summary>
     void EnsureFormationSlots()
@@ -203,6 +272,52 @@ public class UIPanelData : MonoBehaviour
         if (战阵站位 == null) 战阵站位 = new List<NpcDefinition>();
         while (战阵站位.Count < SpiritFormationLayout.格子数) 战阵站位.Add(null);
         while (战阵站位.Count > SpiritFormationLayout.格子数) 战阵站位.RemoveAt(战阵站位.Count - 1);
+    }
+
+    /// <summary>
+    /// **把面板上的玩法数据全部清空**（背包 / 法宝 / 灵阵 / 坐骑 / 已获真灵 /
+    /// 已学功法 / 已获得主被动神通 / 技能槽 / 战阵 / 经验 / 当前功法）。
+    ///
+    /// 用途：① 新档口径（用户 2026-09-27：最开始创建的角色背包里什么都没有）
+    ///       ② 编辑器调试菜单「清空当前场景面板」
+    ///
+    /// ⚠️ 这里清的是**面板数据本身**，所以它会跟着场景一起被保存 ——
+    /// 场景里预置过物品的话，光靠存档里的空列表是清不掉的，必须调这个方法。
+    /// 另外 `神通`（全量表）和 `玩家属性`（定义）**不清**，它们不是"进度"。
+    /// 被动神通按用户口径全部改为「停用」状态（没获得的被动 = 停用）。
+    /// </summary>
+    public void 清空玩法数据()
+    {
+        EnsureLists();
+        物品 = new List<ItemDefinition>();
+        法宝 = new List<TreasureDefinition>();
+        灵阵 = new List<SpiritArrayDefinition>();
+        坐骑 = new List<MountDefinition>();
+        当前坐骑 = null;
+        已获得真灵 = new List<NpcDefinition>();
+        已学功法 = new List<GongFaDefinition>();
+        已获得主动神通 = new List<ActiveDivineAbility>();
+        已获得被动神通 = new List<PassiveDivineAbility>();
+        当前功法 = null;
+        待装备神通 = null;
+        当前经验 = 0;
+        突破所需总经验 = 0;
+        for (int i = 0; i < 主动技能.Count; i++) 主动技能[i] = null;
+        EnsureFormationSlots();
+        for (int i = 0; i < 战阵站位.Count; i++) 战阵站位[i] = null;
+        已停用被动 = new List<PassiveDivineAbility>();
+        foreach (var a in 神通) if (a is PassiveDivineAbility p) 已停用被动.Add(p);
+        RaiseChanged();
+    }
+
+    /// <summary>背包/法宝/灵阵/坐骑/真灵 是不是都为空（用来判定"这是一份新档"）</summary>
+    public bool 玩法数据为空()
+    {
+        return (物品 == null || 物品.Count == 0)
+            && (法宝 == null || 法宝.Count == 0)
+            && (灵阵 == null || 灵阵.Count == 0)
+            && (坐骑 == null || 坐骑.Count == 0)
+            && (已获得真灵 == null || 已获得真灵.Count == 0);
     }
 
     /// <summary>数据发生变化（装备变更 / 被动启停）。UI 收到后自行刷新</summary>
