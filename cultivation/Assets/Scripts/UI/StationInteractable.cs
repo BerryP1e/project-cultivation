@@ -52,6 +52,18 @@ public class StationInteractable : MonoBehaviour
     [Tooltip("留空则由 StationInteractor 用空白幕布代替（UI 还没设计）")]
     public GameObject 界面预制体;
 
+    /// <summary>
+    /// **运行时可交互闸门**。默认 true。
+    /// 目前只有 NPC 对话会改它：当这个 NPC 当前**没有任何满足条件的对话段**时置 false
+    /// —— 于是不显示「F 对话」提示、按 F 也没反应。
+    ///
+    /// 为什么需要：任务生成的 NPC（如大师兄）出场比它该说话的时候早，
+    /// 玩家提前按 F 就会弹出无标记的默认对话（实测踩过：
+    /// "大师兄杀野猪前按 F 出的是默认对话"）。判定依据是**对话表自己的条件列**，
+    /// 所以不需要给每个 NPC 单独配一条规则。
+    /// </summary>
+    [System.NonSerialized] public bool 现在可交互 = true;
+
     /// <summary>界面标题</summary>
     public string 标题 => string.IsNullOrEmpty(显示名) ? 默认名(类型) : 显示名;
 
@@ -89,9 +101,10 @@ public class StationInteractable : MonoBehaviour
         }
     }
 
-    /// <summary>玩家在不在这台的交互范围内</summary>
+    /// <summary>玩家在不在这台的交互范围内（含运行时闸门）</summary>
     public bool 玩家在范围内(float 玩家距离, float 高度差)
     {
+        if (!现在可交互) return false;
         return 玩家距离 <= Mathf.Max(0.1f, 交互距离) && Mathf.Abs(高度差) <= 最大高度差;
     }
 

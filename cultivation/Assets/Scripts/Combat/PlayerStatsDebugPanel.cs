@@ -106,6 +106,8 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         // 面板内容超高，按钮被挤出窗口下边缘，压根看不见。
         画召唤区();
         GUILayout.Space(4f);
+        画物品区();
+        GUILayout.Space(4f);
 
         // ---- 独立字段 ----
         GUILayout.Label("—— 修炼相关 ——", 行样式);
@@ -118,9 +120,9 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         GUILayout.Space(6f);
         GUILayout.Label("—— 26 项战斗属性 ——", 行样式);
 
-        // 属性列表占「窗口高 - 500」：上面约 230、下面的召唤区约 230、底部一行约 20。
+        // 属性列表占「窗口高 - 700」：上面约 230、召唤区约 150、物品区约 190、底部一行约 20。
         // 加 160 的下限，免得窗口被拖得很矮时这个滚动区变成负数、整个布局崩掉。
-        滚动 = GUILayout.BeginScrollView(滚动, GUILayout.Height(Mathf.Max(160f, rect.height - 520f)));
+        滚动 = GUILayout.BeginScrollView(滚动, GUILayout.Height(Mathf.Max(160f, rect.height - 700f)));
         for (int i = 0; i < AttributeUtil.Count; i++)
         {
             var t = (AttributeType)i;
@@ -276,5 +278,107 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         }
         GUI.enabled = true;
         GUI.backgroundColor = 旧色;
+    }
+
+    // ================================================================
+    // 物品（调试用）：把任意物品直接塞进玩家背包
+    //
+    // 列表来源：`QuestDatabase.物品库` —— 那是 `修仙/从配置表生成资产` 结束时
+    // 由 `QuestDatabaseBuilder` 收集好的（Generated 下的物品表资产 + resources 下的），
+    // 运行时通过 `Assets/resources/任务/任务库.asset` 读得到。
+    // 所以**物品表里改了什么、这里就有什么**，不需要另外维护一份清单。
+    // ================================================================
+
+    Vector2 物品滚动;
+    string 物品搜索 = "";
+    ItemDefinition 选中物品;
+
+    void 画物品区()
+    {
+        var 全部 = 取全部物品();
+
+        GUILayout.Space(6f);
+        GUILayout.Label("—— 给背包塞物品 ——", 行样式);
+        if (全部.Count == 0)
+        {
+            GUILayout.Label("物品库是空的：先跑 修仙/从配置表生成资产", 行样式);
+            return;
+        }
+
+        var 面板 = 取面板();
+        int 已有 = 选中物品 != null && 面板 != null ? 面板.物品数量(选中物品) : 0;
+        GUILayout.Label("共 " + 全部.Count + " 件，当前选中：" +
+            (选中物品 != null ? 选中物品.DisplayName + "（背包里已有 " + 已有 + "）" : "（未选）"), 行样式);
+
+        // 搜索框：物品到几十件以后，纯滚动找起来很累，可以直接筛
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("筛选", 行样式, GUILayout.Width(36f));
+        物品搜索 = GUILayout.TextField(物品搜索 ?? "");
+        if (GUILayout.Button("清", GUILayout.Width(30f))) 物品搜索 = "";
+        GUILayout.EndHorizontal();
+
+        物品滚动 = GUILayout.BeginScrollView(物品滚动, GUILayout.Height(150f));
+        int 显示数 = 0;
+        foreach (var it in 全部)
+        {
+            if (!string.IsNullOrEmpty(物品搜索) &&
+                it.DisplayName.IndexOf(物品搜索, System.StringComparison.OrdinalIgnoreCase) < 0 &&
+                (it.物品id ?? "").IndexOf(物品搜索, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+            显示数++;
+
+            var 原 = GUI.backgroundColor;
+            if (it == 选中物品) GUI.backgroundColor = new Color(1f, 0.85f, 0.45f);
+            // 名字后面带上「能否使用」，一眼能看出哪些是学习物品
+            string 标 = it.DisplayName + (it.可使用 ? "  [可用]" : "");
+            if (GUILayout.Button(标)) 选中物品 = it;
+            GUI.backgroundColor = 原;
+        }
+        if (显示数 == 0) GUILayout.Label("（没有匹配的物品）", 行样式);
+        GUILayout.EndScrollView();
+
+        GUILayout.Space(4f);
+        var 旧色 = GUI.backgroundColor;
+        GUI.enabled = 选中物品 != null && 面板 != null;
+        GUI.backgroundColor = GUI.enabled ? new Color(0.55f, 1f, 0.6f) : new Color(0.6f, 0.6f, 0.6f);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("塞 1 个", GUILayout.Height(28f))) 塞物品(选中物品, 1, 面板);
+        if (GUILayout.Button("塞 10 个", GUILayout.Height(28f))) 塞物品(选中物品, 10, 面板);
+        GUILayout.EndHorizontal();
+        GUI.backgroundColor = 旧色;
+        GUI.enabled = true;
+
+        if (面板 == null)
+            GUILayout.Label("场景里找不到 UIPanelData（角色面板数据），塞不了", 行样式);
+    }
+
+    /// <summary>物品库（缓存一次）</summary>
+    System.Collections.Generic.List<ItemDefinition> 物品缓存;
+
+    System.Collections.Generic.List<ItemDefinition> 取全部物品()
+    {
+        if (物品缓存 != null && 物品缓存.Count > 0) return 物品缓存;
+        var 出 = new System.Collections.Generic.List<ItemDefinition>();
+        var 库 = QuestDatabase.取();
+        if (库 != null && 库.物品库 != null)
+            foreach (var it in 库.物品库)
+                if (it != null && !出.Contains(it)) 出.Add(it);
+        出.Sort((a, b) => string.CompareOrdinal(a.DisplayName, b.DisplayName));
+        物品缓存 = 出;
+        return 物品缓存;
+    }
+
+    static UIPanelData 取面板()
+    {
+        // 面板数据挂在 CharacterUI 上，不在 Player 身上，所以要全场景找
+        return FindObjectOfType<UIPanelData>();
+    }
+
+    static void 塞物品(ItemDefinition 物品, int 数量, UIPanelData 面板)
+    {
+        if (物品 == null || 面板 == null) return;
+        面板.EnsureLists();
+        面板.给物品(物品, 数量);
+        Debug.Log("[调试面板] 往背包塞了 " + 物品.DisplayName + " ×" + 数量
+            + "（现在共 " + 面板.物品数量(物品) + " 个）");
     }
 }

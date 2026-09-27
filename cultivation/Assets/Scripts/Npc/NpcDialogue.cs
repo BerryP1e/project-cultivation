@@ -94,9 +94,45 @@ public class NpcDialogue : MonoBehaviour
     public int 转身帧数 { get; private set; }
     public int 不跑帧数 { get; private set; }
 
+    // ================================================================
+    // 对话门槛：没有可用对话段时，不给交互
+    //
+    // 动机（2026-09-27 实测）：大师兄在第 7 阶段就生成了，而它该说的招募话要到第 12 阶段
+    // （那时才打上 `q_主线_招募中` 标记）。玩家在杀野猪前后提前按 F，
+    // 就会弹出**无标记的默认段** —— 看起来像"说错了话"。
+    //
+    // 判定完全复用**对话表自己的条件列**（需要标记 / 排除标记），
+    // 所以不用给每个 NPC 单独配规则：某个 NPC 当前一段可用对话都没有 → 就不能对话。
+    // ================================================================
+
+    /// <summary>这个 NPC 现在有没有可显示的对话段（没有 = 不该给 F 交互）</summary>
+    public bool 现在有可对话段()
+    {
+        var db = DialogueDatabase.取();
+        if (db == null) return true;            // 库还没就绪：不拦，免得开场把所有人都堵住
+
+        var id = 取NpcId();
+        if (string.IsNullOrEmpty(id)) return true;
+        if (!db.有对话(id)) return true;         // 压根没配对话的 NPC 不归本门槛管
+
+        int 入口 = db.最小分段(id);
+        if (入口 <= 0) return true;
+        return db.候选(id, 入口).Count > 0;
+    }
+
+    void 刷新可交互闸门()
+    {
+        if (设施 == null) return;
+        // 战斗中的 NPC 也不给对话（沿用 NpcAiHuman 的判定）
+        var 人类 = GetComponent<NpcAiHuman>();
+        bool 战斗中不给 = 人类 != null && !人类.现在可对话;
+        设施.现在可交互 = !战斗中不给 && 现在有可对话段();
+    }
+
     void LateUpdate()
     {
         var 玩家 = 取玩家();
+        刷新可交互闸门();
         if (玩家 == null) { 最近决策 = "没有玩家引用"; 不跑帧数++; 恢复头(); return; }
 
         // 战斗中 / 敌对，就不看也不给对话
