@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ccd034b9ebfcb140b81dd705f8ab63e, type: 3}
+  m_Name: ability_qianjie_leiyu
+  m_EditorClassIdentifier: 
+  "\u795E\u901A\u540D\u79F0": "\u5343\u52AB\u96F7\u72F1"
+  "\u795E\u901Aid": ability_qianjie_leiyu
+  "\u795E\u901A\u54C1\u9636": 4
+  "\u4FEE\u70BC\u95E8\u69DB": 1
+  "\u7279\u6548\u65B9\u6CD5id": 
+  "\u6D88\u8017\u7075\u529B": 0
+  "\u7EF4\u6301\u6D88\u8017\u7075\u529B": 3
+  "\u56FE\u6807": {fileID: 0}
+  "\u4ECB\u7ECD": "\u4EE5\u8EAB\u4E3A\u72F1\uFF0C\u5468\u8EAB\u5341\u91CC\u5C3D\u5316\u96F7\u52AB\u4E4B\u5730\u3002\u8303\u56F4\u5185\u654C\u4EBA\u811A\u4E0B\u4E0D\u65AD\u964D\u4E0B\u96F7\u7F5A\uFF0C\u6301\u7EED\u53D7\u5230\u96F7\u51FB\u3002\u542F\u7528\u540E\u6301\u7EED\u6D88\u8017\u7075\u529B\u3002"
+  "\u589E\u76CA":
+    values:
+    - 0
+    - 0
+    - 0
+    - 20
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0.04
+    - 0.02

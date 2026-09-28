@@ -1,24 +1,12 @@
-物品id,物品名,最大堆叠数量,品阶,介绍,可使用,效果类型,效果参数id,效果说明
-item_huiqi_dan,回气丹,99,凡品,服下后立即恢复少量灵力。,0,,,
-item_ningshen_cao,凝神草,99,凡品,常见灵草，可用于炼丹。,0,,,
-item_taixu_ling,太虚令,1,地品,太虚门弟子身份令牌，不可堆叠。,0,,,
-item_yunjing_shi,蕴灵石,20,黄品,蕴含微量灵气的矿石，炼器与布阵的常用材料。,0,,,
-item_qingxin_fu,清心符,10,玄品,使用后短时间内心境澄明，吐纳效率提升。,0,,,
-item_juling_zhu,聚灵珠,5,地品,布阵用的核心媒介，可替代部分阵眼。,0,,,
-item_xuanbing_jing,玄冰晶,20,玄品,极寒之地凝结的晶体，寒冰类术法的引子。,0,,,
-item_pozhang_dan,破障丹,3,天品,冲击境界瓶颈时服下，可显著降低突破难度。,0,,,
+﻿物品id,物品名,最大堆叠数量,品阶,介绍,可使用,效果类型,效果参数id,效果说明
 item_huichundan,回春丹,99,凡品,一颗下去，气血缓慢回复。使用后 1 小时内气血回复 +5%。,1,属性增益,hui_fu_5pct,使用后 1 小时内气血回复 +5%
 item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼气诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_taixu_lianqi,使用后学会功法「太虚炼气诀」。
 item_gongfa_qingyun_jianjue,青云剑诀 秘籍,1,地品,记载着「青云剑诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_qingyun_jianjue,使用后学会功法「青云剑诀」。
-item_active_ability_yujian_shu,御剑术 神通玉简,1,玄品,刻着「御剑术」的玉简，神识一触即可领悟。,1,学主动神通,ability_yujian_shu,使用后获得主动神通「御剑术」。
-item_active_ability_hanbing_jue,寒冰诀 神通玉简,1,地品,刻着「寒冰诀」的玉简，神识一触即可领悟。,1,学主动神通,ability_hanbing_jue,使用后获得主动神通「寒冰诀」。
-item_active_ability_leiying_shu,雷影术 神通玉简,1,地品,刻着「雷影术」的玉简，神识一触即可领悟。,1,学主动神通,ability_leiying_shu,使用后获得主动神通「雷影术」。
-item_active_ability_wuxing_dun,五行遁 神通玉简,1,天品,刻着「五行遁」的玉简，神识一触即可领悟。,1,学主动神通,ability_wuxing_dun,使用后获得主动神通「五行遁」。
 item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。
 item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。
-item_passive_ability_guixi_gong,龟息功 心得,1,黄品,记载着「龟息功」的修炼心得，读罢即可掌握。,1,学被动神通,ability_guixi_gong,使用后获得被动神通「龟息功」。
-item_passive_ability_jingang_buhuai,金刚不坏 心得,1,地品,记载着「金刚不坏」的修炼心得，读罢即可掌握。,1,学被动神通,ability_jingang_buhuai,使用后获得被动神通「金刚不坏」。
-item_passive_ability_shenshi_rumi,神念入微 心得,1,玄品,记载着「神念入微」的修炼心得，读罢即可掌握。,1,学被动神通,ability_shenshi_rumi,使用后获得被动神通「神念入微」。
-item_passive_ability_linggen_taoxi,灵根洗髓 心得,1,天品,记载着「灵根洗髓」的修炼心得，读罢即可掌握。,1,学被动神通,ability_linggen_taoxi,使用后获得被动神通「灵根洗髓」。
-item_passive_ability_wuxing_jiahu,五行加护 心得,1,玄品,记载着「五行加护」的修炼心得，读罢即可掌握。,1,学被动神通,ability_wuxing_jiahu,使用后获得被动神通「五行加护」。
 item_menpai_bianfu,门派便服,1,凡品,太虚宗发给新弟子的门派便服。穿上它，就有了正式弟子的样子。,1,学外观,app_player,使用后获得外观「修仙者」并立刻换上
+item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。
+item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。
+item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。
+item_passive_ability_qianjie_leiyu,千劫雷狱 心得,1,天品,记载着「千劫雷狱」的修炼心得，读罢即可掌握。,1,学被动神通,ability_qianjie_leiyu,使用后获得被动神通「千劫雷狱」。
+item_passive_ability_leiyun,雷云 心得,1,地品,记载着「雷云」的修炼心得，读罢即可掌握。,1,学被动神通,ability_leiyun,使用后获得被动神通「雷云」。

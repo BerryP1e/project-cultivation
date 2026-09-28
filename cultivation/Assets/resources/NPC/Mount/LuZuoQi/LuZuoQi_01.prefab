@@ -1964,8 +1964,6 @@ GameObject:
   - component: {fileID: 9500000}
   - component: {fileID: 11100000}
   - component: {fileID: 6482710367559227395}
-  - component: {fileID: 731931115821859495}
-  - component: {fileID: 3723412333922126301}
   - component: {fileID: 8242100127528985439}
   m_Layer: 0
   m_HasEditorInfo: 1
@@ -2047,50 +2045,6 @@ MonoBehaviour:
   "\u52A8\u4F5C\u5217\u8868": []
   "\u5F85\u673A\u52A8\u4F5C": Idle
   "\u79FB\u52A8\u52A8\u4F5C": Run
---- !u!114 &731931115821859495
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100112}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75b7236ad13405540a65c11cf1d9b048, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  "\u5B9A\u4E49": {fileID: 11400000, guid: 907be551051dad9479412e880a0b8f40, type: 2}
-  "\u6BCF\u6B21\u53D7\u51FB\u964D\u597D\u611F": 20
-  "\u597D\u611F\u5EA6\u8303\u56F4": {x: -100, y: 100}
-  "\u5F53\u524D\u6C14\u8840": 0
-  "\u5DF2\u6B7B\u4EA1": 0
-  "\u8FD0\u884C\u597D\u611F\u5EA6": 0
-  "\u597D\u611F\u5EA6\u5DF2\u5C31\u7EEA": 0
---- !u!114 &3723412333922126301
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100112}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d4d61bdc2762fc5479d9df8ff1dda040, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  "\u5706\u73AF\u534A\u5F84\u7CFB\u6570": 1.15
-  "\u5706\u73AF\u5BBD\u5EA6\u6BD4\u4F8B": 0.16
-  "\u5706\u73AF\u79BB\u5730": 0.04
-  "\u9009\u4E2D\u989C\u8272": {r: 0.25, g: 0.95, b: 0.35, a: 0.85}
-  "\u9501\u5B9A\u989C\u8272": {r: 0.95, g: 0.25, b: 0.25, a: 0.9}
-  "\u8840\u6761\u9AD8\u5EA6\u504F\u79FB": 0.35
-  "\u8840\u6761\u5BBD\u5EA6": 1.1
-  "\u8840\u6761\u9AD8\u5EA6": 0.13
-  "\u8840\u6761\u5E95\u8272": {r: 0.08, g: 0.08, b: 0.08, a: 0.85}
-  "\u8840\u6761\u586B\u5145\u8272": {r: 0.85, g: 0.18, b: 0.18, a: 1}
-  "\u654C\u5BF9\u5E38\u663E\u8840\u6761": 1
-  "\u6B7B\u4EA1\u65F6\u9690\u85CF\u8840\u6761": 1
-  "\u663E\u793A\u53D7\u4F24\u98D8\u5B57": 1
 --- !u!136 &8242100127528985439
 CapsuleCollider:
   m_ObjectHideFlags: 0
