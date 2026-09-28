@@ -243211,6 +243211,7 @@ MonoBehaviour:
   "\u6811\u51A0\u900F\u660E": 1
   "\u6811\u51A0\u900F\u660E\u5EA6": 0.12
   "\u6811\u51A0\u4F59\u91CF": 0.35
+  "\u5EFA\u7B51\u906E\u6321\u542F\u7528": 1
   "\u8EAB\u9AD8": 1.8
   "\u4FDD\u6301": 0.12
   "\u6253\u5370\u65E5\u5FD7": 0
@@ -245996,7 +245997,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   "\u6700\u8FDC\u8DDD\u79BB": 200
+  "\u53D7\u795E\u8BC6\u8303\u56F4\u9650\u5236": 1
+  "\u57FA\u7840\u795E\u8BC6\u8303\u56F4": 4
+  "\u6BCF\u70B9\u795E\u8BC6\u8303\u56F4": 0.8
+  "\u795E\u8BC6\u8303\u56F4\u4E0A\u9650": 40
+  "\u8D85\u8303\u56F4\u65F6\u63D0\u793A": 1
   "\u5C04\u7EBF\u76F8\u673A": {fileID: 0}
+  "\u6218\u6597\u5C5E\u6027": {fileID: 0}
 --- !u!114 &1805764452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246148,11 +246155,19 @@ MonoBehaviour:
     "\u7EC4\u4EF6\u7C7B\u540D": BasicSword01
   - "\u65B9\u6CD5id": basic_remoteattack_01
     "\u7EC4\u4EF6\u7C7B\u540D": BasicRemoteAttack01
+  - "\u65B9\u6CD5id": basic_thunder_01
+    "\u7EC4\u4EF6\u7C7B\u540D": BasicThunder01
   "\u88AB\u52A8\u795E\u901A\u8868":
   - "\u795E\u901Aid": ability_pingxu_yufeng
     "\u7EC4\u4EF6\u7C7B\u540D":
     - YufengFlight
     - YufengVfx
+  - "\u795E\u901Aid": ability_qianjie_leiyu
+    "\u7EC4\u4EF6\u7C7B\u540D":
+    - QianJieLeiYu
+  - "\u795E\u901Aid": ability_leiyun
+    "\u7EC4\u4EF6\u7C7B\u540D":
+    - LeiYun
   "\u6253\u5370\u88C5\u5378\u65E5\u5FD7": 1
 --- !u!114 &1805764457
 MonoBehaviour:
@@ -246320,6 +246335,7 @@ MonoBehaviour:
   "\u654C\u4EBA\u5C42":
     serializedVersion: 2
     m_Bits: 4294967295
+  "\u8D77\u70B9\u7279\u6548\u540C\u76EE\u5F55\u540D": lightning-arc-flash
   "\u6253\u5370\u65BD\u6CD5\u65E5\u5FD7": 1
 --- !u!114 &1805764460
 MonoBehaviour:

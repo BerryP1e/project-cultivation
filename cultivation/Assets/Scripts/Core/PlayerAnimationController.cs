@@ -119,6 +119,9 @@ public class PlayerAnimationController : MonoBehaviour
     bool 动作已进入;
     float 动作开始时间;
 
+    /// <summary>动作被 <see cref="定住动作"/> 定住了（`animator.speed = 0`）</summary>
+    bool 动作定住;
+
     /// <summary>正在播技能动作（普攻 / 施法）</summary>
     public bool 动作播放中 { get; private set; }
 
@@ -236,11 +239,26 @@ public class PlayerAnimationController : MonoBehaviour
         动作播放中 = true;
         动作已进入 = false;
         动作开始时间 = Time.time;
+        动作定住 = false;
         animator.speed = Mathf.Max(0.01f, playbackScale * 动作速度倍率);
         记录髋骨高度();
         animator.SetTrigger(动作参数Hash);
         return true;
     }
+
+    /// <summary>
+    /// **把当前技能动作定住**（`animator.speed = 0`）或放行。
+    ///
+    /// 用途（用户 2026-09-28 要求）：像瞬雷天闪那样"在动画 40% 节点生成一个需要慢慢长起来的特效"
+    /// —— 到了节点先**停 1.5 秒**让特效长出来，再继续播、特效再飞出去。
+    ///
+    /// ⚠️ 为什么必须做在这里：本类的 `Update` **每帧都会重写 `animator.speed`**
+    /// （`Mathf.Max(0.01f, …)`，连 0 都不允许），所以外面直接改 `animator.speed = 0` 会被立刻覆盖掉。
+    /// </summary>
+    public void 定住动作(bool 定住) => 动作定住 = 定住;
+
+    /// <summary>当前动作是不是被 <see cref="定住动作"/> 定住了</summary>
+    public bool 动作已定住 => 动作定住;
 
     /// <summary>打断当前技能动作（比如施法被打断）</summary>
     public void 停止动作()
@@ -250,6 +268,7 @@ public class PlayerAnimationController : MonoBehaviour
         动作已进入 = false;
         当前动作 = null;
         动作速度倍率 = 1f;
+        动作定住 = false;                 // ★ 别把"定住"留给下一个动作 / 留给玩家（否则人就永远僵住了）
     }
 
     /// <summary>
@@ -563,7 +582,10 @@ public class PlayerAnimationController : MonoBehaviour
 
         // ★ 攻速倍率乘进来 ——
         // 以前这里只写 playbackScale，所以外面想用 animator.speed 做"攻速加快动画"会被每帧覆盖。
-        animator.speed = Mathf.Max(0.01f, playbackScale * (动作播放中 ? 动作速度倍率 : 1f));
+        // ★ 被 定住动作(true) 时写 **0**（真的停住，不是 0.01）——
+        //   瞬雷天闪要在 40% 节点停 1.5 秒让雷球长出来。
+        animator.speed = 动作定住 ? 0f
+            : Mathf.Max(0.01f, playbackScale * (动作播放中 ? 动作速度倍率 : 1f));
 
         维护技能动作();
 

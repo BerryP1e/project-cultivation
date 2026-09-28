@@ -222,6 +222,8 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     public float 普攻伤害减免 => Get(AttributeType.BasicAttackReduction);
     public float 主动法术伤害加成 => Get(AttributeType.ActiveSpellBonus);
     public float 主动法术伤害减免 => Get(AttributeType.ActiveSpellReduction);
+    public float 被动法术伤害加成 => Get(AttributeType.PassiveSpellBonus);
+    public float 被动法术伤害减免 => Get(AttributeType.PassiveSpellReduction);
 
     float Get(AttributeType t) => 定义 != null ? 定义.属性[t] : 0f;
 
@@ -239,6 +241,8 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     public float BasicAttackReduction => 普攻伤害减免;
     public float ActiveSpellBonus => 主动法术伤害加成;
     public float ActiveSpellReduction => 主动法术伤害减免;
+    public float PassiveSpellBonus => 被动法术伤害加成;
+    public float PassiveSpellReduction => 被动法术伤害减免;
 
     /// <summary>是否敌对（好感度 &lt; 0），会被普攻自动锁定</summary>
     public bool IsHostile => 是敌对目标;

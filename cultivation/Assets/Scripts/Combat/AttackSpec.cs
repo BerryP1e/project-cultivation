@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 攻击的「伤害属性」轴 —— 决定第二步走哪一套加成判定。
@@ -25,8 +25,10 @@ public enum DamageNature
 ///
 ///   普通攻击 → 攻击方普攻伤害加成    / 受击方普攻伤害减免
 ///   主动神通 → 攻击方主动法术伤害加成 / 受击方主动法术伤害减免
+///   被动神通 → 攻击方被动法术伤害加成 / 受击方被动法术伤害减免
 ///
-/// 主动神通【不会】吃到普攻伤害加成，也【不受】对方普攻伤害减免影响。
+/// 三套互不串味：主动神通【不会】吃到普攻伤害加成，也【不受】对方普攻伤害减免影响；
+/// 被动神通同理，走自己那一套（例：千劫雷狱的雷罚）。
 /// </summary>
 public enum AttackKind
 {
@@ -35,6 +37,9 @@ public enum AttackKind
 
     /// <summary>主动神通</summary>
     主动神通 = 1,
+
+    /// <summary>被动神通（常驻光环类，如千劫雷狱的雷罚）</summary>
+    被动神通 = 2,
 }
 
 /// <summary>
@@ -90,6 +95,12 @@ public struct AttackSpec
     /// <summary>特殊主动神通：会心判定 + 主动法术加成/减免</summary>
     public static AttackSpec 特殊主动神通 => new AttackSpec(DamageNature.特殊, AttackKind.主动神通);
 
+    /// <summary>物理被动神通：暴击判定 + 被动法术加成/减免</summary>
+    public static AttackSpec 物理被动神通 => new AttackSpec(DamageNature.物理, AttackKind.被动神通);
+
+    /// <summary>特殊被动神通：会心判定 + 被动法术加成/减免（千劫雷狱的雷罚走这套）</summary>
+    public static AttackSpec 特殊被动神通 => new AttackSpec(DamageNature.特殊, AttackKind.被动神通);
+
     // ---- 轴判定 ----
 
     /// <summary>本次是否走会心判定（= 伤害属性为特殊）</summary>
@@ -98,17 +109,22 @@ public struct AttackSpec
     /// <summary>本次是否使用主动法术加成 / 减免（= 攻击类别为主动神通）</summary>
     public bool 用主动法术加成 => 攻击类别 == AttackKind.主动神通;
 
+    /// <summary>本次是否使用被动法术加成 / 减免（= 攻击类别为被动神通）</summary>
+    public bool 用被动法术加成 => 攻击类别 == AttackKind.被动神通;
+
     // ---- ASCII 别名 ----
     public DamageNature Nature => 伤害属性;
     public AttackKind Kind => 攻击类别;
     public bool GuaranteedHit => 必定命中;
     public bool UsesInsight => 走会心判定;
     public bool UsesActiveSpell => 用主动法术加成;
+    public bool UsesPassiveSpell => 用被动法术加成;
 
     public override string ToString()
     {
-        return (伤害属性 == DamageNature.特殊 ? "特殊" : "物理")
-             + (攻击类别 == AttackKind.主动神通 ? "主动神通" : "普通攻击")
-             + (必定命中 ? "（必中）" : "");
+        string 类别 = 攻击类别 == AttackKind.主动神通 ? "主动神通"
+                    : 攻击类别 == AttackKind.被动神通 ? "被动神通"
+                    : "普通攻击";
+        return (伤害属性 == DamageNature.特殊 ? "特殊" : "物理") + 类别 + (必定命中 ? "（必中）" : "");
     }
 }

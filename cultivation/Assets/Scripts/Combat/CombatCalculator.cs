@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>一次攻击结算的完整结果，方便打日志 / 飘字 / 调试。</summary>
 public struct AttackResult
@@ -232,7 +232,7 @@ public static class CombatCalculator
 
     /// <summary>
     /// 伤害数值（只算数值，不做判定）。加成 / 减免按「攻击类别」轴取：
-    /// 普通攻击用普攻系，主动神通用主动法术系。
+    /// 普通攻击用普攻系，主动神通用主动法术系，被动神通用被动法术系。
     /// </summary>
     /// <param name="加成触发">本次第二步是否触发了暴击 / 会心</param>
     public static float CalcDamage(ICombatStats attacker, ICombatStats defender, AttackSpec spec, bool 加成触发)
@@ -244,6 +244,11 @@ public static class CombatCalculator
         {
             加成 = attacker.主动法术伤害加成;
             if (defender != null) 减免 = defender.主动法术伤害减免;
+        }
+        else if (spec.用被动法术加成)
+        {
+            加成 = attacker.被动法术伤害加成;
+            if (defender != null) 减免 = defender.被动法术伤害减免;
         }
         else
         {

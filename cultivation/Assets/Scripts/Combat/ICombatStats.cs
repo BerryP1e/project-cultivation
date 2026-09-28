@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 一次攻击结算所需要的双方属性。
@@ -56,6 +56,14 @@ public interface ICombatStats
 
     /// <summary>主动法术伤害减免（比率）。主动神通用，替代普攻伤害减免</summary>
     float 主动法术伤害减免 { get; }
+
+    // ---- 被动法术系：被动神通用 ----
+
+    /// <summary>被动法术伤害加成（比率）。被动神通用，替代普攻伤害加成</summary>
+    float 被动法术伤害加成 { get; }
+
+    /// <summary>被动法术伤害减免（比率）。被动神通用，替代普攻伤害减免</summary>
+    float 被动法术伤害减免 { get; }
 }
 
 /// <summary>把 AttributeSet 适配成 ICombatStats，方便任何持有属性表的对象直接参与结算。</summary>
@@ -83,6 +91,9 @@ public class AttributeCombatStats : ICombatStats
     public float 主动法术伤害加成 => Get(AttributeType.ActiveSpellBonus);
     public float 主动法术伤害减免 => Get(AttributeType.ActiveSpellReduction);
 
+    public float 被动法术伤害加成 => Get(AttributeType.PassiveSpellBonus);
+    public float 被动法术伤害减免 => Get(AttributeType.PassiveSpellReduction);
+
     // ---- ASCII 别名 ----
     public float Attack => 攻击;
     public float Dodge => 闪避;
@@ -97,6 +108,8 @@ public class AttributeCombatStats : ICombatStats
     public float BasicAttackReduction => 普攻伤害减免;
     public float ActiveSpellBonus => 主动法术伤害加成;
     public float ActiveSpellReduction => 主动法术伤害减免;
+    public float PassiveSpellBonus => 被动法术伤害加成;
+    public float PassiveSpellReduction => 被动法术伤害减免;
 
     float Get(AttributeType t) => set != null ? set[t] : 0f;
 }

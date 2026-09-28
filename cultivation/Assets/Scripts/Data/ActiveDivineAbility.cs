@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 主动神通的「结算方式」—— 决定按下快捷键之后干什么。
@@ -16,6 +16,25 @@ public enum ActiveSkillKind
     /// 对范围内所有敌人走 <see cref="CombatCalculator"/> 的主动神通结算。
     /// </summary>
     范围伤害 = 1,
+
+    /// <summary>
+    /// 闪烁位移：朝**鼠标所指方向**闪烁一段距离（不超过神识范围），
+    /// 在**原地**与**落点**各留一蓬特效，并对两处的敌人各结算一次主动神通伤害。
+    ///
+    /// 本档由 <see cref="BlinkSkillRunner"/> 执行（由 ActiveSkillCaster 建）。
+    /// 专属字段：`范围` = 两处伤害的作用半径（米），不是闪烁距离 —— 闪烁距离由神识决定。
+    /// </summary>
+    闪烁位移 = 2,
+
+    /// <summary>
+    /// 追踪弹：先播**普攻动作**，播到一定进度后放出一颗会**拐弯追踪**锁定目标的弹，
+    /// 命中时在命中点放命中特效并**只对锁定目标**结算一次主动神通伤害。
+    ///
+    /// 本档由 <see cref="HomingBoltSkillRunner"/> 执行（由 ActiveSkillCaster 建）。
+    /// 专属字段：`范围` = 追踪的最大距离（米），超出就放弃；0 = 不限。
+    /// 普攻动作 / 出手进度 / 弹速 / 转向速率 等都在那个组件上配。
+    /// </summary>
+    追踪弹 = 3,
 }
 
 /// <summary>
@@ -47,6 +66,11 @@ public class ActiveDivineAbility : DivineAbilityDefinition
 
     [Tooltip("冷却时间（秒）")]
     public float 冷却时间 = 0f;
+
+    [Tooltip("【可积攒的使用次数】。1 = 普通技能（放完必须等冷却）；\n" +
+             "大于 1 = 充能式：可以攒到这么多次连续放，每 冷却时间 秒回 1 次。\n" +
+             "例：雷动千闪 冷却 10 秒、可积攒 3 次 → 最多连放 3 下，然后每 10 秒回 1 次。")]
+    public int 可积攒次数 = 1;
 
     [Tooltip("是否必须先锁定一个目标才能施放")]
     public bool 需要锁定目标 = true;
@@ -80,6 +104,7 @@ public class ActiveDivineAbility : DivineAbilityDefinition
         if (首次造成伤害时间 < 0f) 首次造成伤害时间 = 0f;
         if (范围 < 0f) 范围 = 0f;
         if (冷却时间 < 0f) 冷却时间 = 0f;
+        if (可积攒次数 < 1) 可积攒次数 = 1;
         if (持续时长 < 0f) 持续时长 = 0f;
     }
 }

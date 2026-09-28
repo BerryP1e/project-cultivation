@@ -159,6 +159,21 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     /// <summary>当前生效的吐纳速度（调试开启时取调试值）</summary>
     public float 当前吐纳速度 => 使用调试数值 ? 调试吐纳速度 : (玩家属性 != null ? 玩家属性.吐纳速度 : 0f);
 
+    /// <summary>
+    /// **神识范围换算（全项目唯一一份公式）**：`基础 + 神识 × 每点` 再封顶。
+    ///
+    /// 为什么做成静态共用方法：这个式子原来在 <c>BasicRemoteAttack01</c>、
+    /// <c>BasicSword01</c>、<c>SpiritFormationManager</c> 里各抄了一份
+    /// （系数都是 基础 4 / 每点 0.8 / 上限 40），再加新组件就会变成第 5、6 份。
+    /// 系数仍然**由调用方传**，因为不同玩法确实要给不同系数
+    /// （例：雷决的普攻索敌给 0.55 / 18，比飞剑的追踪距离保守）。
+    /// </summary>
+    public static float 算神识范围(PlayerCombatStats 属性, float 基础, float 每点, float 上限)
+    {
+        float 神识 = 属性 != null ? 属性.当前神识 : 0f;
+        return Mathf.Min(上限, 基础 + 神识 * 每点);
+    }
+
     // ---- ASCII 别名（内部中文命名，对外统一 ASCII，见项目约定）----
     public float CurrentSense => 当前神识;
     public float CurrentBreathSpeed => 当前吐纳速度;
@@ -191,6 +206,8 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     public float 普攻伤害减免 => 当前属性[AttributeType.BasicAttackReduction];
     public float 主动法术伤害加成 => 当前属性[AttributeType.ActiveSpellBonus];
     public float 主动法术伤害减免 => 当前属性[AttributeType.ActiveSpellReduction];
+    public float 被动法术伤害加成 => 当前属性[AttributeType.PassiveSpellBonus];
+    public float 被动法术伤害减免 => 当前属性[AttributeType.PassiveSpellReduction];
 
     // ---- ASCII 别名：内部按习惯用中文命名，对外（UI / 其他脚本 / 自动化）用这些 ----
     public float Attack => 攻击;
@@ -206,4 +223,6 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     public float BasicAttackReduction => 普攻伤害减免;
     public float ActiveSpellBonus => 主动法术伤害加成;
     public float ActiveSpellReduction => 主动法术伤害减免;
+    public float PassiveSpellBonus => 被动法术伤害加成;
+    public float PassiveSpellReduction => 被动法术伤害减免;
 }

@@ -23,12 +23,31 @@ public class NpcTargeting : MonoBehaviour
     [Tooltip("射线检测层级")]
     public LayerMask 射线层 = ~0;
 
-    [Tooltip("最远拾取距离")]
+    [Tooltip("最远拾取距离（射线本身的长度上限）。实际能不能选中/锁定还要过「神识范围」这一关")]
     public float 最远距离 = 200f;
+
+    [Header("神识范围（选中 / 锁定的有效距离）")]
+    [Tooltip("勾掉 = 退回旧行为（只受「最远拾取距离」限制，能锁 200 米外的目标）")]
+    public bool 受神识范围限制 = true;
+
+    [Tooltip("神识范围基础值（米）")]
+    public float 基础神识范围 = 4f;
+
+    [Tooltip("每 1 点神识增加的范围（米）")]
+    public float 每点神识范围 = 0.8f;
+
+    [Tooltip("神识范围上限（米）")]
+    public float 神识范围上限 = 40f;
+
+    [Tooltip("选中/锁定目标超出神识范围时，右上角飘一条提示")]
+    public bool 超范围时提示 = true;
 
     [Header("引用")]
     [Tooltip("用于发射鼠标射线的相机。留空则取 Camera.main")]
     public Camera 射线相机;
+
+    [Tooltip("神识数值来源。留空则自动取自己身上的 PlayerCombatStats")]
+    public PlayerCombatStats 战斗属性;
 
     /// <summary>当前选中的 NPC（绿环）</summary>
     public NpcInstance Selected { get; private set; }
@@ -45,6 +64,31 @@ public class NpcTargeting : MonoBehaviour
     void Awake()
     {
         if (射线相机 == null) 射线相机 = Camera.main;
+        解析引用();
+    }
+
+    void 解析引用()
+    {
+        if (战斗属性 == null) 战斗属性 = GetComponent<PlayerCombatStats>();
+        if (射线相机 == null) 射线相机 = Camera.main;
+    }
+
+    /// <summary>
+    /// 神识范围（米）= 基础 + 神识 × 每点，封顶。
+    ///
+    /// **这是一条全局规则**：选中（左键）和锁定（右键）都必须落在范围内。
+    /// 以前这里只判 <see cref="最远距离"/>（200 米），等于神识范围对索敌完全没作用 ——
+    /// 会出现「14 米的神识能锁 40 米外的怪」。换算式子统一走
+    /// <see cref="PlayerCombatStats.算神识范围"/>，不再各抄一份。
+    /// </summary>
+    public float 神识范围
+    {
+        get
+        {
+            if (!受神识范围限制) return float.PositiveInfinity;
+            if (战斗属性 == null) 解析引用();
+            return PlayerCombatStats.算神识范围(战斗属性, 基础神识范围, 每点神识范围, 神识范围上限);
+        }
     }
 
     void Update()
@@ -78,7 +122,19 @@ public class NpcTargeting : MonoBehaviour
             if (附近有设施()) return;
 
             var npc = RaycastNpc();
-            if (npc != null) Lock(npc, byPlayerClick: true);
+            if (npc != null)
+            {
+                if (在神识范围内(npc))
+                {
+                    Lock(npc, byPlayerClick: true);
+                }
+                else
+                {
+                    // 超出了就不锁，也不能顺手把已有锁定清掉 —— 玩家是想锁但够不着，
+                    // 和"右键点空地"是两回事。
+                    提示超范围(npc);
+                }
+            }
             else ClearLock();          // 右键点在空白处 → 取消锁定（红环与血条一并消失）
         }
     }
@@ -86,10 +142,14 @@ public class NpcTargeting : MonoBehaviour
     /// <summary>
     /// 鼠标左键那一下：射到 NPC 就选中它，射到**空白处就取消选中**。
     /// 单独抽出来是为了能直接验证（不用伪造鼠标输入）。
+    /// 和右键一样受神识范围限制：够不着的目标不选中，也不把已有选中清掉。
     /// </summary>
     public void 点击选中()
     {
-        Select(RaycastNpc());
+        var npc = RaycastNpc();
+        if (npc == null) { Select(null); return; }
+        if (!在神识范围内(npc)) { 提示超范围(npc); return; }
+        Select(npc);
     }
 
     /// <summary>鼠标是不是压在可点的 UI 上（HUD 按钮 / 面板）</summary>
@@ -112,7 +172,7 @@ public class NpcTargeting : MonoBehaviour
         return false;
     }
 
-    /// <summary>鼠标位置射到的 NPC（没有则 null）</summary>
+    /// <summary>鼠标位置射到的 NPC（没有则 null）。**只负责射线**，不含神识判定</summary>
     public NpcInstance RaycastNpc()
     {
         if (射线相机 == null) return null;
@@ -120,6 +180,57 @@ public class NpcTargeting : MonoBehaviour
         if (!Physics.Raycast(ray, out var hit, 最远距离, 射线层)) return null;
         return hit.collider.GetComponentInParent<NpcInstance>();
     }
+
+    // ============================================================ 神识范围判定
+
+    /// <summary>
+    /// 目标是不是在神识范围内。**量的是"身体最近点"到玩家的距离**，不是碰撞点：
+    /// 鼠标射线打到的往往是怪身上朝向镜头的那个点，拿它算会低估距离。
+    /// 大体积目标（龙、巨兽）用"最近的体表点"更符合"我感知得到它"的直觉。
+    /// </summary>
+    public bool 在神识范围内(NpcInstance npc)
+    {
+        return 到目标距离(npc) <= 神识范围;
+    }
+
+    /// <summary>玩家到目标体表最近点的距离（米）。目标为空返回 0</summary>
+    public float 到目标距离(NpcInstance npc)
+    {
+        if (npc == null) return 0f;
+
+        Vector3 玩家位 = transform.position;
+        var 碰撞体 = npc.GetComponentsInChildren<Collider>(true);
+        if (碰撞体 == null || 碰撞体.Length == 0)
+            return Vector3.Distance(玩家位, npc.transform.position);
+
+        float 最近 = float.PositiveInfinity;
+        foreach (var c in 碰撞体)
+        {
+            if (c == null || !c.enabled) continue;
+            float d = Vector3.Distance(玩家位, c.ClosestPoint(玩家位));
+            if (d < 最近) 最近 = d;
+        }
+        return float.IsPositiveInfinity(最近)
+            ? Vector3.Distance(玩家位, npc.transform.position)
+            : 最近;
+    }
+
+    /// <summary>目标超出神识范围时给一条提示（右上角 Toast）。公开出来方便调试 / 自测</summary>
+    public void 提示超范围(NpcInstance npc)
+    {
+        if (!超范围时提示 || !受神识范围限制) return;
+
+        // 提示别刷屏：同一条 1 秒内只飘一次
+        if (Time.unscaledTime - 上次超范围提示 < 1f) return;
+        上次超范围提示 = Time.unscaledTime;
+
+        Debug.Log("[索敌] 「" + npc.DisplayName + "」在神识范围外（" + 到目标距离(npc).ToString("0.#")
+            + "m > " + 神识范围.ToString("0.#") + "m）→ 不能锁定", this);
+        ToastUI.提示("超出神识范围（" + 到目标距离(npc).ToString("0.#")
+            + "m / " + 神识范围.ToString("0.#") + "m）");
+    }
+
+    float 上次超范围提示 = -99f;
 
     /// <summary>选中某个 NPC（绿环）</summary>
     public void Select(NpcInstance npc)
@@ -197,4 +308,9 @@ public class NpcTargeting : MonoBehaviour
     public void SelectNpc(NpcInstance npc) => Select(npc);
     public void LockNpc(NpcInstance npc, bool byPlayerClick = true) => Lock(npc, byPlayerClick);
     public NpcInstance RaycastNpcUnderMouse() => RaycastNpc();
+
+    /// <summary>神识范围（米）。<see cref="受神识范围限制"/> 关掉时返回正无穷</summary>
+    public float SenseRange => 神识范围;
+    public bool IsInSenseRange(NpcInstance npc) => 在神识范围内(npc);
+    public float DistanceTo(NpcInstance npc) => 到目标距离(npc);
 }
