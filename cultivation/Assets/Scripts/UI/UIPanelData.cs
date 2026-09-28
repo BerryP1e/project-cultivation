@@ -196,11 +196,37 @@ public class UIPanelData : MonoBehaviour
         if (法宝 == null) 法宝 = new List<TreasureDefinition>();
         if (灵阵 == null) 灵阵 = new List<SpiritArrayDefinition>();
         if (坐骑 == null) 坐骑 = new List<MountDefinition>();
-        if (主动技能 == null) 主动技能 = new List<UnityEngine.Object>();
+        EnsureSkillSlots();
         if (已停用被动 == null) 已停用被动 = new List<PassiveDivineAbility>();
         if (已获得真灵 == null) 已获得真灵 = new List<NpcDefinition>();
         EnsureFormationSlots();
         从面板库灌目录();
+    }
+
+    /// <summary>
+    /// **主动技能槽永远是 <see cref="技能槽位数"/> 格**（缺的补 null）。
+    ///
+    /// 为什么必须有这个（用户 2026-09-28 报的 bug）：
+    ///   UI 上三个页面各画了 **6 个格子**，但 `UIPanelData.主动技能` 在场景里
+    ///   序列化出来是**空列表（Count = 0）**。于是：
+    ///     · 画面：6 个空格子，看着完全空 ✓
+    ///     · 数据：`HasEmptySlot()` 遍历 0 格 → 一个空位都没找到 → 返回 false
+    ///     · `UIEntryList.OnRowAction` 据此弹出「主动技能装备栏已经满了」✗
+    ///   也就是**"栏是空的却说满了"** —— 根因就是"UI 的格数"和"数据列表的长度"是两套东西。
+    ///
+    /// ⚠️ 别改成"只在 null 时 new 一个空 List"：那正是原来的写法，
+    ///    场景里存的是**已存在的空 List**，`null` 判断根本不成立，所以修不掉。
+    ///
+    /// 与 `SceneRigSyncer` / builder 的分工：那些负责把 **6 个格子摆出来**，
+    /// 这里负责保证**数据列表也是 6 格**，两边格数必须一致。
+    /// </summary>
+    public const int 技能槽位数 = 6;
+
+    void EnsureSkillSlots()
+    {
+        if (主动技能 == null) 主动技能 = new List<UnityEngine.Object>();
+        while (主动技能.Count < 技能槽位数) 主动技能.Add(null);
+        while (主动技能.Count > 技能槽位数) 主动技能.RemoveAt(主动技能.Count - 1);
     }
 
     /// <summary>

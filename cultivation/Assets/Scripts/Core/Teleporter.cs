@@ -5,7 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// 传送光圈：玩家踏进来 → 弹出「是否传送？」→ 确认后传送。
+/// 传送光圈。★ 2026-09-28 起**和 NPC / 建筑同一套交互**：
+///   玩家走进交互范围 → 头顶出现「F 传送」提示 → **按 F** 才弹出「是否传送？」面板 → 确认后传送。
 ///
 /// 一个组件同时管两种传送：
 ///   · **场景间**：选项里填了场景名 → `SceneManager.LoadScene`，再在新场景里找落点物体
@@ -14,7 +15,13 @@ using System.Collections.Generic;
 /// 一个光圈可以给**多个选项**（例如镇妖塔的光圈：①进入下一层 ②出塔），
 /// 选项可标记「暂未开放」→ 界面上灰掉、点了提示"尚未开放"。
 ///
-/// ★ 前置条件：<see cref="场景"/> 里写的场景必须加进 **Build Settings**，否则 LoadScene 会失败。
+/// 交互是怎么接上的：`Awake` 里给自己补一个 <see cref="StationInteractable"/>（类型 = 传送），
+/// 剩下的"找最近 / 画提示 / 收 F 键"全由玩家身上的 <see cref="StationInteractor"/> 统一做 ——
+/// 见 <see cref="StationInteractor.打开界面"/> 里的「传送」分支。
+///
+/// ★ 前置条件：<see cref="传送选项.场景"/> 里写的场景必须加进 **Build Settings**，否则 LoadScene 会失败。
+/// ★ 落点物体必须真实存在于目标场景，且**不能和它对应的传送圈同名** ——
+///   否则玩家会被放到圆圈自己身上（同一帧又踩进圈里）。详见 `docs/ai/场景一致性与踩坑规律.md`。
 /// </summary>
 [DisallowMultipleComponent]
 public class Teleporter : MonoBehaviour
@@ -38,8 +45,14 @@ public class Teleporter : MonoBehaviour
     [Header("触发")]
     [Tooltip("光圈触发半径（米）。留 0 则用物体上已有的 Trigger 碰撞体")]
     public float 半径 = 1.8f;
-    [Tooltip("离开光圈后多久才能再次触发（秒）")]
-    public float 冷却 = 0.5f;
+
+    [Header("交互（★ 2026-09-28 改成和 NPC / 建筑一样）")]
+    [Tooltip("玩家离这么近才出现「F 传送」提示。留 0 则用 半径")]
+    public float 交互距离 = 3.5f;
+    [Tooltip("提示里显示的字。留空 = 只有一个选项时用选项名，多个选项时用「传送」")]
+    public string 提示文字 = "";
+    [Tooltip("提示框离地面多高（米）。传送圈是平的，没有渲染体高度可用")]
+    public float 提示高度 = 1.6f;
 
     [Header("界面")]
     [Tooltip("提示标题")]
@@ -47,62 +60,91 @@ public class Teleporter : MonoBehaviour
     [Tooltip("打印日志")]
     public bool 打印日志 = false;
 
+    /// <summary>
+    /// ★ 2026-09-28 用户要求的改动：**不再"走上去就弹面板"**，
+    /// 而是和 NPC / 建筑一样 —— 靠近出现「F 传送」提示，**按 F 才开面板**。
+    ///
+    /// 为什么这样更好（顺带修掉一个老毛病）：
+    ///   老的 `OnTriggerEnter` 自动弹面板 + 出圈才关，玩家被送到落点后
+    ///   如果落点压在传送圈里，就会**立刻再次触发**、来回弹。
+    ///   改成"按 F"之后，落点就算压在圈上也不会自己弹（见 黑幕字幕.找场景物体 的注释）。
+    /// </summary>
+    public bool 开面板_允许 = true;
+
     bool 面板开着;
-    float 冷却到;
-    // 注：原来有 `在圈内` 和 `上次选项` 两个字段，都只写不读（进圈/出圈的判定
-    // 实际是靠 面板开着 + 冷却到 做的），已删掉以消掉编译警告。
     GameObject 面板;
     readonly List<Button> 按钮s = new List<Button>();
     Text 文本;
-    Transform 玩家;
-
-    void Reset()
-    {
-        name = "Teleport";
-        if (选项 == null || 选项.Length == 0)
-            选项 = new[] { new 传送选项 { 名称 = "传送", 场景 = "", 落点 = "SpawnPoint" } };
-    }
 
     void Awake()
     {
-        // 没有 Trigger 就自己补一个球（用光圈粒子的尺寸估不出来，所以用 半径 参数）
+        // 没有 Trigger 就自己补一个球。**保留它**：别的脚本（任务触发区、死亡流程）
+        // 可能还在用圈的物理边界；而且 StationInteractor 用的是距离判定，不依赖它。
         if (GetComponent<Collider>() == null && 半径 > 0.01f)
         {
             var sc = gameObject.AddComponent<SphereCollider>();
             sc.isTrigger = true;
             sc.radius = 半径;
         }
+
+        // ★ 让 StationInteractor 能发现我（"靠近出「F 传送」提示、按 F 开面板"）。
+        //   Awake 早于 StationInteractor 的首次扫描，所以运行时补的标记一定来得及被看到。
+        确保交互标记();
     }
 
-    void OnTriggerEnter(Collider 其他)
+    /// <summary>运行时改了 提示文字 / 交互距离 之后调这个刷新</summary>
+    public void 刷新交互标记() { if (isActiveAndEnabled) 确保交互标记(); }
+
+    /// <summary>
+    /// ⚠️ 编辑期**只刷新已经存在的标记，绝不 AddComponent** ——
+    ///    在 OnValidate 里加组件会往场景文件里写东西（而且要标脏场景），
+    ///    对一个"只在运行时补齐"的辅助组件来说没必要。
+    ///    真正需要补的场景是 Awake（进 Play 时）。
+    /// </summary>
+    void OnValidate()
     {
-        if (Time.unscaledTime < 冷却到) return;
-        var p = 找玩家(其他);
-        if (p == null) return;
-        玩家 = p;
-        if (!面板开着) 开面板();
+        if (!Application.isPlaying) return;
+        var 标 = GetComponent<StationInteractable>();
+        if (标 != null) 刷新交互标记();
     }
 
-    void OnTriggerExit(Collider 其他)
+    /// <summary>
+    /// 挂上/刷新给 <see cref="StationInteractor"/> 用的可交互标记。
+    ///
+    /// 为什么用"运行时补一个 StationInteractable"而不是让美术在每个场景里手挂：
+    ///   传送圈共 5 个场景 7 个，手挂必然漏（这正是「场景一致性」那类 bug 的成因）。
+    ///   挂在同一个物件上、运行时保证，就永远不会漏。
+    /// </summary>
+    StationInteractable 确保交互标记()
     {
-        if (找玩家(其他) == null) return;
-        冷却到 = Time.unscaledTime + 冷却;
-        关面板();
+        var 标 = GetComponent<StationInteractable>();
+        if (标 == null) 标 = gameObject.AddComponent<StationInteractable>();
+
+        标.类型 = StationInteractable.StationKind.传送;
+        标.显示名 = 取提示文字();
+        标.交互距离 = 交互距离 > 0.01f ? 交互距离 : Mathf.Max(0.5f, 半径);
+        标.交互键覆盖 = KeyCode.F;          // 用户要求：和 NPC 一样按 F
+        标.显示靠近提示 = true;
+        标.提示抬高 = 提示高度;
+        标.现在可交互 = 开面板_允许;
+        return 标;
     }
 
-    static Transform 找玩家(Collider c)
+    /// <summary>提示里显示的字：只有一个选项时用选项名（「前往古古镇」），多个选项时用「传送」</summary>
+    public string 取提示文字()
     {
-        if (c == null) return null;
-        var v = c.GetComponentInParent<PlayerVitals>();
-        if (v != null) return v.transform;
-        if (c.transform.root != null && c.transform.root.name == "Player") return c.transform.root;
-        return null;
+        if (!string.IsNullOrEmpty(提示文字)) return 提示文字;
+        if (选项 != null && 选项.Length == 1 && 选项[0] != null && !string.IsNullOrEmpty(选项[0].名称))
+            return 选项[0].名称;
+        return "传送";
     }
 
     // ---------------- 面板 ----------------
 
-    void 开面板()
+    /// <summary>开面板。★ 现在是**由 <see cref="StationInteractor"/> 按 F 调**（原来是走上去自动调）</summary>
+    public void 开面板()
     {
+        if (!开面板_允许) return;
         if (面板 == null) 建面板();
         面板.SetActive(true);
         面板开着 = true;
@@ -110,11 +152,27 @@ public class Teleporter : MonoBehaviour
         if (打印日志) Debug.Log("[传送] 「" + name + "」弹出选项（" + 选项.Length + " 个）", this);
     }
 
-    void 关面板()
+    /// <summary>关面板</summary>
+    public void 关面板()
     {
         if (面板 != null) 面板.SetActive(false);
         面板开着 = false;
     }
+
+    /// <summary>面板开着吗（StationInteractor 据此知道要不要吞掉 F / ESC）</summary>
+    public bool 面板已开 => 面板开着;
+
+    /// <summary>
+    /// 面板的根物件（没建过时是 null）。
+    ///
+    /// ★ 必须有这个：`StationInteractor` 用 `当前界面 != null` 表示"界面开着"，
+    ///   并在 `Update` 里拿它自愈 —— `if (有界面打开 && 当前界面 == null) 有界面打开 = false;`。
+    ///   传送面板是**本组件自己造的**，以前不给 `StationInteractor` 这个引用，
+    ///   于是那个自愈逻辑**下一帧就把"界面开着"的标记清掉**了 →
+    ///   表现成「按 ESC 关不掉传送面板」（用户 2026-09-28 报的）。
+    ///   把它交出去之后，标记就一直是 true，ESC 那条路才走得到。
+    /// </summary>
+    public GameObject 面板根 => 面板;
 
     void 刷新文本()
     {

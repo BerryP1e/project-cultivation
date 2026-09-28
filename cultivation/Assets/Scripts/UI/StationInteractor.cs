@@ -121,7 +121,21 @@ public class StationInteractor : MonoBehaviour
         if (界面已打开)
         {
             // 界面开着：只处理关闭，不做任何别的交互
-            if (Input.GetKeyDown(关闭键) || Input.GetKeyDown(交互键)) 关闭界面();
+            if (Input.GetKeyDown(关闭键) || Input.GetKeyDown(交互键)) { 关闭界面(); return; }
+
+            // ★ 2026-09-28 用户要求：**走出交互范围就自动关**。
+            //
+            //   为什么放在这里、而不是靠触发区 OnTriggerExit：
+            //   本组件本来就是**按距离**判定"在不在范围内"的（不用物理触发器），
+            //   所以"离开"这件事在这里判最自然、也只有一处判定标准。
+            //
+            //   ⚠️ 别把这个逻辑下放到各自的界面里（传送面板、占位幕布…）——
+            //      那样每个界面都要自己抄一遍距离判定，必然出现"有的界面关有的不关"。
+            if (当前设施 != null && !在范围内(当前设施))
+            {
+                关闭界面();
+                return;
+            }
             return;
         }
 
@@ -160,6 +174,20 @@ public class StationInteractor : MonoBehaviour
             if (s != null && s.isActiveAndEnabled) 已知设施.Add(s);
     }
 
+    /// <summary>
+    /// 玩家现在还在不在这台设施的交互范围内。
+    ///
+    /// **本项目"在不在范围内"只有这一个判定**（`找最近设施` 和"离开自动关界面"共用它），
+    /// 免得两处各写一套阈值、出现"提示没了但界面还开着"这种半开状态。
+    /// </summary>
+    bool 在范围内(StationInteractable 设施)
+    {
+        if (设施 == null) return false;
+        var 差 = 设施.transform.position - transform.position;
+        float 水平 = new Vector2(差.x, 差.z).magnitude;
+        return 设施.玩家在范围内(水平, 差.y);
+    }
+
     void 找最近设施()
     {
         最近设施 = null;
@@ -169,11 +197,9 @@ public class StationInteractor : MonoBehaviour
         foreach (var s in 已知设施)
         {
             if (s == null) continue;
-            var 差 = s.transform.position - 我;
-            float 水平 = new Vector2(差.x, 差.z).magnitude;
-            if (!s.玩家在范围内(水平, 差.y)) continue;
+            if (!在范围内(s)) continue;
             // ★ 用户 2026-09-26：同时进范围时取「**离根节点更近**」的那个（原来比的是水平距离）
-            float 直距 = 差.magnitude;
+            float 直距 = (s.transform.position - 我).magnitude;
             if (直距 < 最近) { 最近 = 直距; 最近设施 = s; }
         }
     }
@@ -399,6 +425,31 @@ public class StationInteractor : MonoBehaviour
         //   原来这里会给对话类也造一块占位幕布（sortingOrder=2500），而对话框只有 900，
         //   结果幕布永远盖在对话框上面 —— 用户实测就是"有的村民点开是一块空白幕布，
         //   有的村民是幕布和对话叠在一起"。而且 NpcDialogue 也在同一帧响应 F，等于两个系统抢一个键。
+        // ★ 传送圈：**面板由 Teleporter 自己画**（它要按选项数量动态生成按钮，
+        //   占位幕布满足不了）。所以这里只负责"按 F 这一下"和"提示"。
+        //   2026-09-28 用户要求：传送从"走上去自动弹面板"改成和 NPC / 建筑一样按 F。
+        if (设施.类型 == StationInteractable.StationKind.传送)
+        {
+            var 传送 = 设施.GetComponent<Teleporter>();
+            if (传送 == null) 传送 = 设施.GetComponentInParent<Teleporter>();
+            if (传送 == null)
+            {
+                Debug.LogWarning($"[StationInteractor] 【{设施.标题}】标了「传送」但物件上没有 Teleporter 组件", 设施);
+                return;
+            }
+
+            当前设施 = 设施;
+            传送.开面板();
+            // ★ 一定要把面板根交给本组件：`界面已打开` 是 `当前界面 != null` 算出来的，
+            //   而 `Update` 里那行自愈 `if (有界面打开 && 当前界面 == null) 有界面打开 = false;`
+            //   会在下一帧把"界面开着"清掉 → ESC 就再也关不掉了（2026-09-28 实测踩到）。
+            当前界面 = 传送.面板根;
+            有界面打开 = true;
+            本次右键已被占用 = true;
+            Debug.Log($"[StationInteractor] 打开【{设施.标题}】传送面板", 设施);
+            return;
+        }
+
         if (设施.类型 == StationInteractable.StationKind.对话)
         {
             var 对话 = 设施.GetComponent<NpcDialogue>();
@@ -436,6 +487,21 @@ public class StationInteractor : MonoBehaviour
         有界面打开 = false;
         上次关闭界面时间 = Time.unscaledTime;      // 让暂停菜单知道"刚关过"，这一下 ESC 别再响
         UiEscRegistry.记录关闭();                    // 统一走协调器，和角色面板同一个记录
+
+        // ★ 传送面板不是本组件造的（是 Teleporter 自己画的），所以**不能 Destroy**，
+        //   只能让它自己收起来 —— 否则下次再按 F 时 Teleporter 手里的 面板 引用已经销毁了。
+        if (当前设施 != null && 当前设施.类型 == StationInteractable.StationKind.传送)
+        {
+            var 传送 = 当前设施.GetComponent<Teleporter>();
+            if (传送 == null) 传送 = 当前设施.GetComponentInParent<Teleporter>();
+            if (传送 != null) 传送.关面板();
+            当前界面 = null;
+            关闭冷却 = 0.25f;
+            Debug.Log($"[StationInteractor] 关闭【{当前设施.标题}】传送面板", 当前设施);
+            当前设施 = null;
+            return;
+        }
+
         if (当前界面 != null) Destroy(当前界面);
         当前界面 = null;
         关闭冷却 = 0.25f;            // 关掉之后短暂不响应右键，免得同一串点击又开一个

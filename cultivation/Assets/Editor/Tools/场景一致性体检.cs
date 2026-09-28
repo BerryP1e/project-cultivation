@@ -42,7 +42,10 @@ public static class 场景一致性体检
 
     static readonly string[] 游戏场景 = new string[]
     {
-        "Assets/Scenes/Village.scene",
+        // ⚠️ 用**真实文件名**的大小写：`village.scene` 是小写，
+        //    而 Build Settings 里登记成 `Village.scene`（Windows 不区分所以一直没暴露）。
+        //    这里按文件名写，比较场景名时再统一转小写，免得踩大小写的坑。
+        "Assets/Scenes/village.scene",
         "Assets/Scenes/Sect.scene",
         "Assets/Scenes/3C_Testbed.scene",
         "Assets/Scenes/Sect_Wilderness.scene",
@@ -148,8 +151,80 @@ public static class 场景一致性体检
 
         if (!string.IsNullOrEmpty(当前场景路径)) EditorSceneManager.OpenScene(当前场景路径, OpenSceneMode.Single);
 
+        // ---- 传送路线体检（2026-09-28 加）----
+        // 为什么单独做：传送落点缺失**不是"组件缺不缺"**，是"数据指向了一个不存在的物体"，
+        // 上面那张"项 / 场景"表查不出来。实测就是因此漏了 7 条路线：
+        // 玩家被放到场景默认点上，表现成"传送了但没落在落点"。
+        报.Append('\n').Append(传送路线体检());
+
         Debug.Log(报.ToString());
         EditorUtility.DisplayDialog("场景一致性体检", 报.ToString(), "好");
+    }
+
+    /// <summary>
+    /// 逐个检查每条传送路线的**落点物体在目标场景里存不存在**。
+    ///
+    /// 这一类 bug 的形状（2026-09-28 实测踩到）：
+    ///   传送门的「落点」字段填了一个名字，而那个名字在目标场景里**根本没有对应物体**
+    ///   → `找场景物体` 返回 null → 玩家留在**场景默认点**上，
+    ///   表现成"传送过去了，但站的地方不对"（而不是报错，所以很难发现）。
+    ///
+    /// 另外：落点常常和它对应的传送门**同名**（`sect1 to 3c` 既是门也是落点）。
+    /// 这是**允许的、而且是现在的设计** —— 落点就用目标场景自己那道门的点位。
+    /// 因为传送已经改成"按 F 才开面板"（见 `Teleporter`），
+    /// 落在门上不会自己弹面板，不会再出现老的"来回弹"。
+    /// </summary>
+    static string 传送路线体检()
+    {
+        var 报 = new StringBuilder();
+        报.Append("--- 传送路线体检 ---\n");
+
+        // 先把所有游戏场景里"能被按名字找到的物体"收集起来（含 inactive）
+        var 物件 = new Dictionary<string, HashSet<string>>();   // 场景名(小写) → 物体名集合
+        foreach (var 路径 in 游戏场景)
+        {
+            if (!System.IO.File.Exists(路径)) continue;
+            var 场景 = EditorSceneManager.OpenScene(路径, OpenSceneMode.Single);
+            var 集 = new HashSet<string>();
+            foreach (var g in 场景.GetRootGameObjects())
+                foreach (var t in g.GetComponentsInChildren<Transform>(true)) 集.Add(t.name);
+            物件[场景.name.ToLowerInvariant()] = 集;
+        }
+
+        int 坏 = 0, 总 = 0;
+        foreach (var 路径 in 游戏场景)
+        {
+            if (!System.IO.File.Exists(路径)) continue;
+            var 场景 = EditorSceneManager.OpenScene(路径, OpenSceneMode.Single);
+            foreach (var g in 场景.GetRootGameObjects())
+                foreach (var tp in g.GetComponentsInChildren<Teleporter>(true))
+                {
+                    if (tp.选项 == null) continue;
+                    foreach (var o in tp.选项)
+                    {
+                        if (o == null || o.暂未开放) continue;
+                        总++;
+                        string 目标 = string.IsNullOrEmpty(o.场景) ? 场景.name : o.场景;
+                        // ⚠️ 两边都转小写再比：Build Settings 里登记的是 `Village`，
+                        //    而场景对象 / 文件名是小写 `village` —— 不归一化会误报"落点不存在"。
+                        string 键 = 目标.ToLowerInvariant();
+                        bool 场景在 = 物件.ContainsKey(键);
+                        bool 落点在 = 场景在 && 物件[键].Contains(o.落点);
+                        if (落点在) continue;
+
+                        坏++;
+                        报.Append("  ✗ ").Append(场景.name).Append(" / ").Append(tp.gameObject.name)
+                           .Append(" 「").Append(o.名称).Append("」 → ").Append(目标)
+                           .Append(" 的落点 [").Append(o.落点).Append("] ");
+                        报.Append(场景在 ? "**目标场景里没有这个物体** → 玩家会落在场景默认点上\n"
+                                          : "**目标场景不在体检清单里**（检查拼写 / Build Settings）\n");
+                    }
+                }
+        }
+
+        报.Append(坏 == 0 ? "  共 " + 总 + " 条传送路线，落点全部可解析 ✓\n"
+                          : "  共 " + 总 + " 条路线，" + 坏 + " 条落点解析不了 ✗\n");
+        return 报.ToString();
     }
 
     static int 场景内数量(Scene 场景, System.Type t, bool 只算玩家身上)

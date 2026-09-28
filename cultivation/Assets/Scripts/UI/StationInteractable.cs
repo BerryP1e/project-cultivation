@@ -22,6 +22,7 @@ public class StationInteractable : MonoBehaviour
         炼器,       // refining furnace
         布阵,       // deploy formation point
         对话,       // ★ 人类 NPC 对话（2026-09-26 合并进来）
+        传送,       // ★ 传送圈（2026-09-28 合并进来：从"走上去自动弹"改成"按 F 开"）
     }
 
     [Header("身份")]
@@ -76,6 +77,7 @@ public class StationInteractable : MonoBehaviour
             case StationKind.炼器: return "炼器";
             case StationKind.布阵: return "布阵";
             case StationKind.对话: return "对话";
+            case StationKind.传送: return "传送";
             default: return "交互";
         }
     }
