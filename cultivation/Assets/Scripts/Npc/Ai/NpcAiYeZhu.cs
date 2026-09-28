@@ -55,7 +55,7 @@ public class NpcAiYeZhu : NpcAiDemon
     public string 普攻命中特效 = "";
 
     [Tooltip("主动神通用的【更重的】命中特效")]
-    public string 重击命中特效 = "FX/Hit_Physical_Heavy";
+    public string 重击命中特效 = "特效/命中/Hit_Physical_Heavy";
 
     protected override void 取默认参数()
     {

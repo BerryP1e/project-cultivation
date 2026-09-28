@@ -1,6 +1,6 @@
 // Made with Amplify Shader Editor
 // Available at the Unity Asset Store - http://u3d.as/y3X 
-Shader "QFX/ProjectilesFX/Aura"
+Shader "特效/飞弹/ProjectilesFX/Aura"
 {
 	Properties
 	{
@@ -232,7 +232,7 @@ Node;AmplifyShaderEditor.PowerNode;170;-804.3082,1342.518;Inherit;True;False;2;0
 Node;AmplifyShaderEditor.ToggleSwitchNode;98;-491.9409,1226.445;Inherit;False;Property;_UseFresnel;Use Fresnel;9;0;Create;True;0;0;False;0;False;1;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.ViewDirInputsCoordNode;162;-1659.864,1437.009;Inherit;False;World;False;0;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3
 Node;AmplifyShaderEditor.IntNode;145;-2853.216,-39.65984;Inherit;False;Property;_SrcBlend;SrcBlend;0;1;[Enum];Create;True;0;1;UnityEngine.Rendering.BlendMode;True;0;False;5;5;0;1;INT;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;146;1721.52,497.3652;Float;False;True;-1;2;ASEMaterialInspector;0;7;QFX/ProjectilesFX/Aura;0b6a9f8b4f707c74ca64c0be8e590de0;True;SubShader 0 Pass 0;0;0;SubShader 0 Pass 0;2;True;1;5;True;145;0;True;147;0;1;False;-1;0;False;-1;False;False;False;False;False;False;False;False;True;2;False;-1;True;True;True;True;False;0;False;-1;False;False;False;False;True;2;False;-1;True;3;False;-1;False;True;4;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;0;0;;0;0;Standard;0;0;1;True;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;146;1721.52,497.3652;Float;False;True;-1;2;ASEMaterialInspector;0;7;飞弹特效/ProjectilesFX/Aura;0b6a9f8b4f707c74ca64c0be8e590de0;True;SubShader 0 Pass 0;0;0;SubShader 0 Pass 0;2;True;1;5;True;145;0;True;147;0;1;False;-1;0;False;-1;False;False;False;False;False;False;False;False;True;2;False;-1;True;True;True;True;False;0;False;-1;False;False;False;False;True;2;False;-1;True;3;False;-1;False;True;4;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;0;0;;0;0;Standard;0;0;1;True;False;;False;0
 WireConnection;78;0;59;0
 WireConnection;60;0;59;0
 WireConnection;155;0;153;0

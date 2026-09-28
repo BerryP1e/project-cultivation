@@ -35,8 +35,8 @@ public static class HitFxBuilder
     const string 贴图目录 = 根目录 + "/Textures";
     const string 材质目录 = 根目录 + "/Materials";
 
-    public const string 基础命中路径 = "FX/Hit_Physical";
-    public const string 重击命中路径 = "FX/Hit_Physical_Heavy";
+    public const string 基础命中路径 = "特效/命中/Hit_Physical";
+    public const string 重击命中路径 = "特效/命中/Hit_Physical_Heavy";
 
     [MenuItem("修仙/构建命中特效")]
     [MenuItem("Cultivation/Build Hit FX")]

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -29,7 +29,10 @@ public static class NpcEffectInventory
             Debug.LogWarning("[资源清单] 请先在 Project 窗口里选中一个目录（文件夹），再点这个菜单");
             return;
         }
-        生成清单(目录);
+        // 文件名/标题跟随选中的目录名，避免第二次生成把第一份覆盖掉
+        string 名 = Path.GetFileName(目录.TrimEnd('/'));
+        if (string.IsNullOrEmpty(名)) 名 = "特效";
+        生成清单(目录, 名 + "资源清单.md", 名 + "资源清单");
     }
 
     static string 取选中目录()
@@ -43,8 +46,19 @@ public static class NpcEffectInventory
 
     // ============================================================ 主流程
 
-    /// <summary>扫描一个目录（含子目录）下的所有 prefab，生成清单</summary>
-    public static void 生成清单(string 目录)
+    /// <summary>扫描一个目录（含子目录）下的所有 prefab，生成清单（默认文件名）</summary>
+    public static void 生成清单(string 目录) => 生成清单(目录, "特效资源清单.md", "特效资源清单");
+
+    /// <summary>
+    /// 扫描一个目录（含子目录）下的所有 prefab，生成清单。
+    /// <paramref name="输出文件名"/> / <paramref name="文档标题"/> 允许生成第二份
+    /// （例如 SpecialSkillsEffectsPack 单独一份），免得两个资源包的清单互相覆盖、标题也一样。
+    ///
+    /// ⚠️ 「建议用途」那一列是**按粒子数 / 循环 / 会不会自己移动**猜的，
+    /// 只对 `QFX` 那种"单体飞弹"包准；**对"一套法术 = 主 prefab + 一堆 Parts/Base 子件"的包不准**
+    /// （实测 SpecialSkillsEffectsPack 312 个里 171 个被误判成"飞行道具"）。看那个包时请忽略该列。
+    /// </summary>
+    public static void 生成清单(string 目录, string 输出文件名, string 文档标题)
     {
         if (!Directory.Exists(目录)) { Debug.LogError("[资源清单] 目录不存在：" + 目录); return; }
 
@@ -62,7 +76,7 @@ public static class NpcEffectInventory
         });
 
         var 文本 = new StringBuilder();
-        文本.AppendLine("# 特效资源清单");
+        文本.AppendLine("# " + 文档标题);
         文本.AppendLine();
         文本.AppendLine("> 由 `NpcEffectInventory` 自动生成（菜单 **修仙 / 资源整理 / 生成特效资源清单**）");
         文本.AppendLine("> 扫描目录：`" + 目录 + "`　共 **" + 全部.Count + "** 个 prefab");
@@ -106,9 +120,13 @@ public static class NpcEffectInventory
                 + " |");
         }
 
-        // 写到工作区根目录（不污染 Unity 工程）
+        // 写到文档目录（不污染 Unity 工程）。
+        // 路径 = <仓库根>/docs/guides/特效资源清单.md —— 和文档重组后的位置一致
+        // （原来写在仓库根，05eed09b 把文档都收进 docs/ 之后这里就脱节了）。
         string 根 = Directory.GetParent(Application.dataPath)?.Parent?.FullName ?? Application.dataPath;
-        string 输出 = Path.Combine(根, "特效资源清单.md");
+        string 文档目录 = Path.Combine(根, "docs", "guides");
+        if (!Directory.Exists(文档目录)) Directory.CreateDirectory(文档目录);
+        string 输出 = Path.Combine(文档目录, 输出文件名);
         File.WriteAllText(输出, 文本.ToString(), new UTF8Encoding(true));
 
         Debug.Log("[资源清单] 扫了 " + 全部.Count + " 个 prefab →\n  " + 输出

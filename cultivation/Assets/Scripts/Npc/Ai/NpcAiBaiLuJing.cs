@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 白鹿精（BaiLuJing）—— **第一个会施放飞弹的妖魔**。
@@ -46,7 +46,7 @@ public class NpcAiBaiLuJing : NpcAiDemon
     public float 发射进度 = 0.5f;
 
     [Tooltip("飞弹特效包前缀")]
-    public string 包前缀 = "QFX/ProjectilesFX/VFX_Prefabs/";
+    public string 包前缀 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/";
 
     [Tooltip("纯弹道（不带飞行脚本、不带命中分支）—— 这样才能「不被场景阻挡」")]
     public string 弹道 = "Projectiles_Particles/VFX_Demon_Projectile_Only";

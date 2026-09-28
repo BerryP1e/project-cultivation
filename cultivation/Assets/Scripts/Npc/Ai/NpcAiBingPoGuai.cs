@@ -81,9 +81,9 @@ public class NpcAiBingPoGuai : NpcAiDemon
     [Tooltip("弹体缩放")]
     public float 弹体缩放 = 1.1f;
 
-    [Header("冰弹 · 冰属性特效（QFX 的 Winter 系列）")]
+    [Header("冰弹 · 冰属性特效（飞弹特效 的 Winter 系列）")]
     [Tooltip("特效包前缀")]
-    public string 包前缀 = "QFX/ProjectilesFX/VFX_Prefabs/";
+    public string 包前缀 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/";
 
     [Tooltip("纯弹道（不带飞行脚本、不带命中分支）—— 这样才能「不被场景阻挡」")]
     public string 弹道 = "Projectiles_Particles/VFX_Winter_Projectile_Only";

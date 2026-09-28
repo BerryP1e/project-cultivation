@@ -1,6 +1,6 @@
 // Made with Amplify Shader Editor
 // Available at the Unity Asset Store - http://u3d.as/y3X 
-Shader "QFX/ProjectilesFX/Particles Cutout"
+Shader "特效/飞弹/ProjectilesFX/Particles Cutout"
 {
 	Properties
 	{
@@ -182,7 +182,7 @@ Node;AmplifyShaderEditor.IntNode;33;-752.1362,-279.3159;Inherit;False;Property;_
 Node;AmplifyShaderEditor.IntNode;34;-750.5512,-369.0815;Inherit;False;Property;_SrcBlend;SrcBlend;0;1;[Enum];Create;True;0;1;UnityEngine.Rendering.BlendMode;True;0;False;5;5;0;1;INT;0
 Node;AmplifyShaderEditor.ClipNode;25;693.6459,10.03131;Inherit;False;3;0;FLOAT4;0,0,0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;1;FLOAT4;0
 Node;AmplifyShaderEditor.SaturateNode;29;190.9022,-57.78777;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;35;909.4606,8.845862;Float;False;True;-1;2;ASEMaterialInspector;0;7;QFX/ProjectilesFX/Particles Cutout;0b6a9f8b4f707c74ca64c0be8e590de0;True;SubShader 0 Pass 0;0;0;SubShader 0 Pass 0;2;True;2;0;True;34;0;True;33;0;1;False;-1;0;False;-1;False;False;False;False;False;False;False;False;True;2;False;-1;True;True;True;True;False;0;False;-1;False;False;False;False;True;2;False;-1;True;3;False;-1;False;True;4;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;0;0;;0;0;Standard;0;0;1;True;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;35;909.4606,8.845862;Float;False;True;-1;2;ASEMaterialInspector;0;7;飞弹特效/ProjectilesFX/Particles Cutout;0b6a9f8b4f707c74ca64c0be8e590de0;True;SubShader 0 Pass 0;0;0;SubShader 0 Pass 0;2;True;2;0;True;34;0;True;33;0;1;False;-1;0;False;-1;False;False;False;False;False;False;False;False;True;2;False;-1;True;True;True;True;False;0;False;-1;False;False;False;False;True;2;False;-1;True;3;False;-1;False;True;4;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;0;0;;0;0;Standard;0;0;1;True;False;;False;0
 WireConnection;1;0;2;0
 WireConnection;6;0;4;0
 WireConnection;6;1;1;0

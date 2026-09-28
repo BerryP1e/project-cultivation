@@ -1,6 +1,6 @@
 // Made with Amplify Shader Editor
 // Available at the Unity Asset Store - http://u3d.as/y3X 
-Shader "QFX/ProjectilesFX/Trail"
+Shader "特效/飞弹/ProjectilesFX/Trail"
 {
 	Properties
 	{
@@ -221,7 +221,7 @@ Node;AmplifyShaderEditor.SimpleMultiplyOpNode;310;3457.903,347.2076;Inherit;Fals
 Node;AmplifyShaderEditor.IntNode;319;354.1931,-147.9588;Inherit;False;Property;_SrcBlend;SrcBlend;0;1;[Enum];Create;True;0;1;UnityEngine.Rendering.BlendMode;True;0;False;5;5;0;1;INT;0
 Node;AmplifyShaderEditor.DynamicAppendNode;187;3909.182,467.3674;Inherit;False;FLOAT4;4;0;FLOAT3;0,0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT4;0
 Node;AmplifyShaderEditor.IntNode;320;352.6082,-58.1933;Inherit;False;Property;_DstBlend;DstBlend;1;1;[Enum];Create;True;0;1;UnityEngine.Rendering.BlendMode;True;0;False;10;1;0;1;INT;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;317;4080.168,467.1783;Float;False;True;-1;2;ASEMaterialInspector;0;7;QFX/ProjectilesFX/Trail;0b6a9f8b4f707c74ca64c0be8e590de0;True;SubShader 0 Pass 0;0;0;SubShader 0 Pass 0;2;True;2;5;True;319;10;True;320;0;1;False;-1;0;False;-1;False;False;False;False;False;False;False;False;True;2;False;-1;True;True;True;True;False;0;False;-1;False;False;False;False;True;2;False;-1;True;3;False;-1;False;True;4;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;0;0;;0;0;Standard;0;0;1;True;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;317;4080.168,467.1783;Float;False;True;-1;2;ASEMaterialInspector;0;7;飞弹特效/ProjectilesFX/Trail;0b6a9f8b4f707c74ca64c0be8e590de0;True;SubShader 0 Pass 0;0;0;SubShader 0 Pass 0;2;True;2;5;True;319;10;True;320;0;1;False;-1;0;False;-1;False;False;False;False;False;False;False;False;True;2;False;-1;True;True;True;True;False;0;False;-1;False;False;False;False;True;2;False;-1;True;3;False;-1;False;True;4;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;0;0;;0;0;Standard;0;0;1;True;False;;False;0
 WireConnection;221;0;220;0
 WireConnection;222;0;220;0
 WireConnection;122;0;221;0

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -56,9 +56,9 @@ public class BasicRemoteAttack01 : MonoBehaviour
     public Vector3 出生偏移 = new Vector3(0f, 0f, 0.15f);
 
     [Header("飞弹外观")]
-    public string 弹道特效路径 = "QFX/ProjectilesFX/VFX_Prefabs/Projectiles_Particles/VFX_Priest_Projectile_Only";
-    public string 闪光特效路径 = "QFX/ProjectilesFX/VFX_Prefabs/Flashes/VFX_Priest_Flash";
-    public string 命中特效路径 = "QFX/ProjectilesFX/VFX_Prefabs/Impacts/VFX_Priest_Impact";
+    public string 弹道特效路径 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/Projectiles_Particles/VFX_Priest_Projectile_Only";
+    public string 闪光特效路径 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/Flashes/VFX_Priest_Flash";
+    public string 命中特效路径 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/Impacts/VFX_Priest_Impact";
 
     [Tooltip("弹体缩放")]
     public float 弹体缩放 = 0.65f;
