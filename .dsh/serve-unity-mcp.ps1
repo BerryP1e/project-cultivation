@@ -1,4 +1,4 @@
-# .dsh/serve-unity-mcp.ps1 —— 手动启动 Unity MCP 服务器的 HTTP 通道
+﻿# .dsh/serve-unity-mcp.ps1 —— 手动启动 Unity MCP 服务器的 HTTP 通道
 #
 # 这是【可选】通道。主通道是 stdio：harness 按 profiles/desktop/cordis.patch.yml
 # 里的 mcp-unity 行自己拉起 `codely serve unity-mcp --stdio`，不需要本脚本。

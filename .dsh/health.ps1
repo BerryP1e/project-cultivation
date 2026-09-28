@@ -1,4 +1,4 @@
-# .dsh/health.ps1 —— Unity 控制管线体检（只读，不改任何东西）
+﻿# .dsh/health.ps1 —— Unity 控制管线体检（只读，不改任何东西）
 #
 # 用法:
 #   pwsh -File "<仓库根>\.dsh\health.ps1"
