@@ -113,6 +113,10 @@ public static class 回填效果引用
         if (缺的.Count > 0) 报 += "\n  找不到对应资产的：\n    " + string.Join("\n    ", 缺的);
         if (找不到 > 0) Debug.LogError(报);      // 找不到 = 配置写错了，要显眼
         else Debug.Log(报);
-        if (!静默) EditorUtility.DisplayDialog("回填效果引用", 报, "好");
+
+        // ⚠️ 这里**不再弹模态框**（原来 `if (!静默) DisplayDialog(...)`）。
+        //   信息上面那句日志已经全说了；而模态框会挡住主线程，
+        //   自动化调用（AI 跑菜单）没人点它 → 看起来就是卡死。详见 踩坑 F8。
+        //   `静默` 参数保留只是为了让老调用点不用改。
     }
 }

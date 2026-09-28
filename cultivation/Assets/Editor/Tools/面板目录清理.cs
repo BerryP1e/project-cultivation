@@ -41,10 +41,9 @@ public static class 面板目录清理
         var 库 = PanelDatabase.取();
         if (库 == null || 库.神通 == null || 库.神通.Count == 0)
         {
-            EditorUtility.DisplayDialog("面板目录清理",
-                "读不到 Assets/resources/面板/面板库.asset（或它是空的）。\n\n" +
-                "先跑一次「修仙/面板/收集面板目录」再清理，\n" +
-                "否则清空后运行时没人灌，面板会变空。", "好");
+            // ⚠️ 不弹模态框（会挡住主线程、自动化没人点 → 卡死）。写 Console 一样能看见。见 踩坑 F8。
+            Debug.LogError("[面板目录清理] 读不到 Assets/resources/面板/面板库.asset（或它是空的）。"
+                + "先跑一次「修仙/面板/收集面板目录」再清理，否则清空后运行时没人灌，面板会变空。");
             return;
         }
         PanelDatabase.清缓存();
@@ -78,8 +77,8 @@ public static class 面板目录清理
         }
 
         报.Append("\n共清掉 ").Append(总清).Append(" 个（运行时由 面板库 灌回，不影响玩法）");
-        Debug.Log("[面板目录清理] " + 报.ToString().Replace("\n", " ｜ "));
-        EditorUtility.DisplayDialog("面板目录清理", 报.ToString(), "好");
+        Debug.Log("[面板目录清理]\n" + 报.ToString());
+        // ⚠️ 不弹模态框（同上）。
     }
 
     static int 数一下(UIPanelData p)

@@ -158,7 +158,8 @@ public static class 场景一致性体检
         报.Append('\n').Append(传送路线体检());
 
         Debug.Log(报.ToString());
-        EditorUtility.DisplayDialog("场景一致性体检", 报.ToString(), "好");
+        // ⚠️ 不弹模态框：它挡住主线程，自动化调用没人点 → 看起来就是卡死。
+        //   报告已经在 Console 里了（上面那句 Debug.Log）。详见 踩坑 F8。
     }
 
     /// <summary>
