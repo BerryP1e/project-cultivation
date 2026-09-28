@@ -21,8 +21,12 @@ public class 场景特效开关 : ScriptableObject
     {
         [Tooltip("场景名（不带路径/扩展名），例如 Sect")]
         public string 场景 = "";
-        [Tooltip("建筑透明：相机与玩家连线上的建筑变透明")]
+        [Tooltip("建筑透明：相机与玩家连线上的**建筑/墙/石头**变透明")]
         public bool 建筑透明 = false;
+        [Tooltip("树冠透明：相机与玩家连线上的**树冠**变透明。\n" +
+                 "★ 和「建筑透明」是**两个独立开关** —— 用户 2026-09-28 明确要求\n" +
+                 "「我只是要树冠，不要房屋」，所以别再把两者绑在一起。")]
+        public bool 树冠透明 = false;
         [Tooltip("玩家描边：被挡住时给玩家描边")]
         public bool 玩家描边 = false;
     }
@@ -39,11 +43,21 @@ public class 场景特效开关 : ScriptableObject
         var 默 = CreateInstance<场景特效开关>();
         默.表 = new[]
         {
-            new 条目 { 场景 = "Demon-Suppressing Tower", 建筑透明 = true,  玩家描边 = false },
-            new 条目 { 场景 = "Sect",                     建筑透明 = false, 玩家描边 = true  },
-            new 条目 { 场景 = "3C_Testbed",               建筑透明 = false, 玩家描边 = false },
+            new 条目 { 场景 = "Demon-Suppressing Tower", 建筑透明 = true,  树冠透明 = false, 玩家描边 = false },
+            new 条目 { 场景 = "Sect",                     建筑透明 = false, 树冠透明 = true,  玩家描边 = true  },
+            new 条目 { 场景 = "3C_Testbed",               建筑透明 = false, 树冠透明 = false, 玩家描边 = false },
         };
         return 默;
+    }
+
+    /// <summary>取某个场景那一行；表里没有返回 null</summary>
+    public static 条目 取(string 场景名)
+    {
+        var 表 = 取表();
+        if (表 == null || 表.表 == null) return null;
+        foreach (var e in 表.表)
+            if (e != null && e.场景 == 场景名) return e;
+        return null;
     }
 
     /// <summary>某个场景里，这个特效该不该生效。表里没有这一行 → 不生效。</summary>

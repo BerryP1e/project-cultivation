@@ -39,7 +39,7 @@ public class StationInteractable : MonoBehaviour
     public float 最大高度差 = 3f;
 
     [Tooltip("★ 这个物件用哪个键。None = 用玩家 StationInteractor 上的全局键。\n" +
-             "人类 NPC 对话固定填 F（用户要求），建筑留 None 走全局")]
+             "2026-09-28 起全项目统一为 F（建筑原来走全局右键，用户要求改成 F）")]
     public KeyCode 交互键覆盖 = KeyCode.None;
 
     [Header("提示")]
@@ -48,6 +48,12 @@ public class StationInteractable : MonoBehaviour
 
     [Tooltip("提示相对物件顶部再抬高多少（米）")]
     public float 提示抬高 = 0.6f;
+
+    [Tooltip("★ 提示的**最高离地高度**（米）。0 = 不限。\n" +
+             "为什么需要它（用户 2026-09-28 报）：提示是按**渲染体包围盒顶部**算的，\n" +
+             "而宗门那些楼有 12~19 米高 → 提示被摆到十几米高空，玩家根本看不到。\n" +
+             "压到 3 米左右就一直在视野里了。")]
+    public float 提示最高点 = 3f;
 
     [Header("界面")]
     [Tooltip("留空则由 StationInteractor 用空白幕布代替（UI 还没设计）")]

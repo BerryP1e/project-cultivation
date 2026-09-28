@@ -32,7 +32,8 @@ using UnityEngine.EventSystems;
 public class StationInteractor : MonoBehaviour
 {
     [Header("按键")]
-    public KeyCode 交互键 = KeyCode.Mouse1;      // 右键
+    [Tooltip("交互键。★ 2026-09-28 起全项目统一 F（用户要求：建筑不再用右键，和 NPC 一样按 F）")]
+    public KeyCode 交互键 = KeyCode.F;
     public KeyCode 关闭键 = KeyCode.Escape;
 
     [Header("字体")]
@@ -220,15 +221,7 @@ public class StationInteractor : MonoBehaviour
         if (提示键字 != null) 提示键字.text = StationInteractable.按键名(最近设施.取按键(交互键));
 
         var 位 = 最近设施.transform.position;
-        // 从物件顶上的渲染体算高度，算不出来就用固定值
-        float 顶 = 1.8f + 提示抬高;
-        var 渲染器 = 最近设施.GetComponentsInChildren<Renderer>();
-        if (渲染器.Length > 0)
-        {
-            var b = 渲染器[0].bounds;
-            for (int i = 1; i < 渲染器.Length; i++) b.Encapsulate(渲染器[i].bounds);
-            顶 = (b.max.y - 最近设施.transform.position.y) + 提示抬高;
-        }
+        float 顶 = 算提示高度(最近设施);
 
         if (主相机 == null) 主相机 = Camera.main;
 
@@ -272,6 +265,11 @@ public class StationInteractor : MonoBehaviour
             提示根.transform.rotation = Quaternion.LookRotation(
                 提示根.transform.position - 主相机.transform.position, 主相机.transform.up);
 
+        // ★ 屏幕内收：万一把提示摆到了画面外（相机贴太近 / 建筑太高 / 视角很偏），
+        //   把它拉回安全边距里面。世界高度已经封了顶（见 算提示高度），这里是第二道保险。
+        夹进屏幕(提示根.transform);
+        if (名字根 != null && 名字根.activeSelf) 夹进屏幕(名字根.transform);
+
         // 根据距离淡一点，远了不明显
         float 近 = Vector2.Distance(new Vector2(位.x, 位.z), new Vector2(transform.position.x, transform.position.z));
         float a = Mathf.Clamp01(1.4f - 近 / Mathf.Max(0.1f, 最近设施.交互距离));
@@ -284,6 +282,56 @@ public class StationInteractor : MonoBehaviour
         if (提示根 != null && 提示根.activeSelf) 提示根.SetActive(false);
         if (名字根 != null && 名字根.activeSelf) 名字根.SetActive(false);
     }
+
+    /// <summary>
+    /// 提示该摆在物件上方多高。
+    ///
+    /// ★ 2026-09-28 用户报「建筑比较高的话提示就看不到了」：
+    ///   原来是**直接取渲染体包围盒的顶部**，而宗门那些楼有 12~19 米高
+    ///   （实测：炼丹阁顶 y=18.70、宗门大殿顶 y=26.89）→ 提示被摆到十几米高空，
+    ///   相机是俯视角、视野里根本没有那个高度 ✗。
+    ///
+    ///   现在**封顶**：`StationInteractable.提示最高点`（默认 3 米，0 = 不限）。
+    ///   矮物件（NPC、炼丹炉、传送圈）本来就在 3 米以内，行为不变；
+    ///   高楼则统一把提示压在 3 米高处。
+    ///
+    ///   ⚠️ 别改成"取物件中心和顶部之间" —— 15 米高的楼取一半也有 7.5 米，照样在画面外。
+    ///      封顶是这里唯一稳的做法；另外 `更新头顶提示` 末尾还有一道屏幕内收兜底。
+    /// </summary>
+    float 算提示高度(StationInteractable 设施)
+    {
+        float 顶 = 1.8f + 设施.提示抬高;
+        var 渲染器 = 设施.GetComponentsInChildren<Renderer>();
+        if (渲染器.Length > 0)
+        {
+            var b = 渲染器[0].bounds;
+            for (int i = 1; i < 渲染器.Length; i++) b.Encapsulate(渲染器[i].bounds);
+            顶 = (b.max.y - 设施.transform.position.y) + 设施.提示抬高;
+        }
+
+        if (设施.提示最高点 > 0.01f) 顶 = Mathf.Min(顶, 设施.提示最高点);
+        return Mathf.Max(0.4f, 顶);
+    }
+
+    /// <summary>把世界空间的一个提示拉回相机安全视野内（世界空间 Canvas，所以用 WorldToScreenPoint 再转回去）</summary>
+    void 夹进屏幕(Transform 谁)
+    {
+        if (谁 == null || 主相机 == null) return;
+
+        var 屏幕 = 主相机.WorldToScreenPoint(谁.position);
+        if (屏幕.z <= 0.05f) return;                     // 在相机背后，别乱拉
+
+        float 边 = Screen.height * 屏幕边距比例;
+        float x = Mathf.Clamp(屏幕.x, 边, Screen.width - 边);
+        float y = Mathf.Clamp(屏幕.y, 边, Screen.height - 边);
+        if (Mathf.Approximately(x, 屏幕.x) && Mathf.Approximately(y, 屏幕.y)) return;
+
+        var 新 = 主相机.ScreenToWorldPoint(new Vector3(x, y, 屏幕.z));
+        谁.position = new Vector3(新.x, 新.y, 谁.position.z);
+    }
+
+    [Tooltip("★ 提示的屏幕安全边距（占屏幕高度的比例）。摆到画面外时会被拉回这个范围")]
+    [Range(0.02f, 0.3f)] public float 屏幕边距比例 = 0.08f;
 
     // 头顶名字：不带框，白字 + 深色描边（亮背景上也看得清）
     static readonly Color 名字色 = new Color(1f, 0.98f, 0.92f, 1f);

@@ -100581,10 +100581,13 @@ MonoBehaviour:
   "\u4E3B\u89D2": {fileID: 0}
   "\u900F\u660E\u5EA6": 0.22
   "\u5C04\u7EBF\u6570": 5
-  "\u8EAB\u9AD8": 1.8
   "\u5C42":
     serializedVersion: 2
     m_Bits: 4294967295
+  "\u6811\u51A0\u900F\u660E": 1
+  "\u6811\u51A0\u900F\u660E\u5EA6": 0.12
+  "\u6811\u51A0\u4F59\u91CF": 0.35
+  "\u8EAB\u9AD8": 1.8
   "\u4FDD\u6301": 0.12
   "\u6253\u5370\u65E5\u5FD7": 0
 --- !u!114 &1786122622
@@ -102156,7 +102159,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c65375c8c201bc4eb5948afba2e7f91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  "\u4EA4\u4E92\u952E": 324
+  "\u4EA4\u4E92\u952E": 102
   "\u5173\u95ED\u952E": 27
   "\u5B57\u4F53": {fileID: 12800000, guid: d12f3feb8a964ad4b8b30fd30bf445d6, type: 3}
   "\u5E55\u5E03\u5E95\u8272": {r: 0.05, g: 0.06, b: 0.09, a: 0.92}
@@ -102164,6 +102167,7 @@ MonoBehaviour:
   "\u63D0\u793A\u8272": {r: 1, g: 0.95, b: 0.6, a: 1}
   "\u63D0\u793A\u62AC\u9AD8": 0.6
   "\u8EAB\u4FA7\u8DDD\u79BB": 0.55
+  "\u5C4F\u5E55\u8FB9\u8DDD\u6BD4\u4F8B": 0.08
 --- !u!114 &1805764458
 MonoBehaviour:
   m_ObjectHideFlags: 0
