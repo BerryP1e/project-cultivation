@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -24,12 +24,26 @@ public class AreaSkillRunner : MonoBehaviour
     [Tooltip("命中时打一条日志")]
     public bool 打印日志 = true;
 
+    [Tooltip("★ 勾上（默认）：特效存活**至少**播完 prefab 的自然总时长（× `存活倍率`）。\n\n" +
+             "为什么：`Effect_13_DangerClose`（焚天炎术）的自然总时长是 **5.0 秒**\n" +
+             "（`Effect_13_Shell`：duration 4.0 + life 1.0），而表里「持续时长」= 3 秒\n" +
+             "→ 到 3 秒就把特效连同执行体一起 Destroy，火焰柱还没落完就没了\n" +
+             "（用户 2026-09-29 报的）。和冰刺 / 寒墟 / 玄霄雷诀同一套口径\n" +
+             "（见 docs/guides/沧澜寒渊录.md §2.4）。")]
+    public bool 存活按特效自动 = true;
+
+    [Tooltip("自动存活再乘这个系数（留点余量让它彻底淡完）")]
+    public float 存活倍率 = 1.05f;
+
     ActiveDivineAbility 神通;
     ICombatStats 攻击方;
     Vector3 中心;
     LayerMask 敌人层;
     NpcInstance 单体目标;
 
+    /// <summary>伤害窗口（= 持续时长；持续时长为 0 时用「一次性存活」）</summary>
+    float 伤害结束时间;
+    /// <summary>物件存活终点：**不小于**伤害窗口，且至少让特效播完</summary>
     float 结束时间;
     float 下次结算时间;
     float 已结算总伤害;
@@ -55,16 +69,28 @@ public class AreaSkillRunner : MonoBehaviour
         float 时长 = 神通 != null ? 神通.持续时长 : 0f;
         float 首次 = 神通 != null ? Mathf.Max(0f, 神通.首次造成伤害时间) : 0f;
 
-        结束时间 = 时长 > 0f
-            ? Time.time + 时长
-            : Time.time + Mathf.Max(0.1f, 一次性存活);
+        // ---- 伤害窗口 ----
+        float 窗口 = 时长 > 0f ? 时长 : Mathf.Max(0.1f, 一次性存活);
+        伤害结束时间 = Time.time + 窗口;
+        结束时间 = 伤害结束时间;
+
+        // ---- 特效存活：至少播完它自己的自然总时长 ----
+        // ★ 别让「伤害窗口」顺手决定特效的生死：焚天炎术窗口 3 秒、特效自然 5 秒，
+        //   到 3 秒就 Destroy 的话火焰柱还没落完（用户 2026-09-29 报的）。
+        if (存活按特效自动)
+        {
+            float 自然 = 特效摆放.量特效总时长(gameObject, 0f);   // 自己身上就是那份粒子系统
+            if (自然 > 0.01f)
+                结束时间 = Mathf.Max(结束时间, Time.time + 自然 * Mathf.Max(0.5f, 存活倍率));
+        }
+
         下次结算时间 = Time.time + 首次;
 
-        // 首次时间不早于自己的存活时长 → 一次伤害都打不出来，提前吼一声
-        if (首次 > 0f && 下次结算时间 >= 结束时间)
+        // 首次时间不早于**伤害窗口** → 一次伤害都打不出来，提前吼一声
+        if (首次 > 0f && 下次结算时间 >= 伤害结束时间)
             Debug.LogWarning("[AreaSkillRunner] " + (神通 != null ? 神通.神通名称 : "?")
                 + " 的「首次造成伤害时间」(" + 首次.ToString("0.##")
-                + "s) 不早于它的存活时长 (" + (结束时间 - Time.time).ToString("0.##")
+                + "s) 不早于它的伤害窗口 (" + (伤害结束时间 - Time.time).ToString("0.##")
                 + "s)，这一次不会结算任何伤害 —— 调小首次时间，或调大持续时长。");
 
         // 首次时间为 0 就保持旧行为：施放瞬间立刻结算
@@ -79,6 +105,9 @@ public class AreaSkillRunner : MonoBehaviour
     void Update()
     {
         if (Time.time >= 结束时间) { Destroy(gameObject); return; }
+
+        // 伤害窗口过了、但特效还在播（自然时长比窗口长）→ 只等销毁，不再结算
+        if (Time.time >= 伤害结束时间) return;
 
         if (Time.time >= 下次结算时间)
         {
