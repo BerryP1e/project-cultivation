@@ -830,11 +830,48 @@ public abstract class NpcAiBase : MonoBehaviour
         var 目 = 敌人;
         if (目 == null) { 进入状态(NpcAiState.待机); return; }
 
-        Vector3 目标点 = 目.position;
+        // 【围上来，不要排队】目标点**不是**敌人脚下那一个点，而是
+        // 「敌人为圆心、自己这一侧、半径 = 攻击距离 × 0.8」的那个**环上的点**。
+        //
+        // 为什么要这么改（用户 2026-09-29 报"它们没有围上来，而是排着队打我"）：
+        // 以前所有怪都瞄 `目.position` 这**同一个点** → 谁先到谁占住，
+        // 后面的全被前面那只挡住 → 一路排到天边。
+        // 改成"各走各的方位"之后：被挡的怪一绕行，方位就变了，目标点跟着挪到新的方位上，
+        // 于是它们会**自然散开把玩家围住**（不需要任何"占位登记表"）。
+        //
+        // 半径取 攻击距离 × 0.8 是为了"舒服地待在射程里"：
+        // 正好站 攻击距离 上时浮点误差会让 可出手() 判"够不着"（见 决策() 里的注释）。
         float 保留 = Mathf.Max(0.1f, 攻击距离 * 0.8f);
-        Vector3 差 = 目标点 - transform.position;
-        差.y = 0f;
-        if (差.magnitude <= 保留) { 停止移动动画(); 转向(差); return; }
+        Vector3 从目 = transform.position - 目.position;
+        从目.y = 0f;
+        if (从目.sqrMagnitude < 0.0004f) 从目 = -transform.forward;   // 正好站在敌人身上（罕见）
+        从目.Normalize();
+        Vector3 目标点 = 目.position + 从目 * 保留;
+
+        // 【坑·本回合刚踩】**停手条件不能用「离目标点还有多远」**。
+        // 第一版我写的是"到目标点 <= 0.3 米就停"，而环半径 = 攻击距离 × 0.8：
+        //   寒狼 射程 1.3 → 环半径 1.04 → 停在 1.04 + 0.3 = **1.34 米**，
+        //   而射程是 1.30 —— **永远差 4 厘米，永远不出手**（实测 6 只全部卡在 1.37 米、0 出手）。
+        // 这和 决策() 里那条注释是**同一个坑**：停手条件必须和"够不够得着"用**同一个数**。
+        // 所以这里直接用 决策() 的停靠距离（攻击距离 × 0.85）。
+        if (到敌人距离 <= Mathf.Max(0.1f, 攻击距离 * 0.85f))
+        {
+            // 已经站进射程了：停住、面朝敌人（接下来交给 决策() 判够不够得着）
+            停止移动动画();
+            转向(目.position - transform.position);
+            return;
+        }
+
+        // 所有方向都被堵死、或者一直靠不近（口袋 / 墙角 / 被一堆同伴挤住）→ 先脱困
+        //
+        // 判据：**离敌人的距离有没有变近**。比"有没有被挡住"可靠得多：
+        // 在口袋里怪物总能斜着挪一点（所以"被挡"是假的），但距离一直不降（"没靠近"是真的）。
+        if (到敌人距离 < 上次到敌距离 - 0.2f)
+        {
+            上次到敌距离 = 到敌人距离;
+            进展计时 = Time.time;
+        }
+        if (Time.time - 进展计时 > Mathf.Max(0.5f, 无进展等待)) { if (走脱困()) return; }
 
         朝点走(目标点, 奔跑倍率);
     }
@@ -852,7 +889,7 @@ public abstract class NpcAiBase : MonoBehaviour
 
     // ============================================================ 移动
 
-    /// <summary>朝一个世界坐标点走（会贴地、会探前方障碍）</summary>
+    /// <summary>朝一个世界坐标点走（会贴地、会探前方障碍、被挡会绕）</summary>
     protected void 朝点走(Vector3 目标点, float 速度倍率)
     {
         Vector3 差 = 目标点 - transform.position;
@@ -860,13 +897,35 @@ public abstract class NpcAiBase : MonoBehaviour
         if (差.sqrMagnitude < 0.0001f) { 停止移动动画(); return; }
 
         Vector3 方向 = 差.normalized;
+
+        // 【围上来】同伴分离：朝目标走之前，先加一个"被旁边同类挤开"的横向分量。
+        // 没有寻路 + 没有物理推挤（移动是直接改 transform），不加这个的话
+        // 一群怪会**沿着同一条线叠在同一个点上**（实测 7 只寒狼方位角全是 0°）。
+        var 分离 = 算分离();
+        if (分离.sqrMagnitude > 0.0001f)
+        {
+            方向 = (方向 + 分离 * 分离强度).normalized;
+            方向.y = 0f;
+            if (方向.sqrMagnitude < 0.0001f) 方向 = 差.normalized;
+        }
+
         float 速度 = Mathf.Max(0.05f, 自己.移动速度) * 速度倍率;
 
         // 前方探障：只探一个「胸口高度的小球」，不拿整条胶囊扫（docs/ai/开发注意事项.md §8.3）
+        //
+        // 【坑·已修】以前这里是「被挡 → 停止移动动画 + return」—— **一步都不走**。
+        // 后果（用户 2026-09-29 报）：拉一群怪的时候**它们排着队**，后面的原地卡死不动，
+        // 因为直线方向被前排的怪挡着，而它们只会傻站着。
+        // 现在改成**侧偏绕行**：换个能走的方向继续挪（见 找绕行方向）。
         if (前方探障距离 > 0f && 前方被挡(方向))
         {
-            停止移动动画();
-            return;
+            if (!找绕行方向(方向, out var 绕行))
+            {
+                停止移动动画();     // 四面八方都被堵死（墙角）才真的停
+                return;
+            }
+            方向 = 绕行;
+            速度 *= 绕行减速;       // 绕行时慢一点，观感上像"绕过去"而不是"侧滑"
         }
 
         transform.position += 方向 * 速度 * Time.deltaTime;
@@ -875,20 +934,199 @@ public abstract class NpcAiBase : MonoBehaviour
         播移动动画(速度倍率);
     }
 
+    // ============================================================ 绕行（没有 NavMesh，靠"触须"找路）
+
+    /// <summary>同伴分离半径（米）</summary>
+    [Tooltip("「被同伴挤开」的作用半径。0 = 关掉（一群怪会叠在一起）")]
+    public float 分离半径 = 2.5f;
+
+    /// <summary>同伴分离强度（相对前进方向）</summary>
+    [Tooltip("「被同伴挤开」的强度。越大散得越开，太大反而挤不进射程")]
+    public float 分离强度 = 1.2f;
+
+    /// <summary>分离用的共享缓冲（非分配版）</summary>
+    static readonly Collider[] 分离缓冲 = new Collider[16];
+
+    /// <summary>
+    /// **同伴分离**：附近同类单位给我的一个横向推力（越近越强）。
+    ///
+    /// 为什么要有它：这群怪的移动是**直接改 transform**（没有 NavMesh、没有刚体推挤），
+    /// 所以不给"挤开"的分量，一群怪就会沿着同一条直线**叠在同一个点上**。
+    /// 而它们的碰撞体还特别大（寒狼的胶囊 **2.58 米宽**），互相之间本来就是重叠的，
+    /// 指望碰撞体把它们分开是做不到的。
+    ///
+    /// 只对**同类单位**（有 <see cref="NpcAiBase"/> 的）生效：不推玩家、不推建筑。
+    /// </summary>
+    Vector3 算分离()
+    {
+        if (分离半径 <= 0f || 分离强度 <= 0f) return Vector3.zero;
+
+        int 数量 = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up * 0.9f, 分离半径,
+                                                 分离缓冲, 障碍层, QueryTriggerInteraction.Ignore);
+        Vector3 和 = Vector3.zero;
+        int 计数 = 0;
+        for (int i = 0; i < 数量; i++)
+        {
+            var c = 分离缓冲[i];
+            if (c == null) continue;
+            if (c.transform.IsChildOf(transform)) continue;
+
+            var 对方 = c.GetComponentInParent<NpcAiBase>();
+            if (对方 == null || 对方 == this) continue;
+            if (对方.自己 != null && 对方.自己.IsDead) continue;
+
+            Vector3 差 = transform.position - 对方.transform.position;
+            差.y = 0f;
+            float d = 差.magnitude;
+            if (d < 0.01f)
+            {
+                // 完全重叠：按实例奇偶挑方向，免得两只一起往同一边挪（那还是叠着）
+                差 = ((自己 != null && (自己.GetInstanceID() & 1) == 0) ? transform.right : -transform.right);
+                d = 1f;
+            }
+            和 += 差.normalized / Mathf.Max(0.3f, d);
+            计数++;
+        }
+        if (计数 == 0) return Vector3.zero;
+
+        和 /= 计数;
+        和.y = 0f;
+        return Vector3.ClampMagnitude(和, 1f);
+    }
+
+    /// <summary>绕行时速度打几折</summary>
+    [Tooltip("被挡住以后侧偏绕行时的速度倍率（1 = 不减速）")]
+    public float 绕行减速 = 0.85f;
+
+    [Tooltip("绕行试探的角度档位（度）。会按 25/50/75/100 依次试，先试自己偏好的那一侧")]
+    public float 绕行试探步长 = 25f;
+
+    [Header("脱困（长时间靠不近才触发）")]
+    [Tooltip("多久「离敌人的距离没有变近」就判定为走不通、开始脱困（秒）。\n" +
+             "**注意**：判据是「没靠近」，不是「被挡住」—— 一群怪互挤时侧偏绕行是能走的，不会触发。")]
+    public float 无进展等待 = 2.5f;
+
+    [Tooltip("每次脱困持续多久（秒）。脱困期间朝「背离敌人 + 侧偏」走，先离开死路再重新接近")]
+    public float 脱困时长 = 1.2f;
+
+    /// <summary>进展跟踪：上次记录的"到敌人距离"和时间</summary>
+    float 上次到敌距离 = float.PositiveInfinity;
+    float 进展计时;
+    float 脱困截止;
+    Vector3 脱困方向 = Vector3.zero;
+
+    /// <summary>
+    /// 长时间靠不近时的脱困：朝「背离敌人、再侧偏 ~20°」走一小段。
+    ///
+    /// 为什么是"背离"：三面围住的口袋（实测：正面 6 米墙 + 左右各 6 米墙，出口在怪背后）
+    /// 靠贪心绕行是**永远出不来**的 —— 它总能找到一个"斜着能挪一点"的方向，
+    /// 于是在墙角来回蹭。只有**先往后退出去**才能重新找路。
+    /// 所以判据用「**有没有靠近**」而不是「有没有被挡」（见 <see cref="无进展等待"/>）。
+    /// 侧偏左右按实例奇偶分，免得同一堆怪一起往同一边退。
+    /// </summary>
+    bool 走脱困()
+    {
+        var 目 = 敌人;
+        if (目 == null) return false;
+
+        if (Time.time >= 脱困截止)
+        {
+            脱困截止 = Time.time + Mathf.Max(0.2f, 脱困时长);
+            Vector3 背 = transform.position - 目.position;
+            背.y = 0f;
+            if (背.sqrMagnitude < 0.0004f) 背 = -transform.forward;
+            背.Normalize();
+            float 侧 = (自己 != null && (自己.GetInstanceID() & 1) == 0) ? 1f : -1f;
+            脱困方向 = (Quaternion.Euler(0f, 20f * 侧, 0f) * 背).normalized;
+            上次到敌距离 = float.PositiveInfinity;      // 重新开始记"有没有靠近"
+            进展计时 = Time.time;
+        }
+
+        朝点走(transform.position + 脱困方向 * 3f, 1f);
+        return true;
+    }
+
+    /// <summary>上一次成功绕行的方向（+1 左 / -1 右），用来做"别来回横跳"的迟滞</summary>
+    float 上次绕行侧;
+    float 绕行保持到;
+
+    /// <summary>
+    /// 前方被挡时找个**能走**的方向。
+    ///
+    /// 做法就是"触须"：把期望方向绕 Y 轴偏 25° / 50° / 75° / 100°，先试自己偏好的那一侧，
+    /// 再试另一侧，**第一个探不到障碍的方向就用它**。
+    /// 难点只有一个：**得让不同的怪往不同的边绕**，否则一群怪全往同一边挤，还是堵。
+    /// 所以偏好侧按 **InstanceID 奇偶**定；并且一旦选定了边，**0.6 秒内不改边**（迟滞），
+    /// 免得在障碍物前面左右横跳。
+    /// </summary>
+    bool 找绕行方向(Vector3 期望, out Vector3 结果)
+    {
+        结果 = 期望;
+
+        float 偏好 = (自己 != null && (自己.GetInstanceID() & 1) == 0) ? 1f : -1f;
+        if (Time.time < 绕行保持到 && Mathf.Abs(上次绕行侧) > 0.5f) 偏好 = 上次绕行侧;
+
+        float 步长 = Mathf.Max(5f, 绕行试探步长);
+        for (int 遍 = 0; 遍 < 2; 遍++)
+        {
+            float 侧 = 遍 == 0 ? 偏好 : -偏好;
+            for (int 档 = 1; 档 <= 4; 档++)
+            {
+                var 候选 = Quaternion.Euler(0f, 步长 * 档 * 侧, 0f) * 期望;
+                候选.y = 0f;
+                if (候选.sqrMagnitude < 0.0001f) continue;
+                候选.Normalize();
+
+                if (!前方被挡(候选))
+                {
+                    结果 = 候选;
+                    上次绕行侧 = 侧;
+                    绕行保持到 = Time.time + 0.6f;
+                    return true;
+                }
+            }
+        }
+
+        绕行保持到 = 0f;
+        return false;      // 两边都试到 100° 还没路 → 真被堵死了
+    }
+
+    /// <summary>探障用的共享缓冲（非分配版；只在一次调用内使用，不跨帧留存）</summary>
+    static readonly RaycastHit[] 探障缓冲 = new RaycastHit[12];
+
     bool 前方被挡(Vector3 方向)
     {
         Vector3 起点 = transform.position + Vector3.up * 0.9f;
-        var 命中 = Physics.SphereCastAll(起点, 0.25f, 方向, 前方探障距离,
-                                         障碍层, QueryTriggerInteraction.Ignore);
-        foreach (var h in 命中)
+        int 数量 = Physics.SphereCastNonAlloc(起点, 0.25f, 方向, 探障缓冲, 前方探障距离,
+                                             障碍层, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < 数量; i++)
         {
+            var h = 探障缓冲[i];
             if (h.collider == null) continue;
             // 排除自己身上的碰撞体 —— SphereCast 从自己体内出发会打到自己，
             // 不排掉的话 NPC 会「一步都不动」，而且从日志完全看不出原因
             if (h.collider.transform.IsChildOf(transform)) continue;
+            // 【坑·已修】**起始球已经压着的（distance = 0）不算"前方障碍"**。
+            // SphereCast 只要起始球和某个碰撞体重叠，就会给所有方向都返回一个 distance=0 的命中 ——
+            // 于是"四面八方都被挡"，`找绕行方向` 也找不到任何出路 → **彻底不动**。
+            // 实测（8 只寒狼 1.2 米一只排成一列）：后排 6 只 `能绕=False`、`走过=0.0 米`、一步不动。
+            // 挨在一起是"已经挤着了"，该做的是滑开，而不是永远罚站。
+            if (h.distance <= 0.001f) continue;
+            // 【坑·已修】**目标本人不算障碍**。以前不排它，于是"射程比它的碰撞体半径大不出多少"
+            // 的近战怪（实测寒狼 射程 1.3）走到离玩家 **1.69 米** 就被自己撞住了，
+            // 永远进不了射程 → 一次都不出手。怪被"要打的那个人"挡住是荒谬的。
+            if (是目标本人(h.collider)) continue;
             return true;
         }
         return false;
+    }
+
+    /// <summary>这个碰撞体是不是当前锁定目标的（玩家/真灵的）</summary>
+    bool 是目标本人(Collider 碰)
+    {
+        var 目 = 敌人;
+        if (目 == null || 碰 == null) return false;
+        return 碰.transform == 目 || 碰.transform.IsChildOf(目);
     }
 
     /// <summary>把高度摆到地面上</summary>
