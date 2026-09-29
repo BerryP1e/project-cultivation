@@ -85,3 +85,6 @@ desktop.ini
 *.bak
 
 *.log
+
+# Unity 地形升级自动生成的备份目录（工程外那份已删；防再次被 git add）
+_TerrainAutoUpgrade/
