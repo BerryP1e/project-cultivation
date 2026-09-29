@@ -62,6 +62,12 @@ somenews/
 .dsh/_scene_backup/
 # harness 的心跳文件，每几十秒就变一次，会把工作区一直弄脏
 .dsh/alive.txt
+# 历史快照类备份目录（例：.dsh/_npc表备份/，由编辑器工具自动备份，见 docs/ai/工程与工具链.md）
+# —— 当前数据的唯一真相源永远是 cultivation/Assets/Data/Tables/*.csv
+.dsh/_*备份*/
+.dsh/_backup*/
+# 编辑器 / IDE 本机配置（Unity 的 VS Editor 包生成，各人机器不同）
+cultivation/.vsconfig
 
 # 打包出来准备上传的 zip
 _backup_zip/
