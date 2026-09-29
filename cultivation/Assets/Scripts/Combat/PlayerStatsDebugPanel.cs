@@ -215,8 +215,19 @@ public class PlayerStatsDebugPanel : MonoBehaviour
 
     GameObject[] 全部NPC;
     string[] 全部NPC名;
+    /// <summary>每个 NPC 有没有可用的 AI（见 <see cref="NpcAiBase.选脚本"/>）</summary>
+    bool[] 全部NPC有AI;
+    /// <summary>每个 NPC 是不是**专属物种 AI**（`NpcAi&lt;模型名&gt;`，而不是类型默认的 Animal/Demon/Human）</summary>
+    bool[] 全部NPC是专属;
     Vector2 召唤滚动;
     int 选中NPC = -1;
+
+    [Tooltip("召唤列表的筛选词（按 prefab 名 / 定义 id / 中文名 过滤）")]
+    public string 召唤搜索 = "";
+
+    [Tooltip("★ 只列「有 AI」的 NPC（用户 2026-09-29 要求：只放进去做好了 ai 的 npc 和 animal）。\n" +
+             "关掉就能看到全部（含中立、没 AI 的）")]
+    public bool 只看有AI = true;
 
     void 加载NPC列表()
     {
@@ -237,29 +248,71 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         列表.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
         全部NPC = 列表.ToArray();
         全部NPC名 = new string[全部NPC.Length];
-        for (int i = 0; i < 全部NPC.Length; i++) 全部NPC名[i] = 全部NPC[i].name;
+        全部NPC有AI = new bool[全部NPC.Length];
+        全部NPC是专属 = new bool[全部NPC.Length];
+        for (int i = 0; i < 全部NPC.Length; i++)
+        {
+            全部NPC名[i] = 全部NPC[i].name;
+            var 实例 = 全部NPC[i].GetComponent<NpcInstance>();
+            全部NPC有AI[i] = NpcAiBase.选脚本(实例) != null;
+            全部NPC是专属[i] = NpcAiBase.找物种脚本(全部NPC[i].name) != null
+                            || (实例 != null && (NpcAiBase.找物种脚本(实例.定义 != null ? 实例.定义.名字 : null) != null
+                                              || NpcAiBase.找物种脚本(实例.定义 != null ? 实例.定义.id : null) != null));
+        }
+    }
+
+    /// <summary>这一条要不要显示（搜索词 + 「只看有 AI」）</summary>
+    bool 召唤该显示(int i, string 净搜索)
+    {
+        if (只看有AI && !全部NPC有AI[i]) return false;
+        if (净搜索.Length == 0) return true;
+        if (全部NPC名[i] != null && 全部NPC名[i].IndexOf(净搜索, System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
+        var 实例 = 全部NPC[i].GetComponent<NpcInstance>();
+        if (实例 == null) return false;
+        if (实例.定义 == null) return false;
+        return (实例.定义.id ?? "").IndexOf(净搜索, System.StringComparison.OrdinalIgnoreCase) >= 0
+            || (实例.定义.名字 ?? "").IndexOf(净搜索, System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     void 画召唤区()
     {
         加载NPC列表();
+
+        int 有AI数 = 0, 专属数 = 0;
+        for (int i = 0; i < 全部NPC.Length; i++) { if (全部NPC有AI[i]) 有AI数++; if (全部NPC是专属[i]) 专属数++; }
+
         GUILayout.Space(6f);
         GUILayout.Label("—— 召唤 NPC ——", 行样式);
-        GUILayout.Label("共 " + 全部NPC.Length + " 个，当前选中：" +
-            (选中NPC >= 0 ? 全部NPC名[选中NPC] : "（未选）"), 行样式);
+        GUILayout.Label("共 " + 全部NPC.Length + " 个（有 AI " + 有AI数 + "，其中专属物种 AI " + 专属数 + "）"
+            + "  当前选中：" + (选中NPC >= 0 ? 全部NPC名[选中NPC] : "（未选）"), 行样式);
+
+        // 搜索框：261 个 NPC 纯滚动找起来很累（用户 2026-09-29 要求：跟背包塞物品那边一样能搜）
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("筛选", 行样式, GUILayout.Width(36f));
+        召唤搜索 = GUILayout.TextField(召唤搜索 ?? "");
+        if (GUILayout.Button("清", GUILayout.Width(30f))) 召唤搜索 = "";
+        GUILayout.EndHorizontal();
+        只看有AI = GUILayout.Toggle(只看有AI, " 只列有 AI 的（★ = 专属物种 AI）", 行样式);
+
+        string 净搜索 = (召唤搜索 ?? "").Trim();
 
         召唤滚动 = GUILayout.BeginScrollView(召唤滚动, GUILayout.Height(110f));
+        int 显示数 = 0;
         for (int i = 0; i < 全部NPC名.Length; i++)
         {
+            if (!召唤该显示(i, 净搜索)) continue;
+            显示数++;
             var 原 = GUI.backgroundColor;
             if (i == 选中NPC) GUI.backgroundColor = new Color(1f, 0.85f, 0.45f);
-            if (GUILayout.Button(全部NPC名[i]))
+            if (GUILayout.Button((全部NPC是专属[i] ? "★ " : "· ") + 全部NPC名[i]))
             {
                 选中NPC = i;
-                Debug.Log("[调试面板] 选中 NPC：" + 全部NPC名[i]);
+                Debug.Log("[调试面板] 选中 NPC：" + 全部NPC名[i]
+                    + (全部NPC是专属[i] ? "（专属物种 AI）" : (全部NPC有AI[i] ? "（类型默认 AI）" : "（**没有 AI**）")));
             }
             GUI.backgroundColor = 原;
         }
+        if (显示数 == 0) GUILayout.Label("（没有匹配的，检查筛选词 / 关掉「只列有 AI 的」）", 行样式);
         GUILayout.EndScrollView();
 
         GUILayout.Space(4f);
@@ -274,7 +327,8 @@ public class PlayerStatsDebugPanel : MonoBehaviour
             Vector3 位 = 玩家 != null ? 玩家.position + 玩家.forward * 2f : Vector3.zero;
             var go = Instantiate(prefab, 位, Quaternion.identity);
             go.name = prefab.name + "_召唤";
-            Debug.Log("[调试面板] 已召唤 " + prefab.name + " 到 " + 位);
+            Debug.Log("[调试面板] 已召唤 " + prefab.name + " 到 " + 位
+                + (全部NPC有AI[选中NPC] ? "" : " —— **注意：这个 NPC 没有 AI，召唤出来不会动**"));
         }
         GUI.enabled = true;
         GUI.backgroundColor = 旧色;

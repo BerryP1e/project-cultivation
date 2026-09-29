@@ -87,6 +87,11 @@ public static class 近战动作量测
         new 目标("熊怪",   "NPC/Demon/XiongGuai/XiongGuai_01",         ""),
         new 目标("蜥蜴精", "NPC/Demon/XiYiJing/XiYiJing_01",           ""),
         new 目标("岩石怪", "NPC/Demon/YanShiGuai/YanShiGuai_01",       ""),
+
+        // ---- 2026-09-29 又一批（用户要求按动作范围判定）----
+        new 目标("冥尸",   "NPC/Demon/MingShi/MingShi_01",             ""),
+        new 目标("冥妖",   "NPC/Demon/MingYao_01/MingYao_01",          ""),
+        new 目标("蜘蛛精", "NPC/Demon/ZhiZhuJing/ZhiZhuJing_01",       ""),
     };
 
     [MenuItem("修仙/怪物/量近战动作范围", false, 700)]
@@ -101,7 +106,7 @@ public static class 近战动作量测
 
         foreach (var t in 目标s)
         {
-            var prefab = Resources.Load<GameObject>(t.prefab路径);
+            var prefab = 载入(t.prefab路径);
             if (prefab == null) { 报.AppendLine(t.名字.PadRight(14) + "✗ prefab 加载不到：" + t.prefab路径); continue; }
 
             var go = Object.Instantiate(prefab);
@@ -179,6 +184,20 @@ public static class 近战动作量测
                 if (st.state.name == 状态名)
                     return st.state.motion as AnimationClip;
         return null;
+    }
+
+    /// <summary>
+    /// 载入 prefab。⚠️ 这些怪的 **FBX 和 prefab 同名同目录**（`MingYao_01.FBX` + `MingYao_01.prefab`），
+    /// `Resources.Load` 拿到哪个**不确定** —— 拿到 FBX 就会"没有控制器/没有 AI 组件"，量出来全是错的。
+    /// 所以按文件夹全取出来、**挑带 NpcInstance 的那个**。
+    /// </summary>
+    static GameObject 载入(string 路径)
+    {
+        var 目录 = 路径.Substring(0, 路径.LastIndexOf('/'));
+        var 名 = 路径.Substring(路径.LastIndexOf('/') + 1);
+        foreach (var g in Resources.LoadAll<GameObject>(目录))
+            if (g != null && g.name == 名 && g.GetComponent<NpcInstance>() != null) return g;
+        return Resources.Load<GameObject>(路径);
     }
 
     /// <summary>

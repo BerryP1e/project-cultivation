@@ -39,6 +39,14 @@ public class NpcAttackConfig
     [Range(0.05f, 0.95f)]
     public float 出手进度 = 0.4f;
 
+    [Tooltip("**太近**就不出这一招（米）。0 = 不限。\n" +
+             "给「又能近战、又能丢飞弹」的怪用（例：蜘蛛精 a1 近战只在贴身时出）")]
+    public float 出手最小距离 = 0f;
+
+    [Tooltip("**太远**就不出这一招（米）。0 = 不限。\n" +
+             "同上：不给它设门槛的话，怪会站在 12 米外用近战动作砍空气")]
+    public float 出手最大距离 = 0f;
+
     [Tooltip("是不是「施法」动作 —— 需要飞行道具（子弹）而不是立即命中")]
     public bool 是施法 = false;
 
@@ -783,13 +791,20 @@ public abstract class NpcAiBase : MonoBehaviour
 
     readonly System.Collections.Generic.List<NpcAttackConfig> 出手候选 = new System.Collections.Generic.List<NpcAttackConfig>();
 
-    /// <summary>配置里**动画真存在**的那几条</summary>
+    /// <summary>配置里**动画真存在**、而且**当前距离够得着**的那几条</summary>
     protected System.Collections.Generic.List<NpcAttackConfig> 可用出手方式()
     {
         出手候选.Clear();
         if (攻击方式 == null) return 出手候选;
         foreach (var c in 攻击方式)
-            if (c != null && 有动作(c.动作名) && 该招就绪(c)) 出手候选.Add(c);
+        {
+            if (c == null || !有动作(c.动作名) || !该招就绪(c)) continue;
+            // 距离门槛：近战 / 远程混着用的怪靠它挑招 ——
+            // 不然「近战 a1」和「飞弹 a2」都是就绪的，随机挑到近战就会站在 12 米外砍空气
+            if (c.出手最小距离 > 0f && 到敌人距离 < c.出手最小距离) continue;
+            if (c.出手最大距离 > 0f && 到敌人距离 > c.出手最大距离) continue;
+            出手候选.Add(c);
+        }
         return 出手候选;
     }
 
@@ -1689,7 +1704,11 @@ public abstract class NpcAiBase : MonoBehaviour
             ? Quaternion.LookRotation(前, Vector3.forward)
             : Quaternion.LookRotation(前, Vector3.up);
         var fx = Instantiate(prefab, 位置, 旋转);
-        fx.name = "NpcFx_" + name;
+        // 【坑·已修】**施法者可能已经死了，弹还在飞**。飞弹的命中回调是挂在 `NpcProjectile.到达时`
+        // 上的闭包，怪被销毁之后回调照样会跑 —— 这时候访问 `name` 会抛
+        // `MissingReferenceException`（实测：怪死了、箭还在飞，命中时就刷这个异常）。
+        // 注意：**伤害不能一起掐掉**（弹都飞出来了，该打还得打），所以只把名字兜住。
+        fx.name = "NpcFx_" + (this != null ? name : "已销毁的施法者");
         Destroy(fx, Mathf.Max(0.2f, 存活));
         return fx;
     }

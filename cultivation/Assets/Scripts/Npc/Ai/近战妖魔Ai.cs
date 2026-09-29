@@ -99,6 +99,10 @@ public class 近战妖魔Ai : NpcAiDemon
     /// <summary>这一只怪是不是走网格判定</summary>
     protected bool 用武器网格 => !string.IsNullOrEmpty(武器节点名);
 
+    [Header("招式开关")]
+    [Tooltip("要不要主动神通（a2）。关掉就只出普攻（例：冥妖用户只要 a1）")]
+    public bool 有神通 = true;
+
     protected override void 取默认参数()
     {
         确保攻击方式();          // ★ 先保证三条默认招式在（Awake 没跑过时也不会静默早退）
@@ -112,13 +116,16 @@ public class 近战妖魔Ai : NpcAiDemon
 
         // 站位 = 「两种招式里**较短的那个**前伸」× 0.73 ——
         // 取短的才能保证**两招的武器都能从玩家身上扫过去**（取长的会让短招打空气）。
-        攻击距离 = Mathf.Max(1.2f, Mathf.Min(普攻峰值前伸, 神通峰值前伸) * 0.73f);
+        攻击距离 = Mathf.Max(1.2f, Mathf.Min(普攻峰值前伸, 有神通 ? 神通峰值前伸 : 普攻峰值前伸) * 0.73f);
 
         if (攻击方式 == null || 攻击方式.Length < 2) return;
         布一招(攻击方式[0], "Attack1", AttackKind.普通攻击, 普攻倍率, 普攻冷却,
                普攻峰值进度, 普攻判定起, 普攻判定止, 普攻命中特效, 1f);
-        布一招(攻击方式[1], "Attack2", AttackKind.主动神通, 神通倍率, 神通冷却,
-               神通峰值进度, 神通判定起, 神通判定止, 重击命中特效, 1.15f);
+        if (有神通)
+            布一招(攻击方式[1], "Attack2", AttackKind.主动神通, 神通倍率, 神通冷却,
+                   神通峰值进度, 神通判定起, 神通判定止, 重击命中特效, 1.15f);
+        else
+            攻击方式[1].动作名 = "";
 
         // Attack3 不用
         攻击方式[2].动作名 = "";
