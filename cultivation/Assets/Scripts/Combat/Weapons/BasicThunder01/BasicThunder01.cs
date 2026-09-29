@@ -115,6 +115,17 @@ public class BasicThunder01 : MonoBehaviour
              "这样加速后特效播完就消失、不会多挂一段空等。")]
     public bool 存活随速度缩短 = true;
 
+    [Tooltip("★ 勾上（默认）：存活**至少**取 prefab 的自然总时长（× `存活倍率`）。\n\n" +
+             "为什么：`lightning-ray` 的自然总时长是 **4.50 秒**\n" +
+             "（ground-dust：duration 2.0 + startDelay 0.5 + life 2.0），\n" +
+             "而这里原来写死 1.2 秒 → 粒子还没落地、地面尘还没散就被 Destroy，\n" +
+             "表现就是「雷提前消失」（用户 2026-09-29 报的）。\n" +
+             "和冰刺 / 寒墟同一套口径（见 docs/guides/沧澜寒渊录.md §2.4）。")]
+    public bool 存活按特效自动 = true;
+
+    [Tooltip("自动存活再乘这个系数（留点余量让它彻底淡完）")]
+    public float 存活倍率 = 1.05f;
+
     [Tooltip("【基准敌人高度】(米)：敌人这么高时特效 scale = 1。\n" +
              "雷会按「敌人高度 ÷ 这个值」等比缩放，再夹进下面的上下限")]
     public float 基准敌人高度 = 1.8f;
@@ -175,7 +186,8 @@ public class BasicThunder01 : MonoBehaviour
     [Tooltip("被闪电链打中时贴在敌人身上的命中特效（这个没删，还在用）")]
     public string 命中特效路径 = "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-arc-flash";
 
-    [Tooltip("命中特效存活（秒）")]
+    [Tooltip("命中特效存活（秒）。勾了 `存活按特效自动` 时它是**下限**\n" +
+             "（`lightning-arc-flash` 自然 2.10 秒，原来写死 0.8 秒也会被切）")]
     public float 命中特效存活 = 0.8f;
 
     // ============================================================ 引用
@@ -375,8 +387,15 @@ public class BasicThunder01 : MonoBehaviour
         开播放速度(go);                       // 整个特效按 雷特效速度 加速
         if (雷特效不随相机) 改成不随相机(go);
 
-        // 存活时间要跟着速度缩短，否则加速后特效播完了还挂一段空等
+        // 存活时间要跟着速度缩短，否则加速后特效播完了还挂一段空等。
+        // ★ 默认再取一次「prefab 的自然总时长」当下限 —— 写死的 1.2 秒会把
+        //   lightning-ray 那 4.5 秒的"雷落地 + 地面尘散开"整段切掉（用户 2026-09-29 报的）。
         float 存活 = Mathf.Max(0.1f, 雷特效存活);
+        if (存活按特效自动)
+        {
+            var 预制 = Resources.Load<GameObject>(雷特效路径);
+            存活 = Mathf.Max(存活, 特效摆放.量特效总时长(预制, 雷特效存活) * Mathf.Max(0.5f, 存活倍率));
+        }
         if (存活随速度缩短) 存活 /= Mathf.Max(0.05f, 雷特效速度);
         Destroy(go, 存活);
     }
@@ -579,7 +598,12 @@ public class BasicThunder01 : MonoBehaviour
         var go = Instantiate(prefab, 位, Quaternion.identity);
         go.name = "雷击命中_" + 目标.名字;
         go.transform.localScale = Vector3.one * Mathf.Clamp(缩放, 缩放下限, 缩放上限);
-        Destroy(go, Mathf.Max(0.05f, 命中特效存活));
+
+        // 同上：命中特效也别写死（lightning-arc-flash 自然 2.10 秒，0.8 秒会被切）
+        float 命中存活 = Mathf.Max(0.05f, 命中特效存活);
+        if (存活按特效自动)
+            命中存活 = Mathf.Max(命中存活, 特效摆放.量特效总时长(prefab, 命中特效存活) * Mathf.Max(0.5f, 存活倍率));
+        Destroy(go, 命中存活);
     }
 
     // ============================================================ 工具
