@@ -49,6 +49,22 @@ public class StationInteractor : MonoBehaviour
     [Tooltip("靠近提示相对物件头顶再往上多少")]
     public float 提示抬高 = 0.6f;
 
+    [Tooltip("★ 勾上（默认）：**非对话**设施（建筑 / 传送圈 / 炼丹炉…）的提示**挂在玩家身上** ——\n" +
+             "水平 = 玩家位置 + 朝设施方向偏 `提示朝设施偏移`，高度 = 玩家 + `提示玩家抬高`。\n\n" +
+             "**为什么（用户 2026-09-29）**：原来放在**物件包围盒顶部**（再按 `提示最高点` 封顶 3m），\n" +
+             "宗门那些 12~19 米的楼会把这个 3 米高的提示**埋进楼体内部**，从外面完全看不见。\n" +
+             "用户原话：「你生成的位置被建筑本身的模型盖住了 —— 以后这个互动提示生成在玩家的高度。」\n\n" +
+             "挂玩家身上就永远不会被建筑挡住（相机本来就看着玩家），也不受楼高影响。\n" +
+             "关掉它就退回老逻辑（物件顶部 + 提示最高点封顶）。")]
+    public bool 提示挂玩家 = true;
+
+    [Tooltip("挂玩家身上时，提示比**玩家脚底**高多少米（默认 2.1 ≈ 头顶稍上）")]
+    public float 提示玩家抬高 = 2.1f;
+
+    [Tooltip("挂玩家身上时，再朝「设施方向」水平偏出去多少米（0 = 就在玩家正上方）。\n" +
+             "偏一点能让提示看起来是「朝着那台设施」的；**别给太大**，否则又可能钻进建筑里")]
+    public float 提示朝设施偏移 = 0.5f;
+
     /// <summary>这一帧的右键是不是被设施吃掉了（给 NpcTargeting 用，兜底）</summary>
     public static bool 本次右键已被占用 { get; private set; }
 
@@ -258,7 +274,23 @@ public class StationInteractor : MonoBehaviour
         {
             if (名字根 != null && 名字根.activeSelf) 名字根.SetActive(false);
             提示文字.text = 最近设施.标题;
-            提示根.transform.position = 位 + Vector3.up * 顶;
+
+            if (提示挂玩家)
+            {
+                // ★ 用户 2026-09-29：**挂在玩家身上**，不再挂物件顶部 ——
+                //   原来放在物件包围盒顶（再封顶 3m），宗门那些 15 米的楼会把提示埋进楼体里。
+                //   水平 = 玩家 + 朝设施方向偏一点；高度 = 玩家的高度。
+                var 朝 = 位 - transform.position;
+                朝.y = 0f;
+                if (朝.sqrMagnitude > 0.0001f) 朝.Normalize(); else 朝 = Vector3.zero;
+                提示根.transform.position = transform.position
+                                          + 朝 * Mathf.Max(0f, 提示朝设施偏移)
+                                          + Vector3.up * 提示玩家抬高;
+            }
+            else
+            {
+                提示根.transform.position = 位 + Vector3.up * 顶;
+            }
         }
 
         if (主相机 != null)
