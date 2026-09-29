@@ -92,22 +92,27 @@ public static class 飞弹出生点量测
                 continue;
             }
 
-            Vector3 点; string 说明;
-            bool 成功 = 量点(实例, t, 片段, out 点, out 说明);
+            Vector3 点; string 说明; Transform 驱动骨;
+            bool 成功 = 量点(实例, t, 片段, out 点, out 说明, out 驱动骨);
             if (!成功) { 报.AppendLine(t.名字.PadRight(22) + t.动作名.PadRight(9) + "✗ " + 说明); Object.DestroyImmediate(实例); continue; }
 
-            // 找离这个点最近的骨骼（武器网格自己那根骨骼优先 —— 它才是带着武器动的那根）
-            Transform 骨 = 最近骨骼(实例, 点, t.网格节点名);
+            // ★ 优先用「驱动这个点的蒙皮骨」（权重最大的那根）——
+            // 这才是"这块肉长在哪根骨头上"，用它当挂点，任何姿势都精确跟着走。
+            // 只有拿不到（比如"武器中部"取的是包围盒中心、不对应某个顶点）才退回"离得最近的骨骼"。
+            Transform 骨 = 驱动骨 != null ? 驱动骨 : 最近骨骼(实例, 点, t.网格节点名);
+            string 来历 = 驱动骨 != null ? "蒙皮主骨" : "最近骨骼(退路)";
             if (骨 == null) { 报.AppendLine(t.名字.PadRight(22) + t.动作名.PadRight(9) + "✗ 找不到可用骨骼"); Object.DestroyImmediate(实例); continue; }
             // ⚠️ `点` 是**角色本地坐标**，而 `InverseTransformPoint` 要的是**世界坐标** ——
             // 直接喂进去会得到一堆几百米的鬼数字（第一版就是这么错的：248 / -208）。
             var 世界点 = 实例.transform.TransformPoint(点);
             var 偏移 = 骨.InverseTransformPoint(世界点);
+            var 回算 = 骨.TransformPoint(偏移);
             var 缩放 = 骨.lossyScale;
             报.AppendLine(t.名字.PadRight(22) + t.动作名.PadRight(9) + t.进度.ToString("0.000").PadRight(7)
                 + t.模式.PadRight(16) + "→ " + 骨.name + " / (" + 偏移.x.ToString("0.000") + ", "
-                + 偏移.y.ToString("0.000") + ", " + 偏移.z.ToString("0.000") + ")   [" + 说明
-                + "  骨骼lossyScale=" + 缩放.ToString("0.00") + "]");
+                + 偏移.y.ToString("0.000") + ", " + 偏移.z.ToString("0.000") + ")   [" + 来历 + "；" + 说明
+                + "；回算误差 " + Vector3.Distance(回算, 世界点).ToString("0.0000") + " 米；骨骼lossyScale="
+                + 缩放.ToString("0.00") + "]");
             Object.DestroyImmediate(实例);
         }
 
@@ -137,11 +142,12 @@ public static class 飞弹出生点量测
         return null;
     }
 
-    /// <summary>采样到指定进度，求出目标点（本地坐标系 = 角色根节点空间）</summary>
-    static bool 量点(GameObject go, 目标 t, AnimationClip 片段, out Vector3 点, out string 说明)
+    /// <summary>采样到指定进度，求出目标点（本地坐标系 = 角色根节点空间）+ 驱动它的蒙皮骨</summary>
+    static bool 量点(GameObject go, 目标 t, AnimationClip 片段, out Vector3 点, out string 说明, out Transform 驱动骨)
     {
         点 = Vector3.zero;
         说明 = "";
+        驱动骨 = null;
         var 逆 = go.transform.worldToLocalMatrix;
 
         AnimationMode.StartAnimationMode();
@@ -155,28 +161,41 @@ public static class 飞弹出生点量测
                     if (tr.name == t.网格节点名) { 网格 = tr; break; }
 
             var 顶点 = new List<Vector3>();
+            var 顶点主骨 = new List<Transform>();     // 每个顶点"权重最大的那根蒙皮骨"（静态网格 = null）
             var 渲染s = 网格 != null ? 网格.GetComponentsInChildren<Renderer>(true)
                                     : go.GetComponentsInChildren<Renderer>(true);
             foreach (var r in 渲染s)
             {
                 if (r == null || r is ParticleSystemRenderer) continue;
                 var sm = r as SkinnedMeshRenderer;
-                if (sm != null && sm.sharedMesh != null) 蒙皮顶点(sm, 逆, 顶点);
+                if (sm != null && sm.sharedMesh != null) 蒙皮顶点(sm, 逆, 顶点, 顶点主骨);
                 else
                 {
                     var mf = r.GetComponent<MeshFilter>();
                     if (mf == null || mf.sharedMesh == null) continue;
                     var M = 逆 * r.transform.localToWorldMatrix;
-                    foreach (var v in mf.sharedMesh.vertices) 顶点.Add(M.MultiplyPoint3x4(v));
+                    foreach (var v in mf.sharedMesh.vertices) { 顶点.Add(M.MultiplyPoint3x4(v)); 顶点主骨.Add(null); }
                 }
             }
             if (顶点.Count == 0) { 说明 = "这个网格没有可用的顶点"; return false; }
 
+            int 选中 = -1;
             if (t.模式 == "模型末端")
             {
+                // 【坑·已修】"整个模型最靠后的顶点"是**姿势相关**的：
+                // 蜘蛛精在吐丝那一帧，最后面的顶点其实是**后腿**（主骨 Bone14），不是尾巴。
+                // 所以：**模型里只要有名字带 Tail 的骨骼链，就只在"尾巴骨驱动的顶点"里找**
+                // （蜘蛛精有 Bip01 Tail…TailNub；玄蜂没有尾巴骨，就走全模型）。
+                bool 有尾骨 = false;
+                foreach (var b in 顶点主骨) if (b != null && b.name.IndexOf("Tail", System.StringComparison.OrdinalIgnoreCase) >= 0) { 有尾骨 = true; break; }
                 float 最小 = float.MaxValue;
-                foreach (var v in 顶点) if (v.z < 最小) { 最小 = v.z; 点 = v; }
-                说明 = "本地 Z 最小的顶点 (" + 点.ToString("0.00") + ")";
+                for (int i = 0; i < 顶点.Count; i++)
+                {
+                    if (有尾骨 && (顶点主骨[i] == null || 顶点主骨[i].name.IndexOf("Tail", System.StringComparison.OrdinalIgnoreCase) < 0)) continue;
+                    if (顶点[i].z < 最小) { 最小 = 顶点[i].z; 选中 = i; }
+                }
+                点 = 顶点[选中];
+                说明 = (有尾骨 ? "（只在尾巴骨驱动的顶点里找）" : "") + "本地 Z 最小的顶点 (" + 点.ToString("0.00") + ")";
             }
             else if (t.模式 == "武器中部")
             {
@@ -197,20 +216,27 @@ public static class 飞弹出生点量测
                 if (靶 == null) 靶 = go.transform;
                 var 靶位 = 逆.MultiplyPoint3x4(靶.position);
                 float 最远 = -1f;
-                foreach (var v in 顶点)
+                for (int i = 0; i < 顶点.Count; i++)
                 {
-                    float d = Vector3.Distance(v, 靶位);
-                    if (d > 最远) { 最远 = d; 点 = v; }
+                    float d = Vector3.Distance(顶点[i], 靶位);
+                    if (d > 最远) { 最远 = d; 选中 = i; }
                 }
+                点 = 顶点[选中];
                 说明 = "离骨骼(" + 靶.name + ")最远 " + 最远.ToString("0.00") + " 米";
             }
+
+            // ★ 这个点是被哪根骨头驱动的？**有它就用它**（见 最近骨骼 的注释）
+            if (选中 >= 0 && 选中 < 顶点主骨.Count) 驱动骨 = 顶点主骨[选中];
             return true;
         }
         finally { AnimationMode.StopAnimationMode(); }
     }
 
-    /// <summary>蒙皮网格的真实顶点（自己做蒙皮：骨骼矩阵 × bindpose × 顶点，按权重加权）</summary>
-    static void 蒙皮顶点(SkinnedMeshRenderer sm, Matrix4x4 逆, List<Vector3> 出)
+    /// <summary>
+    /// 蒙皮网格的真实顶点（自己做蒙皮：骨骼矩阵 × bindpose × 顶点，按权重加权）。
+    /// 顺便把每个顶点**权重最大的那根骨骼**记下来 —— 那是"驱动这块肉的骨头"。
+    /// </summary>
+    static void 蒙皮顶点(SkinnedMeshRenderer sm, Matrix4x4 逆, List<Vector3> 出, List<Transform> 主骨表)
     {
         var m = sm.sharedMesh;
         var vs = m.vertices;
@@ -232,6 +258,19 @@ public static class 飞弹出生点量测
             }
             else w = sm.transform.TransformPoint(vs[i]);
             出.Add(逆.MultiplyPoint3x4(w));
+
+            // 主骨 = 四个权重里最大的那根
+            Transform 最好 = null; float 最大 = 0f;
+            if (有权重)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    int bi = k == 0 ? bw[i].boneIndex0 : k == 1 ? bw[i].boneIndex1 : k == 2 ? bw[i].boneIndex2 : bw[i].boneIndex3;
+                    float wt = k == 0 ? bw[i].weight0 : k == 1 ? bw[i].weight1 : k == 2 ? bw[i].weight2 : bw[i].weight3;
+                    if (wt > 最大 && bi >= 0 && bi < 骨.Length && 骨[bi] != null) { 最大 = wt; 最好 = 骨[bi]; }
+                }
+            }
+            主骨表.Add(最好);
         }
     }
 
@@ -244,6 +283,16 @@ public static class 飞弹出生点量测
     /// <summary>
     /// 离目标点最近的骨骼。**武器网格自己那根骨骼优先** —— 它才是"带着武器动"的那根，
     /// 用它当挂点的父节点，武器怎么动出生点就怎么动。
+    /// </summary>
+    /// <summary>
+    /// **退路**：离目标点最近的那根骨骼。
+    ///
+    /// ⚠️ **别优先用它** —— 用户 2026-09-29 一眼看出"玄蜂的箭不是从屁股射出来的"，
+    /// 根因就是这个：玄蜂的屁股点用"最近骨骼"算出来挂到了 `Bone04`
+    /// （**离屁股 1.83 米**，在身体中上部）。
+    /// **正解是看蒙皮权重**：屁股那些顶点 100% 权重都在 `Bone13` / `Bone13(mirrored)` 上，
+    /// 挂 `Bone13` 才精确（改后离屁股 **0.001 米**，而且权重 1.0 = 任何姿势都刚性跟随）。
+    /// 只有拿不到"驱动骨"（比如"武器中部"取的是包围盒中心、不对应具体顶点）才用它。
     /// </summary>
     static Transform 最近骨骼(GameObject go, Vector3 局部点, string 网格节点名)
     {
