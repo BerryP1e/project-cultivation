@@ -54,8 +54,6 @@ public static class 飞弹出生点量测
         new 目标("狗头军师-武器顶端2", "NPC/Demon/GouTouJunShi/GouTouJunShi_01", "GouTouJunShi_01_Weapon", "Attack2", 0.57f, "武器顶端"),
         new 目标("老龟精-武器顶端",   "NPC/Demon/LaoGuiJing/LaoGuiJing_01",     "LaoGuiJing_wuqi", "Attack1", 0.465f, "武器顶端"),
         new 目标("老龟精-武器顶端2",  "NPC/Demon/LaoGuiJing/LaoGuiJing_01",     "LaoGuiJing_wuqi", "Attack2", 0.645f, "武器顶端"),
-        new 目标("箭魔-武器中部",     "NPC/Demon/JianMo/JianMo_01",             "JianMo_01_02", "Attack1", 0.31f, "武器中部"),
-        new 目标("箭魔-武器中部2",    "NPC/Demon/JianMo/JianMo_01",             "JianMo_01_02", "Attack2", 0.57f, "武器中部"),
     };
 
     [MenuItem("修仙/怪物/量飞弹出生点", false, 701)]
