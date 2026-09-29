@@ -105,6 +105,31 @@ public class NpcAttackConfig
     [Tooltip("收招后摇（秒）：动作播完还要等这么久才可能再次出手")]
     public float 收招后摇 = 0.25f;
 
+    // ============================================================ 近战 · 网格判定
+    // 用户 2026-09-29 定的新口径：有武器的怪要**用武器子物件的网格**来判伤害，
+    // 不再是"到出手进度就必中"。
+
+    [Tooltip("★ 勾上 = 这一招**用武器子物件的网格做伤害判定**，而不是「到出手进度就必中」。\n\n" +
+             "攻击期间（出手进度 → 判定结束进度）**逐帧**拿判定网格的世界包围盒去和玩家的体积求交，\n" +
+             "**碰到了才出伤**；整个窗口都没碰到 = 这一下打空（漏招）。\n" +
+             "出伤和命中特效都在**碰到的那一帧**，所以特效不会提前闪。")]
+    public bool 用网格判定 = false;
+
+    [Tooltip("判定用的子物件名（在子物件里按名字找，例：`ChiMangJin_WuQi`）。\n" +
+             "留空 = 用**整个角色**的渲染体（没武器的怪走这条）。\n" +
+             "可以填**多个**（用 `|` 隔开，例：`NiuTouYao_01_Weapon|NiuTouYao_02_Weapon`）\n" +
+             "—— 同一个类的几个模型变体武器名不一样时用得上，取第一个找到的。\n" +
+             "⚠️ 名字要和 prefab 里的层级完全一致（大小写不敏感）。")]
+    public string 判定网格名 = "";
+
+    [Tooltip("判定窗口从 `出手进度` 开始，到这个进度结束（0~1）。\n" +
+             "窗口内一直检测；调窄它 = 只有真正挥出去的那一小段才有判定")]
+    [Range(0.05f, 1f)]
+    public float 判定结束进度 = 0.95f;
+
+    [Tooltip("把判定包围盒往外扩多少米（补偿网格贴合不紧 / 玩家体积偏小）。0 = 不外扩")]
+    public float 判定外扩 = 0.15f;
+
     /// <summary>这一次出手用的结算规则</summary>
     public AttackSpec 取规则() => new AttackSpec(伤害属性, 攻击类别, 必定命中, 技能倍率);
 }
@@ -1110,14 +1135,123 @@ public abstract class NpcAiBase : MonoBehaviour
         float 总长 = Mathf.Max(0.05f, 动作结束时间 - 动作开始时间);
         float 进度 = Mathf.Clamp01((Time.time - 动作开始时间) / 总长);
 
-        // 【出伤 + 命中特效】都在**同一时刻**：动画放到 出手进度 那一下
-        if (!本次出手已结算 && 进度 >= 当前出手.出手进度)
+        // 【出伤 + 命中特效】都在**同一时刻**。
+        //
+        // 两条路：
+        //   · 普通（用网格判定 = false）：动画放到 `出手进度` 那一下就结算（必中，看公式命中率）
+        //   · 网格判定（用网格判定 = true）：窗口内**逐帧**拿武器网格去碰玩家，
+        //     **碰到的那一帧**才结算 —— 没碰到就是打空。特效也落在接触点上。
+        if (!本次出手已结算)
         {
-            本次出手已结算 = true;
-            结算伤害(当前出手);
+            if (当前出手.用网格判定)
+            {
+                bool 在窗口内 = 进度 >= 当前出手.出手进度 && 进度 <= 当前出手.判定结束进度;
+                Vector3 接触点;
+                if (在窗口内 && 判定网格碰到玩家(当前出手, out 接触点))
+                {
+                    本次出手已结算 = true;
+                    结算伤害(当前出手, 接触点);
+                }
+            }
+            else if (进度 >= 当前出手.出手进度)
+            {
+                本次出手已结算 = true;
+                结算伤害(当前出手);
+            }
         }
 
         if (Time.time >= 动作结束时间) 收招();
+    }
+
+    // ============================================================ 网格判定
+
+    /// <summary>这一招的判定体（缓存，每次出手只解析一次）</summary>
+    Renderer[] 判定体缓存;
+    NpcAttackConfig 判定体对应的招;
+
+    /// <summary>
+    /// 解析「判定网格」这一步用到的渲染体。
+    /// `判定网格名` 留空 → 用整个角色的渲染体（没武器的怪）。
+    /// </summary>
+    Renderer[] 取判定体(NpcAttackConfig 配置)
+    {
+        if (判定体缓存 != null && 判定体对应的招 == 配置) return 判定体缓存;
+        判定体对应的招 = 配置;
+
+        Transform 根 = transform;
+        if (!string.IsNullOrEmpty(配置.判定网格名))
+        {
+            // 支持 "名字A|名字B|名字C"：同一个类的几个模型变体武器名不一样时用得上
+            Transform 找到 = null;
+            foreach (var 候选 in 配置.判定网格名.Split('|'))
+            {
+                var 名 = 候选.Trim();
+                if (名.Length == 0) continue;
+                foreach (var t in GetComponentsInChildren<Transform>(true))
+                    if (t != null && string.Equals(t.name, 名, System.StringComparison.OrdinalIgnoreCase))
+                    { 找到 = t; break; }
+                if (找到 != null) break;
+            }
+            if (找到 == null)
+            {
+                Debug.LogWarning("[AI] " + name + " 找不到判定网格「" + 配置.判定网格名
+                    + "」→ 退回用整个角色的渲染体", this);
+            }
+            else 根 = 找到;
+        }
+        判定体缓存 = 根.GetComponentsInChildren<Renderer>(true);
+        return 判定体缓存;
+    }
+
+    /// <summary>玩家这一帧的体积（用它的碰撞体；没有就按身高凑一个胶囊盒）</summary>
+    Bounds 取玩家体积()
+    {
+        var 玩家 = 玩家生命 != null ? 玩家生命.transform : null;
+        if (玩家 == null) return new Bounds(Vector3.zero, Vector3.zero);
+
+        var 碰 = 玩家.GetComponentInChildren<Collider>();
+        if (碰 != null && 碰.enabled) return 碰.bounds;
+
+        // 兜底：以判定高度为中心的一个 0.8 米见方的盒子
+        var 心 = 玩家.position + Vector3.up * PlayerTarget.判定高度;
+        return new Bounds(心, new Vector3(0.8f, 1.6f, 0.8f));
+    }
+
+    /// <summary>
+    /// 这一招的网格这一帧**有没有碰到玩家**。碰到就给出**接触点**（在玩家表面上，
+    /// 命中特效落在这里最像"打在身上"）。
+    /// </summary>
+    bool 判定网格碰到玩家(NpcAttackConfig 配置, out Vector3 接触点)
+    {
+        接触点 = Vector3.zero;
+
+        var 体 = 取判定体(配置);
+        if (体 == null || 体.Length == 0) return false;
+
+        bool 有 = false;
+        var 武器体 = new Bounds();
+        foreach (var r in 体)
+        {
+            if (r == null || !r.enabled || !r.gameObject.activeInHierarchy) continue;
+            if (r is ParticleSystemRenderer) continue;                 // 粒子不算判定
+            if (!有) { 武器体 = r.bounds; 有 = true; } else 武器体.Encapsulate(r.bounds);
+        }
+        if (!有) return false;
+        if (配置.判定外扩 > 0f) 武器体.Expand(配置.判定外扩 * 2f);
+
+        var 玩家体 = 取玩家体积();
+        if (!武器体.Intersects(玩家体)) return false;
+
+        // 接触点：玩家体上离"武器中心"最近的那一点 —— 贴在玩家表面，特效好看
+        接触点 = 玩家体.ClosestPoint(武器体.center);
+        return true;
+    }
+
+    /// <summary>收招时把判定体缓存清掉（换模型 / 换招之后要重新解析）</summary>
+    void 清判定缓存()
+    {
+        判定体缓存 = null;
+        判定体对应的招 = null;
     }
 
     void 收招()
@@ -1129,6 +1263,7 @@ public abstract class NpcAiBase : MonoBehaviour
             各招冷却[当前出手] = Time.time + 冷 + 当前出手.收招后摇;
         }
         下次可出手时间 = Time.time + 攻击间隔;
+        清判定缓存();          // 下一次出手可能换招 / 换模型，判定体重新解析
         当前出手 = null;
         进入状态(NpcAiState.待机);
     }
@@ -1156,6 +1291,16 @@ public abstract class NpcAiBase : MonoBehaviour
     /// </summary>
     protected virtual void 结算伤害(NpcAttackConfig 配置)
     {
+        结算伤害(配置, null);
+    }
+
+    /// <summary>
+    /// 真正把伤害打出去。
+    /// <paramref name="网格接触点"/> 非空 = 走网格判定碰到的**接触点**，
+    /// 命中特效就落在那儿（而不是玩家的身体中心）。
+    /// </summary>
+    protected virtual void 结算伤害(NpcAttackConfig 配置, Vector3? 网格接触点)
+    {
         var 规则 = 配置.取规则();
 
         if (配置.是施法)
@@ -1164,11 +1309,11 @@ public abstract class NpcAiBase : MonoBehaviour
             return;
         }
 
-        立即命中(规则, 配置);
+        立即命中(规则, 配置, 网格接触点);
     }
 
     /// <summary>立即结算一次，打到玩家身上</summary>
-    protected void 立即命中(AttackSpec 规则, NpcAttackConfig 配置)
+    protected void 立即命中(AttackSpec 规则, NpcAttackConfig 配置, Vector3? 网格接触点 = null)
     {
         if (玩家生命 == null || 玩家战斗属性 == null) return;
 
@@ -1178,8 +1323,9 @@ public abstract class NpcAiBase : MonoBehaviour
             玩家生命.受到伤害(结果.伤害);
 
             // 【命中特效】以前这条路径**一个特效都不放**，打上去光秃秃的。
-            // 现在统一走 生成命中特效 → 物理攻击自动兜上基础特效
-            var 判定点 = 玩家生命.transform.position + Vector3.up * PlayerTarget.判定高度;
+            // 现在统一走 生成命中特效 → 物理攻击自动兜上基础特效。
+            // 网格判定时用**接触点**，特效就贴在武器打到的那一块上。
+            var 判定点 = 网格接触点 ?? (玩家生命.transform.position + Vector3.up * PlayerTarget.判定高度);
             生成命中特效(配置, 判定点, transform.position - 判定点);
         }
 
