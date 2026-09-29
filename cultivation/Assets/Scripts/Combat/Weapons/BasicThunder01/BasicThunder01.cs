@@ -103,13 +103,16 @@ public class BasicThunder01 : MonoBehaviour
              "否则特效早就播完了还挂在那里（勾了 `存活随速度缩短` 就自动处理）。")]
     public float 雷特效存活 = 1.2f;
 
-    [Tooltip("★ 雷特效的**整体播放速度倍率**。**1 = 原速（默认）**。\n\n" +
+    [Tooltip("★ 雷特效的**整体播放速度倍率**。\n\n" +
              "做法：把整棵树的 `main.simulationSpeed` 乘上这个值 —— 所有粒子的发射、\n" +
-             "生命周期、速度一起加速。\n\n" +
+             "生命周期、速度一起加速（存活也按 `存活随速度缩短` 一起缩短）。\n\n" +
+             "**默认 1.8**（用户 2026-09-29 要求）：原速太拖，缺「雷系干净利落」的感觉；\n" +
+             "而且普攻攻速一高，上一个雷还没散、下一个就来了。嫌快就往下调（1.2~1.5），\n" +
+             "嫌拖就往上调（2.0~2.5）。\n\n" +
              "⚠️ 如果只是**某个部件起步慢**（例：`ground-flashes` 有个 startDelay），\n" +
              "**直接去 prefab 里把那个 startDelay 改成 0**，别用这个整体加速 ——\n" +
              "整体加速会把所有部件（含 ground-pebbles）一起改快，不是你要的。")]
-    public float 雷特效速度 = 1f;
+    public float 雷特效速度 = 1.8f;
 
     [Tooltip("勾上（默认）：自动把 `雷特效存活` 按速度缩短（存活 ÷ 速度），\n" +
              "这样加速后特效播完就消失、不会多挂一段空等。")]
@@ -183,8 +186,14 @@ public class BasicThunder01 : MonoBehaviour
     [Tooltip("特效沿【本地哪根轴】拉伸。留空/填错不要紧：运行时会按 prefab 的 shape 自动探测最长的那个轴")]
     public Vector3 闪电链拉伸轴 = new Vector3(0f, 0f, 1f);
 
-    [Tooltip("被闪电链打中时贴在敌人身上的命中特效（这个没删，还在用）")]
+    [Tooltip("被闪电链打中时贴在敌人身上的命中特效（这个没删，还在用）\n" +
+             "★ 2026-09-29 起**主目标挨劈时也会挂它**（用户要求），但尺寸要压小 → 见 命中特效大小倍率")]
     public string 命中特效路径 = "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-arc-flash";
+
+    [Tooltip("★ 命中特效的**大小倍率**（在「按体型缩放」之后再乘一道）。\n\n" +
+             "用户 2026-09-29：「把闪电链的命中特效调到比现在小一些，现在感觉有点主副颠倒了」\n" +
+             "—— 雷劈是**主**、命中闪是**副**，所以默认压到 **0.6**。嫌小/大就调这个。")]
+    public float 命中特效大小倍率 = 0.6f;
 
     [Tooltip("命中特效存活（秒）。勾了 `存活按特效自动` 时它是**下限**\n" +
              "（`lightning-arc-flash` 自然 2.10 秒，原来写死 0.8 秒也会被切）")]
@@ -348,6 +357,10 @@ public class BasicThunder01 : MonoBehaviour
 
         float 缩放 = 按体型算缩放(目标);
         生成雷(目标, 缩放);
+
+        // ★ 用户 2026-09-29：**主目标也要挂那个命中特效**（原来只有被链到的敌人才有），
+        //   但尺寸单独用一个倍率压小（见 命中特效大小倍率）—— 雷劈是主、命中闪是副。
+        生成命中特效(目标, 缩放);
 
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 技能倍率);
         var 结果 = 目标.受到攻击(玩家战斗属性, 规则, this);
@@ -597,7 +610,9 @@ public class BasicThunder01 : MonoBehaviour
 
         var go = Instantiate(prefab, 位, Quaternion.identity);
         go.name = "雷击命中_" + 目标.名字;
-        go.transform.localScale = Vector3.one * Mathf.Clamp(缩放, 缩放下限, 缩放上限);
+        // ★ 命中特效是**副**效果：在「按体型缩放」之后再压一道 命中特效大小倍率
+        float 大小 = Mathf.Clamp(缩放, 缩放下限, 缩放上限) * Mathf.Max(0.05f, 命中特效大小倍率);
+        go.transform.localScale = Vector3.one * 大小;
 
         // 同上：命中特效也别写死（lightning-arc-flash 自然 2.10 秒，0.8 秒会被切）
         float 命中存活 = Mathf.Max(0.05f, 命中特效存活);
