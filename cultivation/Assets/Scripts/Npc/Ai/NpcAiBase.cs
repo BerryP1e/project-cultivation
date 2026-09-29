@@ -1683,8 +1683,14 @@ public abstract class NpcAiBase : MonoBehaviour
     /// <summary>
     /// 弹道要往前让开多少，才不会一出生就撞到施法者自己。
     /// 取「自己碰撞体的水平半径 + 一点余量」。
+    ///
+    /// 这个前移**只对「飞行中一碰就炸」的实体弹丸有必要**
+    /// （QFX 的 `PFX_ProjectileObject` 那种，生在自己身上会当帧自爆）。
+    /// 我们自己的纯粒子/纯网格弹体**不和场景碰撞**，所以子类可以把它设成 0
+    /// —— 见 <see cref="飞弹妖魔Ai.出膛余量"/>（用"动画里那支箭"当弹体时，
+    /// 前移会让箭凭空往前跳一米）。
     /// </summary>
-    protected float 出膛余量()
+    protected virtual float 出膛余量()
     {
         var col = GetComponent<Collider>();
         if (col == null) return 0.5f;

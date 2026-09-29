@@ -78,6 +78,118 @@ public class 飞弹妖魔Ai : NpcAiDemon
     [Tooltip("留空则 弹道路径/命中路径/闪光路径 要填**完整** Resources 路径")]
     public string 包前缀 = "";
 
+    [Header("用动画里自带的弹体（箭魔那种：动作里本来就有一支箭）")]
+    [Tooltip("模型里**跟着动画动的那支箭**的节点名（SkinnedMeshRenderer）。\n" +
+             "填了 = 发射时取**它在那一刻的真实世界位置**当出生点，并在飞行期间把它藏起来 ——\n" +
+             "看起来就是「动画里那支箭真的飞出去了」；动作结束后再放回来（下次拉弓还要用）。\n" +
+             "留空 = 老做法（用 挂点 + 挂点偏移）。\n" +
+             "**为什么更好**：用户 2026-09-29 提的 ——「他射箭的动画中其实已经有了箭这个组件……\n" +
+             "能否让动画结束了箭也不消失，让它真正的飞出去？」。\n" +
+             "这样出生点**永远和动画里那支箭重合**，不用靠量出来的骨骼+偏移去近似。")]
+    public string 动画弹体节点名 = "";
+
+    SkinnedMeshRenderer 动画弹体;
+    bool 动画弹体已藏;
+    Vector3 动画弹体出膛点;
+    bool 动画弹体出膛点有效;
+
+    protected override void Start()
+    {
+        base.Start();
+        状态变化 += 看状态变化;
+        if (string.IsNullOrEmpty(动画弹体节点名)) return;
+        var t = 找挂点(动画弹体节点名);
+        动画弹体 = t != null ? t.GetComponent<SkinnedMeshRenderer>() : null;
+        if (动画弹体 == null)
+            Debug.LogWarning("[AI] " + name + " 找不到「动画弹体」节点「" + 动画弹体节点名
+                + "」，这一只用挂点+偏移出膛", this);
+    }
+
+    /// <summary>攻击结束 → 把动画里那支箭放回来（拉弓还要用）</summary>
+    void 看状态变化(NpcAiBase 谁, NpcAiState 旧, NpcAiState 新)
+    {
+        if (旧 != NpcAiState.攻击) return;
+        if (动画弹体 == null || !动画弹体已藏) return;
+        动画弹体.enabled = true;
+        动画弹体已藏 = false;
+    }
+
+    /// <summary>
+    /// 发射前先量出「动画里那支箭」此刻的世界中心，并把它藏起来。
+    /// **必须在 base 之前量** —— 藏掉之后就算不出来了。
+    /// </summary>
+    protected override void 生成子弹(NpcAttackConfig 配置, AttackSpec 规则)
+    {
+        if (动画弹体 != null)
+        {
+            动画弹体出膛点 = 算动画弹体世界中心();
+            动画弹体出膛点有效 = true;
+            动画弹体.enabled = false;
+            动画弹体已藏 = true;
+        }
+        base.生成子弹(配置, 规则);
+        动画弹体出膛点有效 = false;
+    }
+
+    protected override Vector3 取出膛点(NpcAttackConfig 配置 = null)
+        => 动画弹体出膛点有效 ? 动画弹体出膛点 : base.取出膛点(配置);
+
+    /// <summary>
+    /// 用「动画里那支箭」当弹体时**不要前移**。
+    ///
+    /// 基类那个前移（"推出自己碰撞体"）是为了让 **QFX 那种飞行中一碰就炸的实体弹丸**
+    /// 不在施法者身上自爆；我们这支箭是**纯网格、不和场景碰撞**，不需要。
+    /// 实测：不移的话箭会比动画里那支箭**凭空往前跳 1.075 米**（= 自己碰撞体半径 + 0.35）。
+    /// </summary>
+    protected override float 出膛余量() => 动画弹体 != null ? 0f : base.出膛余量();
+
+    /// <summary>
+    /// 「动画里那支箭」此刻的世界中心 —— **自己手动蒙皮算**：
+    /// `骨骼.localToWorldMatrix × bindpose × 顶点` 加权，再取顶点 AABB 中心。
+    ///
+    /// 为什么不能直接用它自己的包围盒：蒙皮网格的 `Renderer.bounds` **不反映真实蒙皮范围**
+    /// （实测那支箭真实长 1.9 米，`bounds.size` 只有 0.14 米 —— 见踩坑 B40/B47）。
+    /// 顶点才 246 个，一次发射算一遍，开销可以忽略。
+    /// </summary>
+    Vector3 算动画弹体世界中心()
+    {
+        var sm = 动画弹体;
+        var m = sm != null ? sm.sharedMesh : null;
+        if (m == null) return 取出膛点(null);
+
+        var vs = m.vertices;
+        var bw = m.boneWeights;
+        var bp = m.bindposes;
+        var 骨 = sm.bones;
+        bool 有权重 = bw != null && bw.Length == vs.Length && bp != null && 骨 != null && 骨.Length > 0;
+
+        bool 有 = false;
+        var 盒 = new Bounds();
+        for (int i = 0; i < vs.Length; i++)
+        {
+            Vector3 w;
+            if (有权重)
+            {
+                w = Vector3.zero;
+                float 总 = 0f;
+                for (int k = 0; k < 4; k++)
+                {
+                    int bi = k == 0 ? bw[i].boneIndex0 : k == 1 ? bw[i].boneIndex1 : k == 2 ? bw[i].boneIndex2 : bw[i].boneIndex3;
+                    float wt = k == 0 ? bw[i].weight0 : k == 1 ? bw[i].weight1 : k == 2 ? bw[i].weight2 : bw[i].weight3;
+                    if (wt <= 0.0001f || bi < 0 || bi >= 骨.Length || 骨[bi] == null) continue;
+                    w += (骨[bi].localToWorldMatrix * bp[bi]).MultiplyPoint3x4(vs[i]) * wt;
+                    总 += wt;
+                }
+                if (总 < 0.0001f) w = sm.transform.TransformPoint(vs[i]);
+            }
+            else w = sm.transform.TransformPoint(vs[i]);
+
+            if (!有) { 盒 = new Bounds(w, Vector3.zero); 有 = true; }
+            else 盒.Encapsulate(w);
+        }
+        return 有 ? 盒.center : 取出膛点(null);
+    }
+
     protected override void 取默认参数()
     {
         确保攻击方式();
@@ -89,13 +201,17 @@ public class 飞弹妖魔Ai : NpcAiDemon
         转向速度 = 900f;          // 丢飞弹的，转身要利索
         奔跑倍率 = 1f;
 
-        // ★【必须关掉】`攻击期间锁定朝向` 是**给近战设计的**：近战动作的"转体"烘在
-        // Root Motion 的 deltaRotation 里，锁住朝向、让动画自己转，手才正好刺向目标。
-        // 但**射箭/施法的动作不是这个语义** —— 实测箭魔 Attack1：攻击期间 transform 偏航
-        // 从 180° 一路甩到 **257°（= 离玩家 77°）**，而锁着朝向就**永远不纠回来**。
-        // 表现就是用户报的：「**拉弓瞄准方向不是他朝向的方向**」——身体被甩到一边去了。
-        // 关掉之后每帧都由 AI 把身体纠回目标，弓跟着身体走，瞄准方向就对了。
-        攻击期间锁定朝向 = false;
+        // ★【别去动 `攻击期间锁定朝向`】—— 保持默认 true（= 射击时**不**把身体纠向玩家）。
+        //
+        // 用户 2026-09-29 明确要求：「**对于箭魔这种，在射击时不要朝向玩家就好了**」。
+        // 原因是这套施法/射箭动作**自带它自己的站位和转体**（弓手本来就是侧身站、
+        // 身体随拉弓转，只有持弓的手指向目标）。AI 每帧把身体纠向玩家 =
+        // **跟动作抢方向盘**，看起来就是"瞄的方向和朝向对不上"。
+        //
+        // 【走过的弯路·留个记性】我上一版恰恰是把它设成 false（每帧纠向玩家），
+        // 测出来 transform 是 0° 了、也发的图，但那是**把动作的转体整个抵消掉**换来的，
+        // 手感是错的。用户一句话点醒：**该让动作自己演，别纠**。
+        攻击期间锁定朝向 = true;
 
         if (攻击方式 == null || 攻击方式.Length < 3) return;
 
