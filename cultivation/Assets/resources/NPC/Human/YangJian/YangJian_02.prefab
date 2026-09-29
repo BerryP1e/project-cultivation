@@ -3505,10 +3505,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.7588028
-  m_Height: 2.7303772
+  m_Radius: 0.6692168
+  m_Height: 2.7293622
   m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 1.3660114, z: -0.19812691}
+  m_Center: {x: -0.07744676, y: 1.3602749, z: -0.25314337}
 --- !u!114 &4141313651147304501
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3524,6 +3524,7 @@ MonoBehaviour:
   "\u770B\u5411\u8DDD\u79BB": 8
   "\u53EA\u8F6C\u5934\u8DDD\u79BB": 4.5
   "\u6700\u5927\u504F\u89D2": 70
+  "\u671D\u5411\u8865\u507F": 90
   "\u5934\u90E8\u9AA8\u9ABC\u5173\u952E\u5B57": Head
   "\u5907\u7528\u9AA8\u9ABC\u5173\u952E\u5B57": Neck
   "\u4EA4\u4E92\u8DDD\u79BB": 3.5
@@ -3547,6 +3548,7 @@ MonoBehaviour:
   "\u4EA4\u4E92\u952E\u8986\u76D6": 102
   "\u663E\u793A\u9760\u8FD1\u63D0\u793A": 1
   "\u63D0\u793A\u62AC\u9AD8": 0.6
+  "\u63D0\u793A\u6700\u9AD8\u70B9": 3
   "\u754C\u9762\u9884\u5236\u4F53": {fileID: 0}
 --- !u!1 &100168
 GameObject:

@@ -140,13 +140,31 @@ public static class NpcBodyBounds
     }
 
     /// <summary>
-    /// 渲染体的世界包围盒。**用 mesh 的绑定姿势本地包围盒算**，
-    /// 不用 <c>Renderer.bounds</c>（那是当前姿势的动态值，没动画时不可靠）。
+    /// 渲染体的世界包围盒。
+    ///
+    /// ### 蒙皮网格：**自己蒙皮算真实顶点**（2026-09-29 修）
+    /// 【坑·已修】以前这里用的是 `sharedMesh.bounds`（**绑定姿势的本地包围盒**）再乘节点的矩阵 ——
+    /// 对蒙皮网格这是**错的**：网格的顶点位置由**骨骼**决定，绑定姿势的包围盒跟真实蒙皮范围可以差很远。
+    /// 实测 **玄蜂**：这样量出来只有 **1.16 米高**，而真实蒙皮范围是 **2.81 × 1.51 × 1.21** ✗
+    /// → 后果（用户报的）：
+    ///   · **Collider 太小** → 点它身上大部分地方**射线打不到** → **右键锁不上**（连红圈都不出）
+    ///   · **血条高度按 Collider 算** → 只到 2.22 米，而模型真实顶在 **2.59 米**
+    ///     → **血条被怪自己的模型挡住**
+    /// 所以改成：`骨骼.localToWorldMatrix × bindpose × 顶点` 按权重加权，取真实顶点的包围盒。
+    /// 顶点多的网格会有一次开销，但这个函数只在**生成碰撞体 / 标定贴地**时调，不在每帧。
+    ///
+    /// 拿不到骨骼权重（老资产 / 静态网格）时退回原来的做法。
     /// </summary>
     public static bool 取网格包围盒(Renderer r, out Bounds 世界)
     {
         世界 = default;
         if (r == null) return false;
+
+        // ---- 蒙皮网格：真实蒙皮包围盒 ----
+        if (r is SkinnedMeshRenderer 蒙皮 && 蒙皮.sharedMesh != null)
+        {
+            if (蒙皮包围盒(蒙皮, out 世界)) return true;
+        }
 
         Bounds 本地;
         if (r is SkinnedMeshRenderer smr && smr.sharedMesh != null) 本地 = smr.sharedMesh.bounds;
@@ -169,6 +187,45 @@ public static class NpcBodyBounds
             min = Vector3.Min(min, w);
             max = Vector3.Max(max, w);
         }
+        世界.SetMinMax(min, max);
+        return true;
+    }
+
+    /// <summary>
+    /// 蒙皮网格的**真实**世界包围盒：逐顶点自己做蒙皮（四根骨骼按权重加权）。
+    /// 骨骼权重拿不到时返回 false，让调用方退回绑定姿势包围盒。
+    /// </summary>
+    static bool 蒙皮包围盒(SkinnedMeshRenderer 蒙皮, out Bounds 世界)
+    {
+        世界 = default;
+        var m = 蒙皮.sharedMesh;
+        var vs = m.vertices;
+        var bw = m.boneWeights;
+        var bp = m.bindposes;
+        var 骨 = 蒙皮.bones;
+        if (vs == null || vs.Length == 0) return false;
+        if (bw == null || bw.Length != vs.Length || bp == null || 骨 == null || 骨.Length == 0) return false;
+
+        Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+        bool 有 = false;
+        for (int i = 0; i < vs.Length; i++)
+        {
+            Vector3 w = Vector3.zero;
+            float 总 = 0f;
+            for (int k = 0; k < 4; k++)
+            {
+                int bi = k == 0 ? bw[i].boneIndex0 : k == 1 ? bw[i].boneIndex1 : k == 2 ? bw[i].boneIndex2 : bw[i].boneIndex3;
+                float wt = k == 0 ? bw[i].weight0 : k == 1 ? bw[i].weight1 : k == 2 ? bw[i].weight2 : bw[i].weight3;
+                if (wt <= 0.0001f || bi < 0 || bi >= 骨.Length || 骨[bi] == null) continue;
+                w += (骨[bi].localToWorldMatrix * bp[bi]).MultiplyPoint3x4(vs[i]) * wt;
+                总 += wt;
+            }
+            if (总 < 0.0001f) w = 蒙皮.transform.TransformPoint(vs[i]);
+            min = Vector3.Min(min, w);
+            max = Vector3.Max(max, w);
+            有 = true;
+        }
+        if (!有) return false;
         世界.SetMinMax(min, max);
         return true;
     }
@@ -209,8 +266,17 @@ public static class NpcBodyBounds
         float 水平半径 = Mathf.Max(尺寸.x, 尺寸.z) * 0.5f;
         float 竖直半径 = 尺寸.y * 0.5f;
 
-        // 轴对齐胶囊：半径不能超过半高，否则 Unity 会把它夹成一个球
-        半径 = Mathf.Max(0.05f, Mathf.Min(水平半径, 竖直半径));
+        // 【坑·已修·2026-09-29】半径**不能**取 min(水平, 竖直)。
+        //
+        // 原来写的是 `min(水平半径, 竖直半径)`，理由是"轴对齐胶囊半径超过半高会被 Unity 夹成球"。
+        // 但**又宽又扁**的身体会被这个 min 掐死：实测 **玄蜂** 身体 2.80 宽 × 1.16 高
+        // → min(1.40, 0.58) = **0.58**，得到一个又细又矮的胶囊，**罩不住身体的两侧和上方** ✗
+        // 后果（用户报的）：**点它身上大部分地方射线打不到 → 右键锁不上**（连红圈都不出）。
+        //
+        // 现在：**按水平尺寸给半径**，高度不足就抬高到 2r（Unity 会把这根胶囊当球用）——
+        // 这也正是项目里本来就在用的形状（白熊精 r=1.25 h=2.50 就是个球状胶囊）。
+        // 宁可稍微宽松（点到旁边的空气也能选中），也不能小到**点它自己都点不到**。
+        半径 = Mathf.Max(0.05f, 水平半径);
         高度 = Mathf.Max(半径 * 2f, 尺寸.y);
         中心 = (min + max) * 0.5f;
         return true;

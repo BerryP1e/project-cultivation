@@ -1808,10 +1808,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.15272583
-  m_Height: 1.2523516
+  m_Radius: 0.32850635
+  m_Height: 0.9798583
   m_Direction: 1
-  m_Center: {x: 0, y: 0.6261758, z: 0}
+  m_Center: {x: 0.000000014901161, y: 0.4899292, z: -0.000015482306}
 --- !u!114 &2815565447553190445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1851,6 +1851,7 @@ MonoBehaviour:
   "\u4EA4\u4E92\u952E\u8986\u76D6": 102
   "\u663E\u793A\u9760\u8FD1\u63D0\u793A": 1
   "\u63D0\u793A\u62AC\u9AD8": 0.6
+  "\u63D0\u793A\u6700\u9AD8\u70B9": 3
   "\u754C\u9762\u9884\u5236\u4F53": {fileID: 0}
 --- !u!114 &4128817649856765984
 MonoBehaviour:

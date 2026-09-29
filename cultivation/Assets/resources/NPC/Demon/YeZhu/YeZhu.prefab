@@ -170,10 +170,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.0566268
-  m_Height: 2.1132536
+  m_Radius: 1.5917385
+  m_Height: 3.183477
   m_Direction: 1
-  m_Center: {x: -0.022497654, y: 1.0565121, z: -0.21970499}
+  m_Center: {x: -0.02719608, y: 1.0565118, z: -0.20153439}
 --- !u!114 &6768459309356849976
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,6 +222,12 @@ MonoBehaviour:
   "\u5F3A\u5236\u5173\u95EDRootMotion": 1
   "\u7269\u7406\u57FA\u7840\u547D\u4E2D\u7279\u6548": FX/Hit_Physical
   "\u6253\u5370\u72B6\u6001\u65E5\u5FD7": 0
+  "\u5206\u79BB\u534A\u5F84": 2.5
+  "\u5206\u79BB\u5F3A\u5EA6": 1.2
+  "\u7ED5\u884C\u51CF\u901F": 0.85
+  "\u7ED5\u884C\u8BD5\u63A2\u6B65\u957F": 25
+  "\u65E0\u8FDB\u5C55\u7B49\u5F85": 2.5
+  "\u8131\u56F0\u65F6\u957F": 1.2
   "\u653B\u51FB\u671F\u95F4\u9501\u5B9A\u671D\u5411": 1
   "\u7981\u6B62\u8EAB\u4F53\u8F6C\u5411": 0
   "\u654C\u5BF9\u597D\u611F\u9608\u503C": -10

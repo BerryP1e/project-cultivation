@@ -119,6 +119,7 @@ MonoBehaviour:
   "\u5B9A\u4E49": {fileID: 11400000, guid: 17e298950ccc3664d908bbf54ad4358e, type: 2}
   "\u6BCF\u6B21\u53D7\u51FB\u964D\u597D\u611F": 20
   "\u597D\u611F\u5EA6\u8303\u56F4": {x: -100, y: 100}
+  "\u65E0\u654C": 0
   "\u5F53\u524D\u6C14\u8840": 35186
   "\u5DF2\u6B7B\u4EA1": 0
   "\u8FD0\u884C\u597D\u611F\u5EA6": 0
@@ -167,10 +168,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.4391863
-  m_Height: 2.8783727
+  m_Radius: 1.5169129
+  m_Height: 3.0338259
   m_Direction: 1
-  m_Center: {x: -0.0000010728836, y: 1.4170053, z: -0.50885093}
+  m_Center: {x: 0.0062618256, y: 1.4170055, z: -0.5053475}
 --- !u!1 &100002
 GameObject:
   m_ObjectHideFlags: 0

@@ -3135,6 +3135,7 @@ MonoBehaviour:
   "\u5B9A\u4E49": {fileID: 11400000, guid: a0b1164cd387cbf4385c8b0450b942f2, type: 2}
   "\u6BCF\u6B21\u53D7\u51FB\u964D\u597D\u611F": 20
   "\u597D\u611F\u5EA6\u8303\u56F4": {x: -100, y: 100}
+  "\u65E0\u654C": 0
   "\u5F53\u524D\u6C14\u8840": 35186
   "\u5DF2\u6B7B\u4EA1": 0
   "\u8FD0\u884C\u597D\u611F\u5EA6": 0
@@ -3183,7 +3184,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.8272116
-  m_Height: 3.6544232
+  m_Radius: 1.906668
+  m_Height: 3.813336
   m_Direction: 1
-  m_Center: {x: 0.000004708767, y: 1.9464314, z: -2.0982242}
+  m_Center: {x: 0.07069525, y: 1.946432, z: -1.2730072}

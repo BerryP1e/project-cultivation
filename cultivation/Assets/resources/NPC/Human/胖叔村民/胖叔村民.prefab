@@ -1628,10 +1628,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.15272583
-  m_Height: 1.2523516
+  m_Radius: 0.47949213
+  m_Height: 0.9980467
   m_Direction: 1
-  m_Center: {x: 0, y: 0.6261758, z: 0}
+  m_Center: {x: -0.000000029802322, y: 0.4990233, z: -0.00000020861626}
 --- !u!95 &8541848793279542549
 Animator:
   serializedVersion: 6
@@ -1684,6 +1684,7 @@ MonoBehaviour:
   "\u770B\u5411\u8DDD\u79BB": 8
   "\u53EA\u8F6C\u5934\u8DDD\u79BB": 4.5
   "\u6700\u5927\u504F\u89D2": 70
+  "\u671D\u5411\u8865\u507F": 90
   "\u5934\u90E8\u9AA8\u9ABC\u5173\u952E\u5B57": Head
   "\u5907\u7528\u9AA8\u9ABC\u5173\u952E\u5B57": Neck
   "\u4EA4\u4E92\u8DDD\u79BB": 3.5
@@ -1707,6 +1708,7 @@ MonoBehaviour:
   "\u4EA4\u4E92\u952E\u8986\u76D6": 102
   "\u663E\u793A\u9760\u8FD1\u63D0\u793A": 1
   "\u63D0\u793A\u62AC\u9AD8": 0.6
+  "\u63D0\u793A\u6700\u9AD8\u70B9": 3
   "\u754C\u9762\u9884\u5236\u4F53": {fileID: 0}
 --- !u!1 &5055893704421827660
 GameObject:
