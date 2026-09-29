@@ -35,6 +35,16 @@ public enum ActiveSkillKind
     /// 普攻动作 / 出手进度 / 弹速 / 转向速率 等都在那个组件上配。
     /// </summary>
     追踪弹 = 3,
+
+    /// <summary>
+    /// 向前冰柱：以**鼠标落点**为方向，向正前方推出一道连续的冰柱；路径上的敌人吃**三段**伤害
+    /// （冰柱一段 → 脚下 `frost-ring` 二段 → 脚下 `frost-spike` 三段），三段都按【特殊 + 主动神通】结算。
+    ///
+    /// 本档由 <see cref="IcePillarSkillRunner"/> 执行（由 ActiveSkillCaster 建）。
+    /// 专属字段：`范围` = 推进长度（米）、`持续时长` = 推进耗时（秒）、
+    /// `伤害间隔` = 一段之后隔多久出二段、`命中特效路径` / `三段特效路径` = 二段 / 三段特效。
+    /// </summary>
+    向前冰柱 = 4,
 }
 
 /// <summary>
@@ -90,6 +100,19 @@ public class ActiveDivineAbility : DivineAbilityDefinition
 
     [Tooltip("特效 prefab 的 Resources 相对路径（Assets/resources 之下，不含扩展名）")]
     public string 特效资源路径 = "";
+
+    [Tooltip("【第二段 / 命中特效】\n" +
+             "· 追踪弹（冰暴术）：飞行**命中后**在目标身上放的那个特效\n" +
+             "· 向前冰柱（寒墟）：路径上的敌人吃**第二段**伤害时脚下放的那个\n" +
+             "留空 = 用各 runner 自己的默认值（老神通不受影响）")]
+    public string 命中特效路径 = "";
+
+    [Tooltip("【命中特效贴地】勾上 = 第二段特效放在**敌人脚下**（y = 敌人根部），而不是胸口高度。\n" +
+             "冰暴术的 frost-frozen-tomb、寒墟的 frost-ring 都要贴地")]
+    public bool 命中特效贴地 = false;
+
+    [Tooltip("【第三段特效】目前只有「寒墟」用（frost-spike）。留空 = 没有第三段")]
+    public string 三段特效路径 = "";
 
     [Tooltip("【施法动作】施放时玩家播的角色动作，填 Assets/resources/技能动作/ 里的文件名（不带扩展名）。留空 = 不播动作。例：技能动作2")]
     public string 施法动作 = "";

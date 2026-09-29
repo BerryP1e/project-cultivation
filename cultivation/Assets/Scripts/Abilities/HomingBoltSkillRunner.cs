@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// **瞬雷天闪**（追踪弹档 `ActiveSkillKind.追踪弹`）的执行体。
+/// **追踪弹档**（`ActiveSkillKind.追踪弹`）的执行体 —— 现在服务两个神通：/// **瞬雷天闪**（球 lightning-sphere）与 **冰暴术**（球 frost-crystal、命中 frost-frozen-tomb 贴地）。
 ///
 /// 策划口径（用户 2026-09-28）：
 /// ```
@@ -105,8 +105,17 @@ public class HomingBoltSkillRunner : MonoBehaviour
     [Tooltip("勾上 = 把命中特效的几何中心对齐到目标身上（推荐）")]
     public bool 命中特效对齐 = true;
 
-    [Tooltip("命中特效存活（秒）")]
+    [Tooltip("★ 勾上 = 命中特效放在**敌人脚下**（y = 敌人根部）而不是胸口高度。\n" +
+             "冰暴术的 frost-frozen-tomb 要贴地；瞬雷天闪的 lightning-explode 保持不勾（打胸口）")]
+    public bool 命中特效贴地 = false;
+
+    [Tooltip("命中特效存活（秒）。勾了下面的「按自然」时，它只是**下限**")]
     public float 命中特效存活 = 2f;
+
+    [Tooltip("★ 勾上（默认）：命中特效存活**至少**取 prefab 的自然总时长（×1.05）。\n" +
+             "为什么：`frost-frozen-tomb` 自然 **20.7 秒**（冰冢慢慢长起来那类），\n" +
+             "写死 2 秒会把它硬切 →「忽然消失」。和冰刺/寒墟同一套口径。")]
+    public bool 命中特效存活按自然 = true;
 
     [Header("兜底")]
     [Tooltip("执行体自己的存活上限（秒）。超过就强制收尾，防止卡住")]
@@ -125,6 +134,9 @@ public class HomingBoltSkillRunner : MonoBehaviour
         this.玩家 = 玩家;
         this.敌人层 = 敌人层;
     }
+
+    /// <summary>日志与物件名前缀：用**神通自己的名字**（这个 runner 现在也服务「冰暴术」）</summary>
+    string 名称 => 神通 != null && !string.IsNullOrEmpty(神通.神通名称) ? 神通.神通名称 : "追踪弹";
 
     void Start()
     {
@@ -146,15 +158,15 @@ public class HomingBoltSkillRunner : MonoBehaviour
         if (!播上了)
         {
             if (动画 == null)
-                Debug.LogWarning("[瞬雷天闪] 找不到 PlayerAnimationController，直接出弹", this);
+                Debug.LogWarning("[" + 名称 + "] 找不到 PlayerAnimationController，直接出弹", this);
             else if (动作 == null)
-                Debug.LogWarning("[瞬雷天闪] 找不到动作 Assets/resources/技能动作/" + 动作名 + ".anim，直接出弹", this);
+                Debug.LogWarning("[" + 名称 + "] 找不到动作 Assets/resources/技能动作/" + 动作名 + ".anim，直接出弹", this);
             生成球();          // 没有动作可定时，照样走"球先在手上长一下再飞"的流程
             return;
         }
 
         if (打印日志)
-            Debug.Log("[瞬雷天闪] 播动作「" + 动作名 + "」（" + 动作.length.ToString("0.##")
+            Debug.Log("[" + 名称 + "] 播动作「" + 动作名 + "」（" + 动作.length.ToString("0.##")
                 + "s），播到 " + (出手进度 * 100f).ToString("0") + "% 出弹", this);
     }
 
@@ -196,7 +208,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
     {
         if (动画 != null && 动画.动作已定住) 动画.定住动作(false);
         if (打印日志 && 已发射)
-            Debug.Log("[瞬雷天闪] 结束：命中 " + 命中数 + " 个敌人，合计 " + 累计伤害.ToString("0.##"), this);
+            Debug.Log("[" + 名称 + "] 结束：命中 " + 命中数 + " 个敌人，合计 " + 累计伤害.ToString("0.##"), this);
         Destroy(gameObject);
     }
 
@@ -221,10 +233,10 @@ public class HomingBoltSkillRunner : MonoBehaviour
         else
         {
             球 = new GameObject("闪电球(无特效)");
-            Debug.LogWarning("[瞬雷天闪] 找不到闪电球特效：" + 球特效路径
+            Debug.LogWarning("[" + 名称 + "] 找不到闪电球特效：" + 球特效路径
                 + "（路径要相对 Assets/resources、不带扩展名）→ 只有判定、没有球", this);
         }
-        球.name = "瞬雷天闪_闪电球";
+        球.name = 名称 + "_球";
         球.transform.position = 起点;
         if (!Mathf.Approximately(球缩放, 1f)) 球.transform.localScale *= 球缩放;
 
@@ -240,7 +252,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
         放飞时刻 = Time.time + Mathf.Max(0f, 长球停顿时长);
 
         if (打印日志)
-            Debug.Log("[瞬雷天闪] 到节点：动作进度 " + (动画 != null ? 动画.动作进度.ToString("0.000") : "无")
+            Debug.Log("[" + 名称 + "] 到节点：动作进度 " + (动画 != null ? 动画.动作进度.ToString("0.000") : "无")
                 + "，球已在手上 " + 起点.ToString("F2")
                 + "，定住动作 " + 长球停顿时长.ToString("0.##") + "s 等它长出来", this);
     }
@@ -265,7 +277,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
         弹.设置追踪飞行(锁定.transform, Mathf.Max(1f, 飞行速度), Mathf.Max(30f, 转向速率));
 
         if (打印日志)
-            Debug.Log("[瞬雷天闪] 放飞：从 " + 球.transform.position.ToString("F2") + " → 目标「" + 锁定.DisplayName
+            Debug.Log("[" + 名称 + "] 放飞：从 " + 球.transform.position.ToString("F2") + " → 目标「" + 锁定.DisplayName
                 + "」 " + 目标点.ToString("F2") + "（距离 " + Vector3.Distance(球.transform.position, 目标点).ToString("0.##")
                 + "m｜速度 " + 飞行速度 + "m/s｜转向 " + 转向速率 + "°/s）", this);
     }
@@ -292,13 +304,28 @@ public class HomingBoltSkillRunner : MonoBehaviour
         if (已结算) return;
         已结算 = true;
 
-        // 1) 命中特效：**放在锁定目标身上**（用户明确要求「飞到锁定目标时在锁定目标那里生成」）
+        // 1) 命中特效：放在锁定目标身上（**贴地**时放在敌人脚下 —— 冰暴术的 frost-frozen-tomb）
         if (!string.IsNullOrEmpty(命中特效路径) && 锁定 != null)
         {
-            Vector3 爆点 = 锁定.transform.position + Vector3.up * 命中特效抬高;
+            float 存活 = Mathf.Max(0.1f, 命中特效存活);
+            if (命中特效存活按自然)
+            {
+                var 预制 = Resources.Load<GameObject>(命中特效路径);
+                存活 = Mathf.Max(存活, 特效摆放.量特效总时长(预制, 命中特效存活) * 1.05f);
+            }
+
+            Vector3 爆点 = 命中特效贴地
+                ? 锁定.transform.position
+                : 锁定.transform.position + Vector3.up * 命中特效抬高;
+
             特效摆放.生成(命中特效路径, 爆点, 命中特效旋转欧拉,
-                          命中特效缩放, 对齐到锚点: 命中特效对齐, 存活秒: 命中特效存活,
-                          名: "瞬雷天闪_命中");
+                          命中特效缩放, 对齐到锚点: 命中特效贴地 ? false : 命中特效对齐,
+                          存活秒: 存活, 名: 名称 + "_命中");
+
+            if (打印日志)
+                Debug.Log("[" + 名称 + "] 命中特效「" + 命中特效路径 + "」放在 "
+                    + (命中特效贴地 ? "脚下" : "胸口") + " " + 爆点.ToString("F2")
+                    + "，存活 " + 存活.ToString("0.##") + "s", this);
         }
 
         // 2) 伤害：只打锁定的那一个（【特殊 + 主动神通】）
@@ -311,7 +338,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
             累计伤害 += 结果.伤害;
 
             if (打印日志)
-                Debug.Log("[瞬雷天闪] 命中「" + 目标.名字 + "」 " + 结果
+                Debug.Log("[" + 名称 + "] 命中「" + 目标.名字 + "」 " + 结果
                     + "（倍率 " + 神通.伤害倍率.ToString("0.##") + "｜" + 神通.伤害属性 + "）", 锁定);
         }
 

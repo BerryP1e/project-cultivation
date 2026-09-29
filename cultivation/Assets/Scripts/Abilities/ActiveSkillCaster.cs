@@ -278,6 +278,14 @@ public class ActiveSkillCaster : MonoBehaviour
             return;
         }
 
+        // ★ 向前冰柱（寒墟）：以**鼠标落点**为方向推进，自己管"铺冰柱 + 三段伤害"，
+        //   和"原地放一蓬范围伤害"是两套节奏，所以也单独分流。
+        if (神通.结算方式 == ActiveSkillKind.向前冰柱)
+        {
+            施放冰柱(神通);
+            return;
+        }
+
         // 以锁定的敌人为中心（不需要锁定的技能则以自己为中心）。取施放瞬间的位置。
         Vector3 中心 = (神通.需要锁定目标 && 锁定 != null) ? 锁定.transform.position : transform.position;
 
@@ -326,6 +334,35 @@ public class ActiveSkillCaster : MonoBehaviour
     }
 
     /// <summary>
+    /// 向前冰柱型神通（**寒墟**）的执行：以**鼠标落点**为方向，向前推出一道连续的冰柱，
+    /// 路径上的敌人吃三段伤害（冰柱 → 脚下 frost-ring → 脚下 frost-spike）。
+    ///
+    /// 表里那列「特效资源路径」= **第一段的冰柱**（`frost-wave`）；
+    /// 二段 / 三段走新增的「命中特效路径」/「三段特效路径」列（`frost-ring` / `frost-spike`）。
+    /// 「施法动作」列对这一档**可以留空**（留空 = 不播动作，不影响出招）。
+    /// </summary>
+    void 施放冰柱(ActiveDivineAbility 神通)
+    {
+        // 动作由 runner 按**普攻动作**播（和追踪弹同一套），所以要把它传进去
+        if (动画 == null) 动画 = GetComponent<PlayerAnimationController>();
+        if (动画 == null) 动画 = GetComponentInChildren<PlayerAnimationController>();
+
+        var 宿主 = new GameObject("IcePillar_" + 神通.神通id);
+        var runner = 宿主.AddComponent<IcePillarSkillRunner>();
+        runner.初始化(神通, 战斗属性, transform, 敌人层, Camera.main, 动画);
+
+        if (打印施法日志)
+            Debug.Log("[ActiveSkillCaster] 施放向前冰柱「" + 神通.神通名称 + "」"
+                + " 长度=" + 神通.范围 + "m 时长=" + 神通.持续时长 + "s"
+                + " 倍率=" + 神通.伤害倍率 + " 属性=" + 神通.伤害属性
+                + " 间隔=" + 神通.伤害间隔 + "s"
+                + "（动作 40% 节点放冰柱：" + (动画 != null ? "有动画组件" : "★没有动画组件，会立刻放") + "）"
+                + "\n  冰柱=" + 神通.特效资源路径
+                + "\n  二段=" + 神通.命中特效路径 + (神通.命中特效贴地 ? "（贴地）" : "")
+                + "\n  三段=" + 神通.三段特效路径, this);
+    }
+
+    /// <summary>
     /// 追踪弹型神通的执行（目前是**瞬雷天闪**）：
     /// 播**普攻动作**，在动画的 `出手进度`（策划要 40%）节点放出一颗会拐弯追踪的弹，
     /// 命中时在命中点放命中特效、并**只对锁定目标**结算一次主动神通伤害。
@@ -343,8 +380,11 @@ public class ActiveSkillCaster : MonoBehaviour
         var runner = 宿主.AddComponent<HomingBoltSkillRunner>();
         runner.初始化(神通, 战斗属性, 锁定, 动画组件, transform, 敌人层);
 
-        // 表里那列是"闪电球"；命中特效 runner 自己有默认值，想换在 Inspector 改
+        // 表里那列是"球"；命中特效 runner 自己有默认值（lightning-explode），
+        // 神通自己配了「命中特效路径」就覆盖它（**冰暴术 = frost-frozen-tomb**，且要贴地）
         if (!string.IsNullOrEmpty(神通.特效资源路径)) runner.球特效路径 = 神通.特效资源路径;
+        if (!string.IsNullOrEmpty(神通.命中特效路径)) runner.命中特效路径 = 神通.命中特效路径;
+        runner.命中特效贴地 = 神通.命中特效贴地;
 
         if (打印施法日志)
             Debug.Log("[ActiveSkillCaster] 施放追踪弹「" + 神通.神通名称 + "」目标="
