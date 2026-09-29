@@ -101,6 +101,72 @@ public static class 特效摆放
             t.position.z + (锚点.z - 范围.center.z));
     }
 
+    // ============================================================ 特效时长
+
+    /// <summary>
+    /// 量一个特效 prefab 的**自然总时长**（秒）—— 所有粒子系统里
+    /// `startDelay + duration + startLifetime(最大)` 的最大值（各自再除以 simulationSpeed）。
+    ///
+    /// 为什么要它：**写死一个偏短的存活秒数就是把特效硬切掉**。
+    /// 实测 `frost-shock` 的自然总时长是 **9.1 秒**（`spikes-*` 的粒子寿命 0~9 秒随机 → 慢慢融化消失），
+    /// 早先写死 1.2 秒时的表现就是「冰刺忽然消失」（用户 2026-09-29 报的）。
+    ///
+    /// ⚠️ `loop = true` 的系统本身不会结束，这里只按「一个循环 + 一次寿命」估，仅作下限。
+    /// </summary>
+    public static float 量特效总时长(GameObject prefab, float 兜底 = 2f)
+    {
+        if (prefab == null) return 兜底;
+        float 最 = 0f;
+        foreach (var ps in prefab.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            if (ps == null) continue;
+            var m = ps.main;
+            float 速 = Mathf.Max(0.05f, m.simulationSpeed);
+            float 单 = (m.startDelay.constantMax + m.duration + m.startLifetime.constantMax) / 速;
+            if (单 > 最) 最 = 单;
+        }
+        return 最 > 0.01f ? 最 : 兜底;
+    }
+
+    // ============================================================ 按【子节点】对齐
+
+    /// <summary>
+    /// 按名字找一个子节点（**含未激活的**）。
+    ///
+    /// 为什么需要：有些资源包的 prefab **根节点不在几何中心上**
+    /// （实测 `frost-shock` 的根自身带 (−2.75, 0, 3.21) 的偏移，真正的中心是子节点 `spikes-second`），
+    /// 这时候「按粒子几何中心对齐」和「按根节点摆」都会歪。
+    /// </summary>
+    /// <param name="名字">要匹配的子节点名；精确名优先，其次包含匹配</param>
+    public static Transform 找子节点(GameObject go, string 名字)
+    {
+        if (go == null || string.IsNullOrEmpty(名字)) return null;
+        Transform 包含 = null;
+        foreach (var t in go.GetComponentsInChildren<Transform>(true))
+        {
+            if (t == null || t == go.transform) continue;
+            if (t.name == 名字) return t;                      // 精确
+            if (包含 == null && t.name.ToLower().Contains(名字.ToLower())) 包含 = t;   // 退一步
+        }
+        return 包含;
+    }
+
+    /// <summary>
+    /// 把**指定的子节点**的世界位置对齐到锚点 —— prefab 根不在中心时用这个。
+    ///
+    /// <paramref name="只水平"/> = true 时只对齐 XZ（竖直留给调用方自己控制）。
+    /// 找不到该子节点返回 false（调用方可以退回 <see cref="只对齐水平"/>）。
+    /// </summary>
+    public static bool 对齐子节点到(GameObject go, string 子节点名, Vector3 锚点, bool 只水平 = false)
+    {
+        var t = 找子节点(go, 子节点名);
+        if (t == null) return false;
+        var 差 = 锚点 - t.position;
+        if (只水平) 差.y = 0f;
+        go.transform.position += 差;
+        return true;
+    }
+
     /// <summary>量所有粒子系统的世界位置包围盒（不跳子发射器、不用 renderer.bounds）</summary>
     public static bool 量部件范围(GameObject go, out Bounds 范围)
     {
