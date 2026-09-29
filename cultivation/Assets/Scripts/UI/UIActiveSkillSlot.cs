@@ -14,7 +14,7 @@ using UnityEngine.UI;
 /// 在编辑期 `AddComponent` 看着是好的，但一旦**场景从磁盘重新加载**（进出 Play、重启编辑器）
 /// 就会变成 **Missing 脚本**。
 /// 血泪史：它以前和 `UIActiveSkillBar` 挤在一个文件里，实测 18 个格子里 14 个变成了 Missing，
-/// 表现是「神通页点装备格子没反应」；战阵九宫格也踩过同一个坑（见开发注意事项 §17）。
+/// 表现是「神通页点装备格子没反应」；战阵九宫格也踩过同一个坑（见docs/ai/开发注意事项.md §17）。
 /// </summary>
 public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
 {

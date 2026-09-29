@@ -87,7 +87,7 @@ public class YufengVfx : MonoBehaviour
     ///
     /// 本组件是被 <see cref="PlayerAbilityLoader"/> **启停**的（换功法 / 开关神通），
     /// 订阅若留在 Awake、退订只留在 OnDestroy，停用期间回调就还活着 ✗
-    /// —— 和 <see cref="BasicSword01"/> 那把废飞剑是同一个坑（见开发注意事项 §29）。
+    /// —— 和 <see cref="BasicSword01"/> 那把废飞剑是同一个坑（见docs/ai/开发注意事项.md §29）。
     /// </summary>
     void OnEnable()
     {

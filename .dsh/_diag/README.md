@@ -24,7 +24,7 @@ codely unity-mcp 的原始输出实测是 **0/17 通过**，踩的坑：
 
 ```powershell
 # 1. 抓一份原始 tools/list（喂 initialize + tools/list，文件重定向）
-#    见 开发注意事项.md §5.5 或直接照抄下面的 extract.js 用法
+#    见 docs/ai/开发注意事项.md §5.5 或直接照抄下面的 extract.js 用法
 # 2. 消毒
 node .dsh\unity-mcp-proxy.mjs --transform raw-toolslist.json fixed-toolslist.json
 # 3. 过 harness 自己的校验器

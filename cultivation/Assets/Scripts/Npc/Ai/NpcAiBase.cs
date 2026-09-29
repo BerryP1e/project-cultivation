@@ -116,7 +116,7 @@ public class NpcAttackConfig
 ///   · 感知（找玩家、算距离）
 ///   · 状态机骨架（待机 / 接近 / 远离 / 攻击 / 受击 / 死亡）
 ///   · 移动（`transform.position` + 地面射线。**NPC 身上只有 CapsuleCollider，
-///     没有 CharacterController / Rigidbody，见开发注意事项 §8.2**）
+///     没有 CharacterController / Rigidbody，见docs/ai/开发注意事项.md §8.2**）
 ///   · 动画（按动作名切，**缺什么自动降级**：Run → Walk → Idle）
 ///   · 出手（按 `出手进度` 在动画中途结算伤害，倍率 / 属性 / 类别来自 <see cref="NpcAttackConfig"/>）
 ///   · 死亡（播 Death、可选粒子消散、延迟销毁）
@@ -837,7 +837,7 @@ public abstract class NpcAiBase : MonoBehaviour
         Vector3 方向 = 差.normalized;
         float 速度 = Mathf.Max(0.05f, 自己.移动速度) * 速度倍率;
 
-        // 前方探障：只探一个「胸口高度的小球」，不拿整条胶囊扫（开发注意事项 §8.3）
+        // 前方探障：只探一个「胸口高度的小球」，不拿整条胶囊扫（docs/ai/开发注意事项.md §8.3）
         if (前方探障距离 > 0f && 前方被挡(方向))
         {
             停止移动动画();

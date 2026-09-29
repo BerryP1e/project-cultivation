@@ -3,7 +3,7 @@
 // Built-in render pipeline surface shader. Deliberately ASCII-only: the project
 // is Chinese-first everywhere else, but a shader that fails to compile because of
 // a file-encoding hiccup is a very expensive failure mode, so labels stay English.
-// The Chinese explanation lives in SpiritFormationManager / 开发注意事项.
+// The Chinese explanation lives in SpiritFormationManager / docs/ai/开发注意事项.md.
 //
 // Three things make the "soul" read:
 //   1. translucent body            (_Color.a, ~0.7 = the requested 30% transparency)
