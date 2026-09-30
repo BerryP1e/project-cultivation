@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 2.5D 俯视角跟随摄像机。
@@ -16,8 +16,10 @@ public class TopDownCamera : MonoBehaviour
 
     [Header("机位角度（恒定，不随角色旋转）")]
     [Range(5f, 89f)]
-    [Tooltip("俯角。越大越接近正俯视，45~60 是常见 2.5D 区间")]
-    public float pitch = 50f;
+    [Tooltip("俯角。越大越接近正俯视，45~60 是常见 2.5D 区间。\n\n" +
+             "用户 2026-10-01：「视角倾角有点太高了，希望它低个 10 度，稍微平一点」\n" +
+             "→ 五个游玩场景从 **50 调到 40**（更平、更像平视）。")]
+    public float pitch = 40f;
 
     [Tooltip("水平朝向。45 是经典斜 45 度 2.5D 视角")]
     public float yaw = 45f;

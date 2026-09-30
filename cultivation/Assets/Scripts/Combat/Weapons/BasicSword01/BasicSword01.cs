@@ -309,14 +309,17 @@ public class BasicSword01 : MonoBehaviour
         var 锁定 = 锁定目标;
 
         // 目标没了或死了
+        //
+        // ★ **改锁由玩家负责**（<see cref="NpcTargeting.维护锁定目标还活着"/>），
+        //   这里**不再自己挑下一个** —— 见 找下一个目标() 上面的说明。
+        //   玩家那边会在这几帧内把 `Locked` 换成新的敌对目标（并触发 LockChanged），
+        //   本组件订阅了那个事件，会在这里自动换上 攻击目标。
+        //   如果玩家那边一个都没找到，它会直接 ClearLock → Locked 变 null → 本分支也会收工。
         if (锁定 == null || 锁定.IsDead)
         {
-            var 下一个 = 找下一个目标();          // 自动索敌仍要求好感度 < 0
-            if (下一个 == null) { 交战中 = false; 进入返航(); return; }
-            if (目标管理器 != null) 目标管理器.Lock(下一个, false);   // 红环跟着换过去
-            攻击目标 = 下一个;
-            上一帧在目标球内 = false;
-            进入飞行();
+            if (攻击中) 进入返航();
+            交战中 = false;
+            攻击目标 = null;
             return;
         }
 
@@ -662,13 +665,29 @@ public class BasicSword01 : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 目标死了 → 拿下一个敌对目标。
+    ///
+    /// ★ **判据已经收到玩家身上了**（<see cref="NpcTargeting.找最近的敌对目标"/>）——
+    ///   这里只是转发一下，**不再自己算**。
+    ///
+    /// 【为什么搬走】这段原来写在这里、量的是「到**飞剑**的距离」，
+    /// 而且 `PlayerAbilityLoader` 一换功法就把 `BasicSword01` 停用
+    /// （用玄霄雷决 / 雷动千闪 / 沧澜寒渊录时它本来就是停用的）⇒
+    /// **功能整个消失**，别的普攻方法也根本没有。
+    /// 现在统一由玩家的 <see cref="NpcTargeting"/> 负责：
+    /// 换任何功法、任何普攻方法，行为都一致。
+    /// </summary>
     NpcInstance 找下一个目标()
     {
+        if (目标管理器 != null) return 目标管理器.找最近的敌对目标();
+
+        // 退化（场景里没有 NpcTargeting）：只能自己扫，判据尽量和玩家那份一致
         NpcInstance 最佳 = null;
         float 最近 = float.MaxValue;
         foreach (var npc in FindObjectsOfType<NpcInstance>())
         {
-            if (npc == null || npc.IsDead || !npc.是敌对目标) continue;   // 自动索敌仍要求好感度 < 0
+            if (npc == null || npc.IsDead || !npc.是敌对目标) continue;
             float d = Vector3.Distance(transform.position, npc.transform.position);
             if (d > 索敌半径 || d >= 最近) continue;
             最近 = d; 最佳 = npc;

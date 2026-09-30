@@ -12,7 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public const int 当前版本 = 5;   // 2：修炼系统；3：战阵站位；4：已获得的能力；5：背包/装备/任务进度/对话标记
+    public const int 当前版本 = 7;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -21,8 +21,24 @@ public class SaveData
     public string 最后存档时间 = "";
 
     [Header("进度")]
+    [Tooltip("玩家存档时所在的**场景**（`SceneManager.GetActiveScene().name`）。\n" +
+             "读档时 `MainMenuUI` 按它决定加载哪个场景；空或 3C_Testbed 会兜底成 village。\n\n" +
+             "【踩过的坑·2026-10-01】这个字段以前**从来没人写**！\n" +
+             "建新档时写死 `\"village\"` 之后再也没更新过 —— 于是不管玩家在\n" +
+             "太虚宗 / 宗门野外 / 镇妖塔存的档，读档**一律回到古古镇**，\n" +
+             "而 `位置` 是对的（是那个场景里的坐标）⇒ 人被扔到古古镇的某个随机点。")]
     public string 场景名 = "village";
+
+    [Tooltip("玩家在场景里的位置")]
     public Vector3 位置 = Vector3.zero;
+
+    [Tooltip("**位置是否有效**。\n\n" +
+             "【为什么不能拿 `位置 == Vector3.zero` 当哨兵】老代码是\n" +
+             "`数据.位置 == Vector3.zero ? 保持现状 : 应用` ——\n" +
+             "而 `(0,0,0)` 是**合法坐标**（塔中心、场景原点附近都可能站上去），\n" +
+             "于是「正好站在原点」的档不会恢复位置。现在用显式标志。")]
+    public bool 位置有效 = false;
+
     public float 朝向Y = 0f;
 
     [Header("资源")]
@@ -31,6 +47,10 @@ public class SaveData
 
     [Header("配置")]
     public string 功法id = "";
+
+    [Tooltip("玩家当前穿的外观 id（`AppearanceDefinition.id`）。\n" +
+             "`玩家外观.已选外观` 是 static —— 活过切场景，但**活不过读档**，所以必须存。")]
+    public string 外观id = "";
     public List<string> 已装备神通 = new List<string>();
     public List<string> 已启用被动 = new List<string>();
 
@@ -94,6 +114,13 @@ public class SaveData
     [Header("境界经验（版本 5 起）")]
     public long 当前经验 = 0;
     public long 突破所需总经验 = 0;
+
+    [Header("镇妖塔（版本 6 起）")]
+    [Tooltip("当前所在层（1 起）。进塔时从这里继续")]
+    public int 镇妖塔当前层 = 1;
+
+    [Tooltip("历史最高层（1 起）")]
+    public int 镇妖塔最高层 = 1;
 
     public List<string> 属性键 = new List<string>();
     public List<float> 属性值 = new List<float>();

@@ -21,6 +21,9 @@ public class PlayerStatsDebugPanel : MonoBehaviour
     [Tooltip("留空则自动在自身找 PlayerCombatStats")]
     public PlayerCombatStats 玩家战斗属性;
 
+    [Tooltip("留空则自动在自身找 PlayerVitals（「不扣血」开关要用它）")]
+    public PlayerVitals 玩家气血;
+
     [Header("外观")]
     public float 面板宽度 = 380f;
     public float 面板高度 = 640f;
@@ -36,6 +39,7 @@ public class PlayerStatsDebugPanel : MonoBehaviour
     void Awake()
     {
         if (玩家战斗属性 == null) 玩家战斗属性 = GetComponent<PlayerCombatStats>();
+        if (玩家气血 == null) 玩家气血 = GetComponent<PlayerVitals>();
         显示 = 启动时显示;
         编辑缓存 = new string[AttributeUtil.Count];
     }
@@ -102,6 +106,11 @@ public class PlayerStatsDebugPanel : MonoBehaviour
             ? "当前：使用调试数值（覆盖 基础属性 + 功法）"
             : "当前：使用常规结算", 行样式);
 
+        // 无敌开关放在这里而不是面板底部 —— 面板内容很长，
+        // 放底下会被挤出窗口下边缘（召唤按钮当初就踩过这个坑，见上面 GUILayout 高度的注释）
+        画无敌开关();
+        GUILayout.Space(4f);
+
         // 召唤区放在「应用修改到角色」正下方 —— 之前放在属性列表底下，
         // 面板内容超高，按钮被挤出窗口下边缘，压根看不见。
         画召唤区();
@@ -135,6 +144,52 @@ public class PlayerStatsDebugPanel : MonoBehaviour
 
         GUILayout.EndArea();
         if (玩家战斗属性.使用调试数值) 玩家战斗属性.Recalculate();
+    }
+
+    /// <summary>
+    /// **「不扣血」开关**（立刻生效，点一下就能用）。
+    ///
+    /// 写的是 <see cref="PlayerVitals.调试无敌"/>，而 <c>受到伤害()</c> 第一行就是
+    /// `if (伤害 &lt;= 0f || 已死亡 || 无敌) return 0f;` —— 所以**当帧就生效**，
+    /// 不用等任何重算。
+    ///
+    /// 【为什么挂在 PlayerVitals 上而不是面板自己的字段】
+    /// 面板的字段是**场景序列化**的：面板关了它还在、甚至在编辑器里被存进场景。
+    /// 而 `PlayerVitals` 是运行时组件，重进 Play 就回到默认值 ——
+    /// 「重开一局不该还开着无敌」这件事就自动成立了。
+    ///
+    /// 【为什么不去写 无敌 本身】`无敌` 现在是只读的并集（`调试无敌 ‖ 保护中`），
+    /// 详见 <see cref="PlayerVitals.无敌"/>。这样塔里的重生保护到期时
+    /// 只关它自己那一份，**不会把调试开关一起关掉**。
+    /// </summary>
+    void 画无敌开关()
+    {
+        if (玩家气血 == null) 玩家气血 = GetComponent<PlayerVitals>();
+        if (玩家气血 == null)
+        {
+            GUILayout.Label("—— 不扣血 —— 找不到 PlayerVitals，用不了", 行样式);
+            return;
+        }
+
+        GUILayout.Space(6f);
+        bool 开 = 玩家气血.调试无敌;
+        var 旧色 = GUI.backgroundColor;
+        GUI.backgroundColor = 开 ? new Color(1f, 0.55f, 0.5f) : new Color(0.55f, 1f, 0.6f);
+
+        if (GUILayout.Button(开 ? "✔ 不扣血：开（点此关闭）" : "不扣血（无敌）", GUILayout.Height(30f)))
+        {
+            玩家气血.调试无敌 = !开;
+            Debug.Log("[调试面板] 不扣血：" + (玩家气血.调试无敌 ? "开" : "关")
+                      + "（当前 无敌=" + 玩家气血.无敌
+                      + "，其中重生保护=" + 玩家气血.保护中 + "）");
+        }
+        GUI.backgroundColor = 旧色;
+
+        // 把两个来源都显示出来 —— 只显示一个「无敌：开」的话，
+        // 分不清是调试开关开着、还是重生保护还没到期
+        GUILayout.Label(玩家气血.无敌
+            ? "当前：无敌（调试开关 " + (开 ? "开" : "关") + " ｜ 重生保护 " + (玩家气血.保护中 ? "开" : "关") + "）"
+            : "当前：正常受伤", 行样式);
     }
 
     /// <summary>第一次打开面板时，把当前实际值灌进调试数值，避免从 0 开始</summary>

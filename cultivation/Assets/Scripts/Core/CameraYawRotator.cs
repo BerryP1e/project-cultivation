@@ -26,8 +26,10 @@ public class CameraYawRotator : MonoBehaviour
     [Tooltip("每按一下转多少度（按住会按速度连续转）")]
     public float 每步角度 = 0f;
 
-    [Tooltip("在屏幕左上角显示当前 yaw，方便抄下来当场景默认角度")]
-    public bool 显示角度 = true;
+    [Tooltip("在屏幕左上角显示当前 yaw，方便抄下来当场景默认角度。\n\n" +
+             "**默认关**（用户 2026-10-01：「那个【】调整摄像头转动的提示显示可以去掉了」）。\n" +
+             "要用来调机位时手动勾上即可。")]
+    public bool 显示角度 = false;
 
     TopDownCamera 相机;
 

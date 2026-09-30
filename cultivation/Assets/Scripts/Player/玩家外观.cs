@@ -107,6 +107,44 @@ public class 玩家外观 : MonoBehaviour
     /// </summary>
     static AppearanceDefinition 已选外观;
 
+    /// <summary>
+    /// **当前外观的 id**（存档用）。没选过返回空串。
+    ///
+    /// 【为什么需要单独给存档用】`已选外观` 是 **static** —— 它能活过**切场景**，
+    /// 但活不过**读档**（读档时进程里的静态可能还是上一次会话的，或者干脆是空的）。
+    /// 所以"玩家自己换的那身"必须进存档，否则读档后会被 `按规则选一件()` 覆盖掉
+    /// （用户在 2026-09-27 报过一个同源的 bug：进镇妖塔出来变回宗门便服）。
+    /// </summary>
+    public static string 当前外观id
+    {
+        get
+        {
+            var 库 = AppearanceDatabase.取();
+            if (库 == null || 库.全部 == null) return 已选外观 != null ? 已选外观.id : "";
+            // 已选外观本身可能来自上一局的库实例，按 id 反查一次更稳
+            if (已选外观 == null) return "";
+            return 已选外观.id;
+        }
+    }
+
+    /// <summary>读档用：按 id 把外观记进静态，并立刻装上（读档时可能还没 Start）</summary>
+    public static void 从存档设置外观(string 外观id, 玩家外观 组件 = null)
+    {
+        if (string.IsNullOrEmpty(外观id)) return;
+        var 库 = AppearanceDatabase.取();
+        if (库 == null || 库.全部 == null) return;
+
+        foreach (var a in 库.全部)
+            if (a != null && a.id == 外观id)
+            {
+                已选外观 = a;
+                if (组件 != null) 组件.装备(a);
+                Debug.Log("[外观] 读档恢复外观：" + a.DisplayName);
+                return;
+            }
+        Debug.LogWarning("[外观] 存档里的外观 id 找不到：" + 外观id);
+    }
+
     void OnDestroy() { 对话标记.变化 -= 处理标记变化; }
 
     void 处理标记变化(string 标记, bool 新增)

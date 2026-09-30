@@ -190,6 +190,9 @@ public static class SaveSystem
         数据.突破所需总经验 = 0;
         数据.任务进度 = "";
         数据.对话标记 = "";
+        // 镇妖塔：新角色从第 1 层开始（版本 6）
+        数据.镇妖塔当前层 = 1;
+        数据.镇妖塔最高层 = 1;
     }
 
     /// <summary>把一份档套到当前场景里的角色身上。属性结算系统做好前，只恢复能恢复的那几项</summary>
@@ -212,11 +215,23 @@ public static class SaveSystem
         {
             Debug.Log("[存档] 正在跨场景接力 → 跳过「按存档位置摆放玩家」（落点由切场景过渡负责）");
         }
-        else
+        else if (数据.位置有效)
         {
-            玩家.transform.position = 数据.位置 == Vector3.zero ? 玩家.transform.position : 数据.位置;
+            玩家.transform.position = 数据.位置;
+        }
+        else if (数据.位置 != Vector3.zero)
+        {
+            // 兼容版本 6 及以前的旧档（那时没有 位置有效 标志，用 zero 当哨兵）
+            玩家.transform.position = 数据.位置;
         }
         玩家.transform.rotation = Quaternion.Euler(0f, 数据.朝向Y, 0f);
+
+        // 外观：static 跨场景能活、跨读档活不了，所以读档要显式恢复
+        if (!string.IsNullOrEmpty(数据.外观id))
+        {
+            var 外观组件 = 玩家.GetComponent<玩家外观>();
+            玩家外观.从存档设置外观(数据.外观id, 外观组件);
+        }
         if (cc != null) cc.enabled = true;
 
         // 资源
@@ -313,6 +328,13 @@ public static class SaveSystem
                 Debug.Log("[存档] 主线进度已挂起，等 任务管理器 就绪后恢复：[" + 待恢复任务进度 + "]");
         }
 
+        // ---- 镇妖塔层数（版本 6）----
+        // 放在这里而不是 任务管理器.Start()：层数是**纯静态**的运行时状态，
+        // 和场景无关（不像任务进度要等 任务管理器 实例化）。越早恢复越好 ——
+        // TowerController.Start() 会直接读 TowerProgress.当前层 决定从第几层开刷，
+        // 晚一步就会先按旧层刷一波再跳层（表现为"进塔先闪一下第 1 层的怪"）。
+        TowerProgress.从存档读(数据);
+
         // ---- 战阵 ----
         // 「已获得的真灵」= `Assets/Data/Generated/NpcDefinition` 里所有 demon / human
         //（由 DataTableImporter 自动收集），所以按 id 在「已获得列表 + 场上 NPC」里就能找到。
@@ -355,11 +377,28 @@ public static class SaveSystem
     public static void 从角色采集(SaveData 数据)
     {
         if (数据 == null) return;
+
+        // ★ **记下当前场景**（2026-10-01 修）。
+        //   以前这个字段只在建新档时写过一次 "village"，之后永远是它 ——
+        //   于是不管在太虚宗 / 宗门野外 / 镇妖塔存的档，读档**一律回古古镇**，
+        //   而 `位置` 是那个场景的坐标 ⇒ 人被扔到古古镇里一个毫不相干的地点。
+        var 场 = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (!string.IsNullOrEmpty(场.name))
+        {
+            数据.场景名 = 场.name;
+            Debug.Log("[存档] 记录所在场景：" + 数据.场景名);
+        }
+
         var 玩家 = GameObject.Find("Player");
         if (玩家 == null) return;
 
         数据.位置 = 玩家.transform.position;
+        数据.位置有效 = true;                     // ★ 显式标志，不再拿 Vector3.zero 当哨兵
         数据.朝向Y = 玩家.transform.eulerAngles.y;
+
+        // 外观（static，读档会丢，必须存）
+        try { 数据.外观id = 玩家外观.当前外观id; }
+        catch (System.Exception e) { Debug.LogWarning("[存档] 采集外观失败：" + e.Message); }
 
         var 生命 = 玩家.GetComponent<PlayerVitals>();
         if (生命 != null)
@@ -414,8 +453,7 @@ public static class SaveSystem
         // ---- 背包 / 装备（版本 5）----
         if (战阵面板 != null) 采集面板(数据, 战阵面板);
 
-        // ---- 主线进度 + 对话标记（版本 5）----
-        // ⚠ 任务进度必须在这里抓：任务管理器会随场景重建，它的静态状态也只在运行时有意义
+        // ---- 主线进度 + 对话标记（版本 5）----        // ⚠ 任务进度必须在这里抓：任务管理器会随场景重建，它的静态状态也只在运行时有意义
         var 任务 = UnityEngine.Object.FindObjectOfType<任务管理器>();
         if (任务 != null)
         {
@@ -428,8 +466,13 @@ public static class SaveSystem
         var 标记 = 对话标记.全部标记();
         数据.对话标记 = 标记 != null && 标记.Length > 0 ? string.Join(";", 标记) : "";
 
+        // ---- 镇妖塔层数（版本 6）----
+        // 静态进度 → 存档对象。塔里和塔外都采得到（TowerProgress 是 static）。
+        TowerProgress.写进存档(数据);
+
         Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["
-            + 数据.任务进度 + "]、对话标记 " + 标记.Length + " 个");
+            + 数据.任务进度 + "]、对话标记 " + 标记.Length + " 个"
+            + "、镇妖塔第 " + 数据.镇妖塔当前层 + " 层");
     }
 
     /// <summary>采集面板上的玩法数据（背包 / 法宝 / 灵阵 / 坐骑 / 技能槽 / 停用被动 / 已获真灵 / 经验）</summary>
