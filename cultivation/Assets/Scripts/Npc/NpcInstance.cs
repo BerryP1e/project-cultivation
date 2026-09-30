@@ -32,6 +32,16 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     [SerializeField] float 当前气血;
     [SerializeField] bool 已死亡;
 
+    [Header("等级补正（镇妖塔 / 刷怪用）")]
+    [Tooltip("当前补正等级。0 = 不补正，直接用定义里的基准值。**允许小数**\n" +
+             "（镇妖塔「同一级内逐层递进」会给出 1.25 / 1.8 这种值）。\n" +
+             "由 SpawnZone / TowerController 生成时调「应用等级补正」写入。")]
+    [SerializeField] float 当前等级;
+
+    [Tooltip("补正后的属性。非 null 时**所有属性读取都走它**，不改任何资产。\n" +
+             "NPC表.csv 里填的是「1 级基准值」，实际强度 = 基准 × 等级补正表。")]
+    [SerializeField] AttributeSet 补正属性;
+
     /// <summary>
     /// 运行时好感度。
     ///
@@ -46,11 +56,103 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     /// <summary>当前气血</summary>
     public float CurrentHealth => 当前气血;
 
-    /// <summary>气血上限。取 NPC 表里的「气血」</summary>
-    public float MaxHealth => 定义 != null ? 定义.属性[AttributeType.MaxHealth] : 0f;
+    /// <summary>气血上限。取 NPC 表里的「气血」（被等级补正时取补正后的值）</summary>
+    public float MaxHealth => Get(AttributeType.MaxHealth);
 
-    /// <summary>防御。取 NPC 表里的「防御」</summary>
-    public float Defense => 定义 != null ? 定义.属性[AttributeType.Defense] : 0f;
+    /// <summary>防御。取 NPC 表里的「防御」（被等级补正时取补正后的值）</summary>
+    public float Defense => Get(AttributeType.Defense);
+
+    /// <summary>
+    /// <summary>
+    /// **当前补正等级**（保留 1 位小数）。0 = 没做补正（普通场景怪）。
+    ///
+    /// 杀怪掉修炼次数**不按它算**（见 <see cref="击杀计入等级"/>）——
+    /// 小数等级用来调数值，玩家拿到的经验要是整数，不然等级差系数会乱跳。
+    /// </summary>
+    public float 当前补正等级 => 当前等级;
+
+    /// <summary>
+    /// **击杀统计用的等级**（整数）。塔里刷出来的怪由塔显式指定
+    /// （= 层表算出来的整数等级）；没指定就退回补正等级取整。
+    ///
+    /// 【为什么要和补正等级分开】用户 2026-10-01：
+    /// > 补正等级精确到小数点后 1 位，玩家击杀获得的经验就不那么细致
+    /// 所以第 1~10 层的怪**数值逐层变强**（1.0→1.9），但击杀经验**都是"1 级怪"**。
+    /// </summary>
+    public int 击杀计入等级 { get; private set; }
+
+    /// <summary>当前生效的属性表（补正过就是补正后的）</summary>
+    public AttributeSet 当前属性 => 补正属性 ?? (定义 != null ? 定义.属性 : null);
+
+    /// <summary>有没有做等级补正</summary>
+    public bool 已等级补正 => 当前等级 > 0 && 补正属性 != null;
+
+    /// <summary>
+    /// **按等级补正这份实例的属性。**
+    ///
+    /// 【为什么不改定义资产】<see cref="NpcDefinition"/> 是 ScriptableObject，
+    /// 运行时写它会**写回磁盘**（好感度当初就踩过这个坑，见 <see cref="运行好感度"/> 的注释）。
+    /// 而且同一个怪的 1 级基准值会被所有场景共用，改一个就全脏了。
+    /// 所以补正结果只挂在本实例上，实例销毁即释放。
+    ///
+    /// 【必须早于 Awake 的 ResetHealth】<see cref="SpawnZone"/> 是 Instantiate 之后
+    /// **立刻**调本方法的 —— 而 <c>NpcInstance.Awake</c> 那时还没跑（Unity 的 Awake
+    /// 在 Instantiate 返回后的下一帧前统一跑）。所以这里先写 补正属性，
+    /// Awake 里的 <c>ResetHealth()</c> 读到的就是补正后的 MaxHealth ✓
+    /// </summary>
+    /// <param name="等级">目标补正等级（1~100，**保留 1 位小数**）。≤0 表示清除补正</param>
+    /// <param name="表">等级补正表。空则用 Resources 兜底找一份</param>
+    /// <param name="击杀等级">击杀统计用的**整数**等级。≤0 = 用 <paramref name="等级"/> 取整</param>
+    /// <returns>是否真的做了补正</returns>
+    public bool 应用等级补正(float 等级, NpcLevelScale 表 = null, int 击杀等级 = 0)
+    {
+        if (等级 <= 0 || 定义 == null) { 清除等级补正(); return false; }
+
+        var t = 表 != null ? 表 : NpcLevelScale库.取();
+        if (t == null)
+        {
+            Debug.LogWarning("[等级补正] 找不到 NpcLevelScale 表（先跑「修仙/从配置表生成资产」），"
+                             + name + " 将保持基准数值", this);
+            return false;
+        }
+
+        // ★ 补正等级保留 1 位小数（用户要求）—— 再细也没意义，
+        //   而且会让「同一级内 10 层」的数值差异小到看不出来
+        当前等级 = Mathf.Round(等级 * 10f) / 10f;
+        击杀计入等级 = 击杀等级 > 0 ? 击杀等级 : Mathf.RoundToInt(当前等级);
+        补正属性 = t.应用到(定义.属性, 当前等级);
+        return true;
+    }
+
+    /// <summary>清除等级补正，回到 NPC表 里的基准数值</summary>
+    public void 清除等级补正()
+    {
+        当前等级 = 0;
+        击杀计入等级 = 0;
+        补正属性 = null;
+    }
+
+    /// <summary>
+    /// **在补正后的数值上再叠一个整体倍率**（塔的「同一级内逐层变强」用）。
+    ///
+    /// 只乘**绝对数值量纲**的属性（气血/攻击/防御/灵力/回复），
+    /// 百分比和恒定属性不动 —— 和补正表的分组保持一致，
+    /// 免得把暴击之类的比率乘爆。
+    ///
+    /// 必须在 <see cref="应用等级补正"/> **之后**调（它要先建好 补正属性）。
+    /// </summary>
+    public void 叠加数值倍率(float 倍率)
+    {
+        if (补正属性 == null || 倍率 <= 0f) return;
+        if (Mathf.Approximately(倍率, 1f)) return;
+
+        for (int i = 0; i < AttributeUtil.Count; i++)
+        {
+            var t = (AttributeType)i;
+            if (!NpcLevelScale.属于倍数组(t)) continue;
+            补正属性[t] = 补正属性[t] * 倍率;
+        }
+    }
 
     /// <summary>是否已死亡</summary>
     public bool IsDead => 已死亡;
@@ -131,7 +233,15 @@ public class NpcInstance : MonoBehaviour, ICombatStats
             if (定义 != null)
             {
                 var 修炼 = FindObjectOfType<PlayerCultivation>();
-                if (修炼 != null) 修炼.记录击杀(定义.境界);
+                // ★ 掉修炼次数按**整数**等级算（见 击杀计入等级 的注释）：
+                //   塔里的怪数值可能补正到 1.7 级，但对玩家来说它就是「1 级怪」，
+                //   给的经验不该随小数抖动。非塔里的怪（没做过补正）用定义里的境界。
+                if (修炼 != null)
+                {
+                    int 计入 = 击杀计入等级 > 0 ? 击杀计入等级
+                             : (当前等级 > 0 ? Mathf.RoundToInt(当前等级) : 定义.境界);
+                    修炼.记录击杀(计入);
+                }
             }
 
             // 沙包类 NPC（练功木桩）：气血归零后自动满血，方便一直试招
@@ -225,7 +335,15 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     public float 被动法术伤害加成 => Get(AttributeType.PassiveSpellBonus);
     public float 被动法术伤害减免 => Get(AttributeType.PassiveSpellReduction);
 
-    float Get(AttributeType t) => 定义 != null ? 定义.属性[t] : 0f;
+    /// <summary>
+    /// 属性读取的**唯一出口**。
+    /// 有等级补正就读补正后的值，否则读 <see cref="NpcDefinition.属性"/>（1 级基准值）。
+    /// </summary>
+    float Get(AttributeType t)
+    {
+        if (补正属性 != null) return 补正属性[t];
+        return 定义 != null ? 定义.属性[t] : 0f;
+    }
 
     // ---- ASCII 别名：内部按习惯用中文命名，对外（UI / 其他脚本 / 自动化）用这些 ----
     public float Attack => 攻击;

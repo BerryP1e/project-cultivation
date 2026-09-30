@@ -64,7 +64,27 @@ public static class NpcVariantSplitter
 {
     const string 表路径 = "Assets/Data/Tables/NPC表.csv";
     const string 定义目录 = "Assets/Data/Generated/NpcDefinition";
-    const string 备份目录 = "D:/project：cultivation";
+
+    /// <summary>
+    /// 备份目录：**从 <c>Application.dataPath</c> 反推仓库根**，落到 `.dsh/_npc表备份/`。
+    ///
+    /// 【坑·改过两次】原来写死 `"D:/project：cultivation"`（第一台开发机的路径）。
+    /// 换机器后那个目录不存在，`File.WriteAllBytes` 抛异常又被静默 catch，
+    /// 于是**备份一直没生效**，而仓库根还堆着 8 个从原机器搬来的历史 `.bak`。
+    /// 文档里 2026-09-27 写着"已修"，其实代码里**没改** —— 2026-09-30 才发现并真修。
+    ///
+    /// 放 `.dsh/` 而不是 `Assets/` 里：`.bak` 在 Assets 下会被 Unity 当资产导入。
+    /// </summary>
+    static string 备份目录
+    {
+        get
+        {
+            // Application.dataPath = <仓库根>/cultivation/Assets
+            var 工程根 = Path.GetDirectoryName(Application.dataPath);      // <仓库根>/cultivation
+            var 仓库根 = Path.GetDirectoryName(工程根);                      // <仓库根>
+            return Path.Combine(仓库根, ".dsh", "_npc表备份");
+        }
+    }
 
     const int 列数 = 39;
     const int 满级 = 90;
@@ -135,6 +155,23 @@ public static class NpcVariantSplitter
     };
 
     static bool 是手工家族(string 基) => System.Array.IndexOf(手工家族, 基) >= 0;
+
+    /// <summary>
+    /// **等级补正表启用了吗**（= 资产里存在 NpcLevelScale 资产）。
+    ///
+    /// 用一个只读探针判断，而不是写死 `true` —— 这样万一用户把补正表删了、
+    /// 想退回旧的"逐档递推"做法，本方法会自动重新开始工作，不用改代码。
+    /// </summary>
+    static bool 等级补正表已启用()
+    {
+        try
+        {
+            foreach (var g in AssetDatabase.FindAssets("t:NpcLevelScale"))
+                if (g != null) return true;
+        }
+        catch { /* 忽略：查不到就当没启用 */ }
+        return false;
+    }
 
     // ============================================================ 拆分
 
@@ -211,6 +248,22 @@ public static class NpcVariantSplitter
     {
         var 行 = 读表();
         if (行 == null) return;
+
+        // ★★★ 2026-09-30：**妖魔不再走"逐档递推"了。**
+        //
+        // 用户把这套改成了「NPC表 只填 1 级基准值 + 等级补正表按等级算强度」
+        // （见 docs/guides/镇妖塔.md 与 LevelCurve）。所以：
+        //   · 妖魔的境界**统一是 1**（不再是 21/31/…/90）
+        //   · 强度差异由 `Assets/Data/Tables/NPC等级补正表.csv` 负责
+        //
+        // 而本方法的「每版一大档」用的是写死的 `10f`（见下面 `步长` 那行），
+        // 一旦误跑就会把「境界=1」的妖魔重新推成 1/11/21/31…，
+        // **并把属性按 1.75^n 乘回去** —— 等于把整套改造冲掉。
+        //
+        // 所以这里直接跳过妖魔家族（人类/中立不受影响，它们本来就保留境界、
+        // 也不参与镇妖塔刷怪）。要恢复旧行为就把下面这个开关关掉。
+        bool 跳过妖魔 = 等级补正表已启用();
+
         Backup();
 
         // 变体行 = id 形如 `<基>_NN` 且**不是手工家族**。
@@ -220,6 +273,7 @@ public static class NpcVariantSplitter
         // 这个条件就永远不成立、递推会**整表跳过** ✗
         // 现在改成：**只看 id**，手工家族用显式名单排除（见 手工家族）。
         var 家族 = new Dictionary<string, List<(int 行号, int 版本)>>();
+        int 跳过数 = 0;
         for (int i = 1; i < 行.Count; i++)
         {
             var L = 行[i];
@@ -231,10 +285,18 @@ public static class NpcVariantSplitter
             if (!是变体id(id, out var 基)) continue;
             if (是手工家族(基)) continue;
 
+            // ★ 妖魔改由等级补正表负责，不再逐档递推
+            if (跳过妖魔 && 列[5].Trim() == "妖魔") { 跳过数++; continue; }
+
             int 版本 = int.Parse(id.Substring(id.Length - 2));
             if (!家族.ContainsKey(基)) 家族[基] = new List<(int, int)>();
             家族[基].Add((i, 版本));
         }
+
+        if (跳过妖魔 && 跳过数 > 0)
+            Debug.Log("[NPC版本] 妖魔已改由「等级补正表」负责强度，本次**跳过 " + 跳过数
+                      + " 只妖魔**的逐档递推（境界保持 1，属性保持 1 级基准）。"
+                      + "人类/中立照旧。详见 docs/guides/镇妖塔.md");
 
         int 改 = 0;
         foreach (var kv in 家族)
@@ -559,10 +621,16 @@ public static class NpcVariantSplitter
     {
         try
         {
+            Directory.CreateDirectory(备份目录);       // 目录不存在就建（换机器后必然不存在）
             var 名 = "_backup_NPC表_" + System.DateTime.Now.ToString("MMdd_HHmmss") + ".csv.bak";
             File.WriteAllBytes(Path.Combine(备份目录, 名), File.ReadAllBytes(表路径));
-            Debug.Log("[NPC版本] 已备份 " + 名);
+            Debug.Log("[NPC版本] 已备份到 " + Path.Combine(备份目录, 名));
         }
-        catch (System.Exception e) { Debug.LogWarning("[NPC版本] 备份失败（继续）：" + e.Message); }
+        catch (System.Exception e)
+        {
+            // ★ 不再静默：以前异常被吞掉，表现是"备份一直在跑"其实一次都没成功
+            Debug.LogWarning("[NPC版本] ★备份失败（继续执行）：" + e.GetType().Name + " " + e.Message
+                             + "\n  目标目录 = " + 备份目录);
+        }
     }
 }

@@ -78,4 +78,50 @@ public static class NpcPrefabs
         }
         return pf;
     }
+
+    // ============================================================ 按「定义 id」取
+
+    /// <summary>
+    /// 按 NPC表 的 id 取定义（找不到返回 null）。
+    ///
+    /// 【为什么走 NPC库 而不是 `Resources.LoadAll&lt;NpcDefinition&gt;`】
+    /// 定义资产生成在 `Assets/Data/Generated/NpcDefinition/`，
+    /// **那个路径不在 Resources 下** —— 实测 `Resources.LoadAll&lt;NpcDefinition&gt;("")` 返回 **0 个**。
+    /// 所以走 `Assets/resources/NPC数据/NPC库.asset` 这份只装引用的聚合资产
+    /// （和任务库 / 对话库 / 面板库同一个做法）。
+    /// </summary>
+    public static NpcDefinition 按id取定义(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        var 库 = NpcDatabase库.取();
+        if (库 == null) return null;
+        return 库.按id(id);
+    }
+
+    /// <summary>
+    /// **按 NPC表 的 id 直接取可刷的预制体。**
+    /// 刷怪组表里写的是 id，这里一路 id → 定义 → <see cref="NpcDefinition.模型资源路径"/> → prefab。
+    /// </summary>
+    public static GameObject 按id取(string id)
+    {
+        var d = 按id取定义(id);
+        if (d == null)
+        {
+            if (警告过.Add("id:" + id))
+                Debug.LogWarning("[NPC] NPC库 里没有 id = 「" + id + "」的定义"
+                                 + "（刷怪组表是不是写错了？或者没跑「修仙/从配置表生成资产」）");
+            return null;
+        }
+        return 加载(d.模型资源路径);
+    }
+
+    /// <summary>清索引（重生成资产 / 重进 Play 时用）</summary>
+    public static void 清索引()
+    {
+        警告过.Clear();
+        NpcDatabase库.清缓存();
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void 重置静态() { 警告过.Clear(); }
 }

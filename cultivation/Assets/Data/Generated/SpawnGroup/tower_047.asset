@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1526715cd4c69a34e941c2b2ab8a160f, type: 3}
+  m_Name: tower_047
+  m_EditorClassIdentifier: 
+  "\u7EC4id": tower_047
+  "\u540D\u5B57": "\u5996\u7FA4047"
+  "\u6743\u91CD": 1
+  "\u6210\u5458":
+  - npcId: demon_tufu_02
+    "\u6570\u91CF": 2
+  - npcId: demon_liyujing_02
+    "\u6570\u91CF": 2
+  - npcId: demon_shuangtoushe_01
+    "\u6570\u91CF": 2

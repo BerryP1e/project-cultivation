@@ -213,6 +213,18 @@ public static class DataTableImporter
         //   放在这里 = 每次导入都自动填好，不靠人记得跑菜单。
         回填效果引用.回填(true);
 
+        // ---- 塔相关的三张表（形状特殊，单独一个导入器）----
+        // 它们不能走上面的 Specs：补正表是「10 行 = 一张表」、刷怪组和层表带变长/嵌套列表，
+        // 而 Specs 是「一行一个资产 + 反射套列」。详见 TowerTablesImporter 的注释。
+        try { TowerTablesImporter.导入全部(); }
+        catch (System.Exception e) { report.Append("塔表导入失败: ").Append(e.Message).Append("\n"); }
+
+        // ---- 收集运行时聚合库（塔库 / NPC库）----
+        // 生成的资产在 Assets/Data/Generated 下，**不在 Resources 里**，运行时读不到，
+        // 所以要收一份只装引用的聚合资产到 Assets/resources/ 下（同 任务库 / 对话库 / 面板库）
+        try { TowerDatabaseCollector.收集(); }
+        catch (System.Exception e) { report.Append("塔库收集失败: ").Append(e.Message).Append("\n"); }
+
         EditorSceneManager_MarkAndSave();
         Debug.Log("[DataTableImporter] 导入完成：\n" + report);
     }

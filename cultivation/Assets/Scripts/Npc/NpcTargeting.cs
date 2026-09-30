@@ -95,6 +95,8 @@ public class NpcTargeting : MonoBehaviour
     {
         if (射线相机 == null) { 射线相机 = Camera.main; if (射线相机 == null) return; }
 
+        维护锁定目标还活着();
+
         // 有全屏界面（设施界面等）开着时，鼠标不该穿透到场景里。
         // 否则站在炼丹炉前开着界面，右键会连建筑一起点，又开一个新界面。
         if (StationInteractor.有界面打开) return;
@@ -261,6 +263,11 @@ public class NpcTargeting : MonoBehaviour
     /// </summary>
     public void Lock(NpcInstance npc, bool byPlayerClick = false)
     {
+        // ★ 记下"这个锁定是不是玩家的意图"—— 决定目标死了之后要不要自动改锁。
+        //   手动点 → 是；系统自动找的 → 继承前一次的状态（见 维护锁定目标还活着）
+        if (byPlayerClick) 玩家指定的锁定 = true;
+        else if (npc == null) 玩家指定的锁定 = false;
+
         if (Locked == npc) return;
 
         if (Locked != null)
@@ -280,10 +287,100 @@ public class NpcTargeting : MonoBehaviour
         LockChanged?.Invoke(Locked, byPlayerClick);
     }
 
-    /// <summary>解除锁定</summary>
+    /// <summary>
+    /// 解除锁定
+    /// </summary>
     public void ClearLock()
     {
+        玩家指定的锁定 = false;
         Lock(null);
+    }
+
+    // ============================================================ 目标死了 → 自动改锁
+
+    /// <summary>
+    /// 当前锁定是不是**玩家指定的**。只有玩家指定过的锁定，目标死了才会自动改锁；
+    /// 系统自动找的下一个目标同样继承这个标记，所以会**一直续下去**。
+    ///
+    /// 【为什么要这个标记】如果无条件自动改锁，玩家明明想停手（或收工），
+    /// 一死就又被锁上一个新的，反而是在替他做决定。
+    /// </summary>
+    public bool 玩家指定的锁定 { get; private set; }
+
+    /// <summary>
+    /// **锁定目标死了 → 自动锁一个"神识范围内、对我好感度 &lt; 0（会攻击我）"的目标。**
+    ///
+    /// 用户 2026-09-30 / 10-01 的要求：
+    /// > 如果锁定中的怪物死了，就会锁定神识中的对我好感度低于 0 要攻击我的 NPC
+    ///
+    /// ## 为什么要放在这里（玩家身上），而不是某个普攻方法里
+    ///
+    /// 这条功能原来写在 `BasicSword01.找下一个目标()` 里 —— 结果是**剑自己的逻辑**：
+    /// · 量的是「到**剑**的距离」（剑在飞，不是玩家在感知）
+    /// · **换功法就没了**：`PlayerAbilityLoader` 会把 `BasicSword01` 停用
+    ///   （用玄霄雷决 / 雷动千闪 / 沧澜寒渊录时它就是停用状态），功能整个消失
+    /// · 别的普攻方法（远程 / 冰刺 / 雷）**根本没有**这套
+    ///
+    /// 但「锁定」本来就是**玩家级**的概念（`Locked` 就挂在 `NpcTargeting` 上），
+    /// 所以判断依据必须是玩家自己的**神识范围**（和右键锁定用同一个 `神识范围`），
+    /// 这样换任何功法、任何普攻方法、甚至靠神通打，行为都一致。
+    ///
+    /// ## 判据（和右键锁定对齐）
+    ///
+    /// · 必须 `是敌对目标`（= `对主角好感度 &lt; 0`，也就是"会主动攻击我"的）
+    /// · 必须在 <see cref="神识范围"/> 内 —— 和右键锁定同一把尺子
+    /// · 取**最近**的一个
+    ///
+    /// **一个都没找到 → 清掉锁定**（红环和血条一起消失），而不是留着一个死目标。
+    /// </summary>
+    void 维护锁定目标还活着()
+    {
+        if (!玩家指定的锁定) return;
+        if (Locked == null) return;              // 已经被清掉了
+        if (!Locked.IsDead) return;              // 还活着，正常打
+
+        var 下一个 = 找最近的敌对目标();
+        if (下一个 == null)
+        {
+            Debug.Log("[索敌] 锁定目标「" + Locked.DisplayName + "」已死，神识范围内没有其他敌对目标 → 解除锁定");
+            ClearLock();                          // 注意：它会清 玩家指定的锁定
+            return;
+        }
+
+        Debug.Log("[索敌] 锁定目标「" + Locked.DisplayName + "」已死 → 自动改锁「"
+                  + 下一个.DisplayName + "」（距 " + 到目标距离(下一个).ToString("0.#")
+                  + "m / 神识 " + 神识范围.ToString("0.#") + "m）");
+
+        // ★ byPlayerClick: false —— 这是系统自动找的，不是玩家点的。
+        //   玩家指定的锁定 这个标记**不会被清掉**，所以下一只死了还会继续改锁。
+        Lock(下一个, byPlayerClick: false);
+    }
+
+    /// <summary>
+    /// 神识范围内最近的**敌对目标**（好感度 &lt; 0 = 会攻击我）。没有就返回 null。
+    ///
+    /// 公开出来是为了让普攻方法 / 神通也能复用同一套判据，
+    /// 不用各抄一份（抄一份就会各自跑偏 —— 这正是老代码的病根）。
+    /// </summary>
+    public NpcInstance 找最近的敌对目标()
+    {
+        NpcInstance 最佳 = null;
+        float 最近 = float.MaxValue;
+        float 范围 = 神识范围;
+
+        foreach (var npc in FindObjectsOfType<NpcInstance>())
+        {
+            if (npc == null || npc.IsDead) continue;
+            if (!npc.是敌对目标) continue;              // ★ 必须是"对我好感度 < 0、会攻击我"的
+
+            float d = 到目标距离(npc);                  // 量的是**玩家**到目标体表的最近距离
+            if (d > 范围) continue;
+            if (d >= 最近) continue;
+
+            最近 = d;
+            最佳 = npc;
+        }
+        return 最佳;
     }
 
     /// <summary>解除选中</summary>
