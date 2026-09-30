@@ -126,18 +126,53 @@ public static class 场景自举
         }
 
         // ---- 主相机：机位旋转工具（临时调角度用，可随时摘掉）----
+        //
+        // ★ 2026-10-01：**这里必须顺手把「显示角度」关掉。**
+        //
+        // 【踩过的坑】本方法每次进场景都会 `AddComponent<CameraYawRotator>()`
+        // （只要主相机上没有），而那个脚本的字段默认值会被**原样当成配置** ——
+        // 于是「显示角度」永远是默认的 true，屏幕左上角一直挂着
+        // 「机位 yaw = 45.0°（【 左转 / 】 右转）」那行提示。
+        // 用户要求在场景里把它关掉时，**改场景根本没用** —— 运行时又被这里补回来了。
+        // 实测：场景文件里存的是 0，运行时读出来却是 True。
+        //
+        // 所以补组件这件事不能只看「有没有」，凡是**「补」出来的**都要显式设成
+        // 我们想要的初始状态，不能指望脚本默认值。
         var 相机 = 找主相机(场景);
         if (相机 != null)
         {
-            确保组件<CameraYawRotator>(相机, 场景.name);
+            var 补出来的 = 确保组件<CameraYawRotator>(相机, 场景.name);
+            // 「补」和「已有」都设一遍：玩家在场景里手改过就尊重场景值，
+            // 但**我们不希望它默认开着**，所以统一在这一层关掉提示。
+            foreach (var r in 相机.GetComponents<CameraYawRotator>())
+                if (r != null && r.显示角度) r.显示角度 = false;
+            if (补出来的 != null) 补出来的.显示角度 = false;
+
+            // ★ 全局调色后处理（Built-in 管线，自写 OnRenderImage）。
+            //   放在这里补，是为了**每个场景都自动有** ——
+            //   写进场景反而会漂移（某个场景忘了挂就没有统一调色）。
+            //   组件已经存在（手动挂过、调过参数）时不动它。
+            确保组件<GameGlobalGrade>(相机, 场景.name);
+
+            // ★ 辉光（Bloom）后处理。**必须在调色之前跑**，否则辉光不会被调色、
+            //   会和画面脱节。顺序靠 `[DefaultExecutionOrder(-100)]` 保证
+            //   （见 GameGlobalBloom 的注释）。
+            //   同样在这里自举补，不写进场景。
+            确保组件<GameGlobalBloom>(相机, 场景.name);
+
+            // ★ 画面基线实时预览（F2 切档）。纯调试工具，定下基线后可以删。
+            确保组件<画面基线预览>(相机, 场景.name);
         }
     }
 
-    static void 确保组件<T>(GameObject go, string 场景名) where T : Component
+    /// <summary>确保有该组件；**返回补出来的那个**（已有则返回 null）</summary>
+    static T 确保组件<T>(GameObject go, string 场景名) where T : Component
     {
-        if (go.GetComponent<T>() != null) return;
-        go.AddComponent<T>();
+        var 已有 = go.GetComponent<T>();
+        if (已有 != null) return null;
+        var 新 = go.AddComponent<T>();
         Debug.Log("[场景自举] 「" + 场景名 + "」的「" + go.name + "」缺 " + typeof(T).Name + " → 已自动补上");
+        return 新;
     }
 
     static bool 场景内有<T>(Scene 场景) where T : Component

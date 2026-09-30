@@ -100516,8 +100516,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1786122615}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3904484, y: 0.34682903, z: -0.16172904, w: 0.8373192}
-  m_LocalPosition: {x: -25.272312, y: 13.856711, z: -37.272312}
+  m_LocalRotation: {x: 0.3159854, y: 0.3596048, z: -0.13088545, w: 0.86816275}
+  m_LocalPosition: {x: -26.666805, y: 11.884602, z: -38.666805}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -100537,7 +100537,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 1805764444}
   lookHeight: 1.2
-  pitch: 50
+  pitch: 40
   yaw: 45
   distance: 16
   smoothTime: 0.12
@@ -100605,7 +100605,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   "\u65CB\u8F6C\u901F\u5EA6": 90
   "\u6BCF\u6B65\u89D2\u5EA6": 0
-  "\u663E\u793A\u89D2\u5EA6": 1
+  "\u663E\u793A\u89D2\u5EA6": 0
 --- !u!1001 &1786843642
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -101969,9 +101969,12 @@ MonoBehaviour:
   "\u5F00\u5173\u6309\u952E": 282
   "\u542F\u52A8\u65F6\u663E\u793A": 0
   "\u73A9\u5BB6\u6218\u6597\u5C5E\u6027": {fileID: 0}
+  "\u73A9\u5BB6\u6C14\u8840": {fileID: 0}
   "\u9762\u677F\u5BBD\u5EA6": 380
   "\u9762\u677F\u9AD8\u5EA6": 640
   "\u5B57\u53F7": 13
+  "\u53EC\u5524\u641C\u7D22": 
+  "\u53EA\u770B\u6709AI": 1
 --- !u!114 &1805764450
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -102014,6 +102017,9 @@ MonoBehaviour:
   "\u5F53\u524D\u7075\u6C14": 1
   "\u81EA\u52A8\u56DE\u590D": 1
   "\u56DE\u590D\u500D\u7387": 1
+  "\u8C03\u8BD5\u65E0\u654C": 0
+  "\u8FC7\u573A\u4FDD\u62A4\u5BBD\u9650": 2.5
+  "\u8FC7\u573A\u5BBD\u9650\u5269\u4F59": 0
 --- !u!114 &1805764453
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -102183,6 +102189,9 @@ MonoBehaviour:
   "\u6807\u9898\u8272": {r: 0.92, g: 0.9, b: 0.82, a: 1}
   "\u63D0\u793A\u8272": {r: 1, g: 0.95, b: 0.6, a: 1}
   "\u63D0\u793A\u62AC\u9AD8": 0.6
+  "\u63D0\u793A\u6302\u73A9\u5BB6": 1
+  "\u63D0\u793A\u73A9\u5BB6\u62AC\u9AD8": 2.1
+  "\u63D0\u793A\u671D\u8BBE\u65BD\u504F\u79FB": 0.5
   "\u8EAB\u4FA7\u8DDD\u79BB": 0.55
   "\u5C4F\u5E55\u8FB9\u8DDD\u6BD4\u4F8B": 0.08
 --- !u!114 &1805764458
@@ -102356,6 +102365,7 @@ MonoBehaviour:
   "\u91CD\u751F\u4FDD\u62A4\u65F6\u95F4": 2.5
   "\u91CD\u751F\u65F6\u91CD\u7F6E\u602A\u7269": 1
   "\u6B7B\u4EA1\u754C\u9762": {fileID: 0}
+  "\u5854\u63A5\u7BA1\u590D\u6D3B": 0
   "\u6B7B\u4EA1\u65F6\u7981\u7528": []
 --- !u!114 &1805764461
 MonoBehaviour:
@@ -102660,7 +102670,7 @@ MonoBehaviour:
   "\u68C0\u6D4B\u95F4\u9694\u5E27": 1
   "\u8C03\u8BD5_\u5F3A\u5236\u663E\u793A": 0
   "\u6253\u5370\u65E5\u5FD7": 0
-  "\u542F\u7528": 1
+  "\u542F\u7528": 0
 --- !u!114 &1805764464
 MonoBehaviour:
   m_ObjectHideFlags: 0
