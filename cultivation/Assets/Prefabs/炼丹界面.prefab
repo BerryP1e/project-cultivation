@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!1 &1632980694113461943
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 6586692166541775524}
+  - component: {fileID: 8465474064424527433}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: "\u70BC\u4E39\u754C\u9762"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6586692166541775524
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1632980694113461943}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8465474064424527433
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1632980694113461943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d85ee0335f8d49449b0749ce1c43d226, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  "\u5F00\u5173\u6309\u952E": 0
+  "\u5B57\u4F53": {fileID: 12800000, guid: d12f3feb8a964ad4b8b30fd30bf445d6, type: 3}
+  "\u5E55\u5E03\u8272": {r: 0, g: 0, b: 0, a: 0.72}
+  "\u9762\u677F\u8272": {r: 0.15, g: 0.14, b: 0.17, a: 0.97}
+  "\u6807\u9898\u8272": {r: 0.97, g: 0.93, b: 0.8, a: 1}
+  "\u6B63\u6587\u8272": {r: 0.88, g: 0.87, b: 0.86, a: 1}
+  "\u5F3A\u8C03\u8272": {r: 0.55, g: 0.85, b: 0.75, a: 1}
+  "\u6309\u94AE\u8272": {r: 0.72, g: 0.58, b: 0.3, a: 1}
+  "\u6309\u94AE\u6697\u8272": {r: 0.3, g: 0.29, b: 0.32, a: 1}
+  "\u6309\u94AE\u5B57\u8272": {r: 0.1, g: 0.09, b: 0.08, a: 1}
+  "\u8B66\u544A\u8272": {r: 1, g: 0.66, b: 0.4, a: 1}

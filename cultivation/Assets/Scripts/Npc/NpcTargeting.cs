@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -108,7 +108,7 @@ public class NpcTargeting : MonoBehaviour
             // RaycastNpc() 返回 null → Select(null) → 绿环消失、SelectionChanged 发 null。
             //
             // 点在可点的 UI（技能格子 / 面板按钮）上时不算"世界里的点击" ——
-            // HUD 是 ScreenSpaceOverlay，Physics.Raycast 打不到它（见docs/ai/开发注意事项.md 9.5），
+            // HUD 是 ScreenSpaceOverlay，Physics.Raycast 打不到它（见docs/ai/archive/开发注意事项-流水原文.md 9.5），
             // 不挡一下的话点技能格子会顺手把选中也取消掉。
             if (!点在界面上()) 点击选中();
         }

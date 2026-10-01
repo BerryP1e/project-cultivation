@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **追踪弹档**（`ActiveSkillKind.追踪弹`）的执行体 —— 现在服务两个神通：/// **瞬雷天闪**（球 lightning-sphere）与 **冰暴术**（球 frost-crystal、命中 frost-frozen-tomb 贴地）。
@@ -360,6 +360,6 @@ public class HomingBoltSkillRunner : MonoBehaviour
     // 而且当初"球不出粒子"的判断本身就是错的：我把测试物件丢在 (400,20,400)，
     // 那里**在相机视锥外**，而这些特效的 `cullingMode = PauseAndCatchup`
     // —— 被剔除的粒子系统会**停止模拟**。搬进画面里就正常了（实测 2→9→13→18 颗）。
-    // 详见 docs/ai/踩坑与注意事项.md B35/B36。
+    // 详见 docs/ai/踩坑总库.md B35/B36。
     // ============================================================
 }

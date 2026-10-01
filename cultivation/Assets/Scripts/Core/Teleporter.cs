@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
@@ -21,7 +21,7 @@ using System.Collections.Generic;
 ///
 /// ★ 前置条件：<see cref="传送选项.场景"/> 里写的场景必须加进 **Build Settings**，否则 LoadScene 会失败。
 /// ★ 落点物体必须真实存在于目标场景，且**不能和它对应的传送圈同名** ——
-///   否则玩家会被放到圆圈自己身上（同一帧又踩进圈里）。详见 `docs/ai/场景一致性与踩坑规律.md`。
+///   否则玩家会被放到圆圈自己身上（同一帧又踩进圈里）。详见 `docs/ai/踩坑总库.md`。
 /// </summary>
 [DisallowMultipleComponent]
 public class Teleporter : MonoBehaviour

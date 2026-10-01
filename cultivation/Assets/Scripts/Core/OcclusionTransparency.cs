@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// 【通用装配 · 挂在主相机上】**遮挡透视**：把「摄像机 ↔ 主角」连线挡住的
+/// 【通用装配 · 挂在主相机上】**遮挡与特效开关**：把「摄像机 ↔ 主角」连线挡住的
 /// **建筑/场景**与**树冠**变透明，免得镜头被挡住看不见主角。
 ///
 /// ============================================================
@@ -97,7 +97,7 @@ public class OcclusionTransparency : MonoBehaviour
         if (!建筑遮挡启用 && !树冠透明)
         {
             Debug.Log("[场景特效开关] 「" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
-                + "」建筑透明 / 树冠透明 都没开 → 关闭遮挡透视组件", this);
+                + "」建筑透明 / 树冠透明 都没开 → 关闭遮挡与特效开关组件", this);
             enabled = false;
         }
     }
@@ -135,7 +135,7 @@ public class OcclusionTransparency : MonoBehaviour
             var r = kv.Key;
             if (r == null) continue;
             bool 新 = _台账.变透明(r, kv.Value);
-            if (新 && 打印日志) Debug.Log("[遮挡透视] 变透明：" + r.name, r);
+            if (新 && 打印日志) Debug.Log("[遮挡与特效开关] 变透明：" + r.name, r);
             _保持到[r] = Time.unscaledTime + Mathf.Max(0f, 保持);
         }
 
@@ -145,7 +145,7 @@ public class OcclusionTransparency : MonoBehaviour
             if (Time.unscaledTime > kv.Value) _待恢复.Add(kv.Key);
         foreach (var r in _待恢复)
         {
-            if (打印日志 && r != null) Debug.Log("[遮挡透视] 恢复：" + r.name, r);
+            if (打印日志 && r != null) Debug.Log("[遮挡与特效开关] 恢复：" + r.name, r);
             _台账.还原(r);
             _保持到.Remove(r);
         }
@@ -252,7 +252,7 @@ public class OcclusionTransparency : MonoBehaviour
             _树s.Add(new 树 { 渲染s = 留.ToArray(), 盒 = 盒 });
         }
 
-        if (打印日志) Debug.Log("[遮挡透视] 树冠表重建：树 " + _树s.Count + " 棵");
+        if (打印日志) Debug.Log("[遮挡与特效开关] 树冠表重建：树 " + _树s.Count + " 棵");
     }
 
     /// <summary>线段（a→b）离包围盒最近距离是否小于 余量</summary>

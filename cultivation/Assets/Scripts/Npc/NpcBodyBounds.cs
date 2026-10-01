@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -160,74 +160,124 @@ public static class NpcBodyBounds
         世界 = default;
         if (r == null) return false;
 
-        // ---- 蒙皮网格：真实蒙皮包围盒 ----
-        if (r is SkinnedMeshRenderer 蒙皮 && 蒙皮.sharedMesh != null)
+        try
         {
-            if (蒙皮包围盒(蒙皮, out 世界)) return true;
-        }
+            // ---- 蒙皮网格：真实蒙皮包围盒 ----
+            // ⚠️ 这里**不能**让 蒙皮包围盒 的异常穿出去 —— 穿出去的话下面
+            //    「退回绑定姿势包围盒」的兜底执行不到，调用方拿到 default，
+            //    表现是一串毫不相干的毛病（血条 / 贴地）。
+            //    所以 蒙皮包围盒 内部已经自己 try/catch + 判 isReadable。
+            if (r is SkinnedMeshRenderer 蒙皮 && 蒙皮.sharedMesh != null)
+            {
+                if (蒙皮包围盒(蒙皮, out 世界)) return true;
+            }
 
-        Bounds 本地;
-        if (r is SkinnedMeshRenderer smr && smr.sharedMesh != null) 本地 = smr.sharedMesh.bounds;
-        else
-        {
-            var mf = r.GetComponent<MeshFilter>();
-            if (mf == null || mf.sharedMesh == null) { 世界 = r.bounds; return true; }
-            本地 = mf.sharedMesh.bounds;
-        }
+            Bounds 本地;
+            if (r is SkinnedMeshRenderer smr && smr.sharedMesh != null) 本地 = smr.sharedMesh.bounds;
+            else
+            {
+                var mf = r.GetComponent<MeshFilter>();
+                if (mf == null || mf.sharedMesh == null) { 世界 = r.bounds; return true; }
+                本地 = mf.sharedMesh.bounds;
+            }
+            // 包围盒数据本身可能是坏的（NaN / 全 0）—— 用 Renderer.bounds 兜底
+            if (float.IsNaN(本地.center.x) || float.IsNaN(本地.size.x)) { 世界 = r.bounds; return true; }
 
-        var t = r.transform;
-        Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
-        for (int i = 0; i < 8; i++)
-        {
-            var 角 = new Vector3(
-                (i & 1) == 0 ? 本地.min.x : 本地.max.x,
-                (i & 2) == 0 ? 本地.min.y : 本地.max.y,
-                (i & 4) == 0 ? 本地.min.z : 本地.max.z);
-            var w = t.TransformPoint(角);
-            min = Vector3.Min(min, w);
-            max = Vector3.Max(max, w);
+            var t = r.transform;
+            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+            for (int i = 0; i < 8; i++)
+            {
+                var 角 = new Vector3(
+                    (i & 1) == 0 ? 本地.min.x : 本地.max.x,
+                    (i & 2) == 0 ? 本地.min.y : 本地.max.y,
+                    (i & 4) == 0 ? 本地.min.z : 本地.max.z);
+                var w = t.TransformPoint(角);
+                min = Vector3.Min(min, w);
+                max = Vector3.Max(max, w);
+            }
+            if (float.IsNaN(min.x) || float.IsInfinity(min.x)) { 世界 = r.bounds; return true; }
+            世界.SetMinMax(min, max);
+            return true;
         }
-        世界.SetMinMax(min, max);
-        return true;
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[NpcBodyBounds] 取包围盒失败，用 Renderer.bounds 兜底：{r.name} — {e.Message}");
+            世界 = r.bounds;
+            return true;
+        }
     }
 
     /// <summary>
     /// 蒙皮网格的**真实**世界包围盒：逐顶点自己做蒙皮（四根骨骼按权重加权）。
     /// 骨骼权重拿不到时返回 false，让调用方退回绑定姿势包围盒。
+    ///
+    /// ⚠️【踩过的坑·2026-10-01】**读顶点前必须判 <c>isReadable</c>！**
+    ///
+    /// 原来这里直接 `var vs = m.vertices;`，而模型是 glb 转进来的、
+    /// **Import Settings 里没勾 Read/Write**。于是这一行**抛异常**：
+    /// <code>Not allowed to access vertices on mesh 'tripo_node_xxx' (isReadable is false)</code>
+    ///
+    /// 异常**直接穿透** <see cref="取网格包围盒"/>（那个函数里没有 catch），
+    /// 连它下面「退回绑定姿势包围盒」的兜底都**执行不到** ——
+    /// 于是 <see cref="取"/> 整个失败，<c>out</c> 结果还是 <c>default</c>。
+    ///
+    /// 后果是一串看似**毫不相干**的症状，非常难查：
+    ///   · <b>NPC 血条不显示</b>（<c>NpcIndicator.计算尺寸</c> 拿不到尺寸）
+    ///   · <b>NPC 贴地被算歪</b>（<c>NpcAiBase.标定贴地</c> 拿不到最低点）
+    ///   · <b>模型看着不对劲/看不见</b>（包围盒为 0）
+    ///
+    /// ⇒ 两条一起做：**先判 `isReadable`，再包 try/catch**。
+    ///   判 isReadable 是正路；try/catch 是防止别的访问方式（boneWeights / bindposes）
+    ///   也在没开 Read/Write 时抛。
     /// </summary>
     static bool 蒙皮包围盒(SkinnedMeshRenderer 蒙皮, out Bounds 世界)
     {
         世界 = default;
         var m = 蒙皮.sharedMesh;
-        var vs = m.vertices;
-        var bw = m.boneWeights;
-        var bp = m.bindposes;
-        var 骨 = 蒙皮.bones;
-        if (vs == null || vs.Length == 0) return false;
-        if (bw == null || bw.Length != vs.Length || bp == null || 骨 == null || 骨.Length == 0) return false;
+        if (m == null) return false;
 
-        Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
-        bool 有 = false;
-        for (int i = 0; i < vs.Length; i++)
+        // ★ 关键闸门：没开 Read/Write 的网格**根本不能读顶点**，直接放弃、让调用方兜底
+        if (!m.isReadable) return false;
+
+        try
         {
-            Vector3 w = Vector3.zero;
-            float 总 = 0f;
-            for (int k = 0; k < 4; k++)
+            var vs = m.vertices;
+            var bw = m.boneWeights;
+            var bp = m.bindposes;
+            var 骨 = 蒙皮.bones;
+            if (vs == null || vs.Length == 0) return false;
+            if (bw == null || bw.Length != vs.Length || bp == null || 骨 == null || 骨.Length == 0) return false;
+
+            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+            bool 有 = false;
+            for (int i = 0; i < vs.Length; i++)
             {
-                int bi = k == 0 ? bw[i].boneIndex0 : k == 1 ? bw[i].boneIndex1 : k == 2 ? bw[i].boneIndex2 : bw[i].boneIndex3;
-                float wt = k == 0 ? bw[i].weight0 : k == 1 ? bw[i].weight1 : k == 2 ? bw[i].weight2 : bw[i].weight3;
-                if (wt <= 0.0001f || bi < 0 || bi >= 骨.Length || 骨[bi] == null) continue;
-                w += (骨[bi].localToWorldMatrix * bp[bi]).MultiplyPoint3x4(vs[i]) * wt;
-                总 += wt;
+                Vector3 w = Vector3.zero;
+                float 总 = 0f;
+                for (int k = 0; k < 4; k++)
+                {
+                    int bi = k == 0 ? bw[i].boneIndex0 : k == 1 ? bw[i].boneIndex1 : k == 2 ? bw[i].boneIndex2 : bw[i].boneIndex3;
+                    float wt = k == 0 ? bw[i].weight0 : k == 1 ? bw[i].weight1 : k == 2 ? bw[i].weight2 : bw[i].weight3;
+                    if (wt <= 0.0001f || bi < 0 || bi >= 骨.Length || 骨[bi] == null) continue;
+                    w += (骨[bi].localToWorldMatrix * bp[bi]).MultiplyPoint3x4(vs[i]) * wt;
+                    总 += wt;
+                }
+                if (总 < 0.0001f) w = 蒙皮.transform.TransformPoint(vs[i]);
+                min = Vector3.Min(min, w);
+                max = Vector3.Max(max, w);
+                有 = true;
             }
-            if (总 < 0.0001f) w = 蒙皮.transform.TransformPoint(vs[i]);
-            min = Vector3.Min(min, w);
-            max = Vector3.Max(max, w);
-            有 = true;
+            if (!有) return false;
+            世界.SetMinMax(min, max);
+            return true;
         }
-        if (!有) return false;
-        世界.SetMinMax(min, max);
-        return true;
+        catch (System.Exception e)
+        {
+            // 兜底：绝不把异常放出去 —— 放出去会让调用方的 out 参数停在 default，
+            // 引发一串"看起来毫不相干"的毛病（血条 / 贴地 / 碰撞体）
+            Debug.LogWarning($"[NpcBodyBounds] 读蒙皮顶点失败，退回绑定姿势包围盒：{蒙皮.name} — {e.Message}");
+            return false;
+        }
     }
 
     /// <summary>身躯最低点的世界 Y。取不到就用碰撞体兜底</summary>

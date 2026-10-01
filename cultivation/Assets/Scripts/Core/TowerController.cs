@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -400,7 +400,7 @@ public class TowerController : MonoBehaviour
             // 【注意】先复活再切场景：
             //   不复活的话 `PlayerVitals.已死亡` 会一直是 true，
             //   新场景里的所有敌对 NPC 第一行决策就是「玩家已死 → 待机」，
-            //   表现为「全场 NPC 集体发呆」（`AI开发注意事项.md` §15.10 专门记过这个坑）
+            //   表现为「全场 NPC 集体发呆」（`踩坑总库.md` §15.10 专门记过这个坑）
             复活玩家();
             退到塔外();
             return;

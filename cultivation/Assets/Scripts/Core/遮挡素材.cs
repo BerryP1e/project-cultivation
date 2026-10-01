@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// 【遮挡透视素材工具】把"某个渲染器临时换成半透明、之后原样还回去"这件事集中在这里。
+/// 【遮挡与特效开关素材工具】把"某个渲染器临时换成半透明、之后原样还回去"这件事集中在这里。
 ///
 /// 为什么要抽出来：**建筑透明**（`OcclusionTransparency`）和**树冠透明**（同一个组件里的树冠部分）
 /// 用的是**同一套**逻辑 —— 缓存原材质、按源材质复用一份透明材质、离场时原样还原。
@@ -67,7 +67,7 @@ public static class 遮挡素材
             var sh = Shader.Find("Legacy Shaders/Transparent/Diffuse");
             if (sh == null) sh = Shader.Find("Legacy Shaders/Transparent/Cutout/Diffuse");
             if (sh == null) sh = Shader.Find("Unlit/Transparent");
-            if (sh == null) { Debug.LogWarning("[遮挡透视] 找不到任何透明 shader，无法变透明"); return 源; }
+            if (sh == null) { Debug.LogWarning("[遮挡与特效开关] 找不到任何透明 shader，无法变透明"); return 源; }
 
             var m = new Material(sh) { name = "透明_" + 源.name };
             if (源.HasProperty("_MainTex"))

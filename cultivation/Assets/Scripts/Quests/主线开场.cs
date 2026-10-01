@@ -1,10 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
 /// **主线第一幕：开场（黑幕白字 → 起名 → 出生在主角小屋前）**。
 ///
-/// 策划原文（`docs/design/主线剧情_古古镇到宗门.md`）：
+/// 策划原文（`docs/design/主线剧情.md`）：
 /// ```
 /// 这是一个漫长的故事
 /// 讲述了一个少年如何一步步争渡成仙

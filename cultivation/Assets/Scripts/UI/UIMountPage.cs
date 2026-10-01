@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +17,7 @@ using UnityEngine.UI;
 ///
 /// > ⚠️ 【本工程踩过的坑】预览实例上的 Animator 一定要 `cullingMode = AlwaysAnimate`。
 /// > Unity 会因为「离相机太远」把 Animator 剔除掉，表现是**姿势冻住不动**
-/// > （见docs/ai/开发注意事项.md里的 Animator culling 坑）。
+/// > （见docs/ai/archive/开发注意事项-流水原文.md里的 Animator culling 坑）。
 /// </summary>
 [DisallowMultipleComponent]
 public class UIMountPage : MonoBehaviour

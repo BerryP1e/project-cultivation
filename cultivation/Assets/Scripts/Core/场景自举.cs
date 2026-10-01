@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -105,6 +105,31 @@ public static class 场景自举
             go.AddComponent<任务管理器>();
             Debug.Log("[场景自举] 「" + 场景.name + "」没有任务管理器 → 已自动补上");
         }
+
+        // ---- 纪年 / 灵田（2026-10-01 新增）----
+        //
+        // 【为什么这两个也要自举】它们都是**全局进度**：
+        // 时间在任何场景都在走，灵田在任何场景都在长。
+        // 只在某个场景手挂的话，切到别的场景就停了 —— 那正是
+        // 「场景一致性」那一类反复发作的 bug（见 docs/ai/踩坑总库.md）。
+        //
+        // 两者都**自带** DontDestroyOnLoad（在各自 Awake 里设），所以只在第一个场景
+        // 建一次、之后跨场景都活着。这里**不能**再调 DontDestroyOnLoad —— 本方法是 static。
+        if (!场景内有<时间管理器>(场景) && 时间管理器.取() == null)
+        {
+            var go = new GameObject("时间管理器");
+            SceneManager.MoveGameObjectToScene(go, 场景);
+            go.AddComponent<时间管理器>();
+            Debug.Log("[场景自举] 「" + 场景.name + "」补上 时间管理器（纪年/修炼机会）");
+        }
+
+        if (!场景内有<灵田>(场景) && 灵田.取() == null)
+        {
+            var go = new GameObject("灵田");
+            SceneManager.MoveGameObjectToScene(go, 场景);
+            go.AddComponent<灵田>();
+            Debug.Log("[场景自举] 「" + 场景.name + "」补上 灵田");
+        }
     }
 
     // ---------------------------------------------------------------- 玩家 / 相机
@@ -162,6 +187,12 @@ public static class 场景自举
 
             // ★ 画面基线实时预览（F2 切档）。纯调试工具，定下基线后可以删。
             确保组件<画面基线预览>(相机, 场景.name);
+
+            // ★ 纪年 HUD（右上角）+ 灵田界面（F4）。
+            //   同样自举补 —— UI 是「每个场景一份」的重灾区（见 场景一致性与踩坑规律）。
+            //   两个都是 ScreenSpaceOverlay 自搭 Canvas，挂相机上只是为了有个不销毁的宿主。
+            确保组件<纪年HUD>(相机, 场景.name);
+            确保组件<灵田界面>(相机, 场景.name);
         }
     }
 

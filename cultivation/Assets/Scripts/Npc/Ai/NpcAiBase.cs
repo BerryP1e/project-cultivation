@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -149,7 +149,7 @@ public class NpcAttackConfig
 ///   · 感知（找玩家、算距离）
 ///   · 状态机骨架（待机 / 接近 / 远离 / 攻击 / 受击 / 死亡）
 ///   · 移动（`transform.position` + 地面射线。**NPC 身上只有 CapsuleCollider，
-///     没有 CharacterController / Rigidbody，见docs/ai/开发注意事项.md §8.2**）
+///     没有 CharacterController / Rigidbody，见docs/ai/archive/开发注意事项-流水原文.md §8.2**）
 ///   · 动画（按动作名切，**缺什么自动降级**：Run → Walk → Idle）
 ///   · 出手（按 `出手进度` 在动画中途结算伤害，倍率 / 属性 / 类别来自 <see cref="NpcAttackConfig"/>）
 ///   · 死亡（播 Death、可选粒子消散、延迟销毁）
@@ -926,7 +926,7 @@ public abstract class NpcAiBase : MonoBehaviour
 
         float 速度 = Mathf.Max(0.05f, 自己.移动速度) * 速度倍率;
 
-        // 前方探障：只探一个「胸口高度的小球」，不拿整条胶囊扫（docs/ai/开发注意事项.md §8.3）
+        // 前方探障：只探一个「胸口高度的小球」，不拿整条胶囊扫（docs/ai/archive/开发注意事项-流水原文.md §8.3）
         //
         // 【坑·已修】以前这里是「被挡 → 停止移动动画 + return」—— **一步都不走**。
         // 后果（用户 2026-09-29 报）：拉一群怪的时候**它们排着队**，后面的原地卡死不动，

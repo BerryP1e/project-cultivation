@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 冰魄怪（BingPoGuai）—— **近战普攻 + 冰弹神通**。
@@ -44,7 +44,7 @@ public class NpcAiBingPoGuai : NpcAiDemon
              "【为什么曾经想改】Attack1 量出来手臂是「往右前下方」而不是「往前伸」，\n" +
              "一度以为出伤点该往后挪。**但那是假象** —— 真因是 AI 在播攻击动画时\n" +
              "还每帧把根节点转回目标，把动画自带的「转体」抵消掉了，手才刺歪。\n" +
-             "修了 `攻击期间锁定朝向` 之后这里保持 60%。见docs/ai/开发注意事项.md §20。")]
+             "修了 `攻击期间锁定朝向` 之后这里保持 60%。见docs/ai/archive/开发注意事项-流水原文.md §20。")]
     [Range(0.05f, 0.95f)]
     public float 普攻出手进度 = 0.60f;
 

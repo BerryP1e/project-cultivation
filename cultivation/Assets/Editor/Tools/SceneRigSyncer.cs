@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System.Collections.Generic;
@@ -108,7 +108,7 @@ public static class SceneRigSyncer
                             hMin = 旧.hardMin; hMax = 旧.hardMax;
                             格 = 旧.zoomPerNotch;
                         }
-                        // ★ 遮挡透视**不再在这里按场景保留/删除了**（用户 2026-09-23：可以删）。
+                        // ★ 遮挡与特效开关**不再在这里按场景保留/删除了**（用户 2026-09-23：可以删）。
                         //   建筑透明 / 玩家描边从那时起由 Assets/resources/场景特效开关.asset
                         //   一张表统一决定：组件在每个游玩场景都挂着，运行时自己按表开关
                         //   （见 场景特效开关.自己该生效）。所以它就是个普通组件，

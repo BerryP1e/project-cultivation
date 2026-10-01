@@ -1,171 +1,226 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// **特效资源清单工具** —— 导入新的特效资产包之后跑它，一键整理成一张可读的表。
+/// **特效资源清单工具** —— 导入或整理特效资产包之后跑它，把整个 `Assets/resources/特效` 一把生成一张可读的表。
 ///
-/// 为什么需要：特效包里动辄几百个 prefab、命名还是英文缩写，
-/// 光看目录根本不知道哪个能当子弹、哪个是命中爆炸、哪个是循环拖尾。
-/// 这个工具把关键信息抠出来（路径 / 结构 / 循环 / 会不会自己移动 / 有没有脚本），
-/// 并给出「适合当什么」的建议，最后写成一份 markdown。
+/// 为什么需要：特效包里动辄几百个 prefab、命名还是英文缩写，光看目录根本不知道哪个能当子弹、
+/// 哪个是命中爆炸、哪个是循环拖尾。这个工具把关键信息抠出来（路径 / 粒子数 / 尺寸 / 特征），
+/// 写成一份 markdown 供人和 AI 查。
 ///
-/// 输出：`docs/guides/特效资源清单.md`（仓库根下的 docs/ 里，不写进 Unity 工程，也不污染 Assets）
+/// **输出只有一份**：`docs/guides/特效资源清单.md`。
+/// （历史：以前是"选中一个目录生成一份"，于是散成 飞弹/法术/战斗法术/传送/命中 五份，
+/// 体积虚高又难查；2026 本轮合并成一份，并按"共同目录前缀"省掉每条路径里重复的头。）
 ///
-/// 菜单：修仙 / 资源整理 / 生成特效资源清单
+/// 菜单：修仙 / 资源整理 / 生成特效资源清单（全部）
 /// </summary>
 public static class NpcEffectInventory
 {
-    const string 控制器目录 = "Assets/Animations";
+    /// <summary>特效总根（分类目录都在它下面）</summary>
+    const string 特效根 = "Assets/resources/特效";
 
-    [MenuItem("修仙/资源整理/生成特效资源清单（当前选中目录）")]
-    public static void 生成清单菜单()
-    {
-        string 目录 = 取选中目录();
-        if (string.IsNullOrEmpty(目录))
-        {
-            Debug.LogWarning("[资源清单] 请先在 Project 窗口里选中一个目录（文件夹），再点这个菜单");
-            return;
-        }
-        // 文件名/标题跟随选中的目录名，避免第二次生成把第一份覆盖掉
-        string 名 = Path.GetFileName(目录.TrimEnd('/'));
-        if (string.IsNullOrEmpty(名)) 名 = "特效";
-        生成清单(目录, 名 + "资源清单.md", 名 + "资源清单");
-    }
+    /// <summary>分类的展示顺序；不在这张表里的目录按名字排在后面</summary>
+    static readonly string[] 已知分类 = { "飞弹", "法术", "战斗法术", "传送", "命中" };
 
-    static string 取选中目录()
-    {
-        var obj = Selection.activeObject;
-        if (obj == null) return null;
-        string path = AssetDatabase.GetAssetPath(obj);
-        if (string.IsNullOrEmpty(path)) return null;
-        return Directory.Exists(path) ? path : Path.GetDirectoryName(path).Replace('\\', '/');
-    }
+    [MenuItem("修仙/资源整理/生成特效资源清单（全部）")]
+    public static void 生成全部菜单() => 生成全部();
 
     // ============================================================ 主流程
 
-    /// <summary>扫描一个目录（含子目录）下的所有 prefab，生成清单（默认文件名）</summary>
-    public static void 生成清单(string 目录) => 生成清单(目录, "特效资源清单.md", "特效资源清单");
-
-    /// <summary>
-    /// 扫描一个目录（含子目录）下的所有 prefab，生成清单。
-    /// <paramref name="输出文件名"/> / <paramref name="文档标题"/> 允许生成第二份
-    /// （例如 SpecialSkillsEffectsPack 单独一份），免得两个资源包的清单互相覆盖、标题也一样。
-    ///
-    /// ⚠️ 「建议用途」那一列是**按粒子数 / 循环 / 会不会自己移动**猜的，
-    /// 只对 `QFX` 那种"单体飞弹"包准；**对"一套法术 = 主 prefab + 一堆 Parts/Base 子件"的包不准**
-    /// （实测 SpecialSkillsEffectsPack 312 个里 171 个被误判成"飞行道具"）。看那个包时请忽略该列。
-    /// </summary>
-    public static void 生成清单(string 目录, string 输出文件名, string 文档标题)
+    /// <summary>扫描 `Assets/resources/特效` 下所有分类目录，写成一份合并清单。</summary>
+    public static void 生成全部()
     {
-        if (!Directory.Exists(目录)) { Debug.LogError("[资源清单] 目录不存在：" + 目录); return; }
-
-        var 全部 = new List<条目>();
-        foreach (var f in Directory.GetFiles(目录, "*.prefab", SearchOption.AllDirectories))
-            全部.Add(分析(f.Replace('\\', '/')));
-
-        if (全部.Count == 0) { Debug.LogWarning("[资源清单] " + 目录 + " 下没有 prefab"); return; }
-
-        // 按「建议用途」和「所在子目录」分组
-        全部.Sort((a, b) =>
+        if (!Directory.Exists(特效根))
         {
-            int c = string.CompareOrdinal(a.建议, b.建议);
-            return c != 0 ? c : string.CompareOrdinal(a.相对目录, b.相对目录);
-        });
+            Debug.LogError("[资源清单] 找不到目录：" + 特效根);
+            return;
+        }
+
+        var 分类名 = new List<string>();
+        foreach (var n in 已知分类)
+            if (Directory.Exists(特效根 + "/" + n)) 分类名.Add(n);
+        foreach (var d in Directory.GetDirectories(特效根))
+        {
+            string n = Path.GetFileName(d);
+            if (!分类名.Contains(n)) 分类名.Add(n);
+        }
+        if (分类名.Count == 0) { Debug.LogWarning("[资源清单] " + 特效根 + " 下没有子目录"); return; }
+
+        var 分组 = new List<清单组>();
+        int 总数 = 0;
+        foreach (var n in 分类名)
+        {
+            var 条目 = new List<条目>();
+            foreach (var f in Directory.GetFiles(特效根 + "/" + n, "*.prefab", SearchOption.AllDirectories))
+                条目.Add(分析(f.Replace('\\', '/')));
+            if (条目.Count == 0) continue;
+
+            // 按路径排序（路径最后一段就是资产名，所以等价于按"子目录 + 名字"排）
+            条目.Sort((a, b) => string.CompareOrdinal(a.资源路径, b.资源路径));
+            分组.Add(new 清单组 { 名 = n, 前缀 = 共同目录前缀(条目), 条目 = 条目 });
+            总数 += 条目.Count;
+        }
 
         var 文本 = new StringBuilder();
-        文本.AppendLine("# " + 文档标题);
+        文本.AppendLine("# 特效资源清单");
         文本.AppendLine();
-        文本.AppendLine("> 由 `NpcEffectInventory` 自动生成（菜单 **修仙 / 资源整理 / 生成特效资源清单**）");
-        文本.AppendLine("> 扫描目录：`" + 目录 + "`　共 **" + 全部.Count + "** 个 prefab");
+        文本.AppendLine("> **管什么**：`Assets/resources/特效/` 下**全部特效 prefab** 的路径、规模与特征，按分类分节，供挑特效 / 填路径用。");
+        文本.AppendLine("> **不管什么**：目录约定、怎么加载、导入新包怎么整理 → [特效系统](特效系统.md)；某个特效怎么配到怪身上 → [飞弹与子弹](飞弹与子弹.md)。");
+        文本.AppendLine("> **本文件怎么查**：先看「汇总」定位分类，再进对应小节按名字搜；每节开头有「统一前缀」，表里 `路径` = 前缀 + 表中值。");
+        文本.AppendLine("> **来源**：由 `NpcEffectInventory` **自动生成**（菜单 **修仙 / 资源整理 / 生成特效资源清单（全部）**）。**改完资源重跑菜单，不要手改本文件。**");
         文本.AppendLine();
-        文本.AppendLine("`路径` 列可以直接填进 `NpcAttackConfig.子弹特效路径`（Resources 相对路径、不含扩展名）。");
+        文本.AppendLine("扫描根目录：`" + 特效根 + "`　共 **" + 总数 + "** 个 prefab。");
+        文本.AppendLine(">");
+        文本.AppendLine("> **路径怎么读**：每个小节开头写了该节的「统一前缀」，表里 `路径` = **前缀 + 表中值**，");
+        文本.AppendLine("> 拼起来就是能直接填进 `NpcAttackConfig.子弹特效路径` / `NpcAttackConfig.命中特效路径` 的 Resources 路径");
+        文本.AppendLine("> （相对 `Assets/resources`、**不带扩展名**）。**每行路径的最后一段就是资产名。**");
+        文本.AppendLine(">");
+        文本.AppendLine("> **列义**");
+        文本.AppendLine("> - `粒子` = 粒子系统个数（含子物体）");
+        文本.AppendLine("> - `外径` = 散布半径 × 2 + 最大粒子尺寸（粗估，用来判断「要不要缩放」，不是精确包围盒）");
+        文本.AppendLine("> - `特征` = **建议档位** + 标记。档位：`1` 飞行道具（适合当子弹）· `2` 单次爆发（适合当命中 / 爆炸）·");
+        文本.AppendLine(">   `3` 循环效果（拖尾 / 常驻）· `8` 其他 · `9` 空壳（没粒子也没脚本）· `0` 读不出来。");
+        文本.AppendLine(">   标记：`循环` = 有粒子勾了 loop，`动` = 有粒子带速度或挂了脚本（脚本名最多列 3 个，更多就写 `多脚本`）");
+        文本.AppendLine(">");
+        文本.AppendLine("> ⚠️ **`特征` 里的建议档位是按「粒子数 / 循环 / 会不会自己移动」猜的**：");
+        文本.AppendLine("> 对 `特效/飞弹` 这种「一个主题 = 一份单体飞弹」的包准；");
+        文本.AppendLine("> 对 `特效/法术`（一套法术 = 主 prefab + 一堆 Parts/Base 子件）**不准**");
+        文本.AppendLine("> （实测 312 个里 171 个被误判成「飞行道具」）。看那个包时只看路径和外径。");
+        文本.AppendLine(">");
+        文本.AppendLine("> 目录约定、怎么加载、怎么导入新包 → [特效系统](特效系统.md)。");
+        文本.AppendLine();
+        文本.AppendLine("---");
         文本.AppendLine();
 
         // ---- 汇总 ----
         文本.AppendLine("## 汇总");
         文本.AppendLine();
-        文本.AppendLine("| 建议用途 | 数量 |");
-        文本.AppendLine("|---|---|");
-        var 计数 = new Dictionary<string, int>();
-        foreach (var e in 全部)
-            计数[e.建议] = 计数.ContainsKey(e.建议) ? 计数[e.建议] + 1 : 1;
-        foreach (var kv in new SortedDictionary<string, int>(计数))
-            文本.AppendLine("| " + kv.Key + " | " + kv.Value + " |");
+        文本.AppendLine("| 分类目录 | prefab | 建议档位分布 |");
+        文本.AppendLine("|---|---|---|");
+        foreach (var g in 分组)
+            文本.AppendLine("| `" + 特效根 + "/" + g.名 + "` | " + g.条目.Count + " | " + 档位分布(g.条目) + " |");
+        文本.AppendLine();
+        文本.AppendLine("---");
         文本.AppendLine();
 
-        // ---- 明细 ----
-        string 上个建议 = null;
-        foreach (var e in 全部)
+        // ---- 每类明细 ----
+        foreach (var g in 分组)
         {
-            if (e.建议 != 上个建议)
+            文本.AppendLine("## `" + g.名 + "`（" + g.条目.Count + " 个）");
+            文本.AppendLine();
+            文本.AppendLine("> 统一前缀：`" + g.前缀 + "`");
+            文本.AppendLine();
+            文本.AppendLine("| 路径 | 粒子 | 外径 | 特征 |");
+            文本.AppendLine("|---|---|---|---|");
+            foreach (var e in g.条目)
             {
-                上个建议 = e.建议;
-                文本.AppendLine("## " + e.建议);
-                文本.AppendLine();
-                文本.AppendLine("| 名字 | 路径（填这个） | 粒子 | 循环 | 会移动 | 脚本 | 粒子大小 | 散布半径 | 粗估外径 |");
-                文本.AppendLine("|---|---|---|---|---|---|---|");
+                string 尾 = e.资源路径.Length > g.前缀.Length ? e.资源路径.Substring(g.前缀.Length) : e.资源路径;
+                文本.AppendLine("| `" + 尾 + "` | " + e.粒子数
+                    + " | " + e.规模.ToString("0.#")
+                    + " | " + 特征(e) + " |");
             }
-            文本.AppendLine("| " + e.名字
-                + " | `" + e.资源路径 + "`"
-                + " | " + e.粒子数
-                + " | " + (e.循环 ? "是" : "")
-                + " | " + (e.会移动 ? "是" : "")
-                + " | " + (e.脚本.Length > 0 ? e.脚本 : "")
-                + " | " + e.粒子大小.ToString("0.##")
-                + " | " + e.散布半径.ToString("0.#")
-                + " | " + e.规模.ToString("0.#")
-                + " |");
+            文本.AppendLine();
+            if (g.名 != 分组[分组.Count - 1].名) { 文本.AppendLine("---"); 文本.AppendLine(); }
         }
 
-        // 写到文档目录（不污染 Unity 工程）。
-        // 路径 = <仓库根>/docs/guides/特效资源清单.md —— 和文档重组后的位置一致
-        // （原来写在仓库根，05eed09b 把文档都收进 docs/ 之后这里就脱节了）。
         string 根 = Directory.GetParent(Application.dataPath)?.Parent?.FullName ?? Application.dataPath;
         string 文档目录 = Path.Combine(根, "docs", "guides");
         if (!Directory.Exists(文档目录)) Directory.CreateDirectory(文档目录);
-        string 输出 = Path.Combine(文档目录, 输出文件名);
+        string 输出 = Path.Combine(文档目录, "特效资源清单.md");
         File.WriteAllText(输出, 文本.ToString(), new UTF8Encoding(true));
 
-        Debug.Log("[资源清单] 扫了 " + 全部.Count + " 个 prefab →\n  " + 输出
-            + "\n  " + 汇总一行(全部));
+        Debug.Log("[资源清单] " + 分组.Count + " 个分类 / " + 总数 + " 个 prefab →\n  " + 输出
+            + "\n  " + 汇总一行(分组));
         AssetDatabase.Refresh();
     }
 
-    static string 汇总一行(List<条目> 全部)
+    // ============================================================ 输出小工具
+
+    class 清单组
     {
-        var 计数 = new Dictionary<string, int>();
+        public string 名;
+        public string 前缀;             // 该分类所有路径的共同目录前缀（拼接用）
+        public List<条目> 条目;
+    }
+
+    static string 档位分布(List<条目> 全部)
+    {
+        var 计数 = new SortedDictionary<string, int>();
         foreach (var e in 全部)
-            计数[e.建议] = 计数.ContainsKey(e.建议) ? 计数[e.建议] + 1 : 1;
+        {
+            string k = e.建议.Substring(0, 1);
+            计数[k] = 计数.ContainsKey(k) ? 计数[k] + 1 : 1;
+        }
         var sb = new StringBuilder();
-        foreach (var kv in new SortedDictionary<string, int>(计数))
-            sb.Append(kv.Key + " " + kv.Value + "  ");
+        foreach (var kv in 计数)
+        {
+            if (sb.Length > 0) sb.Append(" · ");
+            sb.Append("`" + kv.Key + "` × " + kv.Value);
+        }
         return sb.ToString();
+    }
+
+    static string 汇总一行(List<清单组> 分组)
+    {
+        var sb = new StringBuilder();
+        foreach (var g in 分组)
+        {
+            if (sb.Length > 0) sb.Append("  ");
+            sb.Append(g.名 + " " + g.条目.Count);
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>算出一批路径的"共同目录前缀"（切在 `/` 上），用来在表里省掉每条都重复的那一截。</summary>
+    static string 共同目录前缀(List<条目> 全部)
+    {
+        string p = 全部[0].资源路径;
+        foreach (var e in 全部)
+        {
+            int i = 0;
+            while (i < p.Length && i < e.资源路径.Length && p[i] == e.资源路径[i]) i++;
+            p = p.Substring(0, i);
+            if (p.Length == 0) break;
+        }
+        int s = p.LastIndexOf('/');
+        return s < 0 ? "" : p.Substring(0, s + 1);
+    }
+
+    /// <summary>`1 循环 动 脚本名` 这种一行摘要</summary>
+    static string 特征(条目 e)
+    {
+        var parts = new List<string> { e.建议.Substring(0, 1) };
+        if (e.循环) parts.Add("循环");
+        if (e.会移动) parts.Add("动");
+
+        var 名 = new List<string>();
+        foreach (var s in e.脚本.Split('/'))
+            if (s.Length > 0 && !名.Contains(s)) 名.Add(s);
+        if (名.Count > 3) parts.Add("多脚本");
+        else parts.AddRange(名);
+
+        return string.Join(" ", parts);
     }
 
     // ============================================================ 分析一个 prefab
 
     class 条目
     {
-        public string 名字;
         public string 资源路径;      // 可直接填进 子弹特效路径
-        public string 相对目录;
         public string 建议;
         public int 粒子数;
         public bool 循环;
         public bool 会移动;
         public string 脚本 = "";
-        public float 粒子大小;
-        public float 散布半径;
-        public float 规模;
+        public float 规模;           // 粗估外径
     }
 
     static 条目 分析(string assetPath)
     {
-        var e = new 条目 { 名字 = Path.GetFileNameWithoutExtension(assetPath) };
-        e.资源路径 = 转Resources路径(assetPath);
+        var e = new 条目 { 资源路径 = 转Resources路径(assetPath) };
 
         var go = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
         if (go == null) { e.建议 = "0 读不出来"; return e; }
@@ -216,19 +271,16 @@ public static class NpcEffectInventory
                 case ParticleSystemShapeType.Circle:
                 case ParticleSystemShapeType.Cone:
                 case ParticleSystemShapeType.ConeShell:
-                   最大散布 = Mathf.Max(最大散布, shape.radius);
+                    最大散布 = Mathf.Max(最大散布, shape.radius);
                     break;
                 case ParticleSystemShapeType.Box:
                     最大散布 = Mathf.Max(最大散布, shape.scale.x * 0.5f, shape.scale.z * 0.5f);
                     break;
             }
         }
-        e.粒子大小 = 最大粒子;
-        e.散布半径 = 最大散布;
         e.规模 = 最大散布 * 2f + 最大粒子;      // 粗估外径，够判断量级
 
         e.建议 = 判建议(e);
-        e.相对目录 = Path.GetDirectoryName(assetPath).Replace('\\', '/');
         return e;
     }
 
@@ -253,5 +305,5 @@ public static class NpcEffectInventory
     }
 
     // ---- ASCII 别名 ----
-    public static void BuildInventory(string folder) => 生成清单(folder);
+    public static void BuildInventory() => 生成全部();
 }

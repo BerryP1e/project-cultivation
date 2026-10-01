@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public const int 当前版本 = 7;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观
+    public const int 当前版本 = 8;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观；8：纪年/灵田
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -64,6 +64,11 @@ public class SaveData
 
     [Tooltip("境界等级 1~90。可由 总灵气 ÷ 难度系数 重算，这里存一份方便读档后立刻显示")]
     public int 境界等级 = 1;
+
+    [Tooltip("**已解锁的最高等级**（版本 8）。破境成功才 +1。\n" +
+             "【为什么必须存】灵气只涨进度、不涨等级（破境封顶），\n" +
+             "所以等级是**独立于总灵气**的状态 —— 不存的话读档会退回 1 级。")]
+    public int 已解锁最高等级 = 1;
 
     [Tooltip("已经学会的功法 id。转修功法只能在这几门里选")]
     public List<string> 已学功法 = new List<string>();
@@ -124,6 +129,35 @@ public class SaveData
 
     public List<string> 属性键 = new List<string>();
     public List<float> 属性值 = new List<float>();
+
+    [Header("纪年（版本 8 起）")]
+    [Tooltip("从开局起过了多少天。**累加值，不重置** —— 日期/月份都从它换算。\n" +
+             "【为什么不存日期】存日期的话，改「一天多少秒」会让老档的月/日错乱；\n" +
+             "存「第几天」就永远自洽。")]
+    public int 天数 = 0;
+
+    [Tooltip("当天已经过了多少（0~1）。0.5 = 正午。")]
+    public float 日内进度 = 0f;
+
+    [Header("修炼机会（版本 8 起）")]
+    [Tooltip("每天白送的那次修炼机会的**逐日余额**。格式 `天数:剩余次数`，分号分隔。\n\n" +
+             "【为什么按天存而不是存一个总数】需求是「日常机会**最多保存 3 天**，3 天后消失」——\n" +
+             "必须知道每一次机会是哪天发的才能让它过期。\n" +
+             "打怪得到的机会**不在这里**（那个不过期，走 修炼次数累积）。")]
+    public string 日常机会 = "";
+
+    [Tooltip("打怪获得的修炼机会（小数累积）。**不过期**")]
+    public float 打怪机会 = 0f;
+
+    [Header("灵田（版本 8 起）")]
+    [Tooltip("灵田品阶（1 起）。决定能种什么、产量多高")]
+    public int 灵田品阶 = 1;
+
+    [Tooltip("灵田格数上限。后续任务可以扩")]
+    public int 灵田格数 = 6;
+
+    [Tooltip("每个格子的内容，格式 `种子id|已生长天数|是否可收`，空格写 `-`。下标 = 格号")]
+    public List<string> 灵田格子 = new List<string>();
 
     /// <summary>空槽 = 从没用过。读不出来或角色名为空都算空</summary>
     public bool 是空的 => string.IsNullOrEmpty(角色名) || string.IsNullOrEmpty(最后存档时间);

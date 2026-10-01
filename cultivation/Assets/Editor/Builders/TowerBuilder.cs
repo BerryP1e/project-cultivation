@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -20,7 +20,7 @@ using UnityEngine.SceneManagement;
 /// 写死 0 会把刷怪点埋到地下或吊在半空，而这种错**在俯视相机下看不出来**。
 ///
 /// 刷怪点摆成**两圈**（16 个点），让一组 3~8 只怪能围上来而不是叠在一起
-/// （叠在一起的表现见 `AI开发注意事项.md` §3.5：一群怪方位角全是 0°）。
+/// （叠在一起的表现见 `踩坑总库.md` §3.5：一群怪方位角全是 0°）。
 /// </summary>
 public static class TowerBuilder
 {

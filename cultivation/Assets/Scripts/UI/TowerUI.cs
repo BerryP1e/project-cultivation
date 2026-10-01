@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -16,7 +16,7 @@ using UnityEngine.UI;
 ///
 /// 和 <see cref="DeathScreenUI"/> / 暂停菜单一样 —— 项目没导 TMP，
 /// 统一用 uGUI 传统 Text + SimHei，运行时搭就不用把界面序列化进场景，
-/// 也就**不会漂移**（见 `docs/ai/场景一致性与踩坑规律.md`：UI 是「每个场景一份」的重灾区）。
+/// 也就**不会漂移**（见 `docs/ai/踩坑总库.md`：UI 是「每个场景一份」的重灾区）。
 ///
 /// ## 必须记住的坑
 ///

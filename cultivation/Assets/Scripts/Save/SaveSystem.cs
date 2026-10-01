@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -204,6 +204,23 @@ public static class SaveSystem
         var 玩家 = GameObject.Find("Player");
         if (玩家 == null) return;
 
+        // ---- 纪年 / 修炼机会 / 灵田（版本 8）----
+        // 【为什么老档要重置而不是套 0】版本 < 8 的档这些字段根本不存在（默认 0/空），
+        // 直接套上去会让"今天的机会"永远不发。所以老档走 重置()，让它从第 0 天干净起步。
+        var 时间 = 时间管理器.取();
+        if (时间 != null)
+        {
+            if (数据.是空的 || 数据.版本 < 8) 时间.重置();
+            else 时间.导入(数据.天数, 数据.日内进度, 数据.日常机会, 数据.打怪机会, 0);
+        }
+
+        var 田 = 灵田.取();
+        if (田 != null)
+        {
+            if (数据.是空的 || 数据.版本 < 8) 田.重置();
+            else 田.导入(数据.灵田品阶, 数据.灵田格数, 数据.灵田格子);
+        }
+
         var cc = 玩家.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
         // ★ 切场景接力期间**不要**用存档里的位置覆盖玩家：
@@ -248,6 +265,8 @@ public static class SaveSystem
         {
             修炼.设置总灵气(数据.总灵气);
             修炼.设置修炼次数(数据.修炼次数累积);
+            // 破境封顶要**在设灵气之前**恢复，否则 查境界 会按默认 1 级把等级压掉
+            修炼.已解锁最高等级 = Mathf.Clamp(数据.已解锁最高等级, 1, 90);
 
             var 面板 = 修炼.面板数据;
             if (面板 != null)
@@ -414,6 +433,7 @@ public static class SaveSystem
             数据.总灵气 = 修炼.总灵气;
             数据.修炼次数累积 = 修炼.修炼次数累积;
             数据.境界等级 = 修炼.等级;
+            数据.已解锁最高等级 = 修炼.已解锁最高等级;
             数据.境界 = 修炼.境界名;                 // 顺手把那个旧字符串字段也更新掉
 
             var 面板 = 修炼.面板数据;
@@ -469,6 +489,32 @@ public static class SaveSystem
         // ---- 镇妖塔层数（版本 6）----
         // 静态进度 → 存档对象。塔里和塔外都采得到（TowerProgress 是 static）。
         TowerProgress.写进存档(数据);
+
+        // ---- 纪年 / 修炼机会 / 灵田（版本 8）----
+        // ⚠️ 写 `UnityEngine.Object` 而不是 `Object`：本文件有 `using System;`，
+        //    裸写 `Object` 会在 System.Object 和 UnityEngine.Object 之间歧义（CS0104）。
+        var 时间 = UnityEngine.Object.FindObjectOfType<时间管理器>();
+        if (时间 != null)
+        {
+            int 天; float 进度, 打怪; int 今日;
+            string 机会;
+            时间.导出(out 天, out 进度, out 机会, out 打怪, out 今日);
+            数据.天数 = 天;
+            数据.日内进度 = 进度;
+            数据.日常机会 = 机会;
+            数据.打怪机会 = 打怪;
+        }
+
+        var 田 = UnityEngine.Object.FindObjectOfType<灵田>();
+        if (田 != null)
+        {
+            int 品阶值, 格数存;
+            List<string> 格;
+            田.导出(out 品阶值, out 格数存, out 格);
+            数据.灵田品阶 = 品阶值;
+            数据.灵田格数 = 格数存;
+            数据.灵田格子 = 格;
+        }
 
         Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["
             + 数据.任务进度 + "]、对话标记 " + 标记.Length + " 个"

@@ -11,16 +11,15 @@
 | `Tripo3d_Unity_Bridge/` | Tripo 建模桥（已作为嵌入式包装进 `cultivation/Packages/`） |
 | `.dsh/` | 控制通道脚本（见下） |
 | `docs/` | **文档总入口 = `docs/INDEX.md`**（2026-09-29 起，原根目录的文档已全部并入） |
-| `docs/ai/开发注意事项.md` | **踩坑记录，动手前必读**（354 KB 原始流水，查问题用 grep；整理版是 `docs/ai/踩坑与注意事项.md`） |
-| `docs/guides/村庄场景生成说明.md` | **动 `village.scene` 前先看这份**：地形 + 材质方案、配置速查表、验收渲图手法（`docs/ai/开发注意事项.md` §46 是它的错题本） |
-| `docs/guides/宗门野外生成说明.md` | **动 `Sect_Wilderness.scene` 前先看这份**：400×400 野外地图（路网当地块边界 → 组团填树）、河流水位/河槽、刷怪区留白、树种与地表贴图的**实测色值表**（`docs/ai/开发注意事项.md` §49 是它的错题本） |
-| `docs/ai/AI开发注意事项.md` | **做 NPC 的 AI 前先看这份**（从哪入手 / 步骤清单 / 验收清单 / 还没做的） |
-| `docs/guides/飞弹制作文档.md` | **要做飞弹（NPC 或玩家）前先看这份**（QFX 弹丸的解剖 / 两条路线 / 踩过的坑） |
-| `docs/guides/子弹特效资源说明.md` | QFX 子弹包的分类与用法（三件套 × 15 主题） |
-| `docs/guides/特效资源清单.md` | 75 个特效 prefab 的路径清单（自动生成） |
-| `docs/design/主线剧情_古古镇到宗门.md` | **策划原文（以它为准）**：主线五幕剧本 + 全局演出规则 |
+| `docs/ai/archive/开发注意事项-流水原文.md` | **踩坑记录，动手前必读**（354 KB 原始流水，查问题用 grep；整理版是 `docs/ai/踩坑总库.md`） |
+| `docs/guides/村庄场景生成说明.md` | **动 `village.scene` 前先看这份**：地形 + 材质方案、配置速查表、验收渲图手法（`docs/ai/archive/开发注意事项-流水原文.md` §46 是它的错题本） |
+| `docs/guides/宗门野外生成说明.md` | **动 `Sect_Wilderness.scene` 前先看这份**：400×400 野外地图（路网当地块边界 → 组团填树）、河流水位/河槽、刷怪区留白、树种与地表贴图的**实测色值表**（`docs/ai/archive/开发注意事项-流水原文.md` §49 是它的错题本） |
+| `docs/ai/踩坑总库.md` | **这个项目唯一的坑库**（按 A~H 主题 + 专题分段编号，每条给现象/根因/修法） |
+| `docs/guides/飞弹与子弹.md` | **要做飞弹（NPC 或玩家）前先看这份**（QFX 弹丸的解剖 / 两条路线 / 出生点量测 / 踩过的坑） |
+| `docs/guides/特效资源清单.md` | 全部特效 prefab 的路径清单（5 个分类 467 个，**自动生成，别手改**） |
+| `docs/design/主线剧情.md` | **策划原文（以它为准）**：主线五幕剧本 + 全局演出规则 |
 
-> 下文出现的 `开发注意事项.md` 一律指 `docs/ai/开发注意事项.md`；`AI开发注意事项.md` 指 `docs/ai/AI开发注意事项.md`。
+> 下文出现的 `archive/开发注意事项-流水原文.md` 一律指 `docs/ai/archive/开发注意事项-流水原文.md`；`踩坑总库.md` 指 `docs/ai/踩坑总库.md`。
 
 ## 控制管线（MCP）
 
@@ -35,7 +34,7 @@ harness 已配好 Unity MCP，工具名形如 `mcp__unity__unity_editor`（共 1
   （带 `$schema`、用 `anyOf`、`additionalProperties` 是 schema），而 mcp-client 是
   「全有或全无」——原始输出实测 0/17 通过，一个不合规则 17 个工具全丢。
   改完消毒逻辑用 `.dsh\_diag\validate.mjs` 本地验证，**不要靠重启试**
-- 兜底通道：`DshBridge.cs` + `.dsh/cmd.txt`（详见 `开发注意事项.md` §5.5，含完整踩坑记录）
+- 兜底通道：`DshBridge.cs` + `.dsh/cmd.txt`（详见 `archive/开发注意事项-流水原文.md` §5.5，含完整踩坑记录）
 
 ## 战斗系统
 
@@ -47,7 +46,7 @@ harness 已配好 Unity MCP，工具名形如 `mcp__unity__unity_editor`（共 1
 **敌对照显血条**：`对主角好感度 < 0` 的 NPC 不需要锁定就常显血量 UI
 （`NpcIndicator.应显示血条`，每帧同步；开关 `敌对常显血条` / `死亡时隐藏血条`）。
 
-详见 `开发注意事项.md` §十一与 §8.1。**尤其 11.3：免暴率 / 免会心率公式是反转的
+详见 `archive/开发注意事项-流水原文.md` §十一与 §8.1。**尤其 11.3：免暴率 / 免会心率公式是反转的
 （攻击方暴击 ≥ 受击方暴击抗性 → 必定暴击），当前数值下玩家打 104/111 个 NPC 都是必定暴击。**
 
 ## 主动技能系统
@@ -56,7 +55,7 @@ harness 已配好 Unity MCP，工具名形如 `mcp__unity__unity_editor`（共 1
 施放器 `cultivation/Assets/Scripts/Abilities/ActiveSkillCaster.cs` 挂在 Player 上；
 范围伤害执行体是同目录的 `AreaSkillRunner.cs`。数值全在 `Assets/Data/Tables/主动神通表.csv`。
 
-`尝试施放(槽位)` 是 public —— **测整条链路不用模拟按键**（见 `开发注意事项.md` §十二）。
+`尝试施放(槽位)` 是 public —— **测整条链路不用模拟按键**（见 `archive/开发注意事项-流水原文.md` §十二）。
 
 **特效大小跟着 `范围` 走**：`缩放 = 范围 ÷ 特效基准半径`（`ActiveSkillCaster` 上的字段），
 只缩 X/Z。**必须同时把实例上的粒子系统从 World 切成 Local 空间** —— World 空间下
@@ -92,7 +91,7 @@ transform 缩放只摊开粒子、不放大单个粒子，大小跟不住范围�
 > 必记的坑：**`Image` 没有 sprite 时 `fillAmount` 会被忽略**；
 > **HUD 是 ScreenSpaceOverlay，`Camera.Render()` 抓不到，要用 `ScreenCapture`**（且偶尔会抓到空白帧）；
 > **`EventSystem.current` 在 Edit Mode 是 null**，悬停只能在 Play Mode 测。
-> 详见 `开发注意事项.md` §十三。
+> 详见 `archive/开发注意事项-流水原文.md` §十三。
 
 ## 动手前的硬约束
 
@@ -105,5 +104,5 @@ transform 缩放只摊开粒子、不放大单个粒子，大小跟不住范围�
    `Assembly.GetName()`/`CodeBase` 会抛 `Illegal byte sequence`，别这么用。
 7. 类名/文件名全 ASCII，public 成员用中文。
 
-> 详细版全部在 `开发注意事项.md`——**尤其第 0 节（开工前必读）、第八节（NPC/AI 的坑）、
+> 详细版全部在 `archive/开发注意事项-流水原文.md`——**尤其第 0 节（开工前必读）、第八节（NPC/AI 的坑）、
 > 第十一节（伤害公式）、第十二节（主动技能 + 特效坑）、第十三节（HUD）**。

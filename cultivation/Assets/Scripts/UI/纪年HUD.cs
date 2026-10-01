@@ -1,0 +1,195 @@
+﻿using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// **右上角纪年 HUD** —— 显示「太虚历 X 年 Y 月 Z 日 · 时辰」，
+/// 顺带一行修炼机会（每天白送的那次、以及总共还能修炼几次）。
+///
+/// ## 为什么放右上角
+///
+/// 用户 2026-10-01 要求"右上角 hud 设计一个纪年系统，同时可以显示时间"。
+/// 塔层显示在**顶部居中**（<see cref="TowerUI"/>），暂停/死亡面板在屏幕中央，
+/// 右上角是空的，正好。
+///
+/// ## 和塔层 HUD 的分工
+///
+/// 两个 HUD 都是运行时自搭的 ScreenSpaceOverlay Canvas，**互不干扰**：
+/// · 塔层 HUD：`sortingOrder = 2500`，只在塔里显示
+/// · 本 HUD：`sortingOrder = 2400`，**所有场景都显示**（时间到哪都在走）
+///
+/// ## 自举
+///
+/// 由 `场景自举` 补到主相机上，不写进场景（避免"某个场景忘了挂"漂移）。
+/// </summary>
+[DisallowMultipleComponent]
+public class 纪年HUD : MonoBehaviour
+{
+    [Header("字体")]
+    public Font 字体;
+
+    [Header("外观")]
+    [Tooltip("字号")]
+    public int 字号 = 22;
+
+    [Tooltip("距离屏幕右上角的边距")]
+    public Vector2 边距 = new Vector2(20f, 18f);
+
+    [Tooltip("主行文字颜色（日期）")]
+    public Color 日期色 = new Color(0.96f, 0.94f, 0.86f, 1f);
+
+    [Tooltip("副行文字颜色（修炼机会）")]
+    public Color 机会色 = new Color(0.72f, 0.90f, 0.98f, 1f);
+
+    [Tooltip("刚跨天时的高亮色")]
+    public Color 跨天色 = new Color(1f, 0.90f, 0.42f, 1f);
+
+    [Header("跨天提示")]
+    [Tooltip("每天开始时把日期文字闪一下高亮，持续几秒")]
+    public float 跨天高亮秒 = 2.5f;
+
+    Canvas 画布;
+    Text 日期文本;
+    Text 机会文本;
+    float 高亮到期时刻 = -1f;
+
+    void Awake()
+    {
+        if (字体 == null) 取默认字体();
+        搭界面();
+    }
+
+    // ============================================================ 事件订阅
+    //
+    // ⚠️【踩过的坑·2026-10-01】**订阅要放 OnEnable / OnDisable 成对，别只放 Start + OnDestroy！**
+    //
+    // 实测症状：跨天时「新的一天」日志打了 **3 遍**，日期推进看着像快了三倍。
+    // 挖 `过了一天` 的调用列表发现订阅者有 4 个，其中本组件的 `处理跨天` 重复了 3 次。
+    //
+    // 根因：主相机在切场景时会被 `场景自举` **重新补组件**，于是 `Start()` 又跑了一次；
+    //       而我只在 `OnDestroy()` 里退订 —— `Start` 每跑一次就多一份订阅。
+    //
+    // 修法：① 放 OnEnable/OnDisable（Unity 保证成对）
+    //       ② **先 `-=` 再 `+=`**（即使万一 OnEnable 被重复调用也不会叠加）
+    //       ③ 用 `时间管理器.取()` 而不是 `FindObjectOfType`（取不到会自建，语义一致）
+    void OnEnable()
+    {
+        var t = 时间管理器.取();
+        if (t == null) return;
+        t.过了一天 -= 处理跨天;
+        t.过了一天 += 处理跨天;
+    }
+
+    void OnDisable()
+    {
+        var t = 时间管理器.取();
+        if (t != null) t.过了一天 -= 处理跨天;
+    }
+
+    void Start()
+    {
+        刷新();
+    }
+
+    void Update()
+    {
+        刷新();
+
+        // 跨天高亮到期就恢复
+        if (高亮到期时刻 > 0f && Time.unscaledTime >= 高亮到期时刻)
+        {
+            高亮到期时刻 = -1f;
+            if (日期文本 != null) 日期文本.color = 日期色;
+        }
+    }
+
+    void 处理跨天(int 天)
+    {
+        if (日期文本 != null)
+        {
+            日期文本.color = 跨天色;
+            高亮到期时刻 = Time.unscaledTime + 跨天高亮秒;
+        }
+        Debug.Log("[纪年] 新的一天 —— " + (时间管理器.取() != null ? 时间管理器.取().纪年文本 : ""));
+    }
+
+    void 刷新()
+    {
+        var t = 时间管理器.取();
+        if (t == null) return;
+
+        if (日期文本 != null) 日期文本.text = t.纪年文本;
+
+        if (机会文本 != null)
+        {
+            int 还能 = t.还能修炼几次;
+            int 日常 = t.日常机会剩余;
+            int 打怪 = Mathf.FloorToInt(t.打怪机会);
+            int 上限 = t.每日修炼上限;
+            int 今日 = t.今日次数;
+
+            string s = $"修炼机会 {还能}/{上限}　今日已用 {今日}";
+            if (日常 > 0 || 打怪 > 0)
+                s += $"（日常 {日常}·打怪 {打怪}）";
+            机会文本.text = s;
+        }
+    }
+
+    void 取默认字体()
+    {
+#if UNITY_EDITOR
+        字体 = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/SimHei.ttf");
+#endif
+        if (字体 == null)
+        {
+            foreach (var f in Resources.FindObjectsOfTypeAll<Font>())
+                if (f != null && f.name.ToLowerInvariant().Contains("simhei")) { 字体 = f; return; }
+        }
+    }
+
+    void 搭界面()
+    {
+        if (画布 != null) return;
+
+        var 根 = new GameObject("ChronicleCanvas", typeof(Canvas), typeof(CanvasScaler));
+        根.transform.SetParent(transform, false);
+        画布 = 根.GetComponent<Canvas>();
+        画布.renderMode = RenderMode.ScreenSpaceOverlay;
+        // 比塔层 HUD(2500) 低一档：塔的面板要能盖住它
+        画布.sortingOrder = 2400;
+        // HUD 不吃射线（不然会挡住右上角的按钮）
+        画布.gameObject.AddComponent<GraphicRaycaster>().enabled = false;
+
+        var 缩放 = 根.GetComponent<CanvasScaler>();
+        缩放.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        缩放.referenceResolution = new Vector2(1920f, 1080f);
+        缩放.matchWidthOrHeight = 0.5f;
+
+        // 一个右上角对齐的竖直容器，日期在上、机会在下
+        var 排 = UIBuildUtils.CreateRect("右上行", 根.transform);
+        排.anchorMin = new Vector2(1f, 1f);
+        排.anchorMax = new Vector2(1f, 1f);
+        排.pivot = new Vector2(1f, 1f);
+        排.sizeDelta = new Vector2(460f, 70f);
+        排.anchoredPosition = new Vector2(-边距.x, -边距.y);
+
+        var 竖 = UIBuildUtils.AddVerticalLayout(排, 4f, new RectOffset(0, 0, 0, 0));
+        竖.childAlignment = TextAnchor.UpperRight;
+        竖.childControlWidth = true;
+        竖.childControlHeight = false;
+        竖.childForceExpandWidth = true;
+        竖.childForceExpandHeight = false;
+
+        日期文本 = UIBuildUtils.CreateText("日期", 排, 字体, "", 字号,
+            TextAnchor.UpperRight, 日期色);
+        日期文本.rectTransform.sizeDelta = new Vector2(460f, 30f);
+        UIBuildUtils.AddOutline(日期文本.rectTransform, new Color(0f, 0f, 0f, 0.75f));
+
+        机会文本 = UIBuildUtils.CreateText("机会", 排, 字体, "", Mathf.Max(12, 字号 - 4),
+            TextAnchor.UpperRight, 机会色);
+        机会文本.rectTransform.sizeDelta = new Vector2(460f, 26f);
+        UIBuildUtils.AddOutline(机会文本.rectTransform, new Color(0f, 0f, 0f, 0.75f));
+    }
+
+    // ---- ASCII 别名 ----
+    public void Refresh() => 刷新();
+}

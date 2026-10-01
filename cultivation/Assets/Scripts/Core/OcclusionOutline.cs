@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -15,7 +15,7 @@ using UnityEngine;
 /// | 被挡时看到 | 遮挡物变透明的一小块窗口 | 角色的**描边 + 剪影**透过遮挡物显形 |
 ///
 /// 上一版为了让遮挡物变透明，必须在运行时替换环境材质，副作用大且判据很难调对
-/// （见docs/ai/开发注意事项.md §31）。改成描边之后，**场景一个组件都不用动**。
+/// （见docs/ai/archive/开发注意事项-流水原文.md §31）。改成描边之后，**场景一个组件都不用动**。
 ///
 /// ## 描边是怎么画出来的
 ///
