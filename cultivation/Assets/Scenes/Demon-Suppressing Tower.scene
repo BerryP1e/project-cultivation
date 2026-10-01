@@ -60379,6 +60379,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: tower to sect2
       objectReference: {fileID: 0}
+    - target: {fileID: 1194053274141876, guid: fab60cdb67eed3f4bb2d72dd90d3d3d0, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4874136042147880, guid: fab60cdb67eed3f4bb2d72dd90d3d3d0, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5197932
@@ -60477,17 +60481,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   "\u9009\u9879":
+  - "\u540D\u79F0": "\u8FDB\u5165\u4E0B\u4E00\u5C42"
+    "\u573A\u666F": 
+    "\u843D\u70B9": 
+    "\u6682\u672A\u5F00\u653E": 0
   - "\u540D\u79F0": "\u51FA\u5854\uFF08\u56DE Sect\uFF09"
     "\u573A\u666F": Sect
     "\u843D\u70B9": sect2 to tower
     "\u6682\u672A\u5F00\u653E": 0
   "\u534A\u5F84": 1.8
   "\u4EA4\u4E92\u8DDD\u79BB": 3.5
-  "\u63D0\u793A\u6587\u5B57": 
+  "\u63D0\u793A\u6587\u5B57": "\u4F20\u9001"
   "\u63D0\u793A\u9AD8\u5EA6": 1.6
-  "\u6807\u9898": "\u662F\u5426\u4F20\u9001\uFF1F"
+  "\u6807\u9898": "\u5996\u7269\u5DF2\u6E05 \xB7 \u662F\u5426\u79BB\u5F00\u672C\u5C42\uFF1F"
   "\u6253\u5370\u65E5\u5FD7": 0
   "\u5F00\u9762\u677F_\u5141\u8BB8": 1
+--- !u!4 &1380260653 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4874136042147880, guid: fab60cdb67eed3f4bb2d72dd90d3d3d0, type: 3}
+  m_PrefabInstance: {fileID: 1380260650}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1383135269
 GameObject:
   m_ObjectHideFlags: 0
@@ -77320,7 +77333,11 @@ MonoBehaviour:
   - {fileID: 1564820974}
   "\u5165\u5854\u843D\u70B9": {fileID: 0}
   "\u5854\u5916\u573A\u666F\u540D": Sect
-  "\u5854\u5916\u843D\u70B9\u540D": 
+  "\u5854\u5916\u843D\u70B9\u540D": sect2 to tower
+  "\u901A\u5173\u4F20\u9001\u70B9": {fileID: 1380260653}
+  "\u901A\u5173\u4F20\u9001\u70B9\u540D": tower to sect2
+  "\u4E0B\u4E00\u5C42\u9009\u9879\u540D": "\u8FDB\u5165\u4E0B\u4E00\u5C42"
+  "\u51FA\u5854\u9009\u9879\u540D": "\u51FA\u5854\uFF08\u56DE Sect\uFF09"
   "\u6B7B\u4EA1\u9009\u62E9\u65F6\u9650": 10
   "\u81EA\u52A8\u5B58\u6863": 1
   "\u6253\u5370\u65E5\u5FD7": 1
@@ -80816,6 +80833,8 @@ MonoBehaviour:
   - 2
   - 3
   "\u6253\u5370\u4FEE\u4E3A\u65E5\u5FD7": 1
+  "\u5DF2\u89E3\u9501\u6700\u9AD8\u7B49\u7EA7": 1
+  "\u7834\u5883\u52A0\u6210": 0
 --- !u!114 &1805764459
 MonoBehaviour:
   m_ObjectHideFlags: 0

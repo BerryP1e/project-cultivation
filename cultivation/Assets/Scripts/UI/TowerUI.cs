@@ -1,16 +1,24 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// **镇妖塔界面**：层数 HUD + 通关选择 + 死亡选择。
+/// **镇妖塔界面**：层数 HUD + 死亡选择。
 ///
-/// ## 三个部分
+/// ## 两个部分
 ///
 /// | 部分 | 什么时候出现 | 按钮 |
 /// |---|---|---|
-/// | **层数 HUD**（左上角一小行） | 进塔就有 | — |
-/// | **通关选择** | 本层怪清空时 | 进入下一层 / 留在本层 |
+/// | **层数 HUD**（顶部居中一小行） | 进塔就有 | — |
 /// | **死亡选择** | 玩家倒下时（10 秒倒数） | 退出塔外 / 进入上一层 |
+///
+/// ## 「清完怪上楼」为什么**不在这里**
+///
+/// 原来有一个「通关选择」面板（进入下一层 / 留在本层），**2026-10-02 用户改掉了**：
+/// 「清完怪后场景中的传送点会出现，互动后可以选择进入下一层或者出塔；
+///   如果不互动传送点的话留在原地 10 秒后新的怪群会刷新」。
+/// 所以那段现在是**场景里的一个传送圈** —— 出现 / 消失 / 两个选项都由
+/// <see cref="TowerController"/> 管（选项行为走 <see cref="Teleporter.选项接管"/>）。
+/// 死亡选择**仍然留在这里**：死亡是"必须选一个"的状态，和"不选就是留在原地"不是一回事。
 ///
 /// ## 为什么是运行时自己搭 Canvas
 ///
@@ -59,12 +67,9 @@ public class TowerUI : MonoBehaviour
 
     Canvas 画布;
     Text HUD文本;
-    RectTransform 通关面板;
     RectTransform 死亡面板;
     Text 死亡倒计时文本;
 
-    /// <summary>通关选择面板开着吗</summary>
-    public bool 通关面板已显示 => 通关面板 != null && 通关面板.gameObject.activeSelf;
     /// <summary>死亡选择面板开着吗</summary>
     public bool 死亡面板已显示 => 死亡面板 != null && 死亡面板.gameObject.activeSelf;
 
@@ -73,7 +78,6 @@ public class TowerUI : MonoBehaviour
         if (字体 == null) 取默认字体();
         if (字体 == null) Debug.LogError("[镇妖塔界面] 找不到中文字体，文字会显示成方块", this);
         搭界面();
-        隐藏通关选择();
         隐藏死亡选择();
     }
 
@@ -134,51 +138,11 @@ public class TowerUI : MonoBehaviour
     void 处理层变化(int 层)
     {
         刷新HUD();
-        隐藏通关选择();
     }
 
     void 处理一波清空(int 层)
     {
         刷新HUD();
-    }
-
-    // ============================================================ 通关选择
-
-    /// <summary>本层清空 —— 问玩家上楼还是留层</summary>
-    public void 显示通关选择(int 层, bool 已是顶层)
-    {
-        if (通关面板 == null) return;
-        通关面板.gameObject.SetActive(true);
-
-        var 标题 = 通关面板.Find("标题");
-        if (标题 != null)
-        {
-            var t = 标题.GetComponent<Text>();
-            if (t != null) t.text = "第 " + 层 + " 层 · 妖物已清";
-        }
-
-        // 到顶层就没有「下一层」了，把按钮改成不可用（而不是藏起来，免得布局跳）
-        var 下一层按钮 = 通关面板.Find("下一层");
-        if (下一层按钮 != null)
-        {
-            var b = 下一层按钮.GetComponent<Button>();
-            if (b != null)
-            {
-                b.interactable = !已是顶层;
-                var 文字 = 下一层按钮.Find("Label");
-                if (文字 != null)
-                {
-                    var t = 文字.GetComponent<Text>();
-                    if (t != null) t.text = 已是顶层 ? "已至顶层" : "进入下一层";
-                }
-            }
-        }
-    }
-
-    /// <summary>隐藏通关选择</summary>
-    public void 隐藏通关选择()
-    {
-        if (通关面板 != null) 通关面板.gameObject.SetActive(false);
     }
 
     // ============================================================ 死亡选择
@@ -232,9 +196,6 @@ public class TowerUI : MonoBehaviour
         缩放.matchWidthOrHeight = 0.5f;
 
         搭HUD(根.transform);
-        通关面板 = 搭选择面板(根.transform, "通关选择",
-             new[] { ("进入下一层", (System.Action)(() => { if (塔 != null) 塔.下一层(); })),
-                     ("留在本层",   (System.Action)(() => { if (塔 != null) 塔.留在本层(); })) });
         死亡面板 = 搭死亡面板(根.transform);
     }
 
@@ -332,8 +293,6 @@ public class TowerUI : MonoBehaviour
     }
 
     // ---- ASCII 别名 ----
-    public void ShowClearChoice(int floor, bool isTop) => 显示通关选择(floor, isTop);
-    public void HideClearChoice() => 隐藏通关选择();
     public void ShowDeathChoice(int floor, float limit) => 显示死亡选择(floor, limit);
     public void HideDeathChoice() => 隐藏死亡选择();
 }

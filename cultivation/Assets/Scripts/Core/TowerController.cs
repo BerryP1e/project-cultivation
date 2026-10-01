@@ -1,19 +1,32 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// **镇妖塔**：刷怪 → 练级 → 上一层。
 ///
-/// ## 用户的机制要求（2026-09-30）
+/// ## 用户的机制要求
 ///
 /// 1. 玩家进入镇妖塔后，塔开始启动**当前层数**的刷怪
-/// 2. 玩家打完一层后，可以选择**进入下一层**，或者**留在这一层**
-/// 3. 所有怪物清理完毕 **10 秒后**会再次刷出这一组怪物
+/// 2. 打完一层后，**场景里出现一个传送点**（<see cref="通关传送点"/>）：按 F 可选
+///    **进入下一层** 或 **出塔**。**不互动它就留在原地** ——
+///    <see cref="SpawnZone.重生延迟"/> 秒（默认 10）后新的怪群刷出来，传送点随之消失。
+///    也就是说「留在本层」**不再是一个按钮**，而是"什么都不做"
+///    （用户 2026-10-02 明确：「清完怪后场景中的传送点会出现，互动后可以选择进入下一层或者出塔；
+///     如果不互动传送点的话留在原地 10 秒后新的怪群会刷新」）
+/// 3. 所有怪物清理完毕 **10 秒后**会再次刷出这一组怪物（由 <see cref="SpawnZone"/> 自己循环）
 /// 4. 玩家死亡时，可以在 **10 秒内**选择**退到塔外**，或**进入上一层**；
-///    没有选择 → **自动退出到塔外**
+///    没有选择 → **自动退出到塔外**（这一条**仍然弹面板** —— 死亡是"必须选一个"的状态，
+///    和清完怪那种"不选就是留在原地"不一样）
 /// 5. 选择进入上一层 → **满血复活**，塔刷新并进行**等级调整**，继续刷怪
 /// 6. 塔的等级**可被记录**（玩家爬到了多少层）；暂定 1000 层，每 10 层对应玩家一个等级
+///
+/// ## 清完怪为什么用"场景里的传送点"而不是弹窗
+///
+/// 弹窗是**抢焦点**的：玩家正在跑位 / 打最后一只怪时弹出来，还得先用鼠标点掉。
+/// 传送点则是"摆在地上、想走就按 F"—— 而且它天然表达了"这是**离开这一层**的出口"。
+/// 实现上塔控只做三件事：**出现 / 消失 / 把两个选项写进那个圈的界面**，
+/// 选项的行为走 <see cref="Teleporter.选项接管"/>（「进入下一层」不是一次传送，是塔的逻辑）。
 ///
 /// ## 与塔外死亡流程的分工
 ///
@@ -49,8 +62,25 @@ public class TowerController : MonoBehaviour
     [Tooltip("选择「退到塔外」时的去处。**填场景名**（例：Sect）—— 走黑幕过场")]
     public string 塔外场景名 = "Sect";
 
-    [Tooltip("退到塔外时的落点名（黑幕过场的落点）。留空 = 用默认落点")]
-    public string 塔外落点名 = "";
+    [Tooltip("退到塔外时的落点名（黑幕过场的落点）。**必须填**！\n" +
+             "默认 `sect2 to tower` = 宗门里那个**进塔的传送圈**本身（落点与传送圈同名是允许的：\n" +
+             "传送要按 F，站在圈上不会自己触发）。\n" +
+             "留空 = 落到目标场景的**默认出生点** —— 用户 2026-10-02 报的 bug 就是这个。")]
+    public string 塔外落点名 = "sect2 to tower";
+
+    [Header("通关传送点（清完怪出现）")]
+    [Tooltip("本层清空时**出现**的那个传送点：玩家走上去按 F，选「进入下一层 / 出塔」。\n" +
+             "留空则按 通关传送点名 在场景里找（**含未激活的**）。")]
+    public Transform 通关传送点;
+
+    [Tooltip("按名字找通关传送点。它在场景里应当**处于未激活**（清完怪才出现）")]
+    public string 通关传送点名 = "tower to sect2";
+
+    [Tooltip("「进入下一层」那一项在圈上显示的名字")]
+    public string 下一层选项名 = "进入下一层";
+
+    [Tooltip("「出塔」那一项在圈上显示的名字")]
+    public string 出塔选项名 = "出塔（回 Sect）";
 
     [Header("节奏")]
     [Tooltip("玩家死亡后给多少秒做选择（用户定：10 秒）")]
@@ -74,17 +104,20 @@ public class TowerController : MonoBehaviour
     /// <summary>塔是否在运行（刷怪中）</summary>
     public bool 塔运行中 { get; private set; }
 
-    /// <summary>正在等玩家做「下一层 / 留在本层」的选择</summary>
+    /// <summary>正在等玩家做「下一层 / 出塔」的决定（= 通关传送点已经摆出来了）</summary>
     public bool 等待通关选择 { get; private set; }
 
     /// <summary>正在等玩家做「退出 / 上一层」的死亡选择</summary>
     public bool 等待死亡选择 { get; private set; }
 
-    /// <summary>上一层清空后是不是已经给过选择了（同一层只问一次）</summary>
+    /// <summary>本层清空后是不是已经给过传送点了（同一层只摆一次）</summary>
     bool 本层已问过;
 
     /// <summary>玩家当前所在层刷完一轮，正在等重刷</summary>
     public bool 等待重刷 { get; private set; }
+
+    /// <summary>通关传送点在场景里能不能被玩家用（找到 + 有 Teleporter）</summary>
+    bool 通关传送点可用;
 
     PlayerVitals 玩家气血;
     PlayerDeathSequence 死亡流程;
@@ -124,6 +157,7 @@ public class TowerController : MonoBehaviour
         层表 = 层表 != null ? 层表 : TowerFloorTable库.取();
         补正表 = 补正表 != null ? 补正表 : NpcLevelScale库.取();
         找入塔落点();
+        找通关传送点();
 
         if (刷怪区 == null) 刷怪区 = new List<SpawnZone>();
         if (刷怪区.Count == 0) 刷怪区.AddRange(FindObjectsOfType<SpawnZone>());
@@ -134,12 +168,17 @@ public class TowerController : MonoBehaviour
     {
         取玩家();
         挂事件();
+        隐藏通关传送点();          // 开局没清怪，出口不该摆在外面
 
         if (层表 == null)
             Debug.LogError("[镇妖塔] 找不到 TowerFloorTable —— 跑一次「修仙/从配置表生成资产」"
                            + "（会生成并收进 Resources/Data）", this);
         if (刷怪区.Count == 0)
             Debug.LogWarning("[镇妖塔] 场景里一个 SpawnZone 都没有，不会刷怪", this);
+        if (!通关传送点可用)
+            Debug.LogWarning("[镇妖塔] 没有可用的「通关传送点」（名字「" + 通关传送点名 + "」）。"
+                             + "清完怪不会有出口，只能等 " + 重生延迟兜底().ToString("0.#") + " 秒自动重刷"
+                             + " —— 玩家就永远上不了下一层了", this);
 
         // 进塔即从存档里的层数继续（没存过就是第 1 层）
         当前层 = Mathf.Clamp(TowerProgress.当前层, 1, 层表 != null ? 层表.有效总层数 : 1);
@@ -158,7 +197,11 @@ public class TowerController : MonoBehaviour
         if (玩家气血 != null) 玩家气血.死亡 -= 处理玩家死亡;
         if (死亡流程 != null) 死亡流程.塔接管复活 = false;
         for (int i = 0; i < 刷怪区.Count; i++)
-            if (刷怪区[i] != null) 刷怪区[i].清空 -= 处理一波清空;
+            if (刷怪区[i] != null)
+            {
+                刷怪区[i].清空 -= 处理一波清空;
+                刷怪区[i].刷出了 -= 处理一波刷出;
+            }
     }
 
     void 取玩家()
@@ -182,7 +225,11 @@ public class TowerController : MonoBehaviour
         if (死亡流程 != null) 死亡流程.塔接管复活 = true;
 
         for (int i = 0; i < 刷怪区.Count; i++)
-            if (刷怪区[i] != null) 刷怪区[i].清空 += 处理一波清空;
+            if (刷怪区[i] != null)
+            {
+                刷怪区[i].清空 += 处理一波清空;
+                刷怪区[i].刷出了 += 处理一波刷出;
+            }
     }
 
     void 找入塔落点()
@@ -190,6 +237,32 @@ public class TowerController : MonoBehaviour
         if (入塔落点 != null) return;
         var go = GameObject.Find("TeleportTarget_入塔");
         if (go != null) 入塔落点 = go.transform;
+    }
+
+    /// <summary>
+    /// 找通关传送点（**含未激活的** —— 它平时就该是关着的，清完怪才出现）。
+    ///
+    /// ⚠️ 不能用 `GameObject.Find`：它**看不见未激活的物体**，
+    ///    而这个圈在场景里正是"未激活"状态，`Find` 永远返回 null。
+    /// </summary>
+    void 找通关传送点()
+    {
+        通关传送点可用 = false;
+        if (通关传送点 == null && !string.IsNullOrEmpty(通关传送点名))
+        {
+            var 场景 = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            foreach (var 根 in 场景.GetRootGameObjects())
+            {
+                foreach (var t in 根.GetComponentsInChildren<Transform>(true))
+                    if (t.name == 通关传送点名) { 通关传送点 = t; break; }
+                if (通关传送点 != null) break;
+            }
+        }
+        if (通关传送点 == null) return;
+        通关传送点可用 = 通关传送点.GetComponent<Teleporter>() != null;
+        if (!通关传送点可用)
+            Debug.LogWarning("[镇妖塔] 通关传送点「" + 通关传送点.name + "」上没有 Teleporter 组件，"
+                             + "玩家不能用它上楼", this);
     }
 
     // ============================================================ 开关塔
@@ -202,6 +275,7 @@ public class TowerController : MonoBehaviour
         等待死亡选择 = false;
         等待重刷 = false;
         本层已问过 = false;
+        隐藏通关传送点();
         刷新刷怪区();
     }
 
@@ -209,6 +283,7 @@ public class TowerController : MonoBehaviour
     public void 停止塔(bool 清掉怪 = true)
     {
         塔运行中 = false;
+        隐藏通关传送点();
         for (int i = 0; i < 刷怪区.Count; i++)
             if (刷怪区[i] != null) 刷怪区[i].停止刷怪(清掉怪);
     }
@@ -255,7 +330,7 @@ public class TowerController : MonoBehaviour
         本层已问过 = false;
         等待重刷 = false;
 
-        if (界面 != null) 界面.隐藏通关选择();
+        隐藏通关传送点();
 
         塔运行中 = true;
         刷新刷怪区();
@@ -271,19 +346,33 @@ public class TowerController : MonoBehaviour
     /// <summary>下一层（到底了就留在顶层）</summary>
     public void 下一层() => 进入层(当前层 + 1);
 
-    /// <summary>留在这一层（重新刷本层）</summary>
+    /// <summary>
+    /// 留在这一层（**立刻**重刷本层）。
+    ///
+    /// ⚠️ 现在**没有界面会调它了**：清完怪不互动传送点就是"留在本层"，
+    ///    重刷由 <see cref="SpawnZone"/> 自己按 <see cref="SpawnZone.重生延迟"/> 循环。
+    ///    留着它是给**调试 / 外部**用的（想在原地立刻再打一波时调）。
+    /// </summary>
     public void 留在本层()
     {
         等待通关选择 = false;
         本层已问过 = false;
-        if (界面 != null) 界面.隐藏通关选择();
+        隐藏通关传送点();
 
         塔运行中 = true;
         刷新刷怪区();
-        if (打印日志) Debug.Log("[镇妖塔] 留在第 " + 当前层 + " 层，重新刷怪", this);
+        if (打印日志) Debug.Log("[镇妖塔] 留在第 " + 当前层 + " 层，立刻重刷怪", this);
     }
 
-    /// <summary>退到塔外（走黑幕过场切场景）</summary>
+    /// <summary>
+    /// 退到塔外（走黑幕过场切场景）。
+    ///
+    /// ★ **落点必须填**（`塔外落点名`）：留空的话 `黑幕字幕.开始场景过渡` 拿不到落点，
+    ///   玩家会被放进目标场景的**默认出生点** —— 用户 2026-10-02 报的就是这个：
+    ///   「死亡后传送出塔，但是没有传送到塔外的那个进塔的传送点，而是出现在了宗门场景的出生点」。
+    ///   这里配的是 `sect2 to tower`（= 宗门里那个**进塔的传送圈**本身，
+    ///   落点与传送圈同名是**允许的**：传送要按 F，落在圈上不会自己再触发）。
+    /// </summary>
     public void 退到塔外()
     {
         停止塔();
@@ -297,7 +386,15 @@ public class TowerController : MonoBehaviour
             return;
         }
 
-        var 落点 = string.IsNullOrEmpty(塔外落点名) ? null : 塔外落点名;
+        string 落点 = 塔外落点名;
+        // ⚠️ 这里**只能**判"填没填"，**不能**顺手判"目标场景里有没有这个落点物体" ——
+        //    落点物体在**目标场景**里，而现在还在塔里，`找场景物体` 一定找不到，
+        //    会打出一条永远出现、且是假警报的 Warning（实测踩过）。
+        //    真要报"找不到落点"，那是切场景之后的事，由 `黑幕字幕.推进场景过渡` 自己报。
+        if (string.IsNullOrEmpty(落点))
+            Debug.LogWarning("[镇妖塔] 没配「塔外落点名」—— 玩家会落在「" + 塔外场景名
+                             + "」的**默认出生点**，而不是塔门口的那个传送点", this);
+
         var 显示名 = 塔外场景名;
         // 唯一正路：黑幕字幕.开始场景过渡（它负责黑幕 / 摆位 / 钉进度）
         黑幕字幕.开始场景过渡(塔外场景名, 显示名, Vector3.zero, 落点);
@@ -305,35 +402,110 @@ public class TowerController : MonoBehaviour
 
     // ============================================================ 清空一波
 
+    /// <summary>
+    /// **本层清空** —— 把通关传送点摆出来（用户 2026-10-02 改的机制）。
+    ///
+    /// 不再弹「下一层 / 留在本层」的窗口：
+    ///   · 想上楼 / 出塔 → 走到传送点按 F（选项由 <see cref="显示通关传送点"/> 写进那个圈）
+    ///   · 什么都不做 → 留在原地，<see cref="SpawnZone"/> 按 `重生延迟` 自己重刷
+    ///     （重刷时 <see cref="处理一波刷出"/> 会把传送点收掉）
+    /// </summary>
     void 处理一波清空(SpawnZone 区)
     {
         if (!塔运行中 || 等待死亡选择) return;
 
         一波清空?.Invoke(当前层);
 
-        // 清空后先等重生延迟再重刷（SpawnZone 自己会重刷）；
-        // 这里只在**第一次**清空时问玩家要不要上楼
-        if (!本层已问过)
-        {
-            本层已问过 = true;
-            等待通关选择 = true;
-            等待重刷 = true;
-            if (界面 != null) 界面.显示通关选择(当前层, 当前层 >= 层表.有效总层数);
-            if (打印日志)
-                Debug.Log("[镇妖塔] 第 " + 当前层 + " 层已清空 —— 等玩家选择「下一层 / 留在本层」"
-                          + "（不选就 10 秒后按留在本层继续）", this);
-            if (界面 == null) StartCoroutine(无界面自动留层());
-        }
+        if (本层已问过) return;
+        本层已问过 = true;
+        等待通关选择 = true;
+        等待重刷 = true;
+        显示通关传送点();
+
+        if (打印日志)
+            Debug.Log("[镇妖塔] 第 " + 当前层 + " 层已清空 —— 通关传送点已出现"
+                      + "（按 F 选「" + 下一层选项名 + " / " + 出塔选项名 + "」；"
+                      + "不互动就 " + 重生延迟兜底().ToString("0.#") + " 秒后重刷本层）", this);
     }
 
     /// <summary>
-    /// 【兜底】还没搭 UI 时，清空后自动留在本层。
-    /// 否则塔会卡在「等一个永远不会有人按的选择」上 —— 调试时很容易误判成塔坏了。
+    /// **新一波刷出来了** —— 收掉通关传送点（那一轮"要不要上楼"的机会已经过去了）。
+    ///
+    /// 为什么挂这个事件而不是自己计时：重刷的时机**只有 `SpawnZone` 知道**
+    /// （它有 `重生延迟` / `首刷延迟` / 立刻重刷好几条路），塔自己再算一遍必然对不上。
     /// </summary>
-    IEnumerator 无界面自动留层()
+    void 处理一波刷出(SpawnZone 区, List<NpcInstance> 怪)
     {
-        yield return new WaitForSeconds(重生延迟兜底());
-        if (等待通关选择) 留在本层();
+        本层已问过 = false;
+        等待通关选择 = false;
+        等待重刷 = false;
+        隐藏通关传送点();
+    }
+
+    /// <summary>
+    /// 把通关传送点**摆出来**，并把它那两个选项写成「进入下一层 / 出塔」。
+    ///
+    /// 为什么要在这里**重写 `选项`** 而不是在场景里配好：
+    ///   「进入下一层」不是一次传送，是塔的逻辑（<see cref="下一层"/>），
+    ///   场景数据表达不了 —— 所以选项由塔控现写、行为由
+    ///   <see cref="Teleporter.选项接管"/> 接走。场景里那份只是"没塔控时的兜底长相"。
+    /// </summary>
+    void 显示通关传送点()
+    {
+        找通关传送点();
+        if (!通关传送点可用) return;
+
+        var 传送 = 通关传送点.GetComponent<Teleporter>();
+        bool 顶层 = 层表 != null && 当前层 >= 层表.有效总层数;
+
+        传送.选项 = new[]
+        {
+            new Teleporter.传送选项 { 名称 = 下一层选项名, 暂未开放 = 顶层 },
+            new Teleporter.传送选项 { 名称 = 出塔选项名, 场景 = 塔外场景名, 落点 = 塔外落点名 },
+        };
+        传送.选项接管 = 处理通关选项;
+        传送.重建面板();                 // 选项变了，旧面板（如果搭过）要作废
+
+        if (!通关传送点.gameObject.activeSelf) 通关传送点.gameObject.SetActive(true);
+        传送.刷新交互标记();              // 刚激活才轮到它 Awake 补交互标记，这里再兜一次
+
+        if (打印日志)
+            Debug.Log("[镇妖塔] 通关传送点已出现：" + 通关传送点.name + " @"
+                      + 通关传送点.position.ToString("F2")
+                      + "（" + 下一层选项名 + (顶层 ? " · 已至顶层" : "") + " / " + 出塔选项名 + "）", this);
+    }
+
+    /// <summary>收掉通关传送点（还开着面板的话一起收）</summary>
+    void 隐藏通关传送点()
+    {
+        if (通关传送点 == null) return;
+        var 传送 = 通关传送点.GetComponent<Teleporter>();
+        if (传送 != null) 传送.关面板();     // 面板是**独立根对象**，不跟着圈一起隐藏
+        if (通关传送点.gameObject.activeSelf) 通关传送点.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 通关传送点上两个选项的行为（0 = 进入下一层，1 = 出塔）。
+    /// 返回 true = 我处理了，圈不用自己去传送。
+    /// </summary>
+    bool 处理通关选项(int 序号)
+    {
+        if (序号 == 0)
+        {
+            if (层表 != null && 当前层 >= 层表.有效总层数)
+            {
+                if (打印日志) Debug.Log("[镇妖塔] 已至顶层（第 " + 当前层 + " 层），不再往上", this);
+                return true;
+            }
+            下一层();
+            return true;
+        }
+        if (序号 == 1)
+        {
+            退到塔外();
+            return true;
+        }
+        return false;
     }
 
     float 重生延迟兜底()
@@ -353,8 +525,9 @@ public class TowerController : MonoBehaviour
         停止塔(清掉怪: false);                     // 先别清场：玩家还在原地消散演出
         等待死亡选择 = true;
 
-        // 顺便把「留在本层」的选择收掉（玩家已经死了，那个选择没意义了）
-        if (等待通关选择) { 等待通关选择 = false; if (界面 != null) 界面.隐藏通关选择(); }
+        // 顺便把通关传送点收掉（玩家已经死了，那个选择没意义了）
+        等待通关选择 = false;
+        隐藏通关传送点();
 
         if (打印日志) Debug.Log("[镇妖塔] 玩家在第 " + 当前层 + " 层倒下 —— "
                                + 死亡选择时限 + " 秒内选择：退出塔外 / 进入上一层", this);
@@ -392,7 +565,7 @@ public class TowerController : MonoBehaviour
         if (!等待死亡选择) return;
         等待死亡选择 = false;
 
-        if (界面 != null) { 界面.隐藏死亡选择(); 界面.隐藏通关选择(); }
+        if (界面 != null) 界面.隐藏死亡选择();
         死亡选择完成?.Invoke(进上一层);
 
         if (!进上一层)

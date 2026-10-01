@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -444,8 +444,19 @@ public static class TowerBuilder
         控.补正表 = NpcLevelScale库.取();
         控.自动存档 = true;
 
+        // ★ 进出塔的接线**必须在这里写死**：本方法会**删掉旧的「塔控」节点再重建**，
+        //   而这些字段只在 Inspector 上配过的话，重跑一次装配就**静默丢掉了** ——
+        //   表现就是「从塔里出去落到了宗门出生点，而不是塔门口那个传送圈」（用户 2026-10-02 报过）。
+        控.塔外场景名 = "Sect";
+        控.塔外落点名 = "sect2 to tower";     // 宗门里那个进塔的传送圈
+        控.通关传送点名 = "tower to sect2";   // 本场景里清完怪才出现的那个圈
+
         var 区 = Object.FindObjectsOfType<SpawnZone>();
         控.刷怪区 = new List<SpawnZone>(区);
+
+        // 通关传送点：**含未激活的**（它平时就该是关着的，清完怪才出现）
+        控.通关传送点 = 找物体("tower to sect2");
+        if (控.通关传送点 != null) 控.通关传送点.gameObject.SetActive(false);
 
         // 界面单独挂一个节点（和塔控同层），好单独调
         var 界面节点 = new GameObject("塔界面");
@@ -455,10 +466,31 @@ public static class TowerBuilder
 
         报告.AppendLine("  塔控：" + 塔控名 + "（刷怪区 " + 控.刷怪区.Count + " 片）");
         报告.AppendLine("  塔界面：" + 界面节点.name);
+        报告.AppendLine("  出塔落点：「" + 控.塔外场景名 + "」的「" + 控.塔外落点名 + "」");
+        报告.AppendLine("  通关传送点：" + (控.通关传送点 != null
+            ? 控.通关传送点.name + " @ " + 控.通关传送点.position.ToString("F2") + "（已设为未激活）"
+            : "★缺「" + 控.通关传送点名 + "」—— 清完怪不会有出口"));
         报告.AppendLine("  层表：" + (控.层表 != null
             ? 控.层表.有效总层数 + " 层，每 " + 控.层表.每多少层一级 + " 层一级" : "★缺（先跑「修仙/从配置表生成资产」）"));
         报告.AppendLine("  补正表：" + (控.补正表 != null ? 控.补正表.曲线摘要() : "★缺"));
 
         return 控;
+    }
+
+    /// <summary>
+    /// 按名字找物体，**含未激活的**。
+    ///
+    /// ⚠️ 不能用 <c>GameObject.Find</c>：它**看不见未激活的物体**，
+    ///    而通关传送圈在场景里正是"未激活"状态，`Find` 永远返回 null
+    ///    —— 那样装配报告会报"★缺"，然后清完怪真的没有出口。
+    /// </summary>
+    static Transform 找物体(string 名)
+    {
+        if (string.IsNullOrEmpty(名)) return null;
+        var 场景 = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        foreach (var 根 in 场景.GetRootGameObjects())
+            foreach (var t in 根.GetComponentsInChildren<Transform>(true))
+                if (t.name == 名) return t;
+        return null;
     }
 }

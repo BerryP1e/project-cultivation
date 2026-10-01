@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
@@ -70,6 +70,19 @@ public class Teleporter : MonoBehaviour
     ///   改成"按 F"之后，落点就算压在圈上也不会自己弹（见 黑幕字幕.找场景物体 的注释）。
     /// </summary>
     public bool 开面板_允许 = true;
+
+    /// <summary>
+    /// **选项被点时的外部接管**（返回 <c>true</c> = 我处理了，本组件不再自己传送）。
+    ///
+    /// 为什么需要它：有的传送圈是**场景机制的一部分**，它的选项要触发的是"逻辑"而不是"换个地方"。
+    /// 例：镇妖塔清完怪出现的那个圈 —— 「进入下一层」= `TowerController.下一层()`、
+    /// 「出塔」= `TowerController.退到塔外()`（停塔 + 记进度 + 走黑幕过场）,
+    /// 这两件事都**表达不成"把玩家挪到某个落点"**。
+    ///
+    /// 有了这个钩子：圈本身不用知道塔的存在（它只管画界面），塔也只是"借用"这个圈的界面。
+    /// 参数 = 选项下标，和 <see cref="执行"/> 收到的那个一致。
+    /// </summary>
+    public System.Func<int, bool> 选项接管;
 
     bool 面板开着;
     GameObject 面板;
@@ -161,6 +174,28 @@ public class Teleporter : MonoBehaviour
 
     /// <summary>面板开着吗（StationInteractor 据此知道要不要吞掉 F / ESC）</summary>
     public bool 面板已开 => 面板开着;
+
+    /// <summary>
+    /// **把面板作废、下次开面板时按当前选项重建**。
+    ///
+    /// 为什么需要：面板是**第一次 `开面板()` 时按当时的 `选项` 一次性搭好的**
+    /// （按钮文字 / 灰不灰都烘在那个时刻），之后改 `选项` 不会反映到已经搭好的面板上。
+    /// 镇妖塔的「进入下一层 / 出塔」是**每次清完怪由塔控写进 `选项`** 的
+    /// （顶层时那一项还要变灰），所以它必须在写完之后调这个。
+    ///
+    /// ⚠️ **面板开着的时候不重建**：面板根正被 `StationInteractor.当前界面` 记着，
+    ///    当场销毁会让"界面开着"的标记指向一个已销毁对象（见 `面板根` 那段说明）。
+    ///    关着的时候销毁 + 置空，下一次 `开面板()` 就会重新搭。
+    /// </summary>
+    public void 重建面板()
+    {
+        if (面板开着) return;
+        if (面板 == null) return;
+        if (Application.isPlaying) Destroy(面板); else DestroyImmediate(面板);
+        面板 = null;
+        文本 = null;
+        按钮s.Clear();
+    }
 
     /// <summary>
     /// 面板的根物件（没建过时是 null）。
@@ -264,6 +299,8 @@ public class Teleporter : MonoBehaviour
         if (打印日志) Debug.Log("[传送] 执行「" + o.名称 + "」→ 场景「" + o.场景 + "」落点「" + o.落点 + "」", this);
 
         关面板();
+        // ★ 先给外部接管（例：镇妖塔的「进入下一层」—— 它不是一次传送，是塔的逻辑）
+        if (选项接管 != null && 选项接管(序号)) return;
         if (string.IsNullOrEmpty(o.场景)) 同场景传送(o);
         else 跨场景传送(o);
     }

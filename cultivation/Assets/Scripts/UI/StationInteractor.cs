@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -137,6 +137,23 @@ public class StationInteractor : MonoBehaviour
 
         if (界面已打开)
         {
+            // ★ 面板被**它自己**（或别处）收掉了 → 把"界面开着"的标记一起收回来。
+            //
+            //   踩过的坑（2026-10-02，镇妖塔清完怪的那个传送圈）：
+            //   圈上的面板是 `Teleporter` 自己造的、**独立根对象**，
+            //   塔在"10 秒后重刷本层"时会 `关面板()` 把面板 `SetActive(false)`。
+            //   面板对象还在（不是 null），于是 `界面已打开` 一直为真 →
+            //   玩家按 F / ESC 全被吞掉、提示也不显示，像卡住了一样。
+            //   `activeInHierarchy`（连父级一起看）为假 = 这块面板已经不在画面上，
+            //   就该当成"界面关了"。
+            if (当前界面 == null || !当前界面.activeInHierarchy)
+            {
+                当前界面 = null;
+                有界面打开 = false;
+                当前设施 = null;
+                return;
+            }
+
             // 界面开着：只处理关闭，不做任何别的交互
             if (Input.GetKeyDown(关闭键) || Input.GetKeyDown(交互键)) { 关闭界面(); return; }
 
@@ -214,6 +231,10 @@ public class StationInteractor : MonoBehaviour
         foreach (var s in 已知设施)
         {
             if (s == null) continue;
+            // ★ 也要看"现在是不是还活着"：重扫是 **1 秒一次**，
+            //   刚刚被隐藏的设施（例：镇妖塔重刷本层时收掉的通关传送点）
+            //   在这一秒内还在缓存里，不挡掉的话按 F 还能把它那个已经收掉的面板再打开。
+            if (!s.isActiveAndEnabled) continue;
             if (!在范围内(s)) continue;
             // ★ 用户 2026-09-26：同时进范围时取「**离根节点更近**」的那个（原来比的是水平距离）
             float 直距 = (s.transform.position - 我).magnitude;
