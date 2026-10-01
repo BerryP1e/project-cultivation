@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6dfe6fcb52b706541aad5cb735cea8bf, type: 3}
-  m_Name: item_lingtian_kaituo
+  m_Name: item_muzhuang
   m_EditorClassIdentifier: 
-  "\u7269\u54C1\u540D": "\u7075\u7530\u5F00\u62D3\u4EE4"
-  "\u7269\u54C1id": item_lingtian_kaituo
+  "\u7269\u54C1\u540D": "\u7EC3\u529F\u6728\u6869"
+  "\u7269\u54C1id": item_muzhuang
   "\u6700\u5927\u5806\u53E0\u6570\u91CF": 99
   "\u56FE\u6807": {fileID: 0}
-  "\u4ECB\u7ECD": "\u5B97\u95E8\u8D21\u732E\u5904\u5151\u6362\u7684\u4EE4\u724C\u3002\u5728\u4E2A\u4EBA\u6D1E\u5E9C\u91CC\u4F7F\u7528\uFF0C\u53EF\u5F00\u57A6\u4E00\u5757\u65B0\u7075\u7530\u3002"
+  "\u4ECB\u7ECD": "\u4E00\u5177\u7EC3\u529F\u7528\u7684\u6728\u6869\u3002\u6446\u5728\u6D1E\u5E9C\u91CC\u53EF\u4EE5\u968F\u65F6\u8BD5\u62DB\uFF0C\u6253\u7A7A\u540E\u4F1A\u81EA\u52A8\u6062\u590D\u3002\u4E0D\u6253\u4EBA\u4E5F\u4E0D\u8FD8\u624B\u3002"
   "\u54C1\u9636": 1
   "\u53EF\u4F7F\u7528": 1
-  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: e9ec27c1163b2eb41bd9d239064d07b1, type: 2}
+  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: 70777ecaa294ccb4eb3fd9c735d7c029, type: 2}

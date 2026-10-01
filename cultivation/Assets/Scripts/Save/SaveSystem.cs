@@ -224,6 +224,14 @@ public static class SaveSystem
             else 田.导入(数据.灵田地块);
         }
 
+        // 【版本 12 起】摆设（练功木桩这类玩家摆下来的物件）
+        var 摆 = 摆设.取();
+        if (摆 != null)
+        {
+            if (数据.是空的 || 数据.版本 < 12) 摆.导入(null);
+            else 摆.导入(数据.摆设);
+        }
+
         var cc = 玩家.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
         // ★ 切场景接力期间**不要**用存档里的位置覆盖玩家：
@@ -516,6 +524,10 @@ public static class SaveSystem
             // 地块状态本身就是可序列化的（位置是 Vector3，JsonUtility 认），所以直接交出去
             数据.灵田地块 = 田.导出();
         }
+
+        // 摆设（练功木桩这类玩家摆下来的物件）—— 也要能存档
+        var 摆 = UnityEngine.Object.FindObjectOfType<摆设>();
+        if (摆 != null) 数据.摆设 = 摆.导出();
 
         Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["
             + 数据.任务进度 + "]、对话标记 " + 标记.Length + " 个"

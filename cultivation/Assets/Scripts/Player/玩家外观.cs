@@ -188,6 +188,21 @@ public class 玩家外观 : MonoBehaviour
 
         网格.sharedMesh = 源网格.sharedMesh;
         网格.sharedMaterials = 源网格.sharedMaterials;
+
+        // 【加固，不是必须】换完网格把包围盒也一起搬过来，并让 Unity 按**蒙皮后的实际顶点**算包围盒。
+        //   理由：`SkinnedMeshRenderer.localBounds` 是**跟着渲染体序列化的**，运行时换 `sharedMesh`
+        //   它**不会**自动跟着变；新网格一旦比旧的大、或挂在别的骨骼层级上，Unity 就会拿旧包围盒
+        //   做视锥剔除 → 模型明明在镜头里却被剔掉。`updateWhenOffscreen = true` 让剔除改用实际顶点，
+        //   换网格 / 换动作都不会再剔错（代价：这个渲染体不再被静态剔除；只给玩家一个，量很小）。
+        //
+        // ★ 别搞错因果 ★ 「宗门玩家模型不显示」的**根因不是包围盒剔除**，修这个只是顺手加固。
+        //   真正的根因是 **Sect.scene 里 `Player_Visual` 的本地位置被存成了 (32.9, 0, -39)** ——
+        //   整套骨架离 `Player` 根 51 米，而相机跟的是 `Player` 根，人自然看不见。
+        //   （实测：玩家 (22.07,-0.66,-3.79)，蒙皮渲染体世界位置 (54.97,-0.66,-42.79)，偏 50.9 米。）
+        //   排查这类"模型不显示"的正确顺序：① 打印 `Player_Visual.localPosition` 和世界位置；
+        //   ② 再看包围盒 / 剔除。详见 docs/ai/踩坑总库.md 里「模型不显示」那条。
+        网格.localBounds = 源网格.localBounds;
+        网格.updateWhenOffscreen = true;
         当前外观 = 外观;
         已选外观 = 外观;          // ★ 记住，切场景时不再被规则覆盖
         Debug.Log("[外观] 换上「" + 外观.DisplayName + "」（网格 " + 源网格.sharedMesh.name + "）", 外观);

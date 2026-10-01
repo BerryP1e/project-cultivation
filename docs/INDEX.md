@@ -58,7 +58,7 @@ rg -n "<关键词>" docs cultivation/Assets/Data/Tables
 | **古古镇** | `village` | 开场、野猪、村民 |
 | **太虚宗（宗门）** | `Sect` | 主广场 `碰撞地板(平坦)` 在 `(0,-1,0)` 附近（106×91）；主角出生/复活点 = `(22.069, -0.685, -3.794)`（= 任务表 `q_main_004` 阶段4 的落点，在主广场地板上） |
 | **宗门野外** | `Sect_Wilderness` | 400×400 森林 |
-| **个人洞府 / 专属洞府 / 洞府后山** | **`3C_Testbed`** | 入口 `sect1 to 3c`；内有 `cultivation room`、**灵田**（**玩家自己摆**，场景里没有预置地块、也没有点位） |
+| **个人洞府 / 专属洞府 / 洞府后山** | **`3C_Testbed`** | 入口 `sect1 to 3c`；内有 `cultivation room`、**可摆放物**（**灵田地块 / 练功木桩**，都是**玩家自己摆**、都要存档；场景里没有预置物件、也没有点位） |
 | **镇妖塔** | `Demon-Suppressing Tower` | 1000 层 |
 | 主菜单 | `StartScene` | |
 | 过场字幕 | `Transition subtitles` | |
@@ -157,8 +157,9 @@ docs/
 | **存档相关（加要存的东西）** | [design/存档系统](design/存档系统.md) | `Assets/Scripts/Save/SaveData.cs`（字段即清单）· [ai/踩坑总库 §G](ai/踩坑总库.md) |
 | **境界 / 功法 / 破境 / 灵气数值** | [design/境界与功法设计](design/境界与功法设计.md)（权威） | [architecture/修炼与境界](architecture/修炼与境界.md) |
 | **修炼小屋 / 转修 / 功法等级换算** | [architecture/修炼与境界](architecture/修炼与境界.md) | [design/境界与功法设计](design/境界与功法设计.md) |
-| **洞府灵田 / 灵植（自由摆放 · 开拓令 · 走近看信息牌 · 按 F 种·收·挪·升级）** | [guides/灵田](guides/灵田.md) | [guides/炼丹](guides/炼丹.md) · [reference/外部素材来源](reference/外部素材来源.md) |
-| **在洞府里摆灵田 / 摆放与吸附规则（占用边距 · SAT · 8 朝向）** | [guides/灵田 §4](guides/灵田.md) | [PROGRESS §2.2](PROGRESS.md) |
+| **洞府灵田 / 灵植 / 可摆放物（自由摆放 · 开拓令 · 练功木桩 · 走近看信息牌 · 按 F 种·收·挪·升级）** | [guides/灵田](guides/灵田.md) | [guides/炼丹](guides/炼丹.md) · [reference/外部素材来源](reference/外部素材来源.md) |
+| **在洞府里摆东西 / 摆放与吸附规则（占用边距 · SAT · 8 朝向 · 跨种类互斥）** | [guides/灵田 §4](guides/灵田.md) | [PROGRESS §2.2](PROGRESS.md) |
+| **摆练功木桩 / 加一种新的可摆放物** | [guides/灵田 §4.5~4.6](guides/灵田.md) | [design/存档系统](design/存档系统.md) · [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **外部素材（作物模型 / 土质贴图）怎么拉、怎么转** | [tools/参考素材/README.md](../tools/参考素材/README.md) | [reference/外部素材来源](reference/外部素材来源.md) |
 | **外部素材的授权 / 出处 / sha256（★ 必读授权状况）** | [reference/外部素材来源](reference/外部素材来源.md) | [guides/灵田 §7](guides/灵田.md) |
 | **时间 / 纪年 / 修炼机会** | [guides/时间系统](guides/时间系统.md) | [architecture/修炼与境界](architecture/修炼与境界.md) |

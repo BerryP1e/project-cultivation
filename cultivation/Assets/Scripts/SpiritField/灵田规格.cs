@@ -86,9 +86,16 @@ public static class 灵田规格
     /// 用圆判会把**明明能并排摆下的两块地判成压住**；用户要的正是整齐并排。
     /// </summary>
     public static bool 压住(Vector2 甲, int 甲朝向档, Vector2 乙, int 乙朝向档)
+        => 压住(甲, 甲朝向档, 占用半边长, 乙, 乙朝向档, 占用半边长);
+
+    /// <summary>
+    /// 同上，但**两边的半边长各给一份** —— 灵田（1.30）和练功木桩（0.60）占地差很多，
+    /// 用同一个数判会出现"木桩明明在田外却算压住"或者反过来漏判。
+    /// </summary>
+    public static bool 压住(Vector2 甲, int 甲朝向档, float 甲半边,
+                            Vector2 乙, int 乙朝向档, float 乙半边)
     {
         Vector2 d = 乙 - 甲;
-        float h = 占用半边长;
 
         var 甲轴 = new[] { 轴(甲朝向档), new Vector2(-轴(甲朝向档).y, 轴(甲朝向档).x) };
         var 乙轴 = new[] { 轴(乙朝向档), new Vector2(-轴(乙朝向档).y, 轴(乙朝向档).x) };
@@ -96,7 +103,7 @@ public static class 灵田规格
         foreach (var a in new[] { 甲轴[0], 甲轴[1], 乙轴[0], 乙轴[1] })
         {
             float 中心距 = Mathf.Abs(Vector2.Dot(d, a));
-            float 半径和 = h * 投影半径(甲轴, a) + h * 投影半径(乙轴, a);
+            float 半径和 = 甲半边 * 投影半径(甲轴, a) + 乙半边 * 投影半径(乙轴, a);
             if (中心距 > 半径和) return false;      // 找到分离轴 → 没压住
         }
         return true;                                 // 四根轴都重叠 → 压住了
@@ -112,6 +119,14 @@ public static class 灵田规格
     /// 返回 4 个候选（已有地的 ±X / ±Z 两侧），离得太远的已经滤掉。
     /// </summary>
     public static void 吸附候选(Vector2 已有, int 朝向档, Vector2 想放, System.Collections.Generic.List<Vector2> 出)
+        => 吸附候选(已有, 朝向档, 想放, 吸附中心距, 吸附距离, 出);
+
+    /// <summary>
+    /// 同上，但**中心距与吸附半径由调用方给** —— 木桩的占地（0.6 米）和灵田（1.9 米）差很多，
+    /// 统一用灵田的 2.70 会让木桩"离得老远就被吸过去"，或者反过来贴紧了也不吸。
+    /// </summary>
+    public static void 吸附候选(Vector2 已有, int 朝向档, Vector2 想放,
+                                float 中心距, float 吸附半径, System.Collections.Generic.List<Vector2> 出)
     {
         出.Clear();
         Vector2 x = 轴(朝向档);
@@ -120,8 +135,11 @@ public static class 灵田规格
         Vector2[] 四向 = { x, -x, z, -z };
         foreach (var 向 in 四向)
         {
-            Vector2 候选 = 已有 + 向 * 吸附中心距;
-            if (Vector2.Distance(候选, 想放) <= 吸附距离) 出.Add(候选);
+            Vector2 候选 = 已有 + 向 * 中心距;
+            if (Vector2.Distance(候选, 想放) <= 吸附半径) 出.Add(候选);
         }
     }
+
+    /// <summary>某种占地边长的物件，吸附时的中心距（= 边长 + 间隙）</summary>
+    public static float 吸附中心距_按(float 占地边长) => 占地边长 + 对齐间隙;
 }

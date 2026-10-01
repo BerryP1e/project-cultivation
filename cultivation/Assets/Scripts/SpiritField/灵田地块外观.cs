@@ -243,11 +243,50 @@ public static class 灵田地块外观
     }
 
     /// <summary>给预览上色：能放=绿，不能放=红</summary>
-    public static void 幽灵上色(GameObject 幽灵, bool 可以)
+    public static void 幽灵上色(GameObject 幽灵, bool 可以) => 幽灵上色(幽灵, 可以, true);
+
+    /// <summary>
+    /// 同上，但可以选**不带土质贴图**的纯色版本。
+    /// 【为什么需要】灵田的预览是"土床"，贴土质贴图正好；而木桩是**实例化出来的 prefab**，
+    /// 把土质贴图糊在它身上会变成一根"土色的桩子"，看不出是什么。纯色半透明更像常规的摆放预览。
+    /// </summary>
+    public static void 幽灵上色(GameObject 幽灵, bool 可以, bool 带土贴图)
     {
         if (幽灵 == null) return;
-        var m = 幽灵材质(可以);
+        var m = 带土贴图 ? 幽灵材质(可以) : 素幽灵材质(可以);
         foreach (var r in 幽灵.GetComponentsInChildren<MeshRenderer>()) r.sharedMaterial = m;
+    }
+
+    static Material 素幽灵缓存_可, 素幽灵缓存_不可;
+
+    /// <summary>不带贴图的半透明预览材质（给"实例化 prefab 当预览"的物件用）</summary>
+    public static Material 素幽灵材质(bool 可以)
+    {
+        if (可以 && 素幽灵缓存_可 != null) return 素幽灵缓存_可;
+        if (!可以 && 素幽灵缓存_不可 != null) return 素幽灵缓存_不可;
+
+        var m = new Material(Shader.Find("Standard"));
+        m.name = 可以 ? "摆设预览_可" : "摆设预览_不可";
+        m.color = 可以 ? new Color(0.45f, 0.95f, 0.45f, 0.45f) : new Color(1f, 0.35f, 0.30f, 0.45f);
+        设为半透明(m);
+
+        if (可以) 素幽灵缓存_可 = m; else 素幽灵缓存_不可 = m;
+        return m;
+    }
+
+    /// <summary>把 Standard 材质切成 Fade（不切的话 alpha 不生效，还是一块不透明的板）</summary>
+    static void 设为半透明(Material m)
+    {
+        m.SetFloat("_Mode", 2f);
+        m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        m.SetInt("_ZWrite", 0);
+        m.DisableKeyword("_ALPHATEST_ON");
+        m.EnableKeyword("_ALPHABLEND_ON");
+        m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        m.SetFloat("_Metallic", 0f);
+        m.SetFloat("_Glossiness", 0.1f);
     }
 
     static Material 幽灵材质(bool 可以)

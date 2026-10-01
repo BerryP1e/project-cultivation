@@ -55,15 +55,8 @@ public class 灵田 : MonoBehaviour
     /// <summary>开一块新地消耗的道具 id（**从背包里用它在洞府摆一块地**）</summary>
     public const string 开拓令id = "item_lingtian_kaituo";
 
-    [Header("允许摆放的场景")]
-    [Tooltip("只有在这些场景里才能用「灵田开拓令」摆地、也才会生成地块视图。\n" +
-             "用户要求：「不在洞府场景无法使用开拓令」。\n" +
-             "⚠️ 改名场景时记得改这里。")]
-    public string[] 允许摆放的场景 = { "3C_Testbed" };
-
     [Header("摆放校验")]
-    [Tooltip("除了地面之外，还检查有没有别的东西挡住（树/岩石/建筑）。\n" +
-             "万一某个场景里误判太多（比如地面上有一层看不见的触发体），把它关掉就只判\"压住已有地块\"")]
+    [Tooltip("除了地面之外，还检查有没有别的东西挡住（现在是统一走 `摆放校验`，见那个类）")]
     public bool 检查场景障碍 = true;
 
     [Tooltip("地面最大坡度（度）。比这陡的地方不许摆")]
@@ -117,19 +110,12 @@ public class 灵田 : MonoBehaviour
 
     public 灵田地块状态 状态(int i) => (i >= 0 && i < 地块.Count) ? 地块[i] : null;
 
-    /// <summary>当前场景允不允许摆放 / 显示地块</summary>
-    public bool 当前场景可摆放
-    {
-        get
-        {
-            var 场景 = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            if (!场景.IsValid() || !场景.isLoaded) return false;
-            if (允许摆放的场景 == null) return false;
-            foreach (var n in 允许摆放的场景)
-                if (n == 场景.name) return true;
-            return false;
-        }
-    }
+    /// <summary>
+    /// 当前场景允不允许摆放 / 显示地块。
+    /// **白名单只有一份**，在 <see cref="摆放校验.允许摆放的场景"/> ——
+    /// 灵田和摆设（木桩）共用它，两处各写一份早晚会不一致。
+    /// </summary>
+    public bool 当前场景可摆放 => 摆放校验.当前场景可摆放;
 
     // ============================================================ 事件
 
@@ -208,74 +194,16 @@ public class 灵田 : MonoBehaviour
     /// </summary>
     public bool 位置可用(Vector3 位置, int 朝向档, out string 原因, int 忽略地块 = -1)
     {
-        原因 = "";
-
-        if (!当前场景可摆放)
-        {
-            原因 = "只能在个人洞府里开垦灵田";
-            return false;
-        }
-
-        // ---- 地面：往下探，要有地、而且够平 ----
-        RaycastHit 地;
-        var 起点 = 位置 + Vector3.up * 3f;
-        if (!Physics.Raycast(起点, Vector3.down, out 地, 探地距离 + 3f, ~0, QueryTriggerInteraction.Ignore))
-        {
-            原因 = "这里没有地面";
-            return false;
-        }
-        if (Vector3.Angle(地.normal, Vector3.up) > 最大地面坡度)
-        {
-            原因 = "这里地面太陡（" + Vector3.Angle(地.normal, Vector3.up).ToString("0") + "°）";
-            return false;
-        }
-        if (Mathf.Abs(地.point.y - 位置.y) > 0.6f)
-        {
-            原因 = "这里和地面差太多";
-            return false;
-        }
-
-        // ---- 压住已有地块？----
-        var 我 = new Vector2(位置.x, 位置.z);
-        for (int i = 0; i < 地块.Count; i++)
-        {
-            if (i == 忽略地块) continue;
-            var b = 地块[i];
-            if (b == null) continue;
-            if (灵田规格.压住(我, 朝向档, new Vector2(b.位置.x, b.位置.z), b.朝向档))
-            {
-                原因 = "压住第 " + (i + 1) + " 块地了";
-                return false;
-            }
-        }
-
-        // ---- 压住场景里的东西？----
-        // 【怎么区分"地面"和"障碍"】不用图层：**地面就是刚才那根向下射线打到的那个碰撞体**，
-        // 把它（和玩家自己）排除掉，剩下的算障碍。这样不用给场景配图层就能用。
+        // ★ **统一走 `摆放校验`**（和摆设/木桩共用同一份判定）。
         //
-        // ⚠️ 【这里用的是"床本身"的半边长，**不含占用边距**】
-        //    占用边距（0.35）是给**别的灵田**留的过道，不该拿来判定场景物件 ——
-        //    用户要的是"有地面有空间的地方任意摆放"，而实测用含边距的 1.30 米盒子去撞，
-        //    连旁边一根细木桩（Npc_WoodenStake）都会把整块地判成"被占着"，根本摆不下去。
-        //    场景障碍只在**真的插进畦里**时才算冲突。
-        if (检查场景障碍)
-        {
-            float 半床 = 灵田规格.床边长 * 0.5f;
-            var 中心 = new Vector3(位置.x, 地.point.y + 0.5f, 位置.z);
-            var 半 = new Vector3(半床, 0.5f, 半床);
-            var 撞 = Physics.OverlapBox(中心, 半, Quaternion.Euler(0f, 灵田规格.档转角度(朝向档), 0f),
-                                        ~0, QueryTriggerInteraction.Ignore);
-            foreach (var c in 撞)
-            {
-                if (c == null || c == 地.collider) continue;
-                if (c is CharacterController) continue;                  // 玩家自己
-                if (c.transform.IsChildOf(transform)) continue;          // 自己的东西
-                原因 = "这里被「" + c.name + "」占着";
-                return false;
-            }
-        }
-
-        return true;
+        // 【为什么不再自己判一遍】这套判定原来在这里、`摆设` 那边又写一遍，
+        // 结果两个方向不对称：**木桩能插进田里、田却盖不住木桩**（实测：
+        // 木桩是有碰撞体的、能被打，所以灵田这边只会报一句莫名其妙的
+        // "这里和地面差太多"，而根本没意识到"这块地被木桩占着"）。
+        // 判定只留一份之后，"压住第 N 块灵田 / 压住第 N 个练功木桩"两个方向都准。
+        float 地面高;
+        return 摆放校验.位置可用(摆放物库.取("lingtian"), 位置, 朝向档,
+                                out 原因, out 地面高, 忽略地块, -1);
     }
 
     /// <summary>

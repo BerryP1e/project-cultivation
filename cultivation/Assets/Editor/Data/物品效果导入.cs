@@ -113,14 +113,24 @@ public static class 物品效果导入
                               .Append(" 的丹方 —— 吃下去不会有任何效果\n");
                     break;
                 }
-            case "放置灵田":
+            case "摆放物件":
+            case "放置灵田":       // 旧写法，留个别名免得老表直接报"认不出"
                 {
-                    // 「灵田开拓令」用的效果：在背包里点使用 → 进洞府的摆放态。
-                    // 数值/规则不在表上（在 `灵田摆放器` 与 `灵田规格` 里），表里只负责说"这是个能用的开垦令"。
-                    var e = 取或建<放置灵田效果>(物品.物品id);
+                    // 「灵田开拓令」/「练功木桩」用的效果：在背包里点使用 → 进洞府的摆放态。
+                    // `效果参数id` = `摆放物库` 的 id（lingtian / muzhuang），
+                    // 规则与尺寸都在 `摆放物定义` / `摆放校验` 里，表里只负责说"这玩意能摆"。
+                    // 旧写法（效果类型=放置灵田）参数一般留空 ⇒ 兜底成 lingtian。
+                    var e = 取或建<摆放物件效果>(物品.物品id);
+                    e.摆放物id = string.IsNullOrEmpty(参数id)
+                               ? (类型 == "放置灵田" ? "lingtian" : "")
+                               : 参数id;
                     e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
                     EditorUtility.SetDirty(e);
                     物品.使用效果 = e;
+                    if (摆放物库.取(e.摆放物id) == null)
+                        report.Append("  [警告] 「").Append(物品.物品名)
+                              .Append("」标了 摆放物件，但 摆放物库 里没有 id = ")
+                              .Append(e.摆放物id).Append(" —— 用的时候会拒绝，摆不出任何东西\n");
                     break;
                 }
             default:
