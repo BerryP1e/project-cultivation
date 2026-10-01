@@ -195,7 +195,36 @@ public static class 场景自举
             确保组件<灵田界面>(相机, 场景.name);
             确保组件<任务引导>(相机, 场景.name);
         }
+
+        // ---- 镇妖塔准入（写进宗门那个进塔的传送圈）----
+        //
+        // 规则本来只是 `Teleporter.需要等级` 一个字段，但那个圈在 Sect.scene 里，
+        // **改它就要保存那个场景** —— 而保存它会连带重排一份序列化的运行时 UI
+        // （实测 1541 行无关改动，见 踩坑总库 A8）。
+        // 所以照老办法：运行时按名字把规则补上去，**不碰场景文件**。
+        补塔准入(场景);
     }
+
+    /// <summary>给宗门的进塔传送圈补「需要炼气三层」（按名字找，找不到就什么都不做）</summary>
+    static void 补塔准入(Scene 场景)
+    {
+        foreach (var 根 in 场景.GetRootGameObjects())
+            foreach (var t in 根.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name != 进塔圈名字) continue;
+                var 传送 = t.GetComponent<Teleporter>();
+                if (传送 == null) continue;
+                if (t.GetComponent<塔准入>() == null)
+                {
+                    t.gameObject.AddComponent<塔准入>();
+                    Debug.Log("[场景自举] 「" + 场景.name + "」的「" + t.name + "」缺 塔准入 → 已自动补上");
+                }
+                return;
+            }
+    }
+
+    /// <summary>宗门里那个进塔的传送圈的名字（`TowerController` 退出塔时也用它当落点）</summary>
+    const string 进塔圈名字 = "sect2 to tower";
 
     /// <summary>确保有该组件；**返回补出来的那个**（已有则返回 null）</summary>
     static T 确保组件<T>(GameObject go, string 场景名) where T : Component

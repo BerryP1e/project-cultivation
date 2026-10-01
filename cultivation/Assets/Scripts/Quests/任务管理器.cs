@@ -39,6 +39,9 @@ public class 任务管理器 : MonoBehaviour
     [Tooltip("检查「提交物品 / 到达」的间隔（秒）")]
     public float 检查间隔 = 0.25f;
 
+    /// <summary>`条件=境界等级` 用（只找一次；找不到就留空，别的条件不受影响）</summary>
+    PlayerCultivation 修行;
+
     readonly Dictionary<string, int> 当前阶段 = new Dictionary<string, int>();
 
     [Tooltip("演出用的等待条件靠它计时：任务id → 这一阶段是什么时候开始的")]
@@ -61,6 +64,9 @@ public class 任务管理器 : MonoBehaviour
 
     /// <summary>外部（黑幕自动收幕）通知：演出结束，放行阶段推进</summary>
     public static void 清演出中() { 演出中 = false; }
+
+    /// <summary>"自称在演出、实际没有"持续了多久 —— 超过阈值就把 `演出中` 清掉（见自愈那段）</summary>
+    float 空演出计时;
 
     /// <summary>接手过来的阶段，动作要等场景激活完的第一帧才发（见 导入进度 的注释）</summary>
     readonly List<string> 待发动作 = new List<string>();
@@ -644,8 +650,29 @@ public class 任务管理器 : MonoBehaviour
             确保对话NPC在场(q);
         }
 
-        if (演出中) return;      // ★ 其余条件：有阻塞式演出在跑就先别推进阶段
+        // ★★ 「演出中」自愈（2026-10-02 实测踩到）★
+        //
+        // `演出中` 是 **static**，由 `播黑幕 / 播对话 / 切到场景` 置真、由黑幕收幕或对话演完置假。
+        // 一旦那段演出**被打断**（切场景把协程连带销毁、强制对话还在等玩家点、对象被销毁…），
+        // 它就**永远卡在 true** —— 而它卡住的表现是"**所有阶段条件都不再判定**"，
+        // 也就是整条主线**静默冻住**（实测：等级到了炼气三层，阶段28 死活不推进）。
+        //
+        // 这里做一次自检：连续 1.5 秒"自称在演出、但实际上既没有对话也没有黑幕"就清掉。
+        // 用 1.5 秒而不是立刻，是因为 `播对话` 会**先**置真、对话框下一帧才显示，
+        // 立刻清会误判成"演完了"，让条件=无 的阶段在过场里偷偷推进。
+        if (演出中 && !DialogueUI.正在显示 && !黑幕字幕.有幕在显示)
+        {
+            空演出计时 += Time.unscaledDeltaTime;
+            if (空演出计时 >= 1.5f)
+            {
+                空演出计时 = 0f;
+                演出中 = false;
+                Debug.LogWarning("[任务] 「演出中」卡住了（没有对话也没有黑幕）→ 已自动清掉，恢复阶段判定");
+            }
+        }
+        else 空演出计时 = 0f;
 
+        if (演出中) return;      // ★ 其余条件：有阻塞式演出在跑就先别推进阶段
         // ★ 接手过来的阶段，动作在这里（场景激活完之后的第一帧）才发
         if (待发动作.Count > 0)
         {
@@ -779,6 +806,21 @@ public class 任务管理器 : MonoBehaviour
                                 完成当前阶段(任务id);
                             }
                         }
+                        break;
+                    }
+                case 任务条件.灵田已种植:
+                    {
+                        // 灵田教学"种下第一颗种子"靠它验真（原来那一阶段是 `条件=无`，
+                        // 收到道具的下一帧就完成，"去种一颗"这件事根本没被检查过）
+                        var 田 = 灵田.取();
+                        if (田 != null && 田.已种数 >= Mathf.Max(1, 阶段.数量)) 完成当前阶段(任务id);
+                        break;
+                    }
+                case 任务条件.境界等级:
+                    {
+                        // 长线门槛（镇妖塔准入 = 炼气三层）
+                        if (修行 == null) 修行 = FindObjectOfType<PlayerCultivation>();
+                        if (修行 != null && 修行.等级 >= Mathf.Max(1, 阶段.数量)) 完成当前阶段(任务id);
                         break;
                     }
                 case 任务条件.落点结束:

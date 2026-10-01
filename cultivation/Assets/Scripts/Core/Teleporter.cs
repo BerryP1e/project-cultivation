@@ -84,6 +84,46 @@ public class Teleporter : MonoBehaviour
     /// </summary>
     public System.Func<int, bool> 选项接管;
 
+    [Header("准入（可选）")]
+    [Tooltip("**玩家境界等级**低于这个值就不给传送（0 = 不限）。\n" +
+             "等级不够时：所有选项**置灰**、面板上写明原因（见「未开放原因」）。\n" +
+             "镇妖塔就是用它卡的「炼气三层」—— 由 `塔准入.cs` 在运行时写进来，不用改场景。")]
+    public int 需要等级 = 0;
+
+    [Tooltip("等级不够时面板上写的提示。留空 = 自动拼「需要炼气 N 层」。\n" +
+             "`{当前}` 会被替换成玩家当前等级。")]
+    public string 未开放原因 = "";
+
+    /// <summary>现在够不够格（需要等级 ≤ 0 = 不限）</summary>
+    public bool 准入通过
+    {
+        get
+        {
+            if (需要等级 <= 0) return true;
+            var 修 = Object.FindObjectOfType<PlayerCultivation>();
+            return 修 != null && 修.等级 >= 需要等级;
+        }
+    }
+
+    /// <summary>等级不够时给玩家看的话</summary>
+    public string 取未开放原因()
+    {
+        if (string.IsNullOrEmpty(未开放原因)) return "需要境界等级 " + 需要等级;
+        var 修 = Object.FindObjectOfType<PlayerCultivation>();
+        return 未开放原因.Replace("{当前}", 修 != null ? 修.等级.ToString() : "?")
+                          .Replace("{需要}", 需要等级.ToString());
+    }
+
+    /// <summary>
+    /// 准入条件变了（等级升了 / 运行时改了 `需要等级`）之后调它：作废旧面板、重刷标题。
+    /// **由 `塔准入.cs` 在等级变化时调**，不指望玩家重开界面。
+    /// </summary>
+    public void 刷新准入()
+    {
+        重建面板();
+        刷新文本();
+    }
+
     bool 面板开着;
     GameObject 面板;
     readonly List<Button> 按钮s = new List<Button>();
@@ -215,6 +255,7 @@ public class Teleporter : MonoBehaviour
         string s = 标题;
         for (int i = 0; i < 选项.Length; i++)
             if (选项[i] != null && 选项[i].暂未开放) s += "\n（「" + 选项[i].名称 + "」尚未开放）";
+        if (!准入通过) s += "\n（" + 取未开放原因() + "）";
         文本.text = s;
     }
 
@@ -265,7 +306,7 @@ public class Teleporter : MonoBehaviour
             brt.pivot = new Vector2(0.5f, 0f);
             brt.sizeDelta = new Vector2(400f, 46f);
             brt.anchoredPosition = new Vector2(0f, 18f + 56f * (选项.Length - 1 - i));
-            bool 灰 = 选项[i] == null || 选项[i].暂未开放;
+            bool 灰 = 选项[i] == null || 选项[i].暂未开放 || !准入通过;
             bgo.GetComponent<Image>().color = 灰 ? new Color(0.22f, 0.2f, 0.22f, 1f) : new Color(0.18f, 0.32f, 0.22f, 1f);
             var bt = bgo.GetComponent<Button>();
             bt.interactable = !灰;
@@ -294,6 +335,14 @@ public class Teleporter : MonoBehaviour
         if (o.暂未开放)
         {
             if (打印日志) Debug.Log("[传送]「" + o.名称 + "」尚未开放", this);
+            return;
+        }
+        // ★ 准入没通过：给一句人话，别静默不动（玩家会以为"点了没反应"）
+        if (!准入通过)
+        {
+            string 原因 = 取未开放原因();
+            ToastUI.提示(原因);
+            Debug.Log("[传送]「" + o.名称 + "」准入不通过：" + 原因, this);
             return;
         }
         if (打印日志) Debug.Log("[传送] 执行「" + o.名称 + "」→ 场景「" + o.场景 + "」落点「" + o.落点 + "」", this);
