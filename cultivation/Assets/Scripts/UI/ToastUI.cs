@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,7 +25,18 @@ public class ToastUI : MonoBehaviour
     public float 停留时长 = 2.2f;
     public Vector2 尺寸 = new Vector2(340f, 52f);
     public float 右边距 = 24f;
-    public float 顶边距 = 24f;
+    /// <summary>
+    /// 距屏幕顶端的边距。
+    ///
+    /// 【为什么是 104 而不是 24】右上角已经被 `纪年HUD` 占了（日期一行 + 修炼机会一行，
+    /// 顶边距 18 + 约 70 像素高）。本组件也锚在右上角，24 的顶边距会和日期**叠在同一行**
+    /// —— 实测截图里"新的一天"和"太虚历 X 年 Y 月 Z 日 · 时辰"糊在一起。
+    /// 104 = 18 + 70 + 16 的余量，正好落在纪年 HUD 下面。
+    ///
+    /// 【改这里就够的原因】`提示()` 里是 `AddComponent` **现建**提示条，
+    /// 位置只来自这几个默认值，场景/prefab 里没有第二份。
+    /// </summary>
+    public float 顶边距 = 104f;
     public float 行间距 = 8f;
 
     /// <summary>当前活着的提示条（从上往下排用）</summary>
