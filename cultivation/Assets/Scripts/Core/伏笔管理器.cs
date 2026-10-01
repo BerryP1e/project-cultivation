@@ -74,6 +74,15 @@ public class 伏笔管理器 : MonoBehaviour
 
     void Update()
     {
+        // 读档进来的等级挂在 `SaveSystem` 上（理由同 日常循环.Update）
+        if (SaveSystem.有挂起的伏笔)
+        {
+            int 田, 塔;
+            SaveSystem.取挂起的伏笔(out 田, out 塔);
+            导入(田, 塔);
+            Debug.Log("[伏笔] 读档恢复：灵田 " + 田 + " 级 / 塔 " + 塔 + " 级");
+        }
+
         推进灵田();
         推进塔();
     }
