@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 可交互物（修炼房屋 / 炼丹炉 / 炼器炉 / 布阵点 / **人类 NPC 对话**）。
@@ -23,6 +23,7 @@ public class StationInteractable : MonoBehaviour
         布阵,       // deploy formation point
         对话,       // ★ 人类 NPC 对话（2026-09-26 合并进来）
         传送,       // ★ 传送圈（2026-09-28 合并进来：从"走上去自动弹"改成"按 F 开"）
+        灵田地块,   // ★ 一块田地（2026-10-01：灵田从"一个面板管一片"改成"每块地独立互动"）
     }
 
     [Header("身份")]
@@ -84,6 +85,7 @@ public class StationInteractable : MonoBehaviour
             case StationKind.布阵: return "布阵";
             case StationKind.对话: return "对话";
             case StationKind.传送: return "传送";
+            case StationKind.灵田地块: return "灵田";
             default: return "交互";
         }
     }

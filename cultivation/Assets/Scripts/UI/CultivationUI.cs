@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,7 +17,7 @@ using UnityEngine.UI;
 /// ```
 ///
 /// · **闭关修炼**：显示当前功法 / 当前境界 + 进度条 / 剩余修炼次数，两个按钮「修炼一次」「闭关」
-/// · **境界突破**：突破所需物品信息，两个按钮「提交物品」「确认突破」
+/// · **境界突破**：**当前破境成功率**（实时值）+ 一个「破境」按钮
 /// · **转修功法**：已学功法列表（点选），「转修后境界预估」，按钮「确认转修」
 ///
 /// 数据全部来自 <see cref="PlayerCultivation"/>，本组件只负责显示和按钮。
@@ -74,7 +75,6 @@ public class CultivationUI : MonoBehaviour
     // 境界突破页
     Text 突破物品信息;
     Text 突破提示;
-    readonly List<string> 已提交 = new List<string>();
 
     // 转修功法页
     readonly List<Image> 功法行图 = new List<Image>();
@@ -112,6 +112,39 @@ public class CultivationUI : MonoBehaviour
         显示();
     }
 
+    // ============================================================ 实时刷新
+    //
+    // 破境成功率是**一个时时变化的值**（用户 2026-10-01）：在背包里服下破境丹，
+    // `PlayerCultivation.设置破境加成()` 就会改它并广播 `修为变化`。
+    // 不订阅的话，本页还开着时服丹 → 页面继续显示旧的成功率（显示 75%，实际已经 95%）。
+    // 订阅之后，修炼、杀怪、服丹、破境任何一处改了修为，这一页都跟着变。
+    //
+    // ⚠️ 必须成对退订（踩坑 B53：`enabled = false` 拦不住 C# 事件）；
+    //    本组件挂在"用一次就 Destroy"的预制体上，所以 OnDestroy 那份不能省。
+
+    void OnEnable() => 订阅();
+    void OnDisable() => 退订();
+    void OnDestroy() => 退订();
+
+    void 订阅()
+    {
+        取数据();
+        if (修为 == null) return;
+        修为.修为变化 -= 处理修为变化;      // 防重复订阅
+        修为.修为变化 += 处理修为变化;
+    }
+
+    void 退订()
+    {
+        if (修为 != null) 修为.修为变化 -= 处理修为变化;
+    }
+
+    void 处理修为变化(PlayerCultivation _)
+    {
+        if (画布 == null) return;           // 界面还没搭好
+        刷新();
+    }
+
     void 找字体()
     {
 #if UNITY_EDITOR
@@ -130,6 +163,7 @@ public class CultivationUI : MonoBehaviour
     public void 显示()
     {
         取数据();
+        订阅();                 // 修为是这时候才找到的，所以要在这里补订一次
         刷新();
         if (画布 != null) 画布.gameObject.SetActive(true);
     }
@@ -192,26 +226,36 @@ public class CultivationUI : MonoBehaviour
         }
 
         // ---- 境界突破 ----
+        // ⚠️ **小境界突破不需要"提交物品"**（用户 2026-10-01）：
+        //    丹药是**在背包里"服用"**的，这里只显示"当前破境成功率"这**一个实时值** ——
+        //    服丹它就自己变高，不再出现"75% → 服丹后 95%"这种并排两个静态数字。
         if (突破物品信息 != null)
         {
-            string 材 = 修为.突破材料;
-            if (string.IsNullOrEmpty(材))
-                材 = 修为.突破类型 == BreakthroughKind.大境界突破 ? "大境界突破材料（**策划还没定名**）"
-                    : "破境丹（**策划还没定名**）";
             var 级 = 修为.当前境界;
             var 丹 = 级 != null ? 灵丹库.取破境丹(级.大境界) : null;
-            string 概率行 = 级 != null
-                ? $"\n\n破境成功率：{级.基础成功率:P0}"
-                  + (丹 != null ? $"　→　服「{丹.名}」后 {级.服丹成功率:P0}" : "")
-                  + (级.失败保留进度 <= 0f ? "\n⚠ 失败将散去这一层的全部灵气" : $"\n⚠ 失败保留 {级.失败保留进度:P0} 进度")
-                : "";
-            突破物品信息.text = "突破所需物品\n\n" + 材 + " × " + 修为.材料数量
-                + "\n\n当前：" + 修为.境界名 + "（第 " + 修为.等级 + " 级）"
-                + "\n类型：" + 修为.突破类型 + 概率行
-                + "\n\n所需灵气：" + 修为.升级所需灵气 + " 基准"
-                + "\n已积累：" + 修为.本级已积累 + "（" + (修为.进度 * 100f).ToString("0.#") + "%）";
+            var sb = new StringBuilder();
+            sb.AppendLine("当前：" + 修为.境界名 + "（第 " + 修为.等级 + " 级）");
+            sb.AppendLine("类型：" + 修为.突破类型);
+            sb.AppendLine();
+            sb.AppendLine("所需灵气：" + 修为.升级所需灵气 + " 基准");
+            sb.AppendLine("已积累：" + 修为.本级已积累 + "（" + (修为.进度 * 100f).ToString("0.#") + "%）");
+            sb.AppendLine();
+            sb.AppendLine("破境成功率：" + (修为.当前破境成功率 * 100f).ToString("0.#") + "%"
+                          + (修为.破境加成 > 0.001f ? "（丹药相助 ✓）" : ""));
+            if (级 != null)
+                sb.AppendLine(级.失败保留进度 <= 0f
+                    ? "⚠ 失败将散去这一层的全部灵气"
+                    : "⚠ 失败保留 " + (级.失败保留进度 * 100f).ToString("0") + "% 进度");
+
+            // 只在"还没嗑丹"时提示可以去服哪一颗；这是**提示**，不是并排的第二个成功率
+            if (级 != null && 丹 != null && 修为.破境加成 <= 0.001f
+                && 级.突破类型 == BreakthroughKind.小境界突破)
+                sb.Append("\n（在背包里服下《" + 丹.名 + "》可把成功率提到 "
+                          + (Mathf.Clamp(级.服丹成功率, 0f, 1f) * 100f).ToString("0.#") + "%）");
+
+            突破物品信息.text = sb.ToString();
         }
-        if (突破提示 != null) 突破提示.text = 已提交.Count > 0 ? "已提交 " + 已提交.Count + " 件" : "";
+        if (突破提示 != null) 突破提示.text = "";
 
         // ---- 转修功法 ----
         刷新功法列表();
@@ -304,42 +348,7 @@ public class CultivationUI : MonoBehaviour
         刷新();
     }
 
-    void 点提交物品()
-    {
-        // 【2026-10-01 改】原来是"记录提交"的空壳。现在物品系统有真丹药了，
-        // 所以这里只做**检查并播报**，不再假装提交 ——
-        // 真正的消耗发生在 点确认突破 → PlayerCultivation.尝试破境() 里
-        //（**不论成败都消耗**，这是用户定的规则）。
-        if (修为 == null || 突破提示 == null) return;
-        var 级 = 修为.当前境界;
-        if (级 == null) { 突破提示.text = "境界表没接线"; return; }
-        if (级.突破类型 == BreakthroughKind.大境界突破)
-        {
-            突破提示.text = "大境界突破需要专属丹药，此物尚未现世";
-            return;
-        }
-        var 丹 = 灵丹库.取破境丹(级.大境界);
-        if (丹 == null) { 突破提示.text = "这一境界还没有对应的破境丹"; return; }
-
-        int 要 = Mathf.Max(1, 级.材料数量);
-        int 有 = 背包里丹药数量(丹.id);
-        突破提示.text = 有 >= 要
-            ? $"「{丹.名}」×{有}（够用）—— 点「确认突破」即可，失败也会消耗"
-            : $"「{丹.名}」不足：有 {有}，需要 {要}。无丹也能破，但成功率只有 {级.基础成功率:P0}";
-    }
-
     /// <summary>背包里这种丹药有几颗。走项目唯一的物品库 + 背包面板</summary>
-    int 背包里丹药数量(string 丹id)
-    {
-        var 库 = QuestDatabase.取();
-        if (库 == null) return 0;
-        var 定义 = 库.找物品(丹id);
-        if (定义 == null) return 0;
-        var 板 = FindObjectOfType<UIPanelData>();
-        if (板 == null) return 0;
-        板.EnsureLists();
-        return 板.物品数量(定义);
-    }
 
     void 点确认突破()
     {
@@ -358,7 +367,6 @@ public class CultivationUI : MonoBehaviour
         var 结果 = 修为.尝试破境();
         if (突破提示 != null)
             突破提示.text = 结果.文本 + (结果.受理 ? $"（本次成功率 {结果.成功率:P0}）" : "");
-        已提交.Clear();
         刷新();
     }
 
@@ -511,7 +519,6 @@ public class CultivationUI : MonoBehaviour
             TextAnchor.UpperLeft, 字色);
         内边距(突破物品信息.rectTransform, 20f);
 
-        建按钮(页根, "提交物品", new Vector2(w * 0.62f, 100f), new Vector2(300f, 62f), 点提交物品);
         建按钮(页根, "确认突破", new Vector2(w * 0.62f, 24f), new Vector2(300f, 62f), 点确认突破);
 
         突破提示 = UIBuildUtils.CreateText("提示", 页根, 字体, "", 18, TextAnchor.UpperLeft,

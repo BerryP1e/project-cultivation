@@ -864,6 +864,16 @@ public class 任务管理器 : MonoBehaviour
         switch (阶段.动作)
         {
             case 任务动作.生成NPC:     生成NPC(阶段); return;
+            case 任务动作.推进天数:
+                {
+                    // 「过了一夜」要真的过一天：不然玩家拿不到新的一份修炼机会，纪年也不动。
+                    var 时 = 时间管理器.取();
+                    if (时 == null) { Debug.LogWarning("[任务] 推进天数：场景里没有 时间管理器"); return; }
+                    int 前 = 时.当前天数;
+                    时.推进(1f);
+                    Debug.Log("[任务] 调度：时间推进 1 天 → 第 " + 时.当前天数 + " 天（原第 " + 前 + " 天）");
+                    return;
+                }
             case 任务动作.镜头回玩家:  StartCoroutine(镜头回玩家(阶段.镜头时长, 阶段.镜头高度)); return;
             case 任务动作.黑幕字幕:    播黑幕(阶段); return;
             case 任务动作.闪白:        黑幕字幕.闪白(); Debug.Log("[任务] 调度：白屏闪一下"); return;

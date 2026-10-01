@@ -146,9 +146,19 @@ public static class 灵植库
             {
                 id = "lingcao_chiyan", 名 = "赤焰芝", 品阶 = 灵植品阶.中品,
                 成熟天数 = 7f, 产量下限 = 1, 产量上限 = 2,
-                产物id = "item_chiyanzhi", 种子id = "", 株高 = 0.38f,
+                产物id = "item_chiyanzhi", 种子id = "item_seed_chiyan", 株高 = 0.38f,
                 主色 = new Color(0.82f, 0.34f, 0.22f), 会开花 = false,
-                说明 = "需要一阶上品灵田。火性浓烈，炼器淬火的上好辅料。",
+                说明 = "需要一阶上品灵田。火性浓烈，炼丹可作辅材、炼器可作淬火之料。",
+            },
+            new 灵植定义
+            {
+                // 回春丹的主材（2026-10-01 补：以前回春丹有物品、没有丹方，也就没有它的灵草）
+                id = "lingcao_huichun", 名 = "回春草", 品阶 = 灵植品阶.凡品,
+                成熟天数 = 3f, 产量下限 = 2, 产量上限 = 5,
+                产物id = "item_huichuncao", 种子id = "item_seed_huichun", 株高 = 0.48f,
+                主色 = new Color(0.42f, 0.74f, 0.36f), 会开花 = true,
+                花色 = new Color(0.92f, 0.48f, 0.44f),
+                说明 = "最常见的伤药灵草，叶背带赤纹。温养气血，回春丹的主材。",
             },
         };
     }
@@ -171,85 +181,5 @@ public static class 灵植库
         if (植 == null) return 0;
         int 基础 = Random.Range(植.产量下限, 植.产量上限 + 1);
         return Mathf.Max(1, Mathf.RoundToInt(基础 * 灵田品阶说明.产量倍率(田)));
-    }
-}
-
-/// <summary>
-/// **一个灵田格子**的运行时状态。
-/// 只存"种了什么 + 长了多久"，成熟与否是算出来的（<see cref="已成熟"/>）——
-/// 这样改「成熟天数」或灵田品阶时，已种下的东西也会跟着变，不用逐个刷数据。
-/// </summary>
-[System.Serializable]
-public class 灵田格
-{
-    /// <summary>种的灵植 id。空 = 这个格子是空的</summary>
-    public string 种子id = "";
-
-    /// <summary>已经生长了多少**游戏日**（按灵田生长倍率算过的等效值）</summary>
-    public float 已生长天数 = 0f;
-
-    /// <summary>这一茬收获过了吗（收完要清空格子）</summary>
-    public bool 已收获 = false;
-
-    public bool 是空的 => string.IsNullOrEmpty(种子id);
-
-    public 灵植定义 植 => 灵植库.取(种子id);
-
-    /// <summary>是否已经成熟可收。**成熟天数是灵植自己的，不乘灵田倍率** ——
-    /// 灵田品阶影响的是"长得快不快"，在累计生长量时就已经乘进去了</summary>
-    public bool 已成熟
-    {
-        get
-        {
-            var d = 植;
-            return d != null && !已收获 && 已生长天数 >= d.成熟天数;
-        }
-    }
-
-    /// <summary>生长进度 0~1（给 UI 画进度条）</summary>
-    public float 进度
-    {
-        get
-        {
-            var d = 植;
-            if (d == null || d.成熟天数 <= 0f) return 0f;
-            return Mathf.Clamp01(已生长天数 / d.成熟天数);
-        }
-    }
-
-    /// <summary>生长阶段 0=空 1=幼苗 2=成长 3=成熟</summary>
-    public int 阶段
-    {
-        get
-        {
-            if (是空的) return 0;
-            if (已成熟) return 3;
-            return 进度 < 0.5f ? 1 : 2;
-        }
-    }
-
-    public void 清空()
-    {
-        种子id = "";
-        已生长天数 = 0f;
-        已收获 = false;
-    }
-
-    // ---- 存档 ----
-    public string 导出() => 是空的 ? "-" : $"{种子id}|{已生长天数:F3}|{(已收获 ? 1 : 0)}";
-
-    public static 灵田格 导入(string s)
-    {
-        var g = new 灵田格();
-        if (string.IsNullOrEmpty(s) || s == "-") return g;
-        var 段 = s.Split('|');
-        if (段.Length < 2) return g;
-        g.种子id = 段[0];
-        float v;
-        if (float.TryParse(段[1], out v)) g.已生长天数 = v;
-        if (段.Length >= 3) g.已收获 = 段[2] == "1";
-        // 种子的定义没了（改过表）→ 当作空格子，免得留一个永远长不出来的僵尸
-        if (灵植库.取(g.种子id) == null) g.清空();
-        return g;
     }
 }

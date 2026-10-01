@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// **炼丹界面** —— 选丹方 → 选品 → 炼丹。
+/// **炼丹界面** —— 选丹方 → 炼丹。
 ///
 /// ## 怎么打开
 ///
@@ -19,13 +19,15 @@ using UnityEngine.UI;
 /// │ 丹方          │ 炼气破境丹                  │
 /// │ [炼气破境丹]  │ 主材 生灵草 ×3（有 12）      │
 /// │ [筑基破境丹]  │ 辅材 凝露花 ×2（有 5）       │
-/// │              │ 品  [1][2][3][4][5]...       │
-/// │              │ 成功率 85%   耗气 20         │
+/// │              │ 【1 品丹】成功率 85%  耗气 20│
 /// │              │        [ 炼  制 ]            │
 /// ├──────────────┴─────────────────────────────┤
 /// │ 提示行                                      │
 /// └────────────────────────────────────────────┘
 /// ```
+///
+/// > ⚠️ **没有"选品"这一行** —— 品是**丹药自己的属性**（1~9，对应境界），不是每炉选的档位。
+/// > 见 `灵丹定义.品` 与 `炼丹炉` 的类注释（用户 2026-10-01 澄清）。
 ///
 /// ## ⚠️ 踩过的坑（照抄 `灵田界面` 的正确结构，别再犯）
 ///
@@ -63,16 +65,13 @@ public class 炼丹界面 : MonoBehaviour
     Canvas 画布;
     RectTransform 面板;        // ★ 幕布本体（只 SetActive 它）
     Text 标题文本, 灵气文本, 丹方详情, 提示文本;
-    RectTransform 丹方排, 品排;
+    RectTransform 丹方排;
     Button 炼制按钮;
 
     readonly List<Button> 丹方按钮 = new List<Button>();
     readonly List<Text> 丹方文字 = new List<Text>();
-    readonly List<Button> 品按钮 = new List<Button>();
-    readonly List<Text> 品文字 = new List<Text>();
 
     string 选中丹方 = "";
-    int 选中品 = 1;
     float 提示到期 = -1f;
 
     public bool 已打开 => 面板 != null && 面板.gameObject.activeSelf;
@@ -133,20 +132,14 @@ public class 炼丹界面 : MonoBehaviour
     void 点丹方(string id)
     {
         选中丹方 = id;
-        选中品 = 1;
         刷新();
     }
 
-    void 点品(int 品)
-    {
-        选中品 = 品;
-        刷新();
-    }
 
     void 点炼制()
     {
         var 炉 = 炼丹炉.取();
-        var r = 炉.炼制(选中丹方, 选中品);
+        var r = 炉.炼制(选中丹方);
         处理炼制完成(r);
         刷新();
     }
@@ -218,19 +211,13 @@ public class 炼丹界面 : MonoBehaviour
             sb.AppendLine($"　{名} ×{kv.Value}　(有 {有}){(有 >= kv.Value ? "" : "　✗")}");
         }
         sb.AppendLine();
-        int 品 = Mathf.Clamp(选中品, 1, Mathf.Clamp(丹方.最高可炼品, 1, 9));
-        float 概 = 炉.实际成功率(丹方, 品);
-        int 耗 = 炉.实际耗气(丹方, 品);
-        sb.AppendLine($"【{品} 品】成功率 {概:P0}　耗灵气 {耗}");
+        sb.AppendLine($"【{丹方.品} 品丹】成功率 {炉.实际成功率(丹方):P0}　耗灵气 {炉.实际耗气(丹方)}");
         sb.AppendLine(丹方.说明);
         丹方详情.text = sb.ToString();
 
-        // 品按钮：1 ~ 最高可炼品
-        刷新品按钮(炉, 丹方);
-
         // 炼制按钮可用性
         string 原因;
-        bool 可以 = 炉.能炼(丹方, 品, out 原因);
+        bool 可以 = 炉.能炼(丹方, out 原因);
         if (炼制按钮 != null)
         {
             炼制按钮.interactable = 可以;
@@ -240,21 +227,6 @@ public class 炼丹界面 : MonoBehaviour
         }
         if (!可以 && 提示文本 != null && string.IsNullOrEmpty(提示文本.text))
             提示文本.text = 原因;
-    }
-
-    void 刷新品按钮(炼丹炉 炉, 灵丹定义 丹方)
-    {
-        int 最高 = Mathf.Clamp(丹方.最高可炼品, 1, 9);
-        if (品按钮.Count != 最高) 重建品按钮(最高);
-        for (int i = 0; i < 最高; i++)
-        {
-            int p = i + 1;
-            bool 选 = p == 选中品;
-            品按钮[i].GetComponent<Image>().color = 选 ? 强调色 : new Color(0.32f, 0.30f, 0.30f, 1f);
-            品文字[i].color = 选 ? 按钮字色 : 正文色;
-            // 品按钮上带成功率，一眼看出"高品更难"
-            品文字[i].text = $"{p}\n{炉.实际成功率(丹方, p):P0}";
-        }
     }
 
     // ============================================================ 搭界面
@@ -276,27 +248,6 @@ public class 炼丹界面 : MonoBehaviour
             le.preferredHeight = 46f; le.minHeight = 46f;
             b.onClick.AddListener(() => 点丹方(炼丹炉.取().全部丹方()[序].id));
             丹方按钮.Add(b); 丹方文字.Add(lbl);
-        }
-    }
-
-    void 重建品按钮(int n)
-    {
-        foreach (var b in 品按钮) if (b != null) Destroy(b.gameObject);
-        品按钮.Clear(); 品文字.Clear();
-        if (品排 == null) return;
-        for (int i = 0; i < n; i++)
-        {
-            int p = i + 1;
-            var b = UIBuildUtils.CreateButton("品" + p, 品排, 字体, "", 16);
-            var 图 = b.GetComponent<Image>();
-            图.raycastTarget = true;
-            var lbl = b.GetComponentInChildren<Text>();
-            lbl.alignment = TextAnchor.MiddleCenter;
-            var le = b.gameObject.AddComponent<LayoutElement>();
-            le.preferredWidth = 62f; le.preferredHeight = 56f;
-            le.minWidth = 62f; le.minHeight = 56f;
-            b.onClick.AddListener(() => 点品(p));
-            品按钮.Add(b); 品文字.Add(lbl);
         }
     }
 
@@ -390,16 +341,6 @@ public class 炼丹界面 : MonoBehaviour
         var 详le = 丹方详情.gameObject.AddComponent<LayoutElement>();
         详le.preferredHeight = 240f; 详le.minHeight = 120f;
 
-        var 品区 = UIBuildUtils.CreateRect("品区", 右.rectTransform);
-        品区.sizeDelta = new Vector2(620f, 60f);
-        var 品排组 = 品区.gameObject.AddComponent<HorizontalLayoutGroup>();
-        品排组.spacing = 6f;
-        品排组.childAlignment = TextAnchor.MiddleLeft;
-        品排组.childControlWidth = false; 品排组.childControlHeight = true;
-        品排组.childForceExpandWidth = false; 品排组.childForceExpandHeight = false;
-        品排 = 品区;
-        var 品le = 品区.gameObject.AddComponent<LayoutElement>();
-        品le.preferredHeight = 60f; 品le.minHeight = 60f;
 
         炼制按钮 = UIBuildUtils.CreateButton("炼制", 右.rectTransform, 字体, "炼　制", 26);
         var 炼图 = 炼制按钮.GetComponent<Image>();

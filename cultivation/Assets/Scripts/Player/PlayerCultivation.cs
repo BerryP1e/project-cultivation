@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -166,6 +166,46 @@ public class PlayerCultivation : MonoBehaviour
              "加了这个封顶之后：灵气只涨进度，**攒满就卡在 100%**，\n" +
              "必须点破境（并成功）才把封顶 +1。")]
     public int 已解锁最高等级 = 1;
+
+    /// <summary>
+    /// **破境加成**（0~1 加法）。= 服下对应大境界的**破境丹**时写进来的那份提升
+    /// （`RealmDefinition.服丹成功率` − `RealmDefinition.基础成功率`）。
+    ///
+    /// 【为什么是一个"值"而不是一个"有没有"的开关】用户 2026-10-01：
+    /// > 「成功率就是个时时变化的值，服用后改变这个值就好了」
+    /// 所以 UI 只显示 <see cref="当前破境成功率"/> 这**一个数**，服丹它就自己变；
+    /// 不再出现"75% → 服丹后 95%"这种并排两个静态数字。
+    ///
+    /// 【生命周期】服丹时写入 → `尝试破境()` **不论成败都清空**（丹在背包里"使用"那一刻
+    /// 就已经消耗掉了，这里只是把那份加成用掉，否则一颗丹能反复生效）。
+    /// **要进存档**（用户 2026-10-01 明确要求），否则服了丹还没破境就退出会白吃一颗。
+    /// </summary>
+    public float 破境加成 = 0f;
+
+    /// <summary>当前的破境成功率（基础 + 丹药加成），实时值 —— UI 直接显示它</summary>
+    public float 当前破境成功率
+    {
+        get
+        {
+            if (当前境界 == null) return 0f;
+            return Mathf.Clamp01(Mathf.Clamp01(当前境界.基础成功率) + Mathf.Clamp01(破境加成));
+        }
+    }
+
+    /// <summary>写入破境加成（由 `服丹效果` 调）</summary>
+    public void 设置破境加成(float 加成)
+    {
+        破境加成 = Mathf.Clamp01(加成);
+        修为变化?.Invoke(this);
+    }
+
+    /// <summary>清掉破境加成（破境之后 / 读档重置时用）</summary>
+    public void 清空破境加成()
+    {
+        if (破境加成 <= 0f) return;
+        破境加成 = 0f;
+        修为变化?.Invoke(this);
+    }
 
     /// <summary>剩余修炼次数（整数）</summary>
     public int 修炼次数 => Mathf.Max(0, Mathf.FloorToInt(修炼次数累积));
@@ -347,15 +387,11 @@ public class PlayerCultivation : MonoBehaviour
             return 破境结果.拒绝("大境界突破需要「" + (string.IsNullOrEmpty(级.突破材料) ? "专属丹药（尚未定名）" : 级.突破材料)
                                  + "」，此物尚未现世");
 
-        // ---- 3) 小境界突破：看有没有对应大境界的破境丹 ----
-        var 丹 = 灵丹库.取破境丹(级.大境界);
-        bool 有丹 = 丹 != null && 丹药查找器 != null && 丹药查找器(丹.id, 级.材料数量);
-        if (丹 != null && 丹药查找器 == null)
-            有丹 = 背包里有丹(丹.id, Mathf.Max(1, 级.材料数量));
-
-        float 基础 = Mathf.Clamp01(级.基础成功率);
-        float 服丹 = Mathf.Clamp(级.服丹成功率, 基础, 1f);
-        float 成功率 = 有丹 ? 服丹 : 基础;
+        // ---- 3) 成功率 = 基础 + 已服丹药的加成（**一个实时值**，见 当前破境成功率） ----
+        // 丹药是在**背包里"服用"**那一刻消耗掉的（`服丹效果`），这里只读它留下的加成。
+        // 小境界突破**不需要"提交物品"**，所以这里也没有任何材料检查。
+        bool 有丹 = 破境加成 > 0.001f;
+        float 成功率 = 当前破境成功率;
 
         // ---- 4) 判定 ----
         // ⚠️ 必须写全 `UnityEngine.Random`：本文件有 `using System;`，
@@ -363,8 +399,9 @@ public class PlayerCultivation : MonoBehaviour
         //    而且两者语义完全不同 —— System.Random 没有静态 value，写错了编译能过但行为不是随机的。
         bool 成功 = UnityEngine.Random.value < 成功率;
 
-        // ---- 5) 消耗丹药（不论成败） ----
-        if (有丹) 消耗丹(丹.id, Mathf.Max(1, 级.材料数量));
+        // ---- 5) 把丹药那份加成用掉（不论成败）----
+        // 丹早就被吃掉了，这里不清的话一颗丹能反复生效。
+        清空破境加成();
 
         // ---- 6) 改灵气 ----
         // 本级起点（进度 0 的位置）与下一级起点（进度 100% 的位置）
@@ -629,6 +666,29 @@ public class PlayerCultivation : MonoBehaviour
         总灵气 = Math.Max(0, 值);
         上次等级 = 等级;
         修为变化?.Invoke(this);
+    }
+
+    /// <summary>
+    /// **加一笔总灵气**（丹药「聚气丹」走这里），返回实际加了多少。
+    ///
+    /// 【为什么要夹一层】总灵气被 `已解锁最高等级` 封了顶：攒满当前小境界就**停住**、
+    /// 等玩家手动破境。所以这里要按"本级还能吃多少"截断，
+    /// 否则一颗丹会把灵气灌到下一级去，等于绕过破境按钮白送等级
+    /// （那个坑见 `查境界` 的注释）。
+    /// </summary>
+    public long 加总灵气(long 点数)
+    {
+        if (点数 <= 0) return 0;
+
+        long 上限 = 取累计(已解锁最高等级);      // 本级封顶：到了就不能再涨
+        long 余量 = System.Math.Max(0L, 上限 - 总灵气);
+        long 实际 = System.Math.Min(点数, 余量);
+        if (实际 <= 0) return 0;
+
+        总灵气 += 实际;
+        上次等级 = 等级;
+        修为变化?.Invoke(this);
+        return 实际;
     }
 
     /// <summary>

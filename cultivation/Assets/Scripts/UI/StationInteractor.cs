@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -530,6 +530,31 @@ public class StationInteractor : MonoBehaviour
             return;
         }
 
+        // ★ 灵田地块：**面板由地块自己画**（每块地一个、要带自己的上下文，
+        //   占位幕布和共用预制体都表达不了"是哪一块地"）。
+        //   和下面传送圈一个路子：这里只负责"按 F 这一下"和把面板根记下来。
+        if (设施.类型 == StationInteractable.StationKind.灵田地块)
+        {
+            var 块 = 设施.GetComponent<灵田地块>();
+            if (块 == null) 块 = 设施.GetComponentInParent<灵田地块>();
+            if (块 == null)
+            {
+                Debug.LogWarning($"[StationInteractor] 【{设施.标题}】标了「灵田地块」但物件上没有 灵田地块 组件", 设施);
+                return;
+            }
+
+            当前设施 = 设施;
+            块.开面板();
+            // ★ 必须把面板根交给本组件：`界面已打开` 是 `当前界面 != null` 算出来的，
+            //   而 Update 里那行自愈 `if (有界面打开 && 当前界面 == null) 有界面打开 = false;`
+            //   会在下一帧把"界面开着"清掉 → ESC 就再也关不掉了（2026-09-28 传送面板踩过）。
+            当前界面 = 块.面板根;
+            有界面打开 = true;
+            本次右键已被占用 = true;
+            Debug.Log($"[StationInteractor] 打开【{设施.标题}】", 设施);
+            return;
+        }
+
         if (设施.类型 == StationInteractable.StationKind.对话)
         {
             var 对话 = 设施.GetComponent<NpcDialogue>();
@@ -578,6 +603,19 @@ public class StationInteractor : MonoBehaviour
             当前界面 = null;
             关闭冷却 = 0.25f;
             Debug.Log($"[StationInteractor] 关闭【{当前设施.标题}】传送面板", 当前设施);
+            当前设施 = null;
+            return;
+        }
+
+        // ★ 灵田地块的面板也是它自己造的（见 打开界面），所以同样只能让它自己收
+        if (当前设施 != null && 当前设施.类型 == StationInteractable.StationKind.灵田地块)
+        {
+            var 块 = 当前设施.GetComponent<灵田地块>();
+            if (块 == null) 块 = 当前设施.GetComponentInParent<灵田地块>();
+            if (块 != null) 块.关面板();
+            当前界面 = null;
+            关闭冷却 = 0.25f;
+            Debug.Log($"[StationInteractor] 关闭【{当前设施.标题}】", 当前设施);
             当前设施 = null;
             return;
         }

@@ -195,8 +195,12 @@ public class NpcLevelScale : ScriptableObject
     /// </summary>
     public AttributeSet 应用到(AttributeSet 基准, float 等级)
     {
+        // ⚠️ 基准缺失时**返回 null**，不要返回一张全 0 的表：
+        //    调用方（NpcInstance）靠"有没有补正"决定属性来源，
+        //    一张全 0 的表会被当成"补正过"，把 NPC 的气血/攻击全归零。
+        if (基准 == null) return null;
+
         var 结果 = new AttributeSet();
-        if (基准 == null) return 结果;
         结果.CopyFrom(基准);
 
         取倍率(等级, out float 倍数, out float 加值);

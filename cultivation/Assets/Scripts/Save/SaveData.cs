@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public const int 当前版本 = 8;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观；8：纪年/灵田
+    public const int 当前版本 = 11;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观；8：纪年/灵田；9：破境加成；10：灵田改成每块地独立状态；11：灵田改成玩家自由摆放（每块地带位置与朝向）
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -69,6 +69,12 @@ public class SaveData
              "【为什么必须存】灵气只涨进度、不涨等级（破境封顶），\n" +
              "所以等级是**独立于总灵气**的状态 —— 不存的话读档会退回 1 级。")]
     public int 已解锁最高等级 = 1;
+
+    [Tooltip("**破境加成**（版本 9）。服下对应大境界的破境丹时写入的一份提升，\n" +
+             "`尝试破境()` 不论成败都会清空它。\n" +
+             "【为什么必须存】用户 2026-10-01 明确要求：丹是**在背包里吃掉**的（已经没了），\n" +
+             "要是服了丹还没破境就存档退出，加成不存就等于白吃一颗。")]
+    public float 破境加成 = 0f;
 
     [Tooltip("已经学会的功法 id。转修功法只能在这几门里选")]
     public List<string> 已学功法 = new List<string>();
@@ -149,15 +155,12 @@ public class SaveData
     [Tooltip("打怪获得的修炼机会（小数累积）。**不过期**")]
     public float 打怪机会 = 0f;
 
-    [Header("灵田（版本 8 起）")]
-    [Tooltip("灵田品阶（1 起）。决定能种什么、产量多高")]
-    public int 灵田品阶 = 1;
-
-    [Tooltip("灵田格数上限。后续任务可以扩")]
-    public int 灵田格数 = 6;
-
-    [Tooltip("每个格子的内容，格式 `种子id|已生长天数|是否可收`，空格写 `-`。下标 = 格号")]
-    public List<string> 灵田格子 = new List<string>();
+    [Header("灵田（版本 11 起：每块地自己带位置与朝向）")]
+    [Tooltip("玩家在洞府里摆下来的每一块地（位置 / 朝向 / 品阶 / 种了什么 / 长了多久）。\n\n" +
+             "⚠️ 这里直接存 `灵田地块状态` 对象 —— 它的字段全是 string/float/int/Vector3，\n" +
+             "都在 JsonUtility 支持范围内。**别往那个类里加 Dictionary / 接口 / 属性**，否则存档静默丢失。\n\n" +
+             "版本 < 11 的档没有位置信息（那时候地是固定 12 块）→ 走重新开局。")]
+    public List<灵田地块状态> 灵田地块 = new List<灵田地块状态>();
 
     /// <summary>空槽 = 从没用过。读不出来或角色名为空都算空</summary>
     public bool 是空的 => string.IsNullOrEmpty(角色名) || string.IsNullOrEmpty(最后存档时间);

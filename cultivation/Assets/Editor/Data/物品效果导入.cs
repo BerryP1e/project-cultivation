@@ -97,6 +97,32 @@ public static class 物品效果导入
                           .Append("」是 属性增益 效果：加什么属性请在 Inspector 里补（表里只给了说明）\n");
                     break;
                 }
+            case "服丹":
+                {
+                    // 丹药的**数值不在这张表上** —— `效果参数id` 填丹方 id（`灵丹定义.id`），
+                    // 运行时拿它去 灵丹库 反查（单一真相源）。表里只负责说"这是一味能吃的丹"。
+                    var e = 取或建<服丹效果>(物品.物品id);
+                    e.丹方id = 参数id;
+                    e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
+                    EditorUtility.SetDirty(e);
+                    物品.使用效果 = e;
+                    if (灵丹库.取(string.IsNullOrEmpty(参数id) ? 物品.物品id : 参数id) == null)
+                        report.Append("  [警告] 「").Append(物品.物品名)
+                              .Append("」标了 服丹，但 灵丹库 里没有 id = ")
+                              .Append(string.IsNullOrEmpty(参数id) ? 物品.物品id : 参数id)
+                              .Append(" 的丹方 —— 吃下去不会有任何效果\n");
+                    break;
+                }
+            case "放置灵田":
+                {
+                    // 「灵田开拓令」用的效果：在背包里点使用 → 进洞府的摆放态。
+                    // 数值/规则不在表上（在 `灵田摆放器` 与 `灵田规格` 里），表里只负责说"这是个能用的开垦令"。
+                    var e = 取或建<放置灵田效果>(物品.物品id);
+                    e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
+                    EditorUtility.SetDirty(e);
+                    物品.使用效果 = e;
+                    break;
+                }
             default:
                 Debug.LogWarning("[物品效果导入] 认不出的效果类型「" + 类型 + "」，物品 = " + 物品.物品id);
                 物品.使用效果 = null;

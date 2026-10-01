@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>炼丹结果。给 UI 显示"为什么失败 / 炼出几品"。</summary>
@@ -10,7 +10,7 @@ public struct 炼丹结果
     public bool 成功;
     /// <summary>这次的成功率（显示给玩家，概率透明）</summary>
     public float 成功率;
-    /// <summary>选的品（1~9）</summary>
+    /// <summary>这颗丹的品（1~9，来自丹方本身；只用于显示）</summary>
     public int 品;
     /// <summary>炼出的数量（失败 = 0）</summary>
     public int 数量;
@@ -27,20 +27,20 @@ public struct 炼丹结果
 /// ## 规则（用户 2026-10-01 需求原文）
 ///
 /// · 炼丹需要**对应材料**以及**消耗灵气**
-/// · 每种丹方有**成功概率**，以及 **1~9 品品质**，**品质越高成功率越低**
+/// · 每种丹方有**自己的成功率**；**丹越品（越珍贵）越难炼**
 /// · 需要**一味主材 + 多味辅材**
-/// · 做几个被动技能 `xx炼丹术` 提升 xx 品丹方的成功率
+/// · 做几个被动技能 `xx炼丹术` 提升成功率
 /// · 做几个被动技能减少炼丹的**灵气消耗**
 ///
-/// ## 品质怎么算
+/// ## 「品」是什么（用户 2026-10-01 澄清，别搞错）
 ///
-/// 品是**玩家选的**（想要高品就赌更低成功率 + 更多灵气），不是随机出来的。
-/// 成功率 = `灵丹定义.成功率(品)` ×（1 + 被动加成），上限 95%。
-/// 灵气   = `灵丹定义.耗灵气(品)` ×（1 - 被动减免）。
+/// 品是**丹药自己的等级 / 珍贵程度，和境界对应**（炼气破境丹 1 品 … 登仙破境丹 9 品）。
+/// **不是"每炉选几品"** —— 所以本类的方法**没有"品"这个参数**：
+/// 成功率与耗气直接取丹方上的两个数。
 ///
-/// > 【为什么品是"选"而不是"掷"】需求说"品质越高成功率越低" ——
-/// > 这句话只有在**玩家主动选品**时才成立（否则就是"随机给品质"，
-/// > 那"成功率低"就没有对应的取舍了）。选品 = 主动赌高收益，这是有决策的玩法。
+/// > 【曾经的错误做法】原来有一组 `最高可炼品` + `品阶衰减` + `品阶加耗`，
+/// > 让玩家同一炉里选 1~9 品、选高品就降成功率加耗气 —— 可**产出的物品 id 完全一样**，
+/// > 品根本没被记下来，"选品"对结果毫无意义。现在按"品 = 丹本身的属性"重做。
 ///
 /// ## 和别的系统怎么接
 ///
@@ -87,13 +87,13 @@ public class 炼丹炉 : MonoBehaviour
 
     public 灵丹定义 取丹方(string id) => 灵丹库.取(id);
 
-    /// <summary>这一品的实际成功率（含被动）</summary>
-    public float 实际成功率(灵丹定义 丹方, int 品)
-        => 丹方 == null ? 0f : Mathf.Clamp01(丹方.成功率(品) * (1f + Mathf.Clamp(成功率加成, 0f, 0.9f)));
+    /// <summary>实际成功率（含被动加成）</summary>
+    public float 实际成功率(灵丹定义 丹方)
+        => 丹方 == null ? 0f : Mathf.Clamp01(丹方.成功率 * (1f + Mathf.Clamp(成功率加成, 0f, 0.9f)));
 
-    /// <summary>这一品的实际灵气消耗（含被动减免）</summary>
-    public int 实际耗气(灵丹定义 丹方, int 品)
-        => 丹方 == null ? 0 : Mathf.Max(1, Mathf.RoundToInt(丹方.耗灵气(品) * (1f - Mathf.Clamp(耗气减免, 0f, 0.9f))));
+    /// <summary>实际灵气消耗（含被动减免）</summary>
+    public int 实际耗气(灵丹定义 丹方)
+        => 丹方 == null ? 0 : Mathf.Max(1, Mathf.RoundToInt(丹方.灵气消耗 * (1f - Mathf.Clamp(耗气减免, 0f, 0.9f))));
 
     // ============================================================ 材料
 
@@ -149,18 +149,17 @@ public class 炼丹炉 : MonoBehaviour
 
     // ============================================================ 炼制
 
-    /// <summary>能不能炼这一品（不实际消耗）。给 UI 判按钮可用性</summary>
-    public bool 能炼(灵丹定义 丹方, int 品, out string 原因)
+    /// <summary>能不能炼（不实际消耗）。给 UI 判按钮可用性</summary>
+    public bool 能炼(灵丹定义 丹方, out string 原因)
     {
         原因 = "";
         if (丹方 == null || !丹方.是丹方) { 原因 = "这不是一个丹方"; return false; }
-        if (品 < 1 || 品 > Mathf.Clamp(丹方.最高可炼品, 1, 9)) { 原因 = $"这个丹方最多炼到 {丹方.最高可炼品} 品"; return false; }
 
         string 缺;
         if (!材料够(丹方, out 缺)) { 原因 = 缺; return false; }
 
         var 命 = 取玩家();
-        int 需 = 实际耗气(丹方, 品);
+        int 需 = 实际耗气(丹方);
         if (命 != null && 命.当前灵气 < 需) { 原因 = $"灵气不足：有 {命.当前灵气:F0}，需要 {需}"; return false; }
         return true;
     }
@@ -170,24 +169,28 @@ public class 炼丹炉 : MonoBehaviour
     ///
     /// 受理后**材料与灵气都会扣掉**（不论成败）—— 这是"失败也有代价"的常规做法，
     /// 也符合需求里"炼丹是主动玩法、消耗资源"的定位。
+    ///
+    /// ⚠️ **不再有"选品"参数**：品是**丹药自己的属性**（1~9，对应境界），不是每炉选的档位。
+    /// 见 <see cref="灵丹定义.品"/> 的说明。
     /// </summary>
-    public 炼丹结果 炼制(string 丹方id, int 品)
+    public 炼丹结果 炼制(string 丹方id)
     {
         var 丹方 = 取丹方(丹方id);
         string 原因;
-        if (!能炼(丹方, 品, out 原因)) return 炼丹结果.拒绝(原因);
+        if (!能炼(丹方, out 原因)) return 炼丹结果.拒绝(原因);
 
         // ---- 扣材料 ----
         foreach (var kv in 全部材料(丹方)) 扣物品(kv.Key, kv.Value);
 
         // ---- 扣灵气 ----
-        int 耗 = 实际耗气(丹方, 品);
+        int 耗 = 实际耗气(丹方);
         var 命 = 取玩家();
         if (命 != null) 命.当前灵气 = Mathf.Max(0f, 命.当前灵气 - 耗);
 
         // ---- 判定 ----
-        float 概率 = 实际成功率(丹方, 品);
+        float 概率 = 实际成功率(丹方);
         bool 成功 = UnityEngine.Random.value < 概率;
+        int 品 = 丹方.品;
 
         var 结果 = new 炼丹结果
         {
@@ -249,6 +252,6 @@ public class 炼丹炉 : MonoBehaviour
     }
 
     // ---- ASCII 别名 ----
-    public 炼丹结果 Craft(string recipeId, int quality) => 炼制(recipeId, quality);
+    public 炼丹结果 Craft(string recipeId) => 炼制(recipeId);
     public List<灵丹定义> AllRecipes() => 全部丹方();
 }

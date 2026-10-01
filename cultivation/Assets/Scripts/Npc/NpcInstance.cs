@@ -81,11 +81,23 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     /// </summary>
     public int 击杀计入等级 { get; private set; }
 
-    /// <summary>当前生效的属性表（补正过就是补正后的）</summary>
-    public AttributeSet 当前属性 => 补正属性 ?? (定义 != null ? 定义.属性 : null);
+    /// <summary>
+    /// 当前生效的属性表（补正过就是补正后的）。
+    ///
+    /// ⚠️【坑·已修】**绝不能写 `补正属性 ?? 定义.属性`**：`AttributeSet` 是 `[Serializable]` 类，
+    /// Unity 反序列化时**一定会给它造一个实例**（全 0），所以它**永远不是 null**，
+    /// `??` 永远走不到「定义」那一支。后果：**所有没做等级补正的 NPC（村民 / 木桩 / 宗门 NPC）
+    /// 属性全变 0 → `MaxHealth = 0` → 血条永远空 + 打不掉血**。
+    /// 塔里没暴露是因为那儿的怪是 `SpawnZone` 生成、真的走了 `应用等级补正`。
+    /// 判据只能用**显式标量** `当前等级` —— 它才有「0 = 没补正」的语义。
+    /// </summary>
+    public AttributeSet 当前属性 => 已等级补正 ? 补正属性 : (定义 != null ? 定义.属性 : null);
 
-    /// <summary>有没有做等级补正</summary>
-    public bool 已等级补正 => 当前等级 > 0 && 补正属性 != null;
+    /// <summary>
+    /// 有没有做等级补正。**判据只能是标量 `当前等级`**，不能靠引用为 null
+    /// （见 <see cref="当前属性"/> 的坑）。
+    /// </summary>
+    public bool 已等级补正 => 当前等级 > 0f;
 
     /// <summary>
     /// **按等级补正这份实例的属性。**
@@ -95,10 +107,11 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     /// 而且同一个怪的 1 级基准值会被所有场景共用，改一个就全脏了。
     /// 所以补正结果只挂在本实例上，实例销毁即释放。
     ///
-    /// 【必须早于 Awake 的 ResetHealth】<see cref="SpawnZone"/> 是 Instantiate 之后
-    /// **立刻**调本方法的 —— 而 <c>NpcInstance.Awake</c> 那时还没跑（Unity 的 Awake
-    /// 在 Instantiate 返回后的下一帧前统一跑）。所以这里先写 补正属性，
-    /// Awake 里的 <c>ResetHealth()</c> 读到的就是补正后的 MaxHealth ✓
+    /// 【和 Awake 的先后关系 —— 别照抄旧注释】
+    /// 旧注释说"Awake 在 Instantiate 返回后的下一帧前统一跑，所以本方法早于 Awake" ——
+    /// **那是错的**：Unity 的 `Awake` 在 `Instantiate()` **内部同步**跑完。真实顺序是
+    /// `Instantiate → Awake（按基准值定血）→ 本方法 → 叠加数值倍率`，
+    /// 所以本方法末尾**必须自己补一次 `ResetHealth()`**，否则怪一出生就是残血。
     /// </summary>
     /// <param name="等级">目标补正等级（1~100，**保留 1 位小数**）。≤0 表示清除补正</param>
     /// <param name="表">等级补正表。空则用 Resources 兜底找一份</param>
@@ -116,11 +129,28 @@ public class NpcInstance : MonoBehaviour, ICombatStats
             return false;
         }
 
+        // ⚠️ 必须在改 `当前等级` **之前**取：改完之后 `已等级补正` 就为真，
+        //    MaxHealth 会去读那张**还没算好**的补正表（全 0），这里就恒为"残血"了。
+        //    规则 = **本来是满血的才跟着新上限拉满；残血的不动**（免得把打了一半的怪治满）。
+        bool 原本满血 = 当前气血 >= MaxHealth - 0.01f;
+
         // ★ 补正等级保留 1 位小数（用户要求）—— 再细也没意义，
         //   而且会让「同一级内 10 层」的数值差异小到看不出来
         当前等级 = Mathf.Round(等级 * 10f) / 10f;
         击杀计入等级 = 击杀等级 > 0 ? 击杀等级 : Mathf.RoundToInt(当前等级);
-        补正属性 = t.应用到(定义.属性, 当前等级);
+
+        // ⚠️ 基准缺失时 `应用到` 会返回 null（**不能返回全 0 的表** —— 那会被当成"补正过"，
+        //    于是属性全归零，见 当前属性 的坑）。这里显式回退到"不补正"。
+        var 结果 = t.应用到(定义.属性, 当前等级);
+        if (结果 == null) { 清除等级补正(); return false; }
+        补正属性 = 结果;
+
+        // ★【坑·已修】改完上限要按"原本满血"重拉一次气血。
+        //   旧注释以为"本方法早于 Awake"，**那是错的**：Unity 的 `Awake` 是在 `Instantiate()`
+        //   内部**同步**跑完的。`SpawnZone` 的真实顺序是
+        //       Instantiate → Awake（按**基准**值定血）→ 本方法 → 叠加数值倍率
+        //   ⇒ 不补这一下，刷出来的怪一出生就是残血（实测塔里 1225/1629 = 75%）✗
+        if (原本满血 && !已死亡) ResetHealth();
         return true;
     }
 
@@ -143,8 +173,11 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     /// </summary>
     public void 叠加数值倍率(float 倍率)
     {
-        if (补正属性 == null || 倍率 <= 0f) return;
+        if (!已等级补正 || 倍率 <= 0f) return;
         if (Mathf.Approximately(倍率, 1f)) return;
+
+        // 同上：改上限之前先记住"本来满不满血"，改完按原样恢复
+        bool 原本满血 = 当前气血 >= MaxHealth - 0.01f;
 
         for (int i = 0; i < AttributeUtil.Count; i++)
         {
@@ -152,6 +185,10 @@ public class NpcInstance : MonoBehaviour, ICombatStats
             if (!NpcLevelScale.属于倍数组(t)) continue;
             补正属性[t] = 补正属性[t] * 倍率;
         }
+
+        // ★ 这一步也在 `Awake` **之后**跑（见 应用等级补正 的注释），所以同样要把气血
+        //   跟着新上限拉满 —— 否则塔里刷出来的怪会是 `基准 ÷ 总倍率` 的残血。
+        if (原本满血 && !已死亡) ResetHealth();
     }
 
     /// <summary>是否已死亡</summary>
@@ -341,7 +378,9 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     /// </summary>
     float Get(AttributeType t)
     {
-        if (补正属性 != null) return 补正属性[t];
+        // ⚠️ 判据是 已等级补正（标量），**不是** `补正属性 != null` —— 见 当前属性 的坑：
+        //    `AttributeSet` 永远不是 null，用 null 判会把没补正的 NPC 全读成 0。
+        if (已等级补正) return 补正属性[t];
         return 定义 != null ? 定义.属性[t] : 0f;
     }
 

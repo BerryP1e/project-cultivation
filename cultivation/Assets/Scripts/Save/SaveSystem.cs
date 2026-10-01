@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -217,8 +217,11 @@ public static class SaveSystem
         var 田 = 灵田.取();
         if (田 != null)
         {
-            if (数据.是空的 || 数据.版本 < 8) 田.重置();
-            else 田.导入(数据.灵田品阶, 数据.灵田格数, 数据.灵田格子);
+            // 【版本 11 起】灵田是玩家自己在洞府里摆的，每块地带**位置与朝向**。
+            // 版本 < 11 的档是"固定 12 块地"那套（没有位置）—— 直接重新开局。
+            // 用户已明确「不用补老档兼容，老档可以全部删掉」。
+            if (数据.是空的 || 数据.版本 < 11) 田.导入(null);
+            else 田.导入(数据.灵田地块);
         }
 
         var cc = 玩家.GetComponent<CharacterController>();
@@ -267,6 +270,7 @@ public static class SaveSystem
             修炼.设置修炼次数(数据.修炼次数累积);
             // 破境封顶要**在设灵气之前**恢复，否则 查境界 会按默认 1 级把等级压掉
             修炼.已解锁最高等级 = Mathf.Clamp(数据.已解锁最高等级, 1, 90);
+            修炼.破境加成 = Mathf.Clamp01(数据.破境加成);   // 版本 9：服丹留下的那份加成
 
             var 面板 = 修炼.面板数据;
             if (面板 != null)
@@ -434,6 +438,7 @@ public static class SaveSystem
             数据.修炼次数累积 = 修炼.修炼次数累积;
             数据.境界等级 = 修炼.等级;
             数据.已解锁最高等级 = 修炼.已解锁最高等级;
+            数据.破境加成 = 修炼.破境加成;
             数据.境界 = 修炼.境界名;                 // 顺手把那个旧字符串字段也更新掉
 
             var 面板 = 修炼.面板数据;
@@ -508,12 +513,8 @@ public static class SaveSystem
         var 田 = UnityEngine.Object.FindObjectOfType<灵田>();
         if (田 != null)
         {
-            int 品阶值, 格数存;
-            List<string> 格;
-            田.导出(out 品阶值, out 格数存, out 格);
-            数据.灵田品阶 = 品阶值;
-            数据.灵田格数 = 格数存;
-            数据.灵田格子 = 格;
+            // 地块状态本身就是可序列化的（位置是 Vector3，JsonUtility 认），所以直接交出去
+            数据.灵田地块 = 田.导出();
         }
 
         Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["

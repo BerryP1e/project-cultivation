@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -117,6 +117,17 @@ public class 时间管理器 : MonoBehaviour
 
     public int 当前天数 => 天数;
     public float 当天进度 => 日内进度;
+
+    /// <summary>
+    /// **含小数的总天数**（`天数 + 日内进度`），单调不减。
+    ///
+    /// 【为什么必须有它】"这一帧过了多少游戏日"**不能**用 `Time.deltaTime ÷ 秒每天` 去反算 ——
+    /// <see cref="推进"/> 允许**一次跨好几天**（新加的「推进天数」任务动作、倍率调很大、读档补时间），
+    /// 反算会把整段跳变丢掉。实测：主线阶段23「次日清晨」推进 1 天后，
+    /// 灵田里的草**一点没长**（用 `Time.deltaTime` 的那版）。
+    /// 唯一可靠的口径是**相邻两帧这个值之差**。
+    /// </summary>
+    public float 总天数 => 天数 + 日内进度;
 
     /// <summary>第几天 → 年（1 起）</summary>
     public int 年 => 起始年 + 天数 / Mathf.Max(1, 每月天数 * 每年月数);
