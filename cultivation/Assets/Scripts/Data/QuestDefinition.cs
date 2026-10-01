@@ -145,6 +145,9 @@ public class QuestDefinition : ScriptableObject
     [Tooltip("完成这个阶段发的物品，写法同「背包物品」列：物品id:数量|物品id:数量")]
     public string 奖励物品 = "";
 
+    [Tooltip("完成这个阶段发的**宗门贡献**（0 = 不发）。和 `奖励物品` 互不影响，可以只发贡献")]
+    [Min(0)] public int 奖励贡献 = 0;
+
     [Tooltip("这个阶段**开始时**对 NPC 做什么")]
     public 任务动作 动作 = 任务动作.无;
 

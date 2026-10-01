@@ -1,40 +1,40 @@
-﻿物品id,物品名,最大堆叠数量,品阶,介绍,可使用,效果类型,效果参数id,效果说明
-item_huichundan,回春丹,99,凡品,一颗下去，气血缓慢回复。使用后 1 小时内气血回复 +5%。,1,属性增益,hui_fu_5pct,使用后 1 小时内气血回复 +5%
-item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼气诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_taixu_lianqi,使用后学会功法「太虚炼气诀」。
-item_gongfa_qingyun_jianjue,青云剑诀 秘籍,1,地品,记载着「青云剑诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_qingyun_jianjue,使用后学会功法「青云剑诀」。
-item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。
-item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。
-item_menpai_bianfu,门派便服,1,凡品,太虚宗发给新弟子的门派便服。穿上它，就有了正式弟子的样子。,1,学外观,app_player,使用后获得外观「修仙者」并立刻换上
-item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。
-item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。
-item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。
-item_passive_ability_qianjie_leiyu,千劫雷狱 心得,1,天品,记载着「千劫雷狱」的修炼心得，读罢即可掌握。,1,学被动神通,ability_qianjie_leiyu,使用后获得被动神通「千劫雷狱」。
-item_passive_ability_leiyun,雷云 心得,1,地品,记载着「雷云」的修炼心得，读罢即可掌握。,1,学被动神通,ability_leiyun,使用后获得被动神通「雷云」。
-item_gongfa_canglan_hanyuanlu,沧澜寒渊录 秘籍,1,地品,记载着「沧澜寒渊录」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_canglan_hanyuanlu,使用后学会功法「沧澜寒渊录」。
-item_active_ability_hanxu,寒墟 神通玉简,1,天品,刻着「寒墟」的玉简，神识一触即可领悟。,1,学主动神通,ability_hanxu,使用后获得主动神通「寒墟」。
-item_active_ability_bingbao_shu,冰暴术 神通玉简,1,天品,刻着「冰暴术」的玉简，神识一触即可领悟。,1,学主动神通,ability_bingbao_shu,使用后获得主动神通「冰暴术」。
-item_shenglingcao,生灵草,99,凡品,灵田出产的基础灵草。聚气凝神，是炼丹最常见的辅材。,0,,,
-item_ningluhua,凝露花,99,凡品,花心凝露，清冽回甘。清障丹的主材。,0,,,
-item_qingxinlian,清心莲,99,下品,静心凝神之莲。愈伤丹的辅材，需一阶中品灵田方可种植。,0,,,
-item_chiyanzhi,赤焰芝,99,中品,火性浓烈，炼器淬火的上好辅料。需一阶上品灵田。,0,,,
-item_seed_shengling,生灵草种,99,凡品,一粒基础灵种。种下三日可收生灵草。,0,,,
-item_seed_ninglu,凝露花种,99,凡品,一粒基础灵种。种下三日可收凝露花。,0,,,
-item_seed_qingxin,清心莲种,99,下品,灵种。需一阶中品灵田方可种植。,0,,,
-item_dan_pojing_lianqi,炼气破境丹,99,凡品,助炼气期修士冲开一层小境界。破境时服下可大幅提升成功率。炼气期专用。,1,服丹,item_dan_pojing_lianqi,服下提升当前破境成功率
-item_dan_pojing_zhuji,筑基破境丹,99,凡品,助筑基期修士稳固根基、冲开小境界。筑基期专用。,1,服丹,item_dan_pojing_zhuji,服下提升当前破境成功率
-item_dan_pojing_jindan,金丹破境丹,99,黄品,金丹期破境之用，药力醇厚。金丹期专用。,1,服丹,item_dan_pojing_jindan,服下提升当前破境成功率
-item_dan_pojing_yuanying,元婴破境丹,99,玄品,温养元婴、冲击瓶颈。元婴期专用。,1,服丹,item_dan_pojing_yuanying,服下提升当前破境成功率
-item_dan_pojing_huashen,化神破境丹,99,玄品,凝练神识、破开关隘。化神期专用。,1,服丹,item_dan_pojing_huashen,服下提升当前破境成功率
-item_dan_pojing_lianxu,炼虚破境丹,99,地品,虚空练形，破境之资。炼虚期专用。,1,服丹,item_dan_pojing_lianxu,服下提升当前破境成功率
-item_dan_pojing_heti,合体破境丹,99,地品,天人合一之机，破境之钥。合体期专用。,1,服丹,item_dan_pojing_heti,服下提升当前破境成功率
-item_dan_pojing_dacheng,大乘破境丹,99,天品,大乘之资，世间罕有。大乘期专用。,1,服丹,item_dan_pojing_dacheng,服下提升当前破境成功率
-item_dan_pojing_dengxian,登仙破境丹,99,仙品,传说中可窥仙门一隙。登仙期专用。,1,服丹,item_dan_pojing_dengxian,服下提升当前破境成功率
-item_seed_chiyan,赤焰芝种,99,中品,赤焰芝的种子。需一阶上品灵田才种得下。,0,,,
-item_dan_juqi,聚气丹,99,凡品,聚敛草木灵气，服下直入丹田。一阶最常用的修炼辅丹。,1,服丹,item_dan_juqi,服下直接增加总灵气
-item_dan_qingzhang,清障丹,99,凡品,花露通脉，扫去灵力淤塞。服下迅速回灵。,1,服丹,item_dan_qingzhang,服下回复灵力
-item_dan_yushang,愈伤丹,99,凡品,生肌止血的入门伤药。「愈伤」二字，外门弟子最先认得。,1,服丹,item_dan_yushang,服下回复气血
-item_huichuncao,回春草,99,凡品,温养气血的灵草，叶背带赤纹。回春丹的主材。,0,,,
-item_seed_huichun,回春草种,99,凡品,回春草的种子。,0,,,
-item_lingtian_ling,灵田升阶令,99,黄品,宗门贡献处兑换的令牌，用于提升灵田品阶。,0,,,
-item_muzhuang,练功木桩,99,黄品,一具练功用的木桩。摆在洞府里可以随时试招，打空后会自动恢复。不打人也不还手。,1,摆放物件,muzhuang,使用后进入摆放状态：鼠标处出现半透明的木桩，R 旋转朝向，左键放下，右键取消。只能在个人洞府里使用。
-item_lingtian_kaituo,灵田开拓令,99,黄品,宗门贡献处兑换的令牌。在个人洞府里使用，可开垦一块新灵田。,1,摆放物件,lingtian,使用后进入摆放状态：鼠标处出现半透明的灵田，R 旋转朝向，左键放下，右键取消。只能在个人洞府里使用。
+﻿物品id,物品名,最大堆叠数量,品阶,介绍,可使用,效果类型,效果参数id,效果说明,兑换消耗贡献
+item_huichundan,回春丹,99,凡品,一颗下去，气血缓慢回复。使用后 1 小时内气血回复 +5%。,1,属性增益,hui_fu_5pct,使用后 1 小时内气血回复 +5%,
+item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼气诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_taixu_lianqi,使用后学会功法「太虚炼气诀」。,
+item_gongfa_qingyun_jianjue,青云剑诀 秘籍,1,地品,记载着「青云剑诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_qingyun_jianjue,使用后学会功法「青云剑诀」。,
+item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。,
+item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。,
+item_menpai_bianfu,门派便服,1,凡品,太虚宗发给新弟子的门派便服。穿上它，就有了正式弟子的样子。,1,学外观,app_player,使用后获得外观「修仙者」并立刻换上,
+item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。,
+item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。,
+item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。,
+item_passive_ability_qianjie_leiyu,千劫雷狱 心得,1,天品,记载着「千劫雷狱」的修炼心得，读罢即可掌握。,1,学被动神通,ability_qianjie_leiyu,使用后获得被动神通「千劫雷狱」。,
+item_passive_ability_leiyun,雷云 心得,1,地品,记载着「雷云」的修炼心得，读罢即可掌握。,1,学被动神通,ability_leiyun,使用后获得被动神通「雷云」。,
+item_gongfa_canglan_hanyuanlu,沧澜寒渊录 秘籍,1,地品,记载着「沧澜寒渊录」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_canglan_hanyuanlu,使用后学会功法「沧澜寒渊录」。,
+item_active_ability_hanxu,寒墟 神通玉简,1,天品,刻着「寒墟」的玉简，神识一触即可领悟。,1,学主动神通,ability_hanxu,使用后获得主动神通「寒墟」。,
+item_active_ability_bingbao_shu,冰暴术 神通玉简,1,天品,刻着「冰暴术」的玉简，神识一触即可领悟。,1,学主动神通,ability_bingbao_shu,使用后获得主动神通「冰暴术」。,
+item_shenglingcao,生灵草,99,凡品,灵田出产的基础灵草。聚气凝神，是炼丹最常见的辅材。,0,,,,
+item_ningluhua,凝露花,99,凡品,花心凝露，清冽回甘。清障丹的主材。,0,,,,
+item_qingxinlian,清心莲,99,下品,静心凝神之莲。愈伤丹的辅材，需一阶中品灵田方可种植。,0,,,,
+item_chiyanzhi,赤焰芝,99,中品,火性浓烈，炼器淬火的上好辅料。需一阶上品灵田。,0,,,,
+item_seed_shengling,生灵草种,99,凡品,一粒基础灵种。种下三日可收生灵草。,0,,,,5
+item_seed_ninglu,凝露花种,99,凡品,一粒基础灵种。种下三日可收凝露花。,0,,,,8
+item_seed_qingxin,清心莲种,99,下品,灵种。需一阶中品灵田方可种植。,0,,,,15
+item_dan_pojing_lianqi,炼气破境丹,99,凡品,助炼气期修士冲开一层小境界。破境时服下可大幅提升成功率。炼气期专用。,1,服丹,item_dan_pojing_lianqi,服下提升当前破境成功率,
+item_dan_pojing_zhuji,筑基破境丹,99,凡品,助筑基期修士稳固根基、冲开小境界。筑基期专用。,1,服丹,item_dan_pojing_zhuji,服下提升当前破境成功率,
+item_dan_pojing_jindan,金丹破境丹,99,黄品,金丹期破境之用，药力醇厚。金丹期专用。,1,服丹,item_dan_pojing_jindan,服下提升当前破境成功率,
+item_dan_pojing_yuanying,元婴破境丹,99,玄品,温养元婴、冲击瓶颈。元婴期专用。,1,服丹,item_dan_pojing_yuanying,服下提升当前破境成功率,
+item_dan_pojing_huashen,化神破境丹,99,玄品,凝练神识、破开关隘。化神期专用。,1,服丹,item_dan_pojing_huashen,服下提升当前破境成功率,
+item_dan_pojing_lianxu,炼虚破境丹,99,地品,虚空练形，破境之资。炼虚期专用。,1,服丹,item_dan_pojing_lianxu,服下提升当前破境成功率,
+item_dan_pojing_heti,合体破境丹,99,地品,天人合一之机，破境之钥。合体期专用。,1,服丹,item_dan_pojing_heti,服下提升当前破境成功率,
+item_dan_pojing_dacheng,大乘破境丹,99,天品,大乘之资，世间罕有。大乘期专用。,1,服丹,item_dan_pojing_dacheng,服下提升当前破境成功率,
+item_dan_pojing_dengxian,登仙破境丹,99,仙品,传说中可窥仙门一隙。登仙期专用。,1,服丹,item_dan_pojing_dengxian,服下提升当前破境成功率,
+item_seed_chiyan,赤焰芝种,99,中品,赤焰芝的种子。需一阶上品灵田才种得下。,0,,,,25
+item_dan_juqi,聚气丹,99,凡品,聚敛草木灵气，服下直入丹田。一阶最常用的修炼辅丹。,1,服丹,item_dan_juqi,服下直接增加总灵气,
+item_dan_qingzhang,清障丹,99,凡品,花露通脉，扫去灵力淤塞。服下迅速回灵。,1,服丹,item_dan_qingzhang,服下回复灵力,
+item_dan_yushang,愈伤丹,99,凡品,生肌止血的入门伤药。「愈伤」二字，外门弟子最先认得。,1,服丹,item_dan_yushang,服下回复气血,
+item_huichuncao,回春草,99,凡品,温养气血的灵草，叶背带赤纹。回春丹的主材。,0,,,,
+item_seed_huichun,回春草种,99,凡品,回春草的种子。,0,,,,8
+item_lingtian_ling,灵田升阶令,99,黄品,宗门贡献处兑换的令牌，用于提升灵田品阶。,0,,,,60
+item_muzhuang,练功木桩,99,黄品,一具练功用的木桩。摆在洞府里可以随时试招，打空后会自动恢复。不打人也不还手。,1,摆放物件,muzhuang,使用后进入摆放状态：鼠标处出现半透明的木桩，R 旋转朝向，左键放下，右键取消。只能在个人洞府里使用。,20
+item_lingtian_kaituo,灵田开拓令,99,黄品,宗门贡献处兑换的令牌。在个人洞府里使用，可开垦一块新灵田。,1,摆放物件,lingtian,使用后进入摆放状态：鼠标处出现半透明的灵田，R 旋转朝向，左键放下，右键取消。只能在个人洞府里使用。,30

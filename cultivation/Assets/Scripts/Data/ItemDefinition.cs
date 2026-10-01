@@ -36,6 +36,13 @@ public class ItemDefinition : ScriptableObject, IPanelEntry
     [Tooltip("使用效果资产（学功法 / 学主动神通 / 学被动神通 / 属性增益…）。勾了可使用却没配效果 → 用不了")]
     public 物品使用效果 使用效果;
 
+    [Header("宗门贡献兑换")]
+    [Tooltip("**在功德堂用宗门贡献换它要多少贡献**。0 = 不参与兑换。\n" +
+             "`> 0` 的物品会自动出现在功德堂的兑换列表里（界面直接扫物品库，不用另建一张兑换表）。\n" +
+             "拿它当开关的理由：本工程大量物品是「表里加一行就自动进游戏」的，\n" +
+             "兑换口再单独维护一份清单，早晚和物品表分叉。")]
+    [Min(0)] public int 兑换消耗贡献 = 0;
+
     // ---- IPanelEntry ----
     public string DisplayName => string.IsNullOrEmpty(物品名) ? name : 物品名;
     public string DisplayDescription => 介绍;

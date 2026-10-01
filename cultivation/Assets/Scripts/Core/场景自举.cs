@@ -203,7 +203,32 @@ public static class 场景自举
         // （实测 1541 行无关改动，见 踩坑总库 A8）。
         // 所以照老办法：运行时按名字把规则补上去，**不碰场景文件**。
         补塔准入(场景);
+
+        // ---- 功德堂兑换（宗门里那栋"功德堂"建筑）----
+        // 同上：那栋建筑在 Sect.scene 里，`StationInteractable` 上的"界面预制体"是空 ——
+        // 不碰场景，运行时补一个自己画面的组件上去。
+        补功德堂(场景);
     }
+
+    /// <summary>给宗门的"功德堂"建筑补上兑换面板（按名字找，找不到就什么都不做）</summary>
+    static void 补功德堂(Scene 场景)
+    {
+        foreach (var 根 in 场景.GetRootGameObjects())
+            foreach (var t in 根.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name != 功德堂物体名) continue;
+                if (t.GetComponent<StationInteractable>() == null) continue;
+                if (t.GetComponent<功德堂兑换>() == null)
+                {
+                    t.gameObject.AddComponent<功德堂兑换>();
+                    Debug.Log("[场景自举] 「" + 场景.name + "」的「" + t.name + "」缺 功德堂兑换 → 已自动补上");
+                }
+                return;
+            }
+    }
+
+    /// <summary>宗门里"功德堂"那栋建筑的对象名（它的 `StationInteractable.显示名` = 功德堂）</summary>
+    const string 功德堂物体名 = "environment_Building_luoxiaguan_001_d";
 
     /// <summary>给宗门的进塔传送圈补「需要炼气三层」（按名字找，找不到就什么都不做）</summary>
     static void 补塔准入(Scene 场景)

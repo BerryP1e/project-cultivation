@@ -232,6 +232,9 @@ public static class SaveSystem
             else 摆.导入(数据.摆设);
         }
 
+        // 【版本 13 起】宗门贡献（兑换用货币）。加法字段：老档读出来是 0，不用版本门槛
+        宗门贡献.从存档设置(数据.是空的 ? 0 : 数据.宗门贡献);
+
         var cc = 玩家.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
         // ★ 切场景接力期间**不要**用存档里的位置覆盖玩家：
@@ -528,6 +531,9 @@ public static class SaveSystem
         // 摆设（练功木桩这类玩家摆下来的物件）—— 也要能存档
         var 摆 = UnityEngine.Object.FindObjectOfType<摆设>();
         if (摆 != null) 数据.摆设 = 摆.导出();
+
+        // 宗门贡献（兑换用货币）—— 静态值，直接抄进存档
+        数据.宗门贡献 = 宗门贡献.当前;
 
         Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["
             + 数据.任务进度 + "]、对话标记 " + 标记.Length + " 个"

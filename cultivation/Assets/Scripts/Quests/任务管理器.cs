@@ -572,6 +572,9 @@ public class 任务管理器 : MonoBehaviour
 
     void 发奖励(QuestDefinition 阶段)
     {
+        // 贡献是"加法"，和物品奖励互不影响：没有奖励物品的阶段也可能发贡献
+        if (阶段.奖励贡献 > 0) 宗门贡献.加(阶段.奖励贡献, "任务「" + 阶段.任务名 + "」第 " + 阶段.阶段 + " 阶段");
+
         if (面板 == null || string.IsNullOrEmpty(阶段.奖励物品)) return;
         var db = 取库();
         if (db == null) return;
