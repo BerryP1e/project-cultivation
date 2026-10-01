@@ -189,6 +189,62 @@ public class QuestDefinition : ScriptableObject
     [Tooltip("需要先完成这个任务id，才能接（留空 = 没有前置）")]
     public string 前置任务id = "";
 
+    // ============================================================ 任务引导
+    //
+    // 这三列喂给 `任务引导.cs`（屏幕左侧的追踪面板 + 目标头顶的感叹号 + 屏幕外时的边缘箭头）。
+    // 大部分阶段**不用填** —— 引导会按「条件」自动推：
+    //   · 条件=对话/击杀/NPC到位 → 指向 `目标npcId` 那个 NPC
+    //     （条件=对话 且 目标npcId 空 时，还会拿 `对话id` 去对话库里反查是哪个 NPC）
+    //   · 条件=到达 → 指向 `坐标X/Y/Z`
+    // 自动推不出来的（例如"去某某建筑走一趟""去某个传送门"）才需要填下面两列。
+
+    [Header("任务引导（留空 = 按条件自动推）")]
+    [Tooltip("引导指向哪个 NPC：`NpcDefinition.id`（如 npc_dashixiang）。\n" +
+             "它在**当前场景**里才会出现头顶感叹号；不在本场景时面板只写「去找谁」")]
+    public string 引导npcId = "";
+
+    [Tooltip("引导指向哪个**地点**，写 `x;y;z`（例：`-4.59;3.48;29.92`）。**留空 = 没有地点目标**。\n" +
+             "★ 分隔符用**分号**，别用半角逗号 —— CSV 是按逗号切列的，一个单元格里带逗号\n" +
+             "会把后面所有列顶偏一格（实测踩过：整行错位、而且不报任何错）。\n" +
+             "★ 为什么用字符串而不是 坐标X/Y/Z 那一组：坐标组拿 `(0,0,0)` 当**合法值**\n" +
+             "（「到村口走一趟」的目标就是原点），没法用它区分「没填」和「填了原点」。\n" +
+             "空串才是真正的「没填」 —— 这一列的语义只有「空」和「一个点」两种。")]
+    public string 引导坐标 = "";
+
+    [Tooltip("上面那个地点在面板里显示成什么（例：`宗门炼丹阁`）。留空 = 显示「目的地」")]
+    public string 引导地点名 = "";
+
+    [Tooltip("上面那个地点在**哪个场景**（例：`Sect`）。**留空 = 就是本场景**。\n" +
+             "★ 填了它、而玩家不在那个场景时：**不画标记**（两个场景的坐标是两套空间，\n" +
+             "拿宗门的坐标在洞府里画箭头会指到毫不相干的方向），面板改写成「目标：X（在「Sect」）」")]
+    public string 引导场景 = "";
+
+    /// <summary>引导坐标填了没（空串 = 没填；**解析得出来才算数**）</summary>
+    public bool 有引导坐标 { get { Vector3 点; return 试解析引导坐标(out 点); } }
+
+    /// <summary>
+    /// 解析「x;y;z」。解析不出来返回 false（调用方按"没填"处理）。
+    /// 分隔符**分号、逗号（半角/全角）、空格**都认 ——
+    /// 表里请写分号（见上面的 Tooltip），其余几种是给手滑 / 从别处粘过来兜底的。
+    /// </summary>
+    public bool 试解析引导坐标(out Vector3 点)
+    {
+        点 = Vector3.zero;
+        if (string.IsNullOrWhiteSpace(引导坐标)) return false;
+        var 干净 = 引导坐标.Replace('；', ';').Replace('，', ',').Replace(',', ';').Replace('\t', ' ');
+        var 段 = 干净.Split(new[] { ';', ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+        if (段.Length < 3) return false;
+        float x, y, z;
+        if (!float.TryParse(段[0].Trim(), System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out x)) return false;
+        if (!float.TryParse(段[1].Trim(), System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out y)) return false;
+        if (!float.TryParse(段[2].Trim(), System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out z)) return false;
+        点 = new Vector3(x, y, z);
+        return true;
+    }
+
     public Vector3 坐标 => new Vector3(坐标X, 坐标Y, 坐标Z);
 
     void OnValidate()

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -188,11 +188,12 @@ public static class 场景自举
             // ★ 画面基线实时预览（F2 切档）。纯调试工具，定下基线后可以删。
             确保组件<画面基线预览>(相机, 场景.name);
 
-            // ★ 纪年 HUD（右上角）+ 灵田界面（F4）。
+            // ★ 纪年 HUD（右上角）+ 灵田界面（F4）+ 任务引导（左侧主线追踪）。
             //   同样自举补 —— UI 是「每个场景一份」的重灾区（见 场景一致性与踩坑规律）。
-            //   两个都是 ScreenSpaceOverlay 自搭 Canvas，挂相机上只是为了有个不销毁的宿主。
+            //   三个都是 ScreenSpaceOverlay 自搭 Canvas，挂相机上只是为了有个不销毁的宿主。
             确保组件<纪年HUD>(相机, 场景.name);
             确保组件<灵田界面>(相机, 场景.name);
+            确保组件<任务引导>(相机, 场景.name);
         }
     }
 

@@ -629,6 +629,21 @@ public class 任务管理器 : MonoBehaviour
             }
         }
 
+        // ★ 「条件=对话」的阶段：要跟谁说话，那个人不在场就补出来。
+        //   放在**演出锁之前**是有意的：它不参与"条件是否达成"的判定，纯粹是"把场景补齐"，
+        //   所以不该被演出锁挡住（否则过场期间进场景，人得等过场结束才出现）。
+        //   · 只补**任务自己生成过**的 NPC（`找NPC` 内部查 `生成过的NPC` 那张表），
+        //     所以不会凭空造出场景里本来没有的路人；
+        //   · 每个"阶段+NPC"只试一次（见 试过补的对话NPC），失败也不刷日志。
+        //   踩过的坑（2026-10-02）：洞府那一幕要跟大师兄说话，而他是 `生成NPC` 造的
+        //   场景内对象 —— 玩家自己走进洞府时他随旧场景销毁、任务动作又不会重跑 ⇒ 整条线卡死。
+        foreach (var id in new List<string>(当前阶段.Keys))
+        {
+            var q = 取当前阶段(id);
+            if (q == null || q.条件 != 任务条件.对话) continue;
+            确保对话NPC在场(q);
+        }
+
         if (演出中) return;      // ★ 其余条件：有阻塞式演出在跑就先别推进阶段
 
         // ★ 接手过来的阶段，动作在这里（场景激活完之后的第一帧）才发
@@ -780,9 +795,54 @@ public class 任务管理器 : MonoBehaviour
         }
     }
 
-    /// <summary>只读地在场查找：找不到就返回 null，**不会重建**（重建是 找NPC 的职责）</summary>
-    static GameObject 查找在场NPC(string npcId)
+    /// <summary>
+    /// **`条件=对话` 的阶段：要跟谁说话，那个人不在场就把他补出来**（放在玩家旁边）。
+    ///
+    /// 【为什么需要】踩过的坑（2026-10-02，整条洞府线卡死）：
+    ///   `q_main_004` 阶段17/18 的条件是"跟 `npc_dashixiong` 说完某一段对话"，
+    ///   而大师兄是 `生成NPC` / `飞到` 造出来的**场景内对象** —— 玩家自己走进洞府
+    ///   （走 `sect1 to 3c` 传送门，**不是**任务驱动的 `切换场景`）时，他随旧场景一起销毁；
+    ///   而任务动作**不会**在新场景重跑（`已执行动作` 会跳过同一阶段）。
+    ///   结果：洞府里根本没有大师兄 ⇒ 那两段对话永远触发不了 ⇒ 灵田教学整条线停在那儿。
+    ///
+    /// 【修法】谁在条件里"等着跟某个人说话"，那个人不在就补出来 ——
+    ///   比"往每个场景都手摆一份 NPC"省事，也不会漏场景。
+    ///   ⚠️ 只补**任务自己生成过**的 NPC（`找NPC` 内部查 `生成过的NPC` 那张表），
+    ///      所以不会凭空造出场景里本来没有的路人。
+    ///   ⚠️ 每个"阶段+NPC"只尝试一次：失败（没有预制体记录）也不要每 0.25 秒刷一条日志。
+    /// </summary>
+    void 确保对话NPC在场(QuestDefinition 阶段)
     {
+        string npcId = 取对话目标npcId(阶段);
+        if (string.IsNullOrEmpty(npcId)) return;
+        if (查找在场NPC(npcId) != null) return;
+
+        string 键 = 阶段.id + "|" + npcId;
+        if (!试过补的对话NPC.Add(键)) return;      // 只补一次
+
+        var 补 = 找NPC(npcId);                     // 不在场时会就地重建（重建点 = 玩家前方）
+        Debug.Log("[任务] 「" + 阶段.阶段名 + "」要跟 " + npcId + " 说话，但它不在场 → "
+                  + (补 != null ? "已就地补出来 @" + 补.transform.position.ToString("F2")
+                                : "补不出来（任务没生成过它，没有预制体记录）"), 阶段);
+    }
+
+    /// <summary>每个"阶段+NPC"只补一次（免得失败时刷屏）</summary>
+    readonly HashSet<string> 试过补的对话NPC = new HashSet<string>();
+
+    /// <summary>
+    /// 这一阶段要跟哪个 NPC 说话：优先任务表的 `目标npcId`，
+    /// 没填就用 `对话id` 去对话库反查（`条件=对话` 的行常常只填了对话id）
+    /// </summary>
+    static string 取对话目标npcId(QuestDefinition 阶段)
+    {
+        if (阶段 == null) return "";
+        if (!string.IsNullOrEmpty(阶段.目标npcId)) return 阶段.目标npcId;
+        var 库 = DialogueDatabase.取();
+        return 库 != null ? 库.取NpcId(阶段.对话id) : "";
+    }
+
+    /// <summary>只读地在场查找：找不到就返回 null，**不会重建**（重建是 找NPC 的职责）</summary>
+    static GameObject 查找在场NPC(string npcId)    {
         if (string.IsNullOrEmpty(npcId)) return null;
         foreach (var npc in FindObjectsOfType<NpcInstance>())
         {
@@ -1362,8 +1422,20 @@ public class 任务管理器 : MonoBehaviour
         }
         var go = Instantiate(预制, 阶段.坐标, Quaternion.identity);
         go.name = 预制.name + "_任务生成";
-        // ★ 记住「这个任务 NPC 是用哪个预制体造的」，供 找NPC 在它被切场景销毁后重建
-        if (!string.IsNullOrEmpty(阶段.动作目标npcId)) 生成过的NPC[阶段.动作目标npcId] = 阶段.动作参数;
+        // ★ 记住「这个任务 NPC 是用哪个预制体造的」，供 找NPC 在它被切场景销毁后重建。
+        //
+        // ⚠️ 不能只看 `动作目标npcId` 有没有填 —— 任务表里 `生成NPC` 那一行**常常只填了
+        //    「动作参数」（预制体路径），`动作目标npcId` 是空的**。实测大师兄就是这样：
+        //    人是生成了，但**一次都没被记下来** ⇒ `找NPC` 的重建路径从来没生效过 ⇒
+        //    玩家一进洞府他就永远消失、洞府那一幕的对话条件永远达不成（2026-10-02 定位）。
+        //    所以拿"刚生成出来那个实例的 `定义.id`"兜底。
+        var 记实例 = go.GetComponent<NpcInstance>();
+        string 记id = !string.IsNullOrEmpty(阶段.动作目标npcId) ? 阶段.动作目标npcId
+                      : (记实例 != null && 记实例.定义 != null ? 记实例.定义.id : "");
+        if (!string.IsNullOrEmpty(记id)) 生成过的NPC[记id] = 阶段.动作参数;
+        else Debug.LogWarning("[任务] 生成NPC：" + 阶段.动作参数
+                              + " 既没填「动作目标npcId」、实例上也没有 NpcInstance.定义 → "
+                              + "这个 NPC 以后不在场时**没法自动重建**", 阶段);
         NPC兜底位置 = 阶段.坐标;
         Debug.Log("[任务] 生成 " + go.name + " 于 " + 阶段.坐标, 阶段);
         return go;

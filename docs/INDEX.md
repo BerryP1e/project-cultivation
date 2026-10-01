@@ -58,7 +58,7 @@ rg -n "<关键词>" docs cultivation/Assets/Data/Tables
 | **古古镇** | `village` | 开场、野猪、村民 |
 | **太虚宗（宗门）** | `Sect` | 主广场 `碰撞地板(平坦)` 在 `(0,-1,0)` 附近（106×91）；主角出生/复活点 = `(22.069, -0.685, -3.794)`（= 任务表 `q_main_004` 阶段4 的落点，在主广场地板上） |
 | **宗门野外** | `Sect_Wilderness` | 400×400 森林 |
-| **个人洞府 / 专属洞府 / 洞府后山** | **`3C_Testbed`** | 入口 `sect1 to 3c`；内有 `cultivation room`、**可摆放物**（**灵田地块 / 练功木桩**，都是**玩家自己摆**、都要存档；场景里没有预置物件、也没有点位） |
+| **个人洞府 / 专属洞府 / 洞府后山** | **`3C_Testbed`** | 入口 `sect1 to 3c`；内有 `cultivation room`、**可摆放物**（**灵田地块 / 练功木桩**，都是**玩家自己摆**、都要存档；场景里没有预置物件、也没有点位）；洞府那一幕的大师兄**不在场景里** —— 他是**任务系统在他不在场时就地补出来**的（见 [design/主线剧情 §6.1](design/主线剧情.md)）。⚠️ 本场景里序列化着一份运行时 UI 列表，**保存它会连带重排**（实测一次保存带出 1541 行无关改动），别为摆一个 NPC 去存它 |
 | **镇妖塔** | `Demon-Suppressing Tower` | 1000 层 |
 | 主菜单 | `StartScene` | |
 | 过场字幕 | `Transition subtitles` | |
@@ -126,7 +126,7 @@ docs/
 │   ├─ 物品系统.md · 存档系统.md · 交互系统.md
 │
 ├─ guides/             某个机制怎么做（按主题一份）
-│   ├─ 灵田.md · 时间系统.md · 炼丹.md
+│   ├─ 灵田.md · 时间系统.md · 炼丹.md · 任务引导.md
 │   ├─ 飞弹与子弹.md · 怪物近战判定.md · 特效系统.md · 特效资源清单.md
 │   ├─ 镇妖塔.md · 村庄场景生成说明.md · 宗门野外生成说明.md
 │   ├─ 玄霄雷决与雷动千闪.md · 千劫雷狱.md · 瞬雷天闪.md · 雷云.md · 闪电链特效.md
@@ -152,6 +152,7 @@ docs/
 | **★ 总进度：需求 ←→ 实现对照** | [PROGRESS](PROGRESS.md) | — |
 | **改主线剧情** | [design/主线剧情](design/主线剧情.md)（剧情设计） | [design/任务系统](design/任务系统.md) · [reference/配置表字段](reference/配置表字段.md) |
 | **加/改任务阶段、条件、动作、标记** | [design/任务系统](design/任务系统.md) | [reference/配置表字段](reference/配置表字段.md) · [ai/踩坑总库 §A/C](ai/踩坑总库.md) |
+| **左侧主线追踪 / 头顶感叹号 / 屏幕边缘箭头**（`任务引导`） | [guides/任务引导](guides/任务引导.md) | [design/任务系统](design/任务系统.md) · [reference/配置表字段 §4.3](reference/配置表字段.md) |
 | **对话 / 对话表 / 对话 UI** | [design/对话系统](design/对话系统.md) | [ai/踩坑总库 §C](ai/踩坑总库.md) |
 | **加/改物品、加可使用效果** | [design/物品系统](design/物品系统.md) | [reference/配置表字段](reference/配置表字段.md) |
 | **存档相关（加要存的东西）** | [design/存档系统](design/存档系统.md) | `Assets/Scripts/Save/SaveData.cs`（字段即清单）· [ai/踩坑总库 §G](ai/踩坑总库.md) |

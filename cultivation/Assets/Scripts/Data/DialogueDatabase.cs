@@ -98,4 +98,22 @@ public class DialogueDatabase : ScriptableObject
 
     /// <summary>某个 NPC 有没有对话（没写对话的 NPC 就不该弹框）</summary>
     public bool 有对话(string npcId) => 最小分段(npcId) > 0;
+
+    /// <summary>
+    /// 某一段对话是谁说的（找不到返回空串）。
+    ///
+    /// 任务系统用它回答"这一阶段到底要跟谁说话" —— `条件=对话` 的阶段常常**只填了
+    /// `对话id`**（说话的人写在对话表的 `npcId` 列里），光看任务表那一行是不知道找谁的。
+    /// 目前两处用：`任务引导`（头顶感叹号指谁）与 `任务管理器`（那个人不在场就补出来）。
+    /// </summary>
+    public string 取NpcId(string 对话id)
+    {
+        if (string.IsNullOrWhiteSpace(对话id)) return "";
+        for (int i = 0; i < 全部.Count; i++)
+        {
+            var d = 全部[i];
+            if (d != null && d.id == 对话id) return d.npcId;
+        }
+        return "";
+    }
 }
