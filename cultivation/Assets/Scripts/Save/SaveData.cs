@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -171,7 +171,7 @@ public class SaveData
 
     [Header("宗门贡献（版本 13 起）")]
     [Tooltip("**宗门里的通用货币**（`宗门贡献.当前` 的落盘处）。\n" +
-             "来路：打镇妖塔（每清一波给一点）、任务表 `奖励贡献` 列；去处：功德堂兑换。\n" +
+             "来路：任务表 `奖励贡献` 列（⚠️ **打镇妖塔暂时不发奖励**，用户 2026-10-02 明确）；去处：功德堂兑换。\n" +
              "⚠️ 加字段是**加法**，不做版本门槛 —— 老档读出来是 0，正好等于「新玩家一点贡献都没有」。")]
     public int 宗门贡献 = 0;
 

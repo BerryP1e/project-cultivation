@@ -126,7 +126,7 @@ docs/
 │   ├─ 物品系统.md · 存档系统.md · 交互系统.md
 │
 ├─ guides/             某个机制怎么做（按主题一份）
-│   ├─ 灵田.md · 时间系统.md · 炼丹.md · 任务引导.md · 宗门贡献与兑换.md
+│   ├─ 灵田.md · 时间系统.md · 炼丹.md · 任务引导.md · 宗门贡献与兑换.md · 日常循环.md
 │   ├─ 飞弹与子弹.md · 怪物近战判定.md · 特效系统.md · 特效资源清单.md
 │   ├─ 镇妖塔.md · 村庄场景生成说明.md · 宗门野外生成说明.md
 │   ├─ 玄霄雷决与雷动千闪.md · 千劫雷狱.md · 瞬雷天闪.md · 雷云.md · 闪电链特效.md
@@ -154,6 +154,7 @@ docs/
 | **加/改任务阶段、条件、动作、标记** | [design/任务系统](design/任务系统.md) | [reference/配置表字段](reference/配置表字段.md) · [ai/踩坑总库 §A/C](ai/踩坑总库.md) |
 | **左侧主线追踪 / 头顶感叹号 / 屏幕边缘箭头**（`任务引导`） | [guides/任务引导](guides/任务引导.md) | [design/任务系统](design/任务系统.md) · [reference/配置表字段 §4.3](reference/配置表字段.md) |
 | **宗门贡献 / 功德堂兑换 / 给物品定价（上架·改价·下架）** | [guides/宗门贡献与兑换](guides/宗门贡献与兑换.md) | [design/物品系统 §3.2](design/物品系统.md) · [reference/配置表字段 §6](reference/配置表字段.md) · [design/存档系统 §3](design/存档系统.md) |
+| **每日清单（今日四件事）/ 今日面板 / 两大伏笔按天发酵 / 灵田微光·塔共鸣** | [guides/日常循环](guides/日常循环.md) | [guides/时间系统](guides/时间系统.md) · [design/存档系统 §3](design/存档系统.md) · [design/任务系统](design/任务系统.md) |
 | **对话 / 对话表 / 对话 UI** | [design/对话系统](design/对话系统.md) | [ai/踩坑总库 §C](ai/踩坑总库.md) |
 | **加/改物品、加可使用效果** | [design/物品系统](design/物品系统.md) | [reference/配置表字段](reference/配置表字段.md) |
 | **存档相关（加要存的东西）** | [design/存档系统](design/存档系统.md) | `Assets/Scripts/Save/SaveData.cs`（字段即清单）· [ai/踩坑总库 §G](ai/踩坑总库.md) |
