@@ -198,7 +198,19 @@ public class 任务引导 : MonoBehaviour
             }
         }
 
-        if (面板 != null && 面板.gameObject.activeSelf != 该显示) 面板.gameObject.SetActive(该显示);
+        if (面板 != null && 面板.gameObject.activeSelf != 该显示)
+        {
+            面板.gameObject.SetActive(该显示);
+            // 【诊断】面板一隐藏就把**原因**写进 Console。
+            //   用户 2026-10-02 报"对完话左边面板和箭头就没了" —— 这句话能直接区分两种原因：
+            //   `当前阶段=null`（那一刻没有主线在跑，比如对话正好把整条任务做完）还是
+            //   `演出中/对话中=True`（标记卡住，见下面那段兜底自愈）。
+            if (!该显示)
+                Debug.Log("[任务引导] 追踪面板隐藏："
+                    + (当前阶段 == null ? "当前没有主线在跑（当前阶段=null）" : "")
+                    + (演出标记 ? " 演出中=True" : "")
+                    + (对话标记 ? " 对话中=True" : ""), this);
+        }
         if (!该显示) { 隐藏两个标记(); return; }
 
         刷新面板文字();
