@@ -7,6 +7,17 @@ using UnityEngine;
 /// 运行时只能靠这份库来查（这是项目里既有的做法：运行时资源一律走 Resources）。
 ///
 /// 菜单：**修仙/对话系统/收集对话资产**（`修仙/从配置表生成资产` 跑完会自动跟着跑一次）。
+///
+/// ## 「树」是什么（2026-10-02 加）
+///
+/// `分段` 是**每个 NPC 一套全局序列**：一个 NPC 身上可以挂**多棵独立的树**，
+/// 靠 id 前缀区分 —— 大师兄身上就有 `dlg_act3_dashi`（招募 1~22 段）、
+/// `dlg_act4_dongfu_guide`（传送点）、`dlg_act5_lingtian`（灵田 1~4 段）等好几棵。
+///
+/// 不加"树"过滤就会串台：实测阶段18 的灵田树演完第 1 段后，
+/// `当前分段 + 1 = 2` 取到的是 **`dlg_act3_dashi_2`（招募台词）** ——
+/// 因为灵田树自己的第 2 段和招募树的第 2 段**段号撞了**，而排序时 id 靠前的赢。
+/// 所以：**续段只在当前这棵树里找**（见 <see cref="取树"/>）。
 /// </summary>
 [CreateAssetMenu(fileName = "对话库", menuName = "修仙/对话库", order = 7)]
 public class DialogueDatabase : ScriptableObject
@@ -27,16 +38,34 @@ public class DialogueDatabase : ScriptableObject
     public static void 清缓存() => 缓存 = null;
 
     /// <summary>
+    /// 这条对话属于哪一棵树：取 id **最后一个 `_` 之前**的部分。
+    /// `dlg_act5_lingtian_3` → `dlg_act5_lingtian`；`dlg_act4_dongfu_guide` → `dlg_act4_dongfu`。
+    ///
+    /// 【为什么必须靠前缀】一个 NPC 上多棵树共用同一套段号，只有 id 前缀能区分它们。
+    /// 对话表里同一棵树的 id 都是 `前缀_段号` 这个写法（`dlg_act3_dashi_1..22`），所以前缀是可靠的。
+    /// </summary>
+    public static string 取树(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return "";
+        int i = id.LastIndexOf('_');
+        return i > 0 ? id.Substring(0, i) : id;
+    }
+
+    /// <summary>
     /// 某个 NPC 的某一段里，**现在满足条件的**所有候选，按「优先」从大到小排。
     /// npcId 为空的通用段对任何 NPC 都算候选（这样可以写"所有村民都会说的话"）。
+    /// 给了 <paramref name="树"/> 就只在那一棵树里找（续段用）。
     /// </summary>
-    public List<DialogueDefinition> 候选(string npcId, int 分段)
+    public List<DialogueDefinition> 候选(string npcId, int 分段) => 候选(npcId, 分段, null);
+
+    public List<DialogueDefinition> 候选(string npcId, int 分段, string 树)
     {
         var 结果 = new List<DialogueDefinition>();
         for (int i = 0; i < 全部.Count; i++)
         {
             var d = 全部[i];
             if (d == null || d.分段 != 分段) continue;
+            if (!string.IsNullOrEmpty(树) && 取树(d.id) != 树) continue;   // ★ 锁在树里
             if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
             if (!对话条件.满足(d)) continue;
             结果.Add(d);
@@ -61,8 +90,10 @@ public class DialogueDatabase : ScriptableObject
         return 结果;
     }
 
-    /// <summary>取这一段该显示哪条（优先大的赢；都没有就 null）</summary>
-    public DialogueDefinition 取段(string npcId, int 分段)
+    /// <summary>取这一段该显示哪条（顺序：当前阶段点名的 → 树内优先值最大的；都没有就 null）</summary>
+    public DialogueDefinition 取段(string npcId, int 分段) => 取段(npcId, 分段, null);
+
+    public DialogueDefinition 取段(string npcId, int 分段, string 树)
     {
         // ★ **当前主线阶段"点名"的那条对话，压过按 `优先` 抢**（2026-10-02 修，用户实测报的坑）：
         //
@@ -71,12 +102,12 @@ public class DialogueDatabase : ScriptableObject
         //   `接取加标记=q_主线_到洞府` 一打上，两条**同时满足条件**，于是按 F 出来的是**灵田台词**，
         //   阶段16 永远完不成 ⇒ 玩家反复按 F 看到同一段（截图实测确认）。
         //
-        //   口径：只在"阶段点名的那条对话的 (npcId, 分段) **正好等于**这次要取的段"时才接管。
-        //   所以阶段点名一个**靠后的段**（例如 `dlg_act3_dashi_21`）时，从入口段起照常往下演，不受影响。
+        //   口径：只在"阶段点名的那条对话的 (npcId, 分段) **正好等于**这次要取的段"时才接管；
+        //   若这次带了树过滤（续段），还要它属于同一棵树。
         var 点名 = 当前阶段点名的对话(npcId, 分段);
-        if (点名 != null) return 点名;
+        if (点名 != null && (string.IsNullOrEmpty(树) || 取树(点名.id) == 树)) return 点名;
 
-        var c = 候选(npcId, 分段);
+        var c = 候选(npcId, 分段, 树);
         return c.Count > 0 ? c[0] : null;
     }
 
@@ -131,7 +162,7 @@ public class DialogueDatabase : ScriptableObject
         return m;
     }
 
-    /// <summary>这个 NPC 最大的分段号（用来判断"还有没有下一段"）</summary>
+    /// <summary>这个 NPC 最大的分段号（用来判断"还有没有下一段"）。⚠️ 是**所有树**里最大的，别单独拿它判续段，见 <see cref="取树"/></summary>
     public int 最大分段(string npcId)
     {
         int m = 0;
@@ -140,6 +171,21 @@ public class DialogueDatabase : ScriptableObject
             var d = 全部[i];
             if (d == null) continue;
             if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
+            if (d.分段 > m) m = d.分段;
+        }
+        return m;
+    }
+
+    /// <summary>这个 NPC **某一棵树**里最大的分段号</summary>
+    public int 最大分段(string npcId, string 树)
+    {
+        int m = 0;
+        for (int i = 0; i < 全部.Count; i++)
+        {
+            var d = 全部[i];
+            if (d == null) continue;
+            if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
+            if (!string.IsNullOrEmpty(树) && 取树(d.id) != 树) continue;
             if (d.分段 > m) m = d.分段;
         }
         return m;

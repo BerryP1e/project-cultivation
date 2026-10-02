@@ -136,6 +136,7 @@ public class DialogueUI : MonoBehaviour
         当前NPC = 来源;
         NpcDialogue.当前对话中 = 来源;
         当前NpcId = npcId;
+        当前树 = "";                  // 开场这一次不加树过滤：取到哪条就以哪条为树（见 显示分段）
         打开帧 = Time.frameCount;
         if (根 != null) 根.SetActive(true);
         显示分段(段);
@@ -274,13 +275,24 @@ public class DialogueUI : MonoBehaviour
         NpcDialogue.当前对话中 = null;
     }
 
-    /// <summary>显示某一段（找不到这一段就收起来）</summary>
+    /// <summary>
+    /// 这次对话**锁在哪一棵树**里（`DialogueDatabase.取树(id)`）。
+    /// 空 = 还没定（开场那一次取段不加树过滤，取到哪条就以哪条为树）。
+    ///
+    /// 【为什么要它】一个 NPC 身上挂着多棵独立的树，而 `分段` 是**每个 NPC 一套全局序列** ——
+    /// 不加过滤时"下一段"会串到别的树去（用户 2026-10-02 实测：灵田树演完第 1 段，
+    /// 第 2 段出来的是招募台词 `dlg_act3_dashi_2`，因为段号撞了、id 靠前的赢）。
+    /// </summary>
+    string 当前树 = "";
+
+    /// <summary>显示某一段：只在**当前这棵树**里取（续段走这里）。</summary>
     public void 显示分段(int 段)
     {
         var db = DialogueDatabase.取();
-        var d = db != null ? db.取段(当前NpcId, 段) : null;
+        var d = db != null ? db.取段(当前NpcId, 段, 当前树) : null;
         if (d == null) { 收起来(); return; }
 
+        当前树 = DialogueDatabase.取树(d.id);       // 第一次取到就锁定这棵树
         当前分段 = 段;
         名字文本.text = d.取说话人(当前NPC != null ? 当前NPC.gameObject.name : "");
         内容文本.text = d.文本;
@@ -337,6 +349,13 @@ public class DialogueUI : MonoBehaviour
     /// 判断谁在说：`说话人` 留空 = NPC 自己在说；写了名字就比对 —— 等于 NPC 名字的是 NPC 说，
     /// 其它（例如「主角」或玩家起的名字）就当玩家在说。
     /// </summary>
+    /// <summary>显示某一段，**允许换树**（对话表 `跳转` 列用：显式跳转可能跳到另一棵树）。</summary>
+    public void 显示分段换树(int 段)
+    {
+        当前树 = "";
+        显示分段(段);
+    }
+
     void 按说话方缩放立绘(DialogueDefinition d)
     {
         string npc名 = 当前NPC != null ? 当前NPC.gameObject.name : "";
@@ -372,7 +391,9 @@ public class DialogueUI : MonoBehaviour
             // 没有回答 → 给一个「继续」：能进下一段就进，否则结束
             var db = DialogueDatabase.取();
             int 下一段 = 当前分段 + 1;
-             bool 有下一段 = db != null && 下一段 <= db.最大分段(当前NpcId) && db.取段(当前NpcId, 下一段) != null;
+            // ★ 续段**只在本树里找**。原来还比 `最大分段(当前NpcId)` —— 那是"这个 NPC 所有树"的最大值，
+            //   正是它让灵田树演完第 1 段后串进招募树的第 2 段（用户 2026-10-02 实测）。
+            bool 有下一段 = db != null && db.取段(当前NpcId, 下一段, 当前树) != null;
             if (有下一段) 加按钮("继续 ▸", () => 按下回答(() => 显示分段(下一段)));
             else 加按钮("结束", () => 按下回答(() => 收起来()));
             return;
@@ -382,7 +403,7 @@ public class DialogueUI : MonoBehaviour
             string 文字 = d.取回答(i);
             int 跳 = d.取跳转(i);
             int 序号 = i;
-            加按钮(文字, () => 按下回答(() => { if (跳 > 0) 显示分段(跳); else 收起来(); }));
+            加按钮(文字, () => 按下回答(() => { if (跳 > 0) 显示分段换树(跳); else 收起来(); }));
         }
     }
 
