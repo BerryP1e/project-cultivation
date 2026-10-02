@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>炼丹结果。给 UI 显示"为什么失败 / 炼出几品"。</summary>
@@ -86,6 +86,31 @@ public class 炼丹炉 : MonoBehaviour
     }
 
     public 灵丹定义 取丹方(string id) => 灵丹库.取(id);
+
+    // ============================================================ 「学会了吗」
+    //
+    // 用户 2026-10-02 的口径：
+    //   「获得的丹方（**只要炼出来过就能学会**，不显示没学过的丹方，
+    //     只要材料足够就会亮起，不然就是暗下去的）」
+    //
+    // ⇒ 两种来源都算"学会"：① 任务里大师兄给的（阶段24 的 `完成加标记` 打 `丹方_<id>`）；
+    //   ② 自己炼成功过一次（`炼制()` 成功时自动补上这个标记）。
+    // 标记走 `对话标记`（存档里本来就有这一份，不用动存档版本）。
+
+    /// <summary>「已学会这个丹方」的标记名</summary>
+    public static string 丹方标记(string 丹方id)
+        => string.IsNullOrEmpty(丹方id) ? "" : "丹方_" + 丹方id;
+
+    /// <summary>这个丹方学会了没有（任务给过 / 自己炼出来过）</summary>
+    public static bool 已学会(string 丹方id) => 对话标记.具备(丹方标记(丹方id));
+
+    /// <summary>**已经学会**的丹方 —— `炼丹界面` 只列这些，没学会的不显示</summary>
+    public List<灵丹定义> 已学会的丹方()
+    {
+        var 出 = new List<灵丹定义>();
+        foreach (var d in 全部丹方()) if (d != null && 已学会(d.id)) 出.Add(d);
+        return 出;
+    }
 
     /// <summary>实际成功率（含被动加成）</summary>
     public float 实际成功率(灵丹定义 丹方)
@@ -215,6 +240,9 @@ public class 炼丹炉 : MonoBehaviour
                 结果.成功 = false;
                 结果.文本 = "炼成了，但物品库里没有「" + 丹方.id + "」——产出丢失";
             }
+
+            // ★ 炼出来过 = 学会这个丹方（用户口径）⇒ 补上标记，`炼丹界面` 靠它决定列不列出来
+            对话标记.添加(丹方标记(丹方.id));
         }
         else
         {
