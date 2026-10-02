@@ -154,7 +154,7 @@ docs/
 | **加/改任务阶段、条件、动作、标记** | [design/任务系统](design/任务系统.md) | [reference/配置表字段](reference/配置表字段.md) · [ai/踩坑总库 §A/C](ai/踩坑总库.md) |
 | **左侧主线追踪 / 头顶感叹号 / 屏幕边缘箭头**（`任务引导`） | [guides/任务引导](guides/任务引导.md) | [design/任务系统](design/任务系统.md) · [reference/配置表字段 §4.3](reference/配置表字段.md) |
 | **宗门贡献 / 功德堂兑换 / 给物品定价（上架·改价·下架）** | [guides/宗门贡献与兑换](guides/宗门贡献与兑换.md) | [design/物品系统 §3.2](design/物品系统.md) · [reference/配置表字段 §6](reference/配置表字段.md) · [design/存档系统 §3](design/存档系统.md) |
-| **每日清单（今日四件事，无常驻 UI）/ 两大伏笔按天发酵 / 灵田微光·塔共鸣** | [guides/日常循环](guides/日常循环.md) | [guides/时间系统](guides/时间系统.md) · [design/存档系统 §3](design/存档系统.md) · [design/任务系统](design/任务系统.md) |
+| **每日清单（今日四件事，无常驻 UI）/ 两大伏笔按天发酵 ** | [guides/日常循环](guides/日常循环.md) | [guides/时间系统](guides/时间系统.md) · [design/存档系统 §3](design/存档系统.md) · [design/任务系统](design/任务系统.md) |
 | **对话 / 对话表 / 对话 UI** | [design/对话系统](design/对话系统.md) | [ai/踩坑总库 §C](ai/踩坑总库.md) |
 | **加/改物品、加可使用效果** | [design/物品系统](design/物品系统.md) | [reference/配置表字段](reference/配置表字段.md) |
 | **存档相关（加要存的东西）** | [design/存档系统](design/存档系统.md) | `Assets/Scripts/Save/SaveData.cs`（字段即清单）· [ai/踩坑总库 §G](ai/踩坑总库.md) |
