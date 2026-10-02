@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -103,7 +103,9 @@ public class 伏笔管理器 : MonoBehaviour
     void 推进塔()
     {
         var 场景 = SceneManager.GetActiveScene().name;
-        bool 在塔 = !string.IsNullOrEmpty(塔场景名) && 场景 == 塔场景名;
+        // 场景名比较忽略大小写（理由同 日常循环：`Scene.name` 的大小写会因入口而不同）
+        bool 在塔 = !string.IsNullOrEmpty(塔场景名)
+            && string.Equals(场景, 塔场景名, System.StringComparison.OrdinalIgnoreCase);
         if (在塔 && !上次在塔里)
         {
             进塔次数++;

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -147,7 +147,12 @@ public class 日常循环 : MonoBehaviour
         var t = 时间管理器.取();
         if (t != null && t.今日次数 > 0) 记下(项.打坐);
 
-        if (!string.IsNullOrEmpty(塔场景名) && SceneManager.GetActiveScene().name == 塔场景名) 记下(项.入塔);
+        // ⚠️ 场景名比较**忽略大小写**：实测同一个场景在不同入口下 `Scene.name` 的大小写会不一致
+        //    （`Village` vs `village`，见 `任务引导` 里那段说明），严格比较会让「进一次镇妖塔」
+        //    这一格永远勾不上。
+        if (!string.IsNullOrEmpty(塔场景名)
+            && string.Equals(SceneManager.GetActiveScene().name, 塔场景名, System.StringComparison.OrdinalIgnoreCase))
+            记下(项.入塔);
     }
 
     void 记下(项 x)

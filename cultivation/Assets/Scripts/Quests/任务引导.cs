@@ -284,7 +284,13 @@ public class 任务引导 : MonoBehaviour
 
         // ★ 只在**同一个场景**里才画标记：两个场景的坐标是两套空间，
         //   在洞府里拿宗门的坐标画箭头，会指到一个毫不相干的方向（实测很容易被当成"引导坏了"）
-        if (!string.IsNullOrEmpty(出.场景) && 出.场景 != 本场景) return 出;
+        //
+        // ⚠️ 比较必须**忽略大小写**：实测（2026-10-02 用户现场）运行时的活动场景名是 `Village`，
+        //    而任务表里填的是 `village` —— 一个大小写之差就会判成"目标不在本场景"，
+        //    表现是面板写「目标：木屋后（在「village」）」、感叹号与边缘箭头**都不出现**。
+        //    Unity 的 `Scene.name` 来自文件名，而文件名在 Windows/git 上大小写很容易前后不一致。
+        if (!string.IsNullOrEmpty(出.场景)
+            && !string.Equals(出.场景, 本场景, System.StringComparison.OrdinalIgnoreCase)) return 出;
 
         出.有 = true;
         出.世界点 = 点 + Vector3.up * 头顶抬高;
