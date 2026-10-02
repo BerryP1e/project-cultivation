@@ -354,11 +354,28 @@ public static class DataTableImporter
             else if (ft == typeof(Vector3)) field.SetValue(target, ParseVector3(raw));
             else if (ft.IsEnum)
             {
+                // ★ 空单元格 = 回到枚举的 **0 号值**（本工程的枚举第一项都是 `无`）。
+                //
+                // 【为什么必须显式写】踩过的坑（2026-10-02）：原来空值既不匹配名字、也 `int.TryParse` 不了，
+                //   于是**什么都不做、旧值原地留着** —— 表现是"我把表里那个动作/条件删掉了，
+                //   重新导入却还是老样子"（实测：阶段19 的 `动作` 从 `飞到` 改成空，
+                //   生成资产里依然是 `飞到`，害得"大师兄原地抽搐"那个 bug 看着没修掉）。
+                //   这类"改了表没生效"最容易被当成代码 bug，见 踩坑 A1/A2/A11。
+                if (string.IsNullOrWhiteSpace(raw))
+                {
+                    field.SetValue(target, Enum.ToObject(ft, 0));
+                    return;
+                }
                 foreach (var name in Enum.GetNames(ft))
                     if (string.Equals(name, raw, StringComparison.OrdinalIgnoreCase))
                     { field.SetValue(target, Enum.Parse(ft, name)); return; }
                 // 数字形式的枚举值
-                if (int.TryParse(raw, out int iv)) field.SetValue(target, Enum.ToObject(ft, iv));
+                if (int.TryParse(raw, out int iv)) { field.SetValue(target, Enum.ToObject(ft, iv)); return; }
+                // 认不出的值：**别静默留着旧值**，喊一声（否则又是一个"改了表没生效"）
+                var 谁 = target as UnityEngine.Object;
+                Debug.LogWarning("[DataTableImporter] " + (谁 != null ? 谁.name + " 的 " : "") + field.Name
+                    + " 认不出的枚举值「" + raw + "」（" + ft.Name + " 的成员：" + string.Join("/", Enum.GetNames(ft))
+                    + "）→ 这一列没写进去");
             }
         }
         catch (Exception e)

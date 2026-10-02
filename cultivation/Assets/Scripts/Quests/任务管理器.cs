@@ -839,6 +839,18 @@ public class 任务管理器 : MonoBehaviour
                         if (炼丹炉.炼成过的种类数 >= Mathf.Max(1, 阶段.数量)) 完成当前阶段(任务id);
                         break;
                     }
+                case 任务条件.在场景:
+                    {
+                        // ★ 「走进那道光 / 回到洞府」这类目标：**人在不在那个场景**就是完成条件。
+                        //   场景名比较忽略大小写（`Scene.name` 来自文件名，Windows/git 上大小写会飘，
+                        //   踩过：运行时的 `Village` vs 表里的 `village`，见 踩坑 B-numbers）。
+                        //   场景名那一列也是 `动作=切换场景` 用的同一列 —— 语义一致，都是"哪个场景"。
+                        if (string.IsNullOrWhiteSpace(阶段.场景名)) break;
+                        if (string.Equals(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+                                          阶段.场景名, StringComparison.OrdinalIgnoreCase))
+                            完成当前阶段(任务id);
+                        break;
+                    }
                 case 任务条件.境界等级:
                     {
                         // 长线门槛（镇妖塔准入 = 炼气三层）
