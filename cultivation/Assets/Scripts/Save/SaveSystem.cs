@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -235,18 +235,15 @@ public static class SaveSystem
         // 【版本 13 起】宗门贡献（兑换用货币）。加法字段：老档读出来是 0，不用版本门槛
         宗门贡献.从存档设置(数据.是空的 ? 0 : 数据.宗门贡献);
 
-        // 【版本 14 起】日常清单 + 两大伏笔等级。⚠️ **不能在这里直接写**：
+        // 【版本 14 起】日常清单。⚠️ **不能在这里直接写**：
         //   本方法是游戏场景加载**之前**跑的（同 364 行那条教训），那时
-        //   `日常循环` / `伏笔管理器` 还没被 `场景自举` 补出来、`取()` 是 null ——
-        //   直接 `if (取() != null) 导入(...)` 会**静默跳过**（实测：采集到 伏笔_灵田=1，
-        //   应用后运行态还是 0）。所以只**挂起**，等它们自己 Update 起来时取走，
+        //   `日常循环` 还没被 `场景自举` 补出来、`取()` 是 null ——
+        //   直接 `if (取() != null) 导入(...)` 会**静默跳过**。
+        //   所以只**挂起**，等它自己 Update 起来时取走，
         //   和 `待恢复任务进度` / 对话标记 一个套路。
         挂起_日常天 = 数据.日常_天;
         挂起_日常掩码 = 数据.日常_掩码;
         有挂起的日常清单 = true;
-        挂起_伏笔田 = 数据.伏笔_灵田;
-        挂起_伏笔塔 = 数据.伏笔_塔;
-        有挂起的伏笔 = true;
 
         var cc = 玩家.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
@@ -548,7 +545,7 @@ public static class SaveSystem
         // 宗门贡献（兑换用货币）—— 静态值，直接抄进存档
         数据.宗门贡献 = 宗门贡献.当前;
 
-        // 日常清单 + 两大伏笔（版本 14）—— 同样从静态实例抄
+        // 日常清单（版本 14）—— 同样从静态实例抄
         var 日常 = 日常循环.取();
         if (日常 != null)
         {
@@ -556,14 +553,6 @@ public static class SaveSystem
             日常.导出(out 天, out 掩码);
             数据.日常_天 = 天;
             数据.日常_掩码 = 掩码;
-        }
-        var 伏笔 = 伏笔管理器.取();
-        if (伏笔 != null)
-        {
-            int 田级, 塔级;
-            伏笔.导出(out 田级, out 塔级);
-            数据.伏笔_灵田 = 田级;
-            数据.伏笔_塔 = 塔级;
         }
 
         Debug.Log("[存档] 已采集：背包 " + 数据.背包物品.Count + " 件、任务进度 ["
@@ -745,17 +734,14 @@ public static class SaveSystem
     }
 
     /// <summary>
-    /// 挂起的「今日清单」/「两大伏笔等级」。理由同 <see cref="待恢复任务进度"/>：
-    /// `应用到角色` 跑在游戏场景加载**之前**，`日常循环` / `伏笔管理器` 那时还不存在
-    /// （`取()` 是 null）—— 实测"直接 if (取() != null) 导入"会**静默跳过**，
-    /// 采集到的伏笔等级应用不回去。所以挂起，由它们各自的 `Update` 起来时取走。
+    /// 挂起的「今日清单」。理由同 <see cref="待恢复任务进度"/>：
+    /// `应用到角色` 跑在游戏场景加载**之前**，`日常循环` 那时还不存在
+    /// （`取()` 是 null）—— 实测"直接 if (取() != null) 导入"会**静默跳过**。
+    /// 所以挂起，由它自己的 `Update` 起来时取走。
     /// </summary>
     public static bool 有挂起的日常清单 { get; private set; }
-    public static bool 有挂起的伏笔 { get; private set; }
     static int 挂起_日常天 = -1;
     static int 挂起_日常掩码;
-    static int 挂起_伏笔田;
-    static int 挂起_伏笔塔;
 
     /// <summary>日常循环就绪后调它（取完即清，只恢复一次）</summary>
     public static void 取挂起的日常清单(out int 天, out int 掩码)
@@ -763,14 +749,6 @@ public static class SaveSystem
         天 = 挂起_日常天;
         掩码 = 挂起_日常掩码;
         有挂起的日常清单 = false;
-    }
-
-    /// <summary>伏笔管理器就绪后调它（取完即清，只恢复一次）</summary>
-    public static void 取挂起的伏笔(out int 田, out int 塔)
-    {
-        田 = 挂起_伏笔田;
-        塔 = 挂起_伏笔塔;
-        有挂起的伏笔 = false;
     }
 
     /// <summary>当前正在玩的这份档（菜单里选完带进游戏场景）</summary>

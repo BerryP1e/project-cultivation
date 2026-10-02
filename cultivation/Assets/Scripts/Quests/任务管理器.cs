@@ -851,9 +851,18 @@ public class 任务管理器 : MonoBehaviour
                             完成当前阶段(任务id);
                         break;
                     }
+                case 任务条件.有标记:
+                    {
+                        // ★ 等"别处发生的一件事"：标记名写在 `物品id` 那一列
+                        //   （例：`TowerController.出塔标记` ⇒ 进过塔并出来才算）。
+                        //   标记是 `对话标记`（进存档），所以读档回来也算数。
+                        if (string.IsNullOrWhiteSpace(阶段.物品id)) break;
+                        if (对话标记.具备(阶段.物品id)) 完成当前阶段(任务id);
+                        break;
+                    }
                 case 任务条件.境界等级:
                     {
-                        // 长线门槛（镇妖塔准入 = 炼气三层）
+                        // 长线门槛（例：修为到某个等级再来）
                         if (修行 == null) 修行 = FindObjectOfType<PlayerCultivation>();
                         if (修行 != null && 修行.等级 >= Mathf.Max(1, 阶段.数量)) 完成当前阶段(任务id);
                         break;

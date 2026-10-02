@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public const int 当前版本 = 14;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观；8：纪年/灵田；9：破境加成；10：灵田改成每块地独立状态；11：灵田改成玩家自由摆放（每块地带位置与朝向）；12：新增「摆设」（练功木桩等可摆放物）；13：新增「宗门贡献」（兑换用货币）；14：新增「今日清单 + 两大伏笔等级」（日常循环）
+    public const int 当前版本 = 14;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观；8：纪年/灵田；9：破境加成；10：灵田改成每块地独立状态；11：灵田改成玩家自由摆放（每块地带位置与朝向）；12：新增「摆设」（练功木桩等可摆放物）；13：新增「宗门贡献」（兑换用货币）；14：新增「今日清单」（日常循环）
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -181,12 +181,6 @@ public class SaveData
              "加法字段，不做版本门槛：老档读出来是 天=-1 / 掩码=0，等于「今天还没做事」。")]
     public int 日常_天 = -1;
     public int 日常_掩码 = 0;
-
-    [Header("两大伏笔的异象等级（版本 14 起）")]
-    [Tooltip("灵田异常灵气 / 镇妖塔妖力共鸣 的等级（各 0~3，见 `伏笔管理器`）。\n" +
-             "加法字段：老档读出来都是 0，正好等于两条线都没开始发酵。")]
-    public int 伏笔_灵田 = 0;
-    public int 伏笔_塔 = 0;
 
     /// <summary>空槽 = 从没用过。读不出来或角色名为空都算空</summary>
     public bool 是空的 => string.IsNullOrEmpty(角色名) || string.IsNullOrEmpty(最后存档时间);
