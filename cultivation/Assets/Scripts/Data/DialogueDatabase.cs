@@ -64,8 +64,57 @@ public class DialogueDatabase : ScriptableObject
     /// <summary>取这一段该显示哪条（优先大的赢；都没有就 null）</summary>
     public DialogueDefinition 取段(string npcId, int 分段)
     {
+        // ★ **当前主线阶段"点名"的那条对话，压过按 `优先` 抢**（2026-10-02 修，用户实测报的坑）：
+        //
+        //   现象：`q_main_004` 阶段16「引导使用传送点」要求 `dlg_act4_dongfu_guide`（段1、优先 34），
+        //   但同一 (大师兄, 段1) 里还有阶段18 的 `dlg_act5_lingtian_1`（优先 41）—— 阶段16 的
+        //   `接取加标记=q_主线_到洞府` 一打上，两条**同时满足条件**，于是按 F 出来的是**灵田台词**，
+        //   阶段16 永远完不成 ⇒ 玩家反复按 F 看到同一段（截图实测确认）。
+        //
+        //   口径：只在"阶段点名的那条对话的 (npcId, 分段) **正好等于**这次要取的段"时才接管。
+        //   所以阶段点名一个**靠后的段**（例如 `dlg_act3_dashi_21`）时，从入口段起照常往下演，不受影响。
+        var 点名 = 当前阶段点名的对话(npcId, 分段);
+        if (点名 != null) return 点名;
+
         var c = 候选(npcId, 分段);
         return c.Count > 0 ? c[0] : null;
+    }
+
+    DialogueDefinition 找到(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        for (int i = 0; i < 全部.Count; i++)
+            if (全部[i] != null && 全部[i].id == id) return 全部[i];
+        return null;
+    }
+
+    /// <summary>
+    /// 在跑的主线里，有没有一条 `条件=对话` 的阶段**显式点名**了 (npcId, 分段) 这一段。
+    /// 多条同时点名时取 `任务id` 最大的那条（和 `任务引导` 的选法一致）。
+    /// </summary>
+    DialogueDefinition 当前阶段点名的对话(string npcId, int 分段)
+    {
+        var 任务 = 任务管理器.实例;
+        if (任务 == null) return null;
+
+        DialogueDefinition 最好 = null;
+        string 最好任务 = null;
+        var 在跑 = 任务.进行中的阶段();
+        for (int i = 0; i < 在跑.Count; i++)
+        {
+            var q = 在跑[i];
+            if (q == null || q.类型 != 任务类型.主线) continue;
+            if (q.条件 != 任务条件.对话 || string.IsNullOrWhiteSpace(q.对话id)) continue;
+            if (最好任务 != null && string.CompareOrdinal(q.任务id, 最好任务) <= 0) continue;
+
+            var d = 找到(q.对话id);
+            if (d == null || d.分段 != 分段) continue;
+            if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
+
+            最好 = d;
+            最好任务 = q.任务id;
+        }
+        return 最好;
     }
 
     /// <summary>这个 NPC 最小的分段号（对话入口），没有就 0</summary>
