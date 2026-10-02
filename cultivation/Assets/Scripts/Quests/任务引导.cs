@@ -255,8 +255,23 @@ public class 任务引导 : MonoBehaviour
 
         string 本场景 = SceneManager.GetActiveScene().name;
 
-        // ---- ① NPC：表里显式填的 > 条件自动推 ----
-        string npcId = !string.IsNullOrWhiteSpace(q.引导npcId) ? q.引导npcId : 自动npcId(q);
+        // ---- ① NPC：表里显式填的 > 条件自动推（自动推的还要"现在真说得了话"才算数）----
+        //
+        // ★ 2026-10-02（用户实测报的"还没进洞府，大师兄就把洞府那一幕演完了"的收尾）：
+        //   自动推出来的 NPC 只是"表意上该跟他说话"—— 那段对话此刻可能**根本出不来**：
+        //   阶段17 点名的 `dlg_act5_dongfu_1` 被 `场景_3C_Testbed` 锁在洞府里，
+        //   而玩家还在宗门传送点站着、大师兄就在旁边 ⇒ 原来的「！」顶在他头上，
+        //   玩家自然去按 F，而不是走进传送光（本轮就是这个把剧情提前演完了）。
+        //   所以：**点名的对话现在能出来才指他**，出不来就落到下面的「地点」分支
+        //   （阶段17 的 `引导坐标` 填的就是那个传送光）。
+        string npcId = q.引导npcId;
+        if (string.IsNullOrWhiteSpace(npcId))
+        {
+            string 推 = 自动npcId(q);
+            var 对话库 = DialogueDatabase.取();
+            if (!string.IsNullOrWhiteSpace(推)
+                && (对话库 == null || 对话库.阶段对话能出(q))) npcId = 推;
+        }
         if (!string.IsNullOrWhiteSpace(npcId))
         {
             出.有名字 = true;

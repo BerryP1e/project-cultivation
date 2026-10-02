@@ -650,6 +650,15 @@ public class 任务管理器 : MonoBehaviour
         {
             var q = 取当前阶段(id);
             if (q == null || q.条件 != 任务条件.对话) continue;
+
+            // ★ 场景门禁（2026-10-02 用户实测报的"还没进洞府，大师兄就把洞府那一幕演完了"）：
+            //   这一段对话此刻**根本出不来**（例：`dlg_act5_dongfu_1` 被 `场景_3C_Testbed`
+            //   锁在洞府里），那就别把那个 NPC 凭空补到玩家跟前 ——
+            //   否则玩家在宗门传送点会看到一个能按 F 的师兄（虽然只会说兜底台词），
+            //   而这一阶段的意图是"走进传送光"（引导这时候指的是传送点，见 任务引导.解析目标）。
+            //   进洞府之后这段就"能出"了，补人照旧发生 —— 洞府线不会因此卡死。
+            if (!阶段对话现在能出(q)) continue;
+
             确保对话NPC在场(q);
         }
 
@@ -884,6 +893,16 @@ public class 任务管理器 : MonoBehaviour
         if (!string.IsNullOrEmpty(阶段.目标npcId)) return 阶段.目标npcId;
         var 库 = DialogueDatabase.取();
         return 库 != null ? 库.取NpcId(阶段.对话id) : "";
+    }
+
+    /// <summary>
+    /// 这一阶段点名的那段对话**此刻能不能出来**（条件 / 场景门禁都算上）。
+    /// 对话库取不到时返回 true（= 按老行为办），见 <see cref="DialogueDatabase.阶段对话能出"/>。
+    /// </summary>
+    static bool 阶段对话现在能出(QuestDefinition 阶段)
+    {
+        var 库 = DialogueDatabase.取();
+        return 库 == null || 库.阶段对话能出(阶段);
     }
 
     /// <summary>只读地在场查找：找不到就返回 null，**不会重建**（重建是 找NPC 的职责）</summary>
