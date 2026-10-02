@@ -101,8 +101,37 @@ public class 炼丹炉 : MonoBehaviour
     public static string 丹方标记(string 丹方id)
         => string.IsNullOrEmpty(丹方id) ? "" : "丹方_" + 丹方id;
 
+    /// <summary>「炼成过某个丹方」的标记前缀（<see cref="丹方标记"/> 就是这个前缀 + 丹方id）</summary>
+    public const string 丹方标记前缀 = "丹方_";
+
     /// <summary>这个丹方学会了没有（任务给过 / 自己炼出来过）</summary>
     public static bool 已学会(string 丹方id) => 对话标记.具备(丹方标记(丹方id));
+
+    /// <summary>
+    /// **已经炼成过几种丹药** —— 数 `丹方_` 标记的个数。
+    ///
+    /// 【为什么数标记，不另开一个计数器】<see cref="炼制"/> 只在**成功**时打这个标记
+    /// （失败不打），而 `对话标记` 是**进存档**的（`SaveData.对话标记`）⇒ 天然满足
+    /// "炼成过、而且读档之后还算数"。另开一个 `static int` 会在重进 Play / 读档时归零，
+    /// 于是"炼完丹主线不推进"这种坑会在读档后又冒出来一次。
+    ///
+    /// 用途：`任务条件.炼过丹`（主线阶段27「走近丹房」= 炼成任意一种丹药）。
+    /// </summary>
+    public static int 炼成过的种类数
+    {
+        get
+        {
+            var 全部 = 对话标记.全部标记();
+            int n = 0;
+            for (int i = 0; i < 全部.Length; i++)
+                if (!string.IsNullOrEmpty(全部[i])
+                    && 全部[i].StartsWith(丹方标记前缀, System.StringComparison.Ordinal)) n++;
+            return n;
+        }
+    }
+
+    /// <summary>炼成过任意一种丹药没有（= <see cref="炼成过的种类数"/> &gt; 0）</summary>
+    public static bool 炼成过任意 => 炼成过的种类数 > 0;
 
     /// <summary>**已经学会**的丹方 —— `炼丹界面` 只列这些，没学会的不显示</summary>
     public List<灵丹定义> 已学会的丹方()
