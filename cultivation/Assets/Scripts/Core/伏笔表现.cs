@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -195,8 +195,8 @@ public class 伏笔表现 : MonoBehaviour
         根.transform.SetParent(transform, false);
         画布 = 根.GetComponent<Canvas>();
         画布.renderMode = RenderMode.ScreenSpaceOverlay;
-        // 压在 HUD 之下（纪年 2400 / 引导 2300），只当一层"气氛"，不挡字
-        画布.sortingOrder = 2200;
+        // HUD 层最底下（1400）：只是一层气氛，绝不能盖住任何面板与文字
+        画布.sortingOrder = 1400;
         画布.gameObject.AddComponent<GraphicRaycaster>().enabled = false;
 
         var 缩放 = 根.GetComponent<CanvasScaler>();

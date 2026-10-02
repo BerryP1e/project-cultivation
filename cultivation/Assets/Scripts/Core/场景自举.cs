@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -215,7 +215,39 @@ public static class 场景自举
         // 同上：那栋建筑在 Sect.scene 里，`StationInteractable` 上的"界面预制体"是空 ——
         // 不碰场景，运行时补一个自己画面的组件上去。
         补功德堂(场景);
+
+        // ---- HUD 层：把"层级比 HUD 还低"的全屏面板抬上来 ----
+        //
+        // 常驻 HUD（纪年 1520 / 任务引导 1500 / 今日面板 1460）现在都压在**面板层之下**，
+        // 但场景里的 `CharacterUI`（角色面板）是 **sortingOrder = 0** —— 比 HUD 还低，
+        // 于是打开角色面板时左边那块追踪牌会盖在它上面（用户 2026-10-02 实测报过这个）。
+        // 照老规矩**不碰场景文件**，运行时抬上来。
+        补HUD层(场景);
     }
+
+    /// <summary>角色面板在所有游玩场景里都是 `sortingOrder = 0`（场景里的默认值）—— 抬到 HUD 之上</summary>
+    static void 补HUD层(Scene 场景)
+    {
+        foreach (var 根 in 场景.GetRootGameObjects())
+            foreach (var c in 根.GetComponentsInChildren<Canvas>(true))
+            {
+                if (c == null || c.name != 角色面板物体名) continue;
+                if (c.sortingOrder >= HUD层下限) return;      // 已经比 HUD 高了，不动
+                int 旧 = c.sortingOrder;
+                c.sortingOrder = 角色面板层级;
+                Debug.Log("[场景自举] 「" + 场景.name + "」的「" + c.name + "」sortingOrder "
+                    + 旧 + " → " + 角色面板层级 + "（它是全屏面板，必须能盖住 HUD）");
+                return;
+            }
+    }
+
+    const string 角色面板物体名 = "CharacterUI";
+
+    /// <summary>HUD 层下限：任务引导 1500 / 纪年 1520 / 今日面板 1460 / 伏笔泛光 1400</summary>
+    const int HUD层下限 = 1400;
+
+    /// <summary>角色面板层级：高于 HUD 层，低于对话(2600)与暂停菜单(3000)</summary>
+    const int 角色面板层级 = 2450;
 
     /// <summary>给宗门的"功德堂"建筑补上兑换面板（按名字找，找不到就什么都不做）</summary>
     static void 补功德堂(Scene 场景)

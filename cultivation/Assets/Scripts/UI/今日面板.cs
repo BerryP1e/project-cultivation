@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,7 +15,8 @@ using UnityEngine.UI;
 /// **和 Toast 叠在同一行**（截图里"新的一天"和日期糊在一起）。
 /// 右下角是空的（血条、快捷栏、主线追踪都在左半边），而且"今天还差什么"本来就该一眼看见。
 ///
-/// `sortingOrder` 给 2390：比纪年 HUD（2400）低一档，真撞上了也是纪年压住它。
+/// `sortingOrder` 给 1460：和 `任务引导`(1500) / `纪年HUD`(1520) 同属 **HUD 层**，
+/// 整层压在**所有面板之下**（面板最低的 `灵田地块界面` 是 1800）—— 见 `任务引导` 里那段说明。
 ///
 /// ## 刷新口径
 ///
@@ -88,7 +89,7 @@ public class 今日面板 : MonoBehaviour
         根.transform.SetParent(transform, false);
         画布 = 根.GetComponent<Canvas>();
         画布.renderMode = RenderMode.ScreenSpaceOverlay;
-        画布.sortingOrder = 2390;      // 纪年 HUD 是 2400，要比它低
+        画布.sortingOrder = 1460;      // 和 任务引导(1500)/纪年(1520) 同属 HUD 层，压在面板之下
         画布.gameObject.AddComponent<GraphicRaycaster>().enabled = false;
 
         var 缩放 = 根.GetComponent<CanvasScaler>();

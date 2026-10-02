@@ -443,8 +443,16 @@ public class 任务引导 : MonoBehaviour
         根.transform.SetParent(transform, false);
         画布 = 根.GetComponent<Canvas>();
         画布.renderMode = RenderMode.ScreenSpaceOverlay;
-        // 低于纪年 HUD(2400)：两者不重叠；塔(2500)/对话(2600)/黑幕(2900) 都要能盖住它
-        画布.sortingOrder = 2300;
+        // ★ 压在**所有面板之下**（1500）。
+        //
+        // 【为什么不是 2300】原来给的是 2300 —— 比塔(2500)/对话(2600)/黑幕(2900) 低，
+        //   看着"够低了"，但**面板里有一个比它更低**：`灵田地块界面` 是 1800、
+        //   `灵田摆放器` 是 1900 ⇒ 玩家一按 F 打开的界面**被这个 HUD 盖住**（用户实测报过）。
+        //   HUD 和面板比大小是比不完的（以后每加一个面板都要重排一次），
+        //   所以直接压到**面板层之下、世界内提示之上**：
+        //   世界内提示最高只到 500（传送圈）／210（地块牌）／200（F 提示）／150（血条飘字）／100（选中环）。
+        //   ⇒ 1500 保证"面板永远盖得住 HUD，HUD 永远盖得住世界提示"。
+        画布.sortingOrder = 1500;
         // 不吃射线（不然屏幕左侧一整块会挡住点击）
         画布.gameObject.AddComponent<GraphicRaycaster>().enabled = false;
 

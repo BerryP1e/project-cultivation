@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -15,7 +15,8 @@ using UnityEngine.UI;
 ///
 /// 两个 HUD 都是运行时自搭的 ScreenSpaceOverlay Canvas，**互不干扰**：
 /// · 塔层 HUD：`sortingOrder = 2500`，只在塔里显示
-/// · 本 HUD：`sortingOrder = 2400`，**所有场景都显示**（时间到哪都在走）
+/// · 本 HUD：`sortingOrder = 1520`（**压在面板之下**：面板最低的 `灵田地块界面` 是 1800），
+///   **所有场景都显示**（时间到哪都在走）
 ///
 /// ## 自举
 ///
@@ -154,8 +155,11 @@ public class 纪年HUD : MonoBehaviour
         根.transform.SetParent(transform, false);
         画布 = 根.GetComponent<Canvas>();
         画布.renderMode = RenderMode.ScreenSpaceOverlay;
-        // 比塔层 HUD(2500) 低一档：塔的面板要能盖住它
-        画布.sortingOrder = 2400;
+        // HUD 层：和 任务引导(1500)/今日面板(1460) 一档，**压在面板之下**。
+        // 【为什么要这么低】面板里最低的是 `灵田地块界面`(1800) —— HUD 若在它之上，
+        //   玩家一按 F 打开界面就会被 HUD 压住（用户实测报过这个 bug）。
+        //   世界内提示最高只到 500（传送圈），所以 1520 两头都安全。
+        画布.sortingOrder = 1520;
         // HUD 不吃射线（不然会挡住右上角的按钮）
         画布.gameObject.AddComponent<GraphicRaycaster>().enabled = false;
 
