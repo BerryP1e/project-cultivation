@@ -41,7 +41,7 @@ public class 日常循环 : MonoBehaviour
     [Tooltip("视为「镇妖塔」的场景名。进过这个场景就算完成「入塔」。")]
     public string 塔场景名 = "Demon-Suppressing Tower";
 
-    /// <summary>清单有任何变化（跨天、勾上一项）都会发。今日面板订阅它。</summary>
+    /// <summary>清单有任何变化（跨天、勾上一项）都会发。</summary>
     public event System.Action 变化;
 
     readonly HashSet<项> 今日完成 = new HashSet<项>();
@@ -100,7 +100,6 @@ public class 日常循环 : MonoBehaviour
             if (!首次)
             {
                 Debug.Log("[日常] 新的一天 —— " + t.纪年文本 + "，今日清单已刷新");
-                ToastUI.提示("新的一天");
             }
             变化?.Invoke();
         }
@@ -156,11 +155,6 @@ public class 日常循环 : MonoBehaviour
         if (!今日完成.Add(x)) return;
 
         Debug.Log("[日常] 完成「" + 项名(x) + "」→ " + 今日完成.Count + "/" + 全部项.Length);
-        if (今日事毕)
-        {
-            var t = 时间管理器.取();
-            ToastUI.提示("今日事毕 —— " + (t != null ? t.纪年文本 : ""));
-        }
         变化?.Invoke();
     }
 
