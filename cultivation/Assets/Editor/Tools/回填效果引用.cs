@@ -67,40 +67,44 @@ public static class 回填效果引用
             // 学功法
             if (效果 is 学功法效果 学功)
             {
-                if (学功.功法 == null && !string.IsNullOrEmpty(学功.功法id))
+                if (该填了(学功.功法, 学功.功法id))
                 {
                     ScriptableObject v;
-                    if (映射.TryGetValue(学功.功法id, out v)) { 学功.功法 = v as GongFaDefinition; 改了 = 学功.功法 != null; }
+                    if (映射.TryGetValue(学功.功法id, out v) && v is GongFaDefinition)
+                    { 学功.功法 = v as GongFaDefinition; 改了 = true; }
                     else { 找不到++; 缺的.Add(物品.物品id + " → 功法 " + 学功.功法id); }
                 }
             }
             // 学主动神通
             else if (效果 is 学主动神通效果 学主)
             {
-                if (学主.神通 == null && !string.IsNullOrEmpty(学主.神通id))
+                if (该填了(学主.神通, 学主.神通id))
                 {
                     ScriptableObject v;
-                    if (映射.TryGetValue(学主.神通id, out v)) { 学主.神通 = v as ActiveDivineAbility; 改了 = 学主.神通 != null; }
+                    if (映射.TryGetValue(学主.神通id, out v) && v is ActiveDivineAbility)
+                    { 学主.神通 = v as ActiveDivineAbility; 改了 = true; }
                     else { 找不到++; 缺的.Add(物品.物品id + " → 主动神通 " + 学主.神通id); }
                 }
             }
             // 学被动神通
             else if (效果 is 学被动神通效果 学被)
             {
-                if (学被.神通 == null && !string.IsNullOrEmpty(学被.神通id))
+                if (该填了(学被.神通, 学被.神通id))
                 {
                     ScriptableObject v;
-                    if (映射.TryGetValue(学被.神通id, out v)) { 学被.神通 = v as PassiveDivineAbility; 改了 = 学被.神通 != null; }
+                    if (映射.TryGetValue(学被.神通id, out v) && v is PassiveDivineAbility)
+                    { 学被.神通 = v as PassiveDivineAbility; 改了 = true; }
                     else { 找不到++; 缺的.Add(物品.物品id + " → 被动神通 " + 学被.神通id); }
                 }
             }
             // 学外观
             else if (效果 is 学外观效果 学外)
             {
-                if (学外.外观 == null && !string.IsNullOrEmpty(学外.外观id))
+                if (该填了(学外.外观, 学外.外观id))
                 {
                     ScriptableObject v;
-                    if (映射.TryGetValue(学外.外观id, out v)) { 学外.外观 = v as AppearanceDefinition; 改了 = 学外.外观 != null; }
+                    if (映射.TryGetValue(学外.外观id, out v) && v is AppearanceDefinition)
+                    { 学外.外观 = v as AppearanceDefinition; 改了 = true; }
                     else { 找不到++; 缺的.Add(物品.物品id + " → 外观 " + 学外.外观id); }
                 }
             }
@@ -118,5 +122,31 @@ public static class 回填效果引用
         //   信息上面那句日志已经全说了；而模态框会挡住主线程，
         //   自动化调用（AI 跑菜单）没人点它 → 看起来就是卡死。详见 踩坑 F8。
         //   `静默` 参数保留只是为了让老调用点不用改。
+    }
+
+    /// <summary>
+    /// 这个直接引用**现在该不该（重新）填**：
+    ///   · 为 null → 该填；
+    ///   · 非 null，但**指向的资产 id 和表里写的 id 对不上** → 也该填（表里改了 id / 引用被写坏）。
+    ///
+    /// 【为什么加了后半条】2026-10-02 修的一处数据腐坏：原来只在 `引用 == null` 时补，
+    /// 而那一版 `物品效果导入` 每次导入都先 `引用 = null`（"让运行时按 id 反查"）——
+    /// 于是每次导入都是一次"清空 → 回填"的赛跑，中途还夹着好几趟 `SaveAssets()/Refresh()`。
+    /// 实测「冰暴术」那件就卡在两次写盘之间：**内存里有引用、盘上还是 `fileID: 0`**，
+    /// 而回填因为"已经不是 null"直接跳过了它（日志：回填 12 件，13 件里少的那一件就是它）。
+    /// 现在两边都改了：`物品效果导入` 只在 id 变了时作废引用；本函数负责收口
+    /// （补空 **以及** 纠正指错的），并且必须**核对类型**——原来用 `v as 类型` 失败会
+    /// **静默写入 null**、日志里连一行都没有。
+    /// </summary>
+    static bool 该填了(ScriptableObject 引用, string 期望id)
+    {
+        if (string.IsNullOrEmpty(期望id)) return false;   // 表里没写 id：没什么可填的
+        if (引用 == null) return true;
+
+        string 实id = null;
+        if (引用 is GongFaDefinition 功) 实id = 功.功法id;
+        else if (引用 is DivineAbilityDefinition 神) 实id = 神.神通id;   // 主动 / 被动都继承它
+        else if (引用 is AppearanceDefinition 外) 实id = 外.id;
+        return 实id != 期望id;
     }
 }

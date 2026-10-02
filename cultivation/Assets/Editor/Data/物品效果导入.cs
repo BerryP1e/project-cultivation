@@ -46,11 +46,29 @@ public static class 物品效果导入
 
         switch (类型.Trim())
         {
+            // ================================================================
+            // ★ 关于「直接引用」（功法 / 神通 / 外观）—— 2026-10-02 修的一处数据腐坏
+            //
+            //   这四种效果身上有一个**直接引用**（`功法` / `神通` / `外观`）+ 一个 id。
+            //   原来自作聪明：每次导入都 `引用 = null`（"让运行时按 id 反查，回头由
+            //   `回填效果引用` 填上"）。于是**每次导入都是一次"清空 → 再回填"的赛跑**：
+            //     · `回填效果引用` 只在引用**为 null** 时才填，填完 SetDirty + SaveAssets；
+            //     · 而 `ImportAll` 中间还会 `SaveAssets()/Refresh()` 好几趟 ——
+            //       实测「冰暴术」那件就卡在两次写盘之间：**内存里有引用、盘上是 fileID: 0**
+            //       （日志实证：回填那一步它已经不是 null ⇒ 被跳过 ⇒ "回填 12 件"，
+            //         而盘上仍然是更早那次清空写下的 null）。
+            //   后果很脏：引用为 null 时运行时只能走 `能力查找.按id<T>()`，
+            //   而那个函数整段在 `#if UNITY_EDITOR` 里 ⇒ **打包后点"玉简"没反应**。
+            //
+            //   现在改成**单一责任人**：
+            //     · 本类**只在 id 变了**的时候作废旧引用（id 没变就原样留着）；
+            //     · 引用的"空 or 指错"一律交给 `回填效果引用` 收口（它会核对 id 再填/纠正）。
+            //   这样重复导入是**幂等**的：第二次跑导入器，回填会报 0 件。
+            // ================================================================
             case "学功法":
                 {
                     var e = 取或建<学功法效果>(物品.物品id);
-                    e.功法id = 参数id;
-                    e.功法 = null;              // 让运行时按 id 反查（也可由下面的引用修复填上）
+                    if (e.功法id != 参数id) { e.功法id = 参数id; e.功法 = null; }
                     e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
                     EditorUtility.SetDirty(e);
                     物品.使用效果 = e;
@@ -59,8 +77,8 @@ public static class 物品效果导入
             case "学主动神通":
                 {
                     var e = 取或建<学主动神通效果>(物品.物品id);
-                    e.神通id = 参数id;
-                    e.神通 = null;
+                    // ★ 只在 id **变了**的时候才把旧引用作废（见 学功法 分支的长注释）
+                    if (e.神通id != 参数id) { e.神通id = 参数id; e.神通 = null; }
                     e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
                     EditorUtility.SetDirty(e);
                     物品.使用效果 = e;
@@ -69,8 +87,7 @@ public static class 物品效果导入
             case "学被动神通":
                 {
                     var e = 取或建<学被动神通效果>(物品.物品id);
-                    e.神通id = 参数id;
-                    e.神通 = null;
+                    if (e.神通id != 参数id) { e.神通id = 参数id; e.神通 = null; }
                     e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
                     EditorUtility.SetDirty(e);
                     物品.使用效果 = e;
@@ -79,8 +96,7 @@ public static class 物品效果导入
             case "学外观":
                 {
                     var e = 取或建<学外观效果>(物品.物品id);
-                    e.外观id = 参数id;
-                    e.外观 = null;
+                    if (e.外观id != 参数id) { e.外观id = 参数id; e.外观 = null; }
                     e.获得即装备 = true;
                     e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
                     EditorUtility.SetDirty(e);
