@@ -120,15 +120,21 @@ public class DialogueDatabase : ScriptableObject
     }
 
     /// <summary>
-    /// 在跑的主线里，有没有一条 `条件=对话` 的阶段**显式点名**了 (npcId, 分段) 这一段。
-    /// 多条同时点名时取 `任务id` 最大的那条（和 `任务引导` 的选法一致）。
+    /// 当前主线阶段点名的那条对话 —— 分两种情况（这是 2026-10-02 把"这一类"一次修掉的第二条）：
+    ///
+    /// ① **点名就是这一段** ⇒ 直接用它（阶段16 点名 `dlg_act4_dongfu_guide`，段1）。
+    /// ② **点名的是同一棵树里更靠后的段**，而这次要的是这棵树的**入口段** ⇒ 用这棵树的入口段开场。
+    ///    例：阶段13 点名 `dlg_act3_dashi_21`（21 段），而入口是 `dlg_act3_dashi_ready`（段1），
+    ///    它的回答「仙人，我准备好了」**跳转到 21** —— 玩家这样才能走到那一段。
+    ///    不加这条时，按 F 会被同段优先更高的 `dlg_act4_dashi_return` 抢走，阶段13 永远完不成
+    ///    （用户实测：反复按 F 都是同一段）。
     /// </summary>
     DialogueDefinition 当前阶段点名的对话(string npcId, int 分段)
     {
         var 任务 = 任务管理器.实例;
         if (任务 == null) return null;
 
-        DialogueDefinition 最好 = null;
+        DialogueDefinition 点名 = null;
         string 最好任务 = null;
         var 在跑 = 任务.进行中的阶段();
         for (int i = 0; i < 在跑.Count; i++)
@@ -139,13 +145,25 @@ public class DialogueDatabase : ScriptableObject
             if (最好任务 != null && string.CompareOrdinal(q.任务id, 最好任务) <= 0) continue;
 
             var d = 找到(q.对话id);
-            if (d == null || d.分段 != 分段) continue;
+            if (d == null) continue;
             if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
 
-            最好 = d;
+            点名 = d;
             最好任务 = q.任务id;
         }
-        return 最好;
+        if (点名 == null) return null;
+
+        // ① 正好点名这一段
+        if (点名.分段 == 分段) return 点名;
+
+        // ② 点名更靠后的段：这次要的是这棵树的入口段 → 用入口段开场（顺着回答/跳转就能走到点名那段）
+        string 树 = 取树(点名.id);
+        if (分段 < 点名.分段 && 分段 == 最小分段(npcId, 树))
+        {
+            var 入口 = 候选(npcId, 分段, 树);
+            if (入口.Count > 0) return 入口[0];
+        }
+        return null;
     }
 
     /// <summary>这个 NPC 最小的分段号（对话入口），没有就 0</summary>
@@ -157,6 +175,21 @@ public class DialogueDatabase : ScriptableObject
             var d = 全部[i];
             if (d == null) continue;
             if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
+            if (m == 0 || d.分段 < m) m = d.分段;
+        }
+        return m;
+    }
+
+    /// <summary>这个 NPC **某一棵树**里最小的分段号（= 那棵树的入口段），没有就 0</summary>
+    public int 最小分段(string npcId, string 树)
+    {
+        int m = 0;
+        for (int i = 0; i < 全部.Count; i++)
+        {
+            var d = 全部[i];
+            if (d == null) continue;
+            if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
+            if (!string.IsNullOrEmpty(树) && 取树(d.id) != 树) continue;
             if (m == 0 || d.分段 < m) m = d.分段;
         }
         return m;
