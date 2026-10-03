@@ -243,7 +243,13 @@ Shader "Cultivation/GlobalGrade"
                         dev = ((n1 * 0.55 + n2 * 0.25 + fib * 0.20) - 0.5) * _GrainGain * 0.2;
                     }
                     float grain = clamp(1.0 + dev, 0.2, 1.8);
-                    c *= lerp(float3(1, 1, 1), grain.xxx, saturate(_GrainAmount));
+                    // ⚠️ 2026-10-03 用户："为啥在摄像头前盖了一层宣纸纹理" —— 大面积**亮而平**的墙面上
+                    //    纸纹会整片显出来，像贴了一张纸。真实纸纹只在**中间调**看得见（纸白与浓墨处看不见），
+                    //    所以这里按亮度加权：0.5 处最强、趋近黑/白处归零。
+                    //    ⚠️ 变量名必须 ASCII（写成中文标识符会报 "Unexpected directive"，而且行号骗人）
+                    float lumNow = Luma(c);
+                    float midWeight = 1.0 - abs(2.0 * lumNow - 1.0);
+                    c *= lerp(float3(1, 1, 1), grain.xxx, saturate(_GrainAmount) * midWeight);
                 }
 
                 // 6) Vignette, centred on screen

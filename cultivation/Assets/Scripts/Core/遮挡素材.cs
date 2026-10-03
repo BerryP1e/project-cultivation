@@ -36,13 +36,14 @@ public static class 遮挡素材
     static readonly int ID_PaperGain = Shader.PropertyToID("_PaperGain");
     static readonly int ID_InkColor = Shader.PropertyToID("_InkColor");
     static readonly int ID_PaperColor = Shader.PropertyToID("_PaperColor");
+    static readonly int ID_ZWriteOn = Shader.PropertyToID("_ZWriteOn");
 
     /// <summary>换上去之后每帧要用的参数（建筑和树冠给的不一样）</summary>
     public struct 水墨参数
     {
-        /// <summary>淡到最透时保留的剪影不透明度（0.28 = 还看得见一层淡墨）</summary>
+        /// <summary>淡到最透时保留的剪影不透明度（0.22 = 还看得见一层淡影）</summary>
         public float 剪影;
-        /// <summary>侵蚀强度（0 = 只渐隐不散形）</summary>
+        /// <summary>侵蚀强度（**默认 0 = 纯淡入淡出**；>0 才开始"墨化开"）</summary>
         public float 侵蚀;
         /// <summary>墨蚀团块尺度（越大团块越小越碎）</summary>
         public float 侵蚀尺度;
@@ -50,8 +51,10 @@ public static class 遮挡素材
         public float 墨边宽;
         /// <summary>墨边强度</summary>
         public float 墨边强度;
-        /// <summary>叠纸纹的量</summary>
+        /// <summary>叠纸纹的量（**默认 0 = 不叠**：叠上去物体就成了一张纸板，用户 2026-10-03 明确不要）</summary>
         public float 纸纹;
+        /// <summary>写深度？**实心壳子（建筑）1 / billboard 卡片（树冠）0**</summary>
+        public float 写深度;
         /// <summary>淡出时长（秒）</summary>
         public float 淡出秒;
         /// <summary>回场时长（秒）</summary>
@@ -61,20 +64,22 @@ public static class 遮挡素材
         {
             return new 水墨参数
             {
-                剪影 = 0.28f, 侵蚀 = 0.55f, 侵蚀尺度 = 0.70f, 墨边宽 = 0.16f, 墨边强度 = 0.85f,
-                纸纹 = 0.35f, 淡出秒 = 0.30f, 回场秒 = 0.40f,
+                剪影 = 0.22f, 侵蚀 = 0f, 侵蚀尺度 = 0.70f, 墨边宽 = 0.16f, 墨边强度 = 0.25f,
+                纸纹 = 0f, 写深度 = 1f, 淡出秒 = 0.30f, 回场秒 = 0.40f,
             };
         }
 
-        /// <summary>树冠是 billboard 片、量大（365 个子渲染体）⇒ 侵蚀与墨边都减半，便宜也更好看</summary>
+        /// <summary>
+        /// 树冠：billboard 卡片、量大（365 个渲染体）⇒ **必须 ZWrite Off**
+        /// （写深度会让每张卡片互相遮挡 ⇒ 变成"一块块的片状物"，用户 2026-10-03 报的），
+        /// 透明度也更透一点（和改造前的观感一致：一堆卡片柔和叠成一片）。
+        /// </summary>
         public static 水墨参数 树冠默认()
         {
             var p = 建筑默认();
-            p.剪影 = 0.20f;
-            p.侵蚀 = 0.34f;
-            p.侵蚀尺度 = 0.30f;
-            p.墨边宽 = 0.12f;
-            p.墨边强度 = 0.45f;
+            p.剪影 = 0.12f;
+            p.墨边强度 = 0.15f;
+            p.写深度 = 0f;
             return p;
         }
     }
@@ -83,7 +88,8 @@ public static class 遮挡素材
     public class 台账
     {
         readonly Dictionary<Renderer, Material[]> _原 = new Dictionary<Renderer, Material[]>();
-        readonly Dictionary<Material, Material> _水墨缓存 = new Dictionary<Material, Material>();
+        readonly Dictionary<Material, Material> _建筑缓存 = new Dictionary<Material, Material>();
+        readonly Dictionary<Material, Material> _树冠缓存 = new Dictionary<Material, Material>();
         readonly Dictionary<Renderer, float> _当前 = new Dictionary<Renderer, float>();
         readonly MaterialPropertyBlock _块 = new MaterialPropertyBlock();
 
@@ -103,11 +109,12 @@ public static class 遮挡素材
             if (原 == null || 原.Length == 0) return false;
 
             _原[r] = 原;
+            bool 树 = 是树冠(r);
             var 换 = new Material[原.Length];
-            for (int i = 0; i < 原.Length; i++) 换[i] = 取水墨(原[i]);
+            for (int i = 0; i < 原.Length; i++) 换[i] = 取水墨(原[i], 树);
             r.sharedMaterials = 换;
             _当前[r] = 0f;
-            写参数(r, 0f, 水墨参数.建筑默认());
+            写参数(r, 0f, 树 ? 水墨参数.树冠默认() : 水墨参数.建筑默认());
             return true;
         }
 
@@ -181,22 +188,28 @@ public static class 遮挡素材
             r.SetPropertyBlock(_块);
         }
 
-        Material 取水墨(Material 源)
+        /// <summary>
+        /// 取（或造）水墨材质副本。⚠️ **缓存键是「源材质 + 是不是树冠」** ——
+        /// 因为 `ZWrite` 是**材质级**的着色状态（MaterialPropertyBlock 改不动它），
+        /// 建筑要写深度、树冠不能写深度（写了就变成"一片片卡片"），所以必须分成两份。
+        /// </summary>
+        Material 取水墨(Material 源, bool 树冠)
         {
             if (源 == null) return null;
+            var 缓存 = 树冠 ? _树冠缓存 : _建筑缓存;
             Material 有;
-            if (_水墨缓存.TryGetValue(源, out 有) && 有 != null) return 有;
+            if (缓存.TryGetValue(源, out 有) && 有 != null) return 有;
 
             if (!_找过) { _水墨 = Shader.Find(水墨Shader名); _找过 = true; }
             if (_水墨 == null)
             {
                 Debug.LogWarning("[遮挡与特效开关] 找不到 shader「" + 水墨Shader名 + "」—— 退回老的透明方案（观感会掉一档）");
                 var 老的 = 取旧透明(源);
-                _水墨缓存[源] = 老的;
+                缓存[源] = 老的;
                 return 老的;
             }
 
-            var m = new Material(_水墨) { name = "水墨_" + 源.name };
+            var m = new Material(_水墨) { name = (树冠 ? "水墨冠_" : "水墨_") + 源.name };
             if (源.HasProperty("_MainTex"))
             {
                 m.mainTexture = 源.mainTexture;
@@ -205,8 +218,7 @@ public static class 遮挡素材
             }
             if (源.HasProperty("_Color")) m.SetColor("_Color", 源.GetColor("_Color"));
 
-            // 默认参数（每帧会被 MaterialPropertyBlock 覆盖）：先给一套"建筑"的
-            var p = 水墨参数.建筑默认();
+            var p = 树冠 ? 水墨参数.树冠默认() : 水墨参数.建筑默认();
             m.SetFloat(ID_Fade, 0f);
             m.SetFloat(ID_Ghost, p.剪影);
             m.SetFloat(ID_Dissolve, p.侵蚀);
@@ -215,22 +227,20 @@ public static class 遮挡素材
             m.SetFloat(ID_EdgeInk, p.墨边强度);
             m.SetFloat(ID_PaperAmount, p.纸纹);
             m.SetFloat(ID_PaperGain, 2f);
+            m.SetFloat(ID_ZWriteOn, p.写深度);        // ★ 材质级：树冠 0 / 建筑 1
+            m.SetFloat("_Wash", 0.15f);              // 只去一点饱和，绝不动亮度
             m.SetColor(ID_InkColor, new Color(0.06f, 0.06f, 0.07f, 1f));
             m.SetColor(ID_PaperColor, new Color(0.93f, 0.92f, 0.90f, 1f));
 
-            // 复用刚接入的那张宣纸颗粒图（没装就还是"white"，等于不叠纸纹）
+            // 纸纹图仍然挂上，但**默认量为 0**（用户 2026-10-03：叠上去物体变纸板，不要）
             var 纸 = Resources.Load<Texture>("宣纸/宣纸纹理_纸纹");
             if (纸 != null)
             {
                 m.SetTexture(ID_PaperTex, 纸);
                 m.SetFloat(ID_PaperTiling, 0.35f);
             }
-            else
-            {
-                m.SetFloat(ID_PaperAmount, 0f);
-            }
 
-            _水墨缓存[源] = m;
+            缓存[源] = m;
             return m;
         }
 

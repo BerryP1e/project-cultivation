@@ -40,8 +40,8 @@ public class OcclusionTransparency : MonoBehaviour
     public Transform 主角;
 
     [Header("建筑 / 场景遮挡（射线）")]
-    [Tooltip("**淡到最透时保留的淡墨剪影**（0 = 彻底消失，0.28 = 还看得见一层淡墨，不至于突然空一块）")]
-    [Range(0.05f, 0.9f)] public float 透明度 = 0.28f;
+    [Tooltip("**淡到最透时保留的淡影**（0 = 彻底消失；0.22 = 还看得见一层淡影，不至于突然空一块）")]
+    [Range(0.05f, 0.9f)] public float 透明度 = 0.22f;
     [Tooltip("朝主角身上打几条射线（覆盖身高，避免只挡到腿时看不见）")]
     public int 射线数 = 5;
     [Tooltip("参与透视的层（默认全部；UI 层会被自动排除）")]
@@ -50,8 +50,8 @@ public class OcclusionTransparency : MonoBehaviour
     [Header("树冠遮挡（按包围盒判，因为树冠没有碰撞体）")]
     [Tooltip("树冠遮挡相机→主角连线时也变透明。用户 2026-09-28 要求")]
     public bool 树冠透明 = true;
-    [Tooltip("树冠的淡墨剪影（比建筑更透，尽量别挡视线）")]
-    [Range(0.0f, 0.9f)] public float 树冠透明度 = 0.16f;
+    [Tooltip("树冠的淡影（比建筑更透，尽量别挡视线）")]
+    [Range(0.0f, 0.9f)] public float 树冠透明度 = 0.12f;
     [Tooltip("树冠的判定用「包围盒和线段的距离」小于这个余量就算挡（米）")]
     public float 树冠余量 = 0.35f;
 
@@ -60,15 +60,17 @@ public class OcclusionTransparency : MonoBehaviour
     public float 淡出秒 = 0.30f;
     [Tooltip("回场时长（秒）：剪影 → 实心。⚠️ 比淡出略长，回场才不会「啪」地弹回来")]
     public float 回场秒 = 0.40f;
-    [Tooltip("侵蚀强度：物体的形状像墨被水化开一样散掉。0 = 只渐隐不散形")]
-    [Range(0f, 1f)] public float 侵蚀 = 0.55f;
-    [Tooltip("树冠的侵蚀。⚠️ 树冠是 billboard 片、量大（365 个子渲染体），给一半就够")]
-    [Range(0f, 1f)] public float 树冠侵蚀 = 0.34f;
-    [Tooltip("边缘墨散：侵蚀边界压成墨色的宽度与强度（这是「水墨」最要紧的一笔）")]
+    [Tooltip("侵蚀强度：物体的形状像墨被水化开一样散掉。**默认 0 = 纯淡入淡出**\n" +
+             "⚠️ 2026-10-03 用户看过一版侵蚀，明确说难看 ⇒ 默认关掉，想试再往上调")]
+    [Range(0f, 1f)] public float 侵蚀 = 0f;
+    [Tooltip("树冠的侵蚀。⚠️ 树冠是 billboard 卡片、量大（365 个子渲染体）—— 建议一直留 0")]
+    [Range(0f, 1f)] public float 树冠侵蚀 = 0f;
+    [Tooltip("边缘墨散：侵蚀边界压成墨色的宽度与强度（**只有在「侵蚀 > 0」时才起作用**）")]
     [Range(0.01f, 0.5f)] public float 墨边宽 = 0.16f;
-    [Range(0f, 1f)] public float 墨边强度 = 0.85f;
-    [Tooltip("淡出时往物体上叠的宣纸纸纹（复用 Resources 里那张归一化颗粒图）")]
-    [Range(0f, 1f)] public float 纸纹 = 0.35f;
+    [Range(0f, 1f)] public float 墨边强度 = 0.25f;
+    [Tooltip("淡出时往物体上叠的宣纸纸纹。**默认 0 = 不叠**\n" +
+             "⚠️ 叠上去物体会变成一张纸板（用户 2026-10-03：「为啥在摄像头前盖了一层宣纸纹理，太丑了」）")]
+    [Range(0f, 1f)] public float 纸纹 = 0f;
 
     [Header("开关（运行时由 场景特效开关.asset 覆盖）")]
     [Tooltip("建筑/墙/石头遮挡时变透明。由场景特效开关表的「建筑透明」列决定")]

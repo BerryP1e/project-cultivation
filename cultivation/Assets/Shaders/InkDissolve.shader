@@ -31,19 +31,20 @@ Shader "Cultivation/InkDissolve"
         _Color ("Colour", Color) = (1,1,1,1)
 
         _Fade ("Fade (0 = solid, 1 = ghost only)", Range(0,1)) = 0
-        _Ghost ("Ghost Alpha at full fade", Range(0,1)) = 0.28
+        _Ghost ("Ghost Alpha at full fade", Range(0,1)) = 0.22
+        _ZWriteOn ("ZWrite On (1 = solid shells, 0 = billboard cards)", Range(0,1)) = 1
 
-        _Dissolve ("Dissolve Amount", Range(0,1)) = 0.55
-        _DissolveScale ("Dissolve Scale", Range(0.05,3)) = 0.4
+        _Dissolve ("Dissolve Amount (0 = pure fade)", Range(0,1)) = 0
+        _DissolveScale ("Dissolve Scale", Range(0.05,3)) = 0.7
         _EdgeWidth ("Ink Edge Width", Range(0.01,0.5)) = 0.16
-        _EdgeInk ("Ink Edge Strength", Range(0,1)) = 0.85
+        _EdgeInk ("Ink Edge Strength", Range(0,1)) = 0.25
         _InkColor ("Ink Colour", Color) = (0.06,0.06,0.07,1)
 
         _PaperColor ("Paper Colour", Color) = (0.93,0.92,0.90,1)
-        _Wash ("Wash to paper", Range(0,1)) = 0.6
+        _Wash ("Wash (de-saturate only)", Range(0,1)) = 0.15
         _PaperTex ("Paper Grain", 2D) = "white" {}
         _PaperTiling ("Paper Tiling", Range(0.05,4)) = 0.35
-        _PaperAmount ("Paper Amount", Range(0,1)) = 0.35
+        _PaperAmount ("Paper Amount (0 = off)", Range(0,1)) = 0
         _PaperGain ("Paper Gain", Range(0.2,20)) = 2
     }
 
@@ -54,7 +55,11 @@ Shader "Cultivation/InkDissolve"
         Pass
         {
             Name "InkForward"
-            ZWrite On
+            // ⚠️ ZWrite 必须按"这物件是实心壳子还是卡片"分：
+            //    建筑/墙 = 1（实心壳，写深度，避免半透明时看到自己背面）
+            //    树冠 = 0（billboard 卡片，**写深度会让每张卡片互相遮挡 ⇒ 一片片硬边**；
+            //            原来那个 Transparent/Diffuse 就是 ZWrite Off，所以一堆卡片能柔和叠成一片）
+            ZWrite [_ZWriteOn]
             Blend SrcAlpha OneMinusSrcAlpha
             Cull Back
 
@@ -71,6 +76,7 @@ Shader "Cultivation/InkDissolve"
 
             float _Fade;
             float _Ghost;
+            float _ZWriteOn;
             float _Dissolve;
             float _DissolveScale;
             float _EdgeWidth;
@@ -161,22 +167,25 @@ Shader "Cultivation/InkDissolve"
                 float ndl = saturate(dot(n, ldir));
                 float3 lit = albedo * (amb + _LightColor0.rgb * ndl);
 
-                // ---- ① 墨感：去饱和 + 向纸色偏一点，但**保留它自己的明暗** ----
-                // ⚠️ 一开始写成"整体提亮到纸色"，结果暗场景里淡出的柱子亮得像块白板，
-                //    比周围亮一大截、非常跳。改成"保留亮度结构、只去饱和 + 25% 纸色 + 轻微提亮"。
+                // ---- ① 墨感：**只去饱和**（默认 0.15，几乎等于原色） ----
+                // ⚠️ 踩过两次：① "整体提亮到纸色"⇒ 暗场景里淡出的柱子亮得像白板；
+                //    ② 往纸色偏 25% + ×1.15 ⇒ 物体比周围亮一截，用户："暗度感觉非常低"。
+                //    现在默认只做一点点去饱和，**绝不动亮度**（要更"墨"就把 _Wash 往上调）。
                 float lum = dot(lit, float3(0.299, 0.587, 0.114));
-                float3 washed = lum.xxx;
-                washed = lerp(washed, _PaperColor.rgb, 0.25);
-                washed *= 1.15;
+                float3 washed = lerp(lit, lum.xxx, _Wash);
                 float3 col = lerp(lit, washed, f);
 
-                // ---- ② 墨蚀：阈值侵蚀 + 边缘墨散 ----
-                float noise = InkNoise(i.wpos);
-                float th = _Dissolve * f;
-                float edge = 1.0 - saturate((noise - th) / max(_EdgeWidth, 0.001));
-                edge *= f;                                   // 只在淡出时出现
-
-                col = lerp(col, _InkColor.rgb, saturate(edge * _EdgeInk));
+                // ---- ② 墨蚀：只在 _Dissolve > 0 时才做（默认 0 = 纯淡入淡出）----
+                float edge = 0;
+                if (_Dissolve > 0.001)
+                {
+                    float noise = InkNoise(i.wpos);
+                    float th = _Dissolve * f;
+                    edge = 1.0 - saturate((noise - th) / max(_EdgeWidth, 0.001));
+                    edge *= f;
+                    clip(noise - th - 0.001);        // 被侵蚀掉的像素直接不画（也就不写深度）
+                    col = lerp(col, _InkColor.rgb, saturate(edge * _EdgeInk));
+                }
 
                 // ---- ③ 不透明度：整体渐隐到剪影；墨边保留得更实 ----
                 float a = lerp(1.0, _Ghost, smoothstep(0.0, 1.0, f));
@@ -260,9 +269,13 @@ Shader "Cultivation/InkDissolve"
             float4 frag(v2f i) : SV_Target
             {
                 float f = saturate(_Fade);
-                float th = _Dissolve * f;
-                float noise = InkNoise(i.wpos);
-                clip(noise - th - 0.001);
+                // 只有开了侵蚀才在影子里打洞；否则影子就是跟着淡出（纯淡入淡出时别在影子上留麻点）
+                if (_Dissolve > 0.001)
+                {
+                    float th = _Dissolve * f;
+                    float noise = InkNoise(i.wpos);
+                    clip(noise - th - 0.001);
+                }
                 SHADOW_CASTER_FRAGMENT(i)
             }
             ENDCG
