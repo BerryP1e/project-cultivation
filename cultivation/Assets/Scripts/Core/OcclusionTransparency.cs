@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
@@ -40,8 +40,8 @@ public class OcclusionTransparency : MonoBehaviour
     public Transform 主角;
 
     [Header("建筑 / 场景遮挡（射线）")]
-    [Tooltip("遮挡时的透明度")]
-    [Range(0.05f, 0.9f)] public float 透明度 = 0.22f;
+    [Tooltip("**淡到最透时保留的淡墨剪影**（0 = 彻底消失，0.28 = 还看得见一层淡墨，不至于突然空一块）")]
+    [Range(0.05f, 0.9f)] public float 透明度 = 0.28f;
     [Tooltip("朝主角身上打几条射线（覆盖身高，避免只挡到腿时看不见）")]
     public int 射线数 = 5;
     [Tooltip("参与透视的层（默认全部；UI 层会被自动排除）")]
@@ -50,10 +50,25 @@ public class OcclusionTransparency : MonoBehaviour
     [Header("树冠遮挡（按包围盒判，因为树冠没有碰撞体）")]
     [Tooltip("树冠遮挡相机→主角连线时也变透明。用户 2026-09-28 要求")]
     public bool 树冠透明 = true;
-    [Tooltip("树冠的透明度（比建筑更透，尽量别挡视线）")]
-    [Range(0.0f, 0.9f)] public float 树冠透明度 = 0.12f;
+    [Tooltip("树冠的淡墨剪影（比建筑更透，尽量别挡视线）")]
+    [Range(0.0f, 0.9f)] public float 树冠透明度 = 0.16f;
     [Tooltip("树冠的判定用「包围盒和线段的距离」小于这个余量就算挡（米）")]
     public float 树冠余量 = 0.35f;
+
+    [Header("水墨淡出（2026-10-03：不再是硬切，也不再是塑料半透明）")]
+    [Tooltip("淡出时长（秒）：实心 → 只剩剪影")]
+    public float 淡出秒 = 0.30f;
+    [Tooltip("回场时长（秒）：剪影 → 实心。⚠️ 比淡出略长，回场才不会「啪」地弹回来")]
+    public float 回场秒 = 0.40f;
+    [Tooltip("侵蚀强度：物体的形状像墨被水化开一样散掉。0 = 只渐隐不散形")]
+    [Range(0f, 1f)] public float 侵蚀 = 0.55f;
+    [Tooltip("树冠的侵蚀。⚠️ 树冠是 billboard 片、量大（365 个子渲染体），给一半就够")]
+    [Range(0f, 1f)] public float 树冠侵蚀 = 0.34f;
+    [Tooltip("边缘墨散：侵蚀边界压成墨色的宽度与强度（这是「水墨」最要紧的一笔）")]
+    [Range(0.01f, 0.5f)] public float 墨边宽 = 0.16f;
+    [Range(0f, 1f)] public float 墨边强度 = 0.85f;
+    [Tooltip("淡出时往物体上叠的宣纸纸纹（复用 Resources 里那张归一化颗粒图）")]
+    [Range(0f, 1f)] public float 纸纹 = 0.35f;
 
     [Header("开关（运行时由 场景特效开关.asset 覆盖）")]
     [Tooltip("建筑/墙/石头遮挡时变透明。由场景特效开关表的「建筑透明」列决定")]
@@ -67,11 +82,27 @@ public class OcclusionTransparency : MonoBehaviour
     [Tooltip("打印调试日志")]
     public bool 打印日志 = false;
 
-    readonly 遮挡素材.台账 _台账 = new 遮挡素材.台账();
-    readonly Dictionary<Renderer, float> _保持到 = new Dictionary<Renderer, float>();
-    /// <summary>本帧判定为遮挡的渲染器 → 它该用的透明度（建筑和树冠不一样）</summary>
-    readonly Dictionary<Renderer, float> _本帧 = new Dictionary<Renderer, float>();
-    readonly List<Renderer> _待恢复 = new List<Renderer>();
+    // ⚠️ 这几个容器**不能写成 readonly + 只在字段初始化器里 new**：
+    //    本组件是**存进场景**的（相机上那份是序列化过的），实测从场景反序列化出来的实例
+    //    这几个非序列化容器会是 **null** ⇒ LateUpdate 第一行就 NRE、每帧刷屏（踩过，2026-10-03）。
+    //    所以统一走 确保容器() 兜底。
+    遮挡素材.台账 _台账;
+    Dictionary<Renderer, float> _保持到;
+    /// <summary>本帧判定为遮挡的渲染器（值是"它该用的透明度"的历史遗留，现在只当命中标记）</summary>
+    Dictionary<Renderer, float> _本帧;
+    List<Renderer> _待恢复;
+    /// <summary>每帧推进用的快照（不能直接遍历字典：推进过程中可能把渲染器还回去）</summary>
+    List<Renderer> _在管快照;
+
+    /// <summary>反序列化兜底：容器为 null 就地补上（见上面那条注释）</summary>
+    void 确保容器()
+    {
+        if (_台账 == null) _台账 = new 遮挡素材.台账();
+        if (_保持到 == null) _保持到 = new Dictionary<Renderer, float>();
+        if (_本帧 == null) _本帧 = new Dictionary<Renderer, float>();
+        if (_待恢复 == null) _待恢复 = new List<Renderer>();
+        if (_在管快照 == null) _在管快照 = new List<Renderer>();
+    }
 
     // 树冠登记表：一棵树一行（按"树根"找，把子渲染体都收进来）
     class 树
@@ -84,6 +115,7 @@ public class OcclusionTransparency : MonoBehaviour
 
     void Awake()
     {
+        确保容器();
         // ★ 生效范围交给「场景特效开关表」决定（而不是"哪个场景挂了组件"）——
         //   这样组件可以跟着通用装配铺到所有场景，不会再被同步冲掉、也不会到处生效。
         //
@@ -104,6 +136,7 @@ public class OcclusionTransparency : MonoBehaviour
 
     void LateUpdate()
     {
+        确保容器();
         var cam = GetComponent<Camera>();
         if (cam == null || !cam.isActiveAndEnabled) return;
 
@@ -129,26 +162,53 @@ public class OcclusionTransparency : MonoBehaviour
         if (建筑遮挡启用) 收碰撞体射线(cam, 采样点);
         if (树冠透明) 收树冠(cam, 采样点);
 
-        // ---- 本帧命中的：换成透明，并续上保持时间 ----
+        float now = Time.unscaledTime;
+
+        // ---- 本帧命中的：换上水墨材质，并续上保持时间 ----
         foreach (var kv in _本帧)
         {
             var r = kv.Key;
             if (r == null) continue;
-            bool 新 = _台账.变透明(r, kv.Value);
-            if (新 && 打印日志) Debug.Log("[遮挡与特效开关] 变透明：" + r.name, r);
-            _保持到[r] = Time.unscaledTime + Mathf.Max(0f, 保持);
+            bool 新 = _台账.换成水墨(r);
+            if (新 && 打印日志) Debug.Log("[遮挡与特效开关] 换成水墨：" + r.name, r);
+            _保持到[r] = now + Mathf.Max(0f, 保持);
         }
 
-        // ---- 过期的：恢复原材质 ----
+        // ---- 每帧推进所有在管的渲染器（淡出 / 回场都是连续的，不再是硬切）----
+        //   参数按"是建筑还是树冠"现算：树冠更透、侵蚀更轻（片状资产 + 量大）
+        _在管快照.Clear();
+        foreach (var r in _台账.名单) if (r != null) _在管快照.Add(r);
+
         _待恢复.Clear();
-        foreach (var kv in _保持到)
-            if (Time.unscaledTime > kv.Value) _待恢复.Add(kv.Key);
+        foreach (var r in _在管快照)
+        {
+            float 保持到;
+            bool 遮挡 = _本帧.ContainsKey(r) || (_保持到.TryGetValue(r, out 保持到) && now <= 保持到);
+            float f = _台账.推进(r, 遮挡, 取参数(r));
+            if (!遮挡 && f <= 0.0001f) _待恢复.Add(r);      // 已经完全回来了 → 把原材质还回去
+        }
+
         foreach (var r in _待恢复)
         {
-            if (打印日志 && r != null) Debug.Log("[遮挡与特效开关] 恢复：" + r.name, r);
+            if (打印日志 && r != null) Debug.Log("[遮挡与特效开关] 还原：" + r.name, r);
             _台账.还原(r);
             _保持到.Remove(r);
         }
+    }
+
+    /// <summary>按"建筑还是树冠"组一套水墨参数</summary>
+    遮挡素材.水墨参数 取参数(Renderer r)
+    {
+        bool 树 = 遮挡素材.是树冠(r);
+        var p = 树 ? 遮挡素材.水墨参数.树冠默认() : 遮挡素材.水墨参数.建筑默认();
+        p.剪影 = 树 ? 树冠透明度 : 透明度;
+        p.侵蚀 = 树 ? 树冠侵蚀 : 侵蚀;
+        p.墨边宽 = 墨边宽;
+        p.墨边强度 = 树 ? 墨边强度 * 0.55f : 墨边强度;
+        p.纸纹 = 纸纹;
+        p.淡出秒 = 淡出秒;
+        p.回场秒 = 回场秒;
+        return p;
     }
 
     // ---------------------------------------------------------------- 通路 ①：碰撞体射线
@@ -283,4 +343,26 @@ public class OcclusionTransparency : MonoBehaviour
 
     void OnDisable() { _台账.全还原(); _保持到.Clear(); _本帧.Clear(); _待恢复.Clear(); }
     void OnDestroy() { _台账.全还原(); }
+
+    // ---------------------------------------------------------------- 只读诊断（自动化验证用）
+    //
+    // 本组件是**由 场景自举 补到相机上**的，参数不写进场景 ⇒ 验证脚本需要能读到运行时状态，
+    // 否则"淡出到底有没有在推进"只能靠肉眼看。两个只读入口都不改任何东西。
+
+    /// <summary>当前被水墨淡出管着的渲染器数量（0 = 这一帧没有任何东西在淡）。读不到返回 -1</summary>
+    public int 水墨数量
+    {
+        get { try { return _台账.数量; } catch (System.Exception) { return -1; } }
+    }
+
+    /// <summary>随便挑一个在管的渲染器，返回它的 `_Fade`（没有 = -1，读异常 = -2）。自动化验证用</summary>
+    public float 取一个进度()
+    {
+        try
+        {
+            foreach (var r in _台账.名单) return _台账.取进度(r);
+        }
+        catch (System.Exception) { return -2f; }
+        return -1f;
+    }
 }
