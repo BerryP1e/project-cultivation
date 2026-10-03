@@ -91,7 +91,7 @@ public static class UI神通页重排
                 var label = slot.label.rectTransform;
                 label.SetParent(bar.transform, false);
                 label.anchorMin = label.anchorMax = new Vector2(.5f, .55f);
-                label.anchoredPosition = pos + new Vector2(0, -47); label.sizeDelta = new Vector2(132, 26); slot.label.fontSize = 16;
+                label.anchoredPosition = pos + new Vector2(0, -62); label.sizeDelta = new Vector2(132, 26); slot.label.fontSize = 16;
             }
             if (slot.clearButton != null)
             {
@@ -151,6 +151,7 @@ public static class UI神通页重排
         if (info.actionButton != null)
             UIBuildUtils.Place(info.actionButton.transform as RectTransform, Vector2.zero, new Vector2(1, 0), new Vector2(40, 48), new Vector2(-40, 110));
         if (info.actionLabel != null) info.actionLabel.fontSize = 25;
+        UIInkAbilityArt.RefreshDetail(info);
     }
     static void Top(RectTransform rt, float y, float height, float padding)
     {

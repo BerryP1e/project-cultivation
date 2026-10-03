@@ -38,8 +38,9 @@ public static class UIDragContext
         rt.localScale = InkUITheme.Enabled && !UIInkMotion.减少动效 ? Vector3.one * 1.08f : Vector3.one;
         if (InkUITheme.Enabled)
         {
-            var icon = UIBuildUtils.CreateImage("Icon", rt, entry.DisplayIcon != null ? Color.white : UIEntryRow.TierColor(entry.DisplayTier));
-            icon.sprite = entry.DisplayIcon; icon.preserveAspect = true;
+            var displayIcon = UIInkAbilityArt.Icon(entry);
+            var icon = UIBuildUtils.CreateImage("Icon", rt, displayIcon != null ? Color.white : UIEntryRow.TierColor(entry.DisplayTier));
+            icon.sprite = displayIcon; icon.preserveAspect = true;
             UIBuildUtils.Place(icon.rectTransform, new Vector2(0, .3f), Vector2.one, new Vector2(16, 8), new Vector2(-16, -16));
         }
 
@@ -151,7 +152,7 @@ public class UIEntryRow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         if (label != null) label.text = entry != null ? entry.DisplayName : "";
         if (swatch != null)
         {
-            swatch.sprite = entry != null ? entry.DisplayIcon : null;
+            swatch.sprite = UIInkAbilityArt.Icon(entry);
             swatch.color = swatch.sprite != null ? Color.white : SwatchColor(entry);
             swatch.preserveAspect = true;
         }
@@ -604,11 +605,13 @@ public class UIEntryList : MonoBehaviour
         var le = row.GetComponent<LayoutElement>(); le.minHeight = le.preferredHeight = rowHeight;
         if (inkCards)
         {
-            UIBuildUtils.Place(row.swatch.rectTransform, new Vector2(0, .45f), new Vector2(1, 1), new Vector2(14, 0), new Vector2(-14, -12));
-            UIBuildUtils.Place(row.label.rectTransform, new Vector2(0, .22f), new Vector2(1, .45f), new Vector2(8, 0), new Vector2(-8, 0));
+            UIBuildUtils.Place(row.swatch.rectTransform, new Vector2(0, .50f), new Vector2(1, 1), new Vector2(14, 0), new Vector2(-14, -12));
+            UIBuildUtils.Place(row.label.rectTransform, new Vector2(0, .27f), new Vector2(1, .50f), new Vector2(8, 0), new Vector2(-8, 0));
             row.label.alignment = TextAnchor.MiddleCenter; row.label.fontSize = 18;
-            UIBuildUtils.Place(row.tagText.rectTransform, Vector2.zero, new Vector2(.42f, .22f), new Vector2(8, 2), new Vector2(-2, -2));
-            UIBuildUtils.Place(row.actionButton.transform as RectTransform, new Vector2(.42f, 0), new Vector2(1, .22f), new Vector2(0, 2), new Vector2(-8, -2));
+            UIBuildUtils.Place(row.tagText.rectTransform, Vector2.zero, new Vector2(.36f, .24f), new Vector2(10, 12), new Vector2(-2, 0));
+            row.tagText.alignment = TextAnchor.MiddleCenter; row.tagText.fontSize = 14;
+            UIBuildUtils.Place(row.actionButton.transform as RectTransform, new Vector2(.36f, 0), new Vector2(1, .24f), new Vector2(0, 10), new Vector2(-12, 0));
+            if (row.actionLabel != null) row.actionLabel.fontSize = 14;
         }
         else if (rowHeight >= 56)
         {

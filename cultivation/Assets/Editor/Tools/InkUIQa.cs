@@ -24,6 +24,11 @@ public static class InkUIQa
     }
     public static string Panel(string command)
     {
+        if (command == "artbefore" || command == "artafter")
+        {
+            EditorPrefs.SetBool("InkUI.QA.AbilityArtBefore", command == "artbefore");
+            return "OK ability art mode=" + command + "; restart Play to apply";
+        }
         if (command == "before" || command == "after")
         {
             EditorPrefs.SetBool("InkUI.QA.Before", command == "before");
@@ -77,6 +82,7 @@ public static class InkUIQa
             return "OK temporary actual catalog: active=" + data.已获得主动神通.Count + "; passive=" + data.已获得被动神通.Count;
         }
         if (command == "validate") return Validate(role);
+        if (command == "artcheck") return ValidateArtwork(role);
         if (role != null) role.SetOpen(false);
         if (cultivation != null) cultivation.Hide();
         if (alchemy != null) alchemy.Close();
@@ -90,6 +96,15 @@ public static class InkUIQa
         foreach (var tower in UnityEngine.Object.FindObjectsOfType<TowerUI>(true)) tower.HideDeathChoice();
         foreach (var plotUI in UnityEngine.Object.FindObjectsOfType<灵田地块界面>(true)) UnityEngine.Object.Destroy(plotUI.gameObject);
         if (command.StartsWith("role:")) { role.SetOpen(true); role.ShowTabByIndex(int.Parse(command.Substring(5))); }
+        else if (command.StartsWith("ability:"))
+        {
+            role.SetOpen(true); role.ShowTabByIndex(2);
+            var data = role.GetComponent<UIPanelData>();
+            var ability = data.神通.Find(item => item != null && item.神通id == command.Substring(8));
+            if (ability == null) return "FAIL no ability=" + command.Substring(8);
+            foreach (var list in role.GetComponentsInChildren<UIEntryList>())
+                if (list.source == ListSource.神通) { list.Select(ability); break; }
+        }
         else if (command.StartsWith("cultivation:"))
         {
             if (cultivation == null) cultivation = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/CultivationUI.prefab")).GetComponent<CultivationUI>();
@@ -151,6 +166,42 @@ public static class InkUIQa
         else return "FAIL unknown panel=" + command;
         Canvas.ForceUpdateCanvases();
         return "OK " + command + "; Screen=" + Screen.width + "x" + Screen.height + "; timeScale=" + Time.timeScale;
+    }
+    static string ValidateArtwork(CharacterPanelUI role)
+    {
+        role.SetOpen(true); role.ShowTabByIndex(2);
+        var data = role.GetComponent<UIPanelData>();
+        var log = new StringBuilder(); int failed = 0, count = 0;
+        var info = role.GetComponentInChildren<UIEntryList>().infoTarget;
+        foreach (var list in role.GetComponentsInChildren<UIEntryList>())
+            if (list.source == ListSource.神通) info = list.infoTarget;
+        var previous = info.Current;
+        try
+        {
+            foreach (var ability in data.神通)
+            {
+                if (ability == null) continue;
+                count++;
+                var originalIcon = ability.图标;
+                var icon = UIInkAbilityArt.Icon(ability);
+                var art = UIInkAbilityArt.Artwork(ability);
+                info.Show(ability);
+                var image = info.transform.Find("InkAbilityArtwork")?.GetComponent<Image>();
+                bool ok = icon != null && icon != originalIcon && art != null
+                    && image != null && image.sprite == art && image.gameObject.activeSelf
+                    && !image.raycastTarget && image.color == Color.white && image.preserveAspect
+                    && ability.图标 == originalIcon;
+                log.AppendLine((ok ? "PASS " : "FAIL ") + ability.神通id + " icon/art bound; data unchanged");
+                if (!ok) failed++;
+            }
+            info.Show(null);
+            var cleared = info.transform.Find("InkAbilityArtwork");
+            bool clears = cleared != null && !cleared.gameObject.activeSelf;
+            log.AppendLine((clears ? "PASS " : "FAIL ") + "clear selection hides previous artwork");
+            if (!clears) failed++;
+        }
+        finally { info.Show(previous); }
+        return "Abilities=" + count + " Failures=" + failed + "\n" + log;
     }
     static string Validate(CharacterPanelUI role)
     {

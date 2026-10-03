@@ -68,9 +68,9 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
             // 空槽不要让生成器的灰色占位 Image 盖住独立的异形槽底；
             // 有真实 DisplayIcon 时才显示内容层。
             icon.gameObject.SetActive(entry != null);
-            icon.sprite = entry != null ? entry.DisplayIcon : null;
+            icon.sprite = UIInkAbilityArt.Icon(entry);
             icon.color = entry != null
-                ? (entry.DisplayIcon != null ? Color.white : UIEntryRow.TierColor(entry.DisplayTier))
+                ? (icon.sprite != null ? Color.white : UIEntryRow.TierColor(entry.DisplayTier))
                 : new Color(0.9f, 0.9f, 0.9f, 1f);
         }
 

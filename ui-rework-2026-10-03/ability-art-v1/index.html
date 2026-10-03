@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>神通插画 · 素材与实机对照</title>
+<style>body{margin:24px;background:#eee9dc;color:#303d37;font:16px system-ui}main{max-width:1440px;margin:auto}select,button{font:inherit;padding:8px;margin:4px}p{line-height:1.7}.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}.compare img,#detail{width:100%}article{padding:16px;border-bottom:1px solid #9c8355;display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:center}article img{max-width:100%}a{color:#526f5c}.checker{background-color:#eee9dc;background-image:linear-gradient(45deg,#ccc8bc 25%,transparent 25%,transparent 75%,#ccc8bc 75%),linear-gradient(45deg,#ccc8bc 25%,transparent 25%,transparent 75%,#ccc8bc 75%);background-size:20px 20px;background-position:0 0,10px 10px}@media(max-width:800px){.compare{grid-template-columns:1fr}}</style>
+<main><h1>神通插画接入 · 第一阶段</h1><p>8 枚独立图标与 8 幅独立详情画，均含真实 alpha。下方前图只关闭新插画，保留原皮肤；后图是实际 Play 捕获。图标 256×256，详情画 1024×576。棋盘格由网页绘制，未写入 PNG。</p>
+<label>页面 <select id="page"><option>神通</option><option>法宝</option><option>灵阵</option><option>HUD</option></select></label>
+<label>分辨率 <select id="resolution"><option>1920x1080</option><option>1280x720</option></select></label>
+<div class="compare"><div><p>前 · 插画未接入</p><a id="beforeLink"><img id="before"></a></div><div><p>后 · 插画已接入</p><a id="afterLink"><img id="after"></a></div></div>
+<p>逐项查看详情：<select id="ability"></select></p><a id="detailLink"><img id="detail"></a>
+<p><button id="background">切换素材底色</button><a href="接入与素材验收.md">查看验收与未完成项</a> · <a href="manifest.json">alpha 与尺寸记录</a> · <a href="generation-map.json">生成提示词</a></p>
+<div id="assets" class="checker"></div></main>
+<script>
+const abilities=[['bingbao_shu','冰暴术'],['fentian_yanshu','焚天炎术'],['leidong_qianshan','雷动千闪'],['shunlei_tianshan','瞬雷天闪'],['hanxu','寒墟'],['pingxu_yufeng','凭虚御风'],['qianjie_leiyu','千劫雷狱'],['leiyun','雷云']];
+const resolution=document.getElementById('resolution'),page=document.getElementById('page'),ability=document.getElementById('ability'),assets=document.getElementById('assets');
+for(const [id,name] of abilities){ability.add(new Option(name,id));const row=document.createElement('article');for(const kind of ['icon','art']){const a=document.createElement('a');a.href='export/'+kind+'-ability-'+id+'.png';const img=document.createElement('img');img.src=a.href;img.alt=name+' '+kind;a.append(img);row.append(a)}row.title=name;assets.append(row)}
+function refresh(){for(const [id,phase] of [['before','前'],['after','后']]){const path='../../cultivation/screenshots/UI_'+page.value+'_插画接入'+phase+'_'+resolution.value+'.png';document.getElementById(id).src=path;document.getElementById(id+'Link').href=path}const path='../../cultivation/screenshots/UI_神通-'+ability.value+'_插画接入后_'+resolution.value+'.png';document.getElementById('detail').src=path;document.getElementById('detailLink').href=path}
+page.onchange=resolution.onchange=ability.onchange=refresh;document.getElementById('background').onclick=()=>{assets.classList.toggle('checker');assets.style.background=assets.classList.contains('checker')?'':'#303d37'};refresh();
+</script></html>

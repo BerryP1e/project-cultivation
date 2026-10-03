@@ -12,6 +12,8 @@
 
 ### 0.1 全工程映射与状态入口
 
+2026-10-04 第一阶段补图：`AbilityArt/` 已接当前真实目录 8 项神通的 8 枚图标与 8 幅详情画。`UIInkAbilityArt` 按 `神通id` 查找，仅在展示层使用，不改 `DisplayIcon` 数据字段、CSV 或 ScriptableObject。资源库/被动行/六槽/HUD/拖影共用图标查询，神通详情用独立不挡射线的 `InkAbilityArtwork`，正文让出图片区。缺图仍走原图标；无详情画保持空白。素材、提示词、alpha 统计与实机截图见 [插画接入验收](../../ui-rework-2026-10-03/ability-art-v1/接入与素材验收.md)。
+
 2026-10-04 动效接入：`UIInkMotion` 共用落笔、晕开、提笔、干笔与 Timing 表，暂停菜单提供“减少动效”。面板绘制用 `UIInkReveal/UIInkClipRect` 展开，文字只淡入；关闭快照不复制业务脚本、不占射线，业务立即关闭。`UIInkNumber/UIInkFill` 只插值显示，冷却与编号排除；列表复用刷新不重启整库入场。文件桥 `inkmotion:record/status` 录制六类动作慢放；运行时墨晕优先读取 `Effects/fx-ink-blot`，缺图使用柔边几何。素底版与飞白尚缺，§10 统一纸纹未接，不能把本轮写成整套动效/材质全部完成。
 
 | 控制器 / 节点 | 素材 / 行为 |

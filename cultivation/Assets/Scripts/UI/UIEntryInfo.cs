@@ -140,6 +140,7 @@ public class UIEntryInfo : MonoBehaviour
                 iconImage.color = new Color(0.62f, 0.62f, 0.62f, 1f);
             }
             if (actionButton != null) actionButton.gameObject.SetActive(false);
+            UIInkAbilityArt.RefreshDetail(this);
             return;
         }
 
@@ -160,13 +161,14 @@ public class UIEntryInfo : MonoBehaviour
 
         if (iconImage != null)
         {
-            iconImage.sprite = entry.DisplayIcon;
+            iconImage.sprite = UIInkAbilityArt.Icon(entry);
             // 没有图时用一块品阶色底板占位，避免一片空白
-            iconImage.color = entry.DisplayIcon != null
+            iconImage.color = iconImage.sprite != null
                 ? Color.white
                 : UIEntryRow.TierColor(entry.DisplayTier);
         }
 
+        UIInkAbilityArt.RefreshDetail(this);
         RefreshActionState();
     }
 
