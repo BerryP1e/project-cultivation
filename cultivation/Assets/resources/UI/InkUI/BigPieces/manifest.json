@@ -1,0 +1,25 @@
+{
+  "source": "large-ui-pieces-atlas-v1.png",
+  "transparent": true,
+  "note": "三块完整大面板皮肤；内部纸面/玉面是组件材质，外部透明。",
+  "crops": {
+    "left-parent-navigation-panel": [
+      10,
+      5,
+      280,
+      884
+    ],
+    "learned-ability-library-panel": [
+      295,
+      100,
+      955,
+      730
+    ],
+    "ability-detail-panel": [
+      1250,
+      15,
+      505,
+      870
+    ]
+  }
+}

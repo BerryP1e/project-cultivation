@@ -49,6 +49,9 @@ public class UIInkSkin : MonoBehaviour
     [Tooltip("把面板里的淡色文字改成**墨色**（纸底上白字看不清）并去掉黑描边")]
     public bool 换字色 = true;
 
+    [Tooltip("按原型图**重排神通页**（大幕布 / 左导航立板 / 六槽环+编号 / 卡片网格 / 通高详情）")]
+    public bool 重排神通页 = true;
+
     /// <summary>创角面板的墨色（= 规格色板 #303D37）</summary>
     static readonly Color 墨色 = new Color(0.188f, 0.239f, 0.216f, 1f);
 
@@ -195,6 +198,9 @@ public class UIInkSkin : MonoBehaviour
 
         Debug.Log("[水墨换皮] " + gameObject.name + " 完成：面板底 " + 面板 + " / 页签 " + 页签 + " / 列表行 " + 行
                   + " / 按钮 " + 按钮 + " / 进度条 " + 进度 + " / 滚动条 " + 滚动 + " / 改字色 " + 字, this);
+
+        // ---- 换完图之后，再按原型图**重排神通页**（幕布/左导航/六槽环+编号/卡片网格/通高详情）----
+        if (重排神通页) UI神通页重排.应用(r);
     }
 
     /// <summary>内板（内容分区底板）—— 名字来自 `CharacterPanelBuilder` 的分区命名</summary>

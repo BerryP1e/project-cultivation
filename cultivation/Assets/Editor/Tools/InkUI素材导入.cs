@@ -80,6 +80,23 @@ public static class InkUI素材导入
         { "cinnabar-hover",     new Vector4(120, 28, 120, 28) },
         { "cinnabar-pressed",   new Vector4(120, 28, 120, 28) },
         { "cinnabar-disabled",  new Vector4(120, 28, 120, 28) },
+        // ---- 另外三包（`transparent-*-v1` / `large-ui-pieces-v1`）----
+        //   ⚠️ 这三包的 manifest 只写了"从图集裁哪块"，**没写九宫格** ⇒ 这里按用途给保守值，
+        //   跑一次看日志里的尺寸，再按"角饰大概占多宽"微调。
+        { "parent-curtain-9slice-source", new Vector4(96, 96, 96, 96) },   // 面板大幕布（含山水）
+        { "parent-navigation-rail",       new Vector4(24, 24, 24, 24) },
+        { "nav-tab-inactive",             new Vector4(24,  8, 24,  8) },
+        { "nav-tab-active",               new Vector4(36, 12, 36, 12) },
+        { "ornate-divider",               new Vector4(24,  8, 24,  8) },
+        { "title-plaque",                 new Vector4(96, 48, 96, 48) },
+        { "left-parent-navigation-panel", new Vector4(96, 96, 96, 96) },
+        { "learned-ability-library-panel",new Vector4(96, 96, 96, 96) },
+        { "ability-detail-panel",         new Vector4(96, 96, 96, 96) },
+        { "ability-library-card",         new Vector4(28, 28, 28, 28) },
+        { "enabled-passive-row",          new Vector4(28, 20, 28, 20) },
+        { "parent-navigation-tab",        new Vector4(24,  8, 24,  8) },
+        { "primary-action-button",        new Vector4(120, 28, 120, 28) },
+        { "secondary-action-button",      new Vector4(120, 28, 120, 28) },
     };
 
     /// <summary>小件不压缩（怕色带）；其余用 CompressedHQ</summary>
