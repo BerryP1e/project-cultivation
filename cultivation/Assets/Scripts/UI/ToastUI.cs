@@ -93,6 +93,10 @@ public class ToastUI : MonoBehaviour
     CanvasGroup 组;
     RectTransform 自己;
     float 计时;
+    Vector2 基准位置;
+    bool 运动名额;
+    bool 已提笔;
+    RectTransform 底图;
 
     void 构建(string 文本, float 时长)
     {
@@ -106,6 +110,7 @@ public class ToastUI : MonoBehaviour
         自己.sizeDelta = 尺寸;
 
         var 底 = UIBuildUtils.CreateImage("底", transform, 底色);
+        底图 = 底.rectTransform;
         底.raycastTarget = false;                        // 提示不该挡住点击
         UIBuildUtils.Stretch(底.rectTransform, 0f);
 
@@ -118,6 +123,8 @@ public class ToastUI : MonoBehaviour
         组.alpha = 0f;
 
         排版();
+        if (InkUITheme.Enabled) { 淡入时长 = .16f; 淡出时长 = .20f; }
+        运动名额 = InkUITheme.Enabled && UIInkMotion.Acquire();
     }
 
     /// <summary>把活着的提示从上往下排</summary>
@@ -129,6 +136,7 @@ public class ToastUI : MonoBehaviour
             var t = 活动[i];
             if (t == null) continue;
             t.自己.anchoredPosition = new Vector2(-t.右边距, -(t.顶边距 + y));
+            t.基准位置 = t.自己.anchoredPosition;
             y += t.尺寸.y + t.行间距;
         }
     }
@@ -137,10 +145,25 @@ public class ToastUI : MonoBehaviour
     {
         计时 += Time.unscaledDeltaTime;                  // 暂停时也要动（timeScale=0）
         float 总 = 淡入时长 + 停留时长 + 淡出时长;
+        if (InkUITheme.Enabled && 底图 != null)
+            底图.localScale = Vector3.one * (UIInkMotion.减少动效 || !运动名额 ? 1 : Mathf.Lerp(.6f, 1, UIInkMotion.Timing.Cubic(计时 / Mathf.Max(.01f, 淡入时长))));
 
-        if (计时 < 淡入时长) 组.alpha = 淡入时长 > 0f ? 计时 / 淡入时长 : 1f;
-        else if (计时 < 淡入时长 + 停留时长) 组.alpha = 1f;
-        else if (计时 < 总) 组.alpha = 1f - (计时 - 淡入时长 - 停留时长) / Mathf.Max(0.01f, 淡出时长);
+        if (计时 < 淡入时长) 组.alpha = !InkUITheme.Enabled
+            ? Mathf.Clamp01(计时 / Mathf.Max(.01f, 淡入时长))
+            : UIInkMotion.减少动效 || !运动名额 ? 1 : UIInkMotion.Timing.Cubic(计时 / Mathf.Max(.01f, 淡入时长));
+        else if (计时 < 淡入时长 + 停留时长)
+        {
+            组.alpha = 1f;
+            if (运动名额) { UIInkMotion.Release(); 运动名额 = false; }
+        }
+        else if (计时 < 总)
+        {
+            if (!已提笔) { 已提笔 = true; 运动名额 = InkUITheme.Enabled && UIInkMotion.Acquire(); }
+            float t = (计时 - 淡入时长 - 停留时长) / Mathf.Max(0.01f, 淡出时长);
+            组.alpha = !InkUITheme.Enabled ? 1 - t
+                : UIInkMotion.减少动效 || !运动名额 ? 1 : 1 - UIInkMotion.Timing.Quad(t);
+            if (!UIInkMotion.减少动效 && 运动名额) 自己.anchoredPosition = 基准位置 + Vector2.up * (10 * t);
+        }
         else
         {
             活动.Remove(this);
@@ -150,7 +173,7 @@ public class ToastUI : MonoBehaviour
         }
     }
 
-    void OnDestroy() { 活动.Remove(this); }
+    void OnDestroy() { 活动.Remove(this); if (运动名额) { UIInkMotion.Release(); 运动名额 = false; } }
 
     // ---- ASCII 别名 ----
     public static void Show(string text, float seconds = 0f) => 提示(text, seconds);

@@ -94,6 +94,7 @@ public class MainMenuUI : MonoBehaviour
 
     public void 关闭面板()
     {
+        if (存档面板 != null) UIInkMotion.提笔(存档面板.transform);
         if (存档面板 != null) 存档面板.SetActive(false);
     }
 

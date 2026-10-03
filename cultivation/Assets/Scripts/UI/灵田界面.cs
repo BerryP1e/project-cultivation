@@ -126,6 +126,7 @@ public class 灵田界面 : MonoBehaviour
 
     public void 关闭()
     {
+        if (面板 != null) UIInkMotion.提笔(面板.transform);
         if (面板 == null) return;
         面板.gameObject.SetActive(false);
         同步幕布();

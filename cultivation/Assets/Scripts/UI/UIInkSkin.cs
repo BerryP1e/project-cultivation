@@ -215,6 +215,8 @@ public class UIInkSkin : MonoBehaviour
 
         // ---- 换完图之后，再按原型图**重排神通页**（幕布/左导航/六槽环+编号/卡片网格/通高详情）----
         if (重排神通页) UI神通页重排.应用(r);
+        foreach (var node in r.GetComponentsInChildren<Transform>(true))
+            if (node.name == "Window") UIInkMotion.Attach(node.gameObject, UIInkMotion.Kind.Panel);
         foreach (var button in r.GetComponentsInChildren<Button>(true))
             if (!button.name.StartsWith("Tab_") && button.name != "Row" && button.GetComponent<UIActiveSkillSlot>() == null && button.GetComponent<UISpiritSlot>() == null)
                 InkUITheme.Button(button);
@@ -374,6 +376,7 @@ public class UIInkSkin : MonoBehaviour
             var img = t.GetComponent<Image>();
             if (img == null) continue;
             bool selected = t.name.Substring(4) == 当前;
+            UIInkMotion.Attach(t.gameObject, UIInkMotion.Kind.Tab)?.选中(selected);
             // 独立素纸牌只用于当前项；其余项直接露出暗墨立板。
             // BigPieces 导航大件烘有固定选中项，不能拿它代替动态八页签。
             var sp = 取图("Skeleton/nav-tab-inactive");

@@ -40,6 +40,8 @@ public class UIInkHudSkin : MonoBehaviour
             if (text.name == "按键" || text.name == "文字") text.fontSize = 17;
         if (hud != null)
         {
+            UIInkNumber.Attach(hud.气血文字); UIInkNumber.Attach(hud.灵力文字);
+            UIInkFill.Attach(hud.气血填充); UIInkFill.Attach(hud.灵力填充); UIInkFill.Attach(hud.修炼填充);
             if (hud.幕布名称 != null) hud.幕布名称.color = InkUITheme.Ink;
             if (hud.幕布品阶 != null) hud.幕布品阶.color = InkUITheme.Ink;
             if (hud.幕布正文 != null) hud.幕布正文.color = InkUITheme.Ink;

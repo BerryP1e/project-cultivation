@@ -208,6 +208,7 @@ public class Teleporter : MonoBehaviour
     /// <summary>关面板</summary>
     public void 关面板()
     {
+        if (面板 != null) UIInkMotion.提笔(面板.transform);
         if (面板 != null) 面板.SetActive(false);
         面板开着 = false;
     }

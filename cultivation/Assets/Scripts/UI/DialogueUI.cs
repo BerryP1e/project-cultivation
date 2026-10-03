@@ -268,6 +268,7 @@ public class DialogueUI : MonoBehaviour
 
     void 收起来()
     {
+        if (根 != null) UIInkMotion.提笔(根.transform);
         if (根 != null) 根.SetActive(false);
         清回答();
         当前NPC = null;

@@ -63,6 +63,7 @@ public static class InkUITheme
         image.pixelsPerUnitMultiplier = path.StartsWith("Buttons/") ? Mathf.Max(2.6f, 240f / Mathf.Max(40f, image.rectTransform.rect.width * .65f)) : 2f;
         if (resetColor) image.color = Color.white;
         if (path == "CommonPanels/plot-tag" && sprite.texture.isReadable) image.alphaHitTestMinimumThreshold = .12f;
+        if (image.type == UnityEngine.UI.Image.Type.Filled) UIInkFill.Attach(image);
     }
 
     public static void Button(Button button, string material = null)
@@ -89,6 +90,8 @@ public static class InkUITheme
             disabledSprite = Load("Buttons/" + material + "-disabled")
         };
         foreach (var text in button.GetComponentsInChildren<Text>(true)) text.color = material == "ivory" || !button.interactable ? Ink : new Color(.98f, .95f, .85f);
+        UIInkMotion.Attach(button.gameObject, UIInkMotion.Kind.Card);
+        UIInkMotion.干笔(button);
     }
 
     // selectedSprite 是 EventSystem 的键盘焦点状态，不能冒充数据里的“当前选中”。
@@ -103,6 +106,7 @@ public static class InkUITheme
             highlightedSprite = Load(selected ? normal : prefix + "-hover"),
             selectedSprite = Load(normal), pressedSprite = Load(prefix + "-selected"), disabledSprite = Load(normal)
         };
+        UIInkMotion.Attach(button.gameObject, UIInkMotion.Kind.Row)?.选中(selected);
     }
 
     public static void Scroll(ScrollRect scroll, float titleHeight = 34)
@@ -113,6 +117,8 @@ public static class InkUITheme
         if (bar == null) bar = UIBuildUtils.AddVerticalScrollbar(scroll, 16, titleHeight, 8);
         scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
         scroll.scrollSensitivity = 42;
+        scroll.inertia = true;
+        scroll.decelerationRate = .135f;
         Image(bar.GetComponent<Image>(), "SkillsPage/status/scroll-track");
         Image(bar.handleRect.GetComponent<Image>(), "SkillsPage/status/scroll-thumb");
         if (scroll.viewport != null)
@@ -121,5 +127,8 @@ public static class InkUITheme
             if (hit == null) hit = scroll.viewport.gameObject.AddComponent<Image>();
             hit.color = Color.clear; hit.raycastTarget = true;
         }
+        if (scroll.content != null)
+            foreach (var graphic in scroll.content.GetComponentsInChildren<Graphic>(true))
+                if (graphic.GetComponent<UIInkScrollFade>() == null) graphic.gameObject.AddComponent<UIInkScrollFade>();
     }
 }

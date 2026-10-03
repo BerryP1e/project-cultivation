@@ -230,7 +230,10 @@ public static class InkUIQa
         var singleton = typeof(ScriptableSingleton<>).MakeGenericType(type);
         var instance = singleton.GetProperty("instance", BindingFlags.Public | BindingFlags.Static).GetValue(null);
         var groupType = assembly.GetType("UnityEditor.GameViewSizeGroupType");
-        var group = type.GetMethod("GetGroup").Invoke(instance, new[] { Enum.Parse(groupType, "Standalone") });
+        var allFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+        var currentGroup = type.GetProperty("currentGroupType", allFlags);
+        var groupValue = currentGroup != null ? currentGroup.GetValue(currentGroup.GetMethod.IsStatic ? null : instance) : Enum.Parse(groupType, "Standalone");
+        var group = type.GetMethod("GetGroup").Invoke(instance, new[] { groupValue });
         var gt = group.GetType();
         var sizeType = assembly.GetType("UnityEditor.GameViewSize");
         var modeType = assembly.GetType("UnityEditor.GameViewSizeType");
@@ -255,6 +258,8 @@ public static class InkUIQa
         view.Repaint();
         var current = gameViewType.GetProperty("currentGameViewSize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(view);
         return "GameView requested " + width + "x" + height + "; Screen currently " + Screen.width + "x" + Screen.height
-            + "; selected=" + index + "; current=" + current + "; batch=" + Application.isBatchMode + "; windows=" + Resources.FindObjectsOfTypeAll(gameViewType).Length;
+            + "; group=" + groupValue + "; selected=" + index + "; current=" + current
+            + "; actualPreset=" + (current != null ? sizeType.GetProperty("width").GetValue(current) + "x" + sizeType.GetProperty("height").GetValue(current) : "none")
+            + "; batch=" + Application.isBatchMode + "; windows=" + Resources.FindObjectsOfTypeAll(gameViewType).Length;
     }
 }

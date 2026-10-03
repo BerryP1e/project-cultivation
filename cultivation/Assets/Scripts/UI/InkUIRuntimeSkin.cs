@@ -64,6 +64,8 @@ public class InkUIRuntimeSkin : MonoBehaviour
             if (row != null) InkUITheme.Image(row.gameObject.AddComponent<Image>(), "CommonPanels/toast");
         }
         Refresh();
+        if (name == "PauseMenuCanvas" || name == "DeathScreenCanvas" || name == "MenuCanvas" || name == "起名界面")
+            UIInkMotion.Attach(gameObject, UIInkMotion.Kind.Panel);
     }
     void Update()
     {
@@ -81,6 +83,8 @@ public class InkUIRuntimeSkin : MonoBehaviour
             string n = image.name;
             string path = Map(canvas, image);
             if (path != null) InkUITheme.Image(image, path, !path.EndsWith("furnace-stage"));
+            if (path != null && (image.name == "主面板" || image.name == "内容框" || image.name == "面板" || image.name == "功德堂" || image.name == "对话框" || image.name == "底板" || image.name == "SavePanel"))
+                UIInkMotion.Attach(image.gameObject, UIInkMotion.Kind.Panel);
         }
         foreach (var button in GetComponentsInChildren<Button>(true))
         {
@@ -96,6 +100,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         foreach (var text in GetComponentsInChildren<Text>(true))
         {
             if (!handled.Add(text.GetInstanceID())) continue;
+            if (text.name.Contains("余额") || text.name.Contains("贡献") || text.name == "灵气数值" || text.name == "进度文字") UIInkNumber.Attach(text);
             if (text.name == "塔层HUD") { Backdrop(text, "CommonPanels/tower-floor-bar"); text.color = new Color(.98f, .95f, .85f); }
             if ((canvas == "PauseMenuCanvas" || canvas == "DeathScreenCanvas" || canvas == "起名界面" || canvas == "StationUIPlaceholder") && text.name == "标题")
             { Backdrop(text, "CommonPanels/title-plaque"); text.color = InkUITheme.Ink; }

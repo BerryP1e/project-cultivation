@@ -460,6 +460,9 @@ public static class DshBridge
             case "inkqa":
                 输出.Append(InkUIQa.Panel(参数)).Append('\n');
                 break;
+            case "inkmotion":
+                输出.Append(InkUIMotionQa.Run(参数)).Append('\n');
+                break;
 
             case "screen":
                 {

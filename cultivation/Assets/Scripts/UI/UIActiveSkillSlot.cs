@@ -59,6 +59,7 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
 
     public void Bind(Object content, bool pendingHighlight = false)
     {
+        bool changed = Content != content;
         Content = content;
         var entry = content as IPanelEntry;
 
@@ -97,6 +98,7 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
         }
 
         if (clearButton != null) clearButton.gameObject.SetActive(content != null);
+        if (changed && gameObject.activeInHierarchy) UIInkMotion.晕开(transform as RectTransform, null, UIInkMotion.Timing.Slot);
     }
 
     /// <summary>取数据源。优先用接好的引用，没有就顺着 Canvas 往上找</summary>
@@ -126,7 +128,7 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
         if (obj == null) return;
 
         panel.EquipToSlot(index, obj);
-        UIDragContext.End();
+        UIDragContext.End(true);
     }
 
     /// <summary>清空本格</summary>

@@ -106,6 +106,7 @@ public class PauseMenuUI : MonoBehaviour
 
     void 设显示(bool 显示)
     {
+        if (!显示 && 菜单根 != null) UIInkMotion.提笔(菜单根.transform);
         if (菜单根 != null && 菜单根.activeSelf != 显示) 菜单根.SetActive(显示);
     }
 
@@ -220,6 +221,17 @@ public class PauseMenuUI : MonoBehaviour
         {
             float y = 起始Y - i * (按钮尺寸.y + 按钮间距);
             建按钮("按钮_" + 文案[i], 菜单根.transform, 文案[i], new Vector2(0f, y), 动作[i]);
+        }
+        if (InkUITheme.Enabled)
+        {
+            var rt = new GameObject("按钮_减少动效", typeof(RectTransform)).GetComponent<RectTransform>();
+            rt.SetParent(菜单根.transform, false); rt.anchorMin = rt.anchorMax = new Vector2(.5f, 1);
+            rt.anchoredPosition = new Vector2(0, -300 - 文案.Length * (按钮尺寸.y + 按钮间距)); rt.sizeDelta = new Vector2(300, 52);
+            var btn = UIBuildUtils.CreateButton("减少动效", rt, 取字体(), "", 26);
+            UIBuildUtils.Stretch(btn.transform as RectTransform);
+            var label = btn.GetComponentInChildren<Text>();
+            System.Action refresh = () => label.text = "减少动效：" + (UIInkMotion.减少动效 ? "开" : "关");
+            refresh(); btn.onClick.AddListener(() => { UIInkMotion.减少动效 = !UIInkMotion.减少动效; refresh(); });
         }
     }
 

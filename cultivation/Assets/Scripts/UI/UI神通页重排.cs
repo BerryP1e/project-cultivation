@@ -83,8 +83,9 @@ public static class UI神通页重排
             if (slot.background != null) slot.background.overrideSprite = null;
             if (slot.icon != null) UIBuildUtils.Stretch(slot.icon.rectTransform, 22);
             if (slot.GetComponent<InkUIHitShape>() == null) slot.gameObject.AddComponent<InkUIHitShape>();
-            if (slot.GetComponent<InkUIHoverMotion>() == null && slot.icon != null)
-                slot.gameObject.AddComponent<InkUIHoverMotion>().visual = slot.icon.transform;
+            var oldHover = slot.GetComponent<InkUIHoverMotion>();
+            if (oldHover != null) oldHover.enabled = false;
+            UIInkMotion.Attach(slot.gameObject, UIInkMotion.Kind.Slot, slot.icon != null ? slot.icon.transform : null);
             if (slot.label != null)
             {
                 var label = slot.label.rectTransform;

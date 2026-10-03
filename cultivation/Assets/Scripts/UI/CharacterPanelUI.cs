@@ -106,7 +106,11 @@ public class CharacterPanelUI : MonoBehaviour
     {
         IsOpen = open;
 
-        if (panelRoot != null) panelRoot.SetActive(open);
+        if (panelRoot != null)
+        {
+            if (!open && !snap && panelRoot.activeInHierarchy) UIInkMotion.提笔(panelRoot.transform);
+            panelRoot.SetActive(open);
+        }
 
         if (open)
         {

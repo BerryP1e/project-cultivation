@@ -14,10 +14,13 @@ public static class UIDragContext
     public static IPanelEntry Entry { get; private set; }
     public static GameObject Ghost { get; private set; }
     public static bool Dragging => Entry != null;
+    static Vector2 origin;
+    static bool hasOrigin;
 
     public static void Begin(IPanelEntry entry, Transform canvasRoot, Font font)
     {
         End();
+        hasOrigin = false;
         Entry = entry;
         if (entry == null || canvasRoot == null) return;
 
@@ -32,10 +35,10 @@ public static class UIDragContext
 
         var rt = (RectTransform)go.transform;
         rt.sizeDelta = InkUITheme.Enabled ? new Vector2(164, 150) : new Vector2(200f, 40f);
-        rt.localScale = InkUITheme.Enabled ? Vector3.one * 1.08f : Vector3.one;
-        if (InkUITheme.Enabled && entry.DisplayIcon != null)
+        rt.localScale = InkUITheme.Enabled && !UIInkMotion.减少动效 ? Vector3.one * 1.08f : Vector3.one;
+        if (InkUITheme.Enabled)
         {
-            var icon = UIBuildUtils.CreateImage("Icon", rt, Color.white);
+            var icon = UIBuildUtils.CreateImage("Icon", rt, entry.DisplayIcon != null ? Color.white : UIEntryRow.TierColor(entry.DisplayTier));
             icon.sprite = entry.DisplayIcon; icon.preserveAspect = true;
             UIBuildUtils.Place(icon.rectTransform, new Vector2(0, .3f), Vector2.one, new Vector2(16, 8), new Vector2(-16, -16));
         }
@@ -46,6 +49,7 @@ public static class UIDragContext
                                                 TextAnchor.MiddleCenter, new Color(0.1f, 0.1f, 0.1f));
             UIBuildUtils.Stretch(label.rectTransform, 2f);
             if (InkUITheme.Enabled) UIBuildUtils.Place(label.rectTransform, Vector2.zero, new Vector2(1, .3f), new Vector2(8, 4), new Vector2(-8, -4));
+            label.horizontalOverflow = HorizontalWrapMode.Overflow; label.verticalOverflow = VerticalWrapMode.Overflow;
             label.raycastTarget = false;
         }
         Ghost = go;
@@ -54,20 +58,30 @@ public static class UIDragContext
     public static void Move(Vector2 screenPosition)
     {
         if (Ghost == null) return;
-        if (InkUITheme.Enabled)
+        if (!hasOrigin) { origin = screenPosition; hasOrigin = true; }
+        if (InkUITheme.Enabled && !UIInkMotion.减少动效)
         {
             var delta = screenPosition - (Vector2)Ghost.transform.position;
-            Ghost.transform.localRotation = Quaternion.Euler(Mathf.Clamp(-delta.y * .15f, -8, 8), Mathf.Clamp(delta.x * .15f, -8, 8), -3);
+            Ghost.transform.localRotation = Quaternion.Euler(Mathf.Clamp(-delta.y * .1f, -4, 4), Mathf.Clamp(delta.x * .1f, -4, 4), -4);
         }
-        Ghost.transform.position = screenPosition;
+        Ghost.transform.position = screenPosition + (InkUITheme.Enabled && !UIInkMotion.减少动效 ? Vector2.up * 12 : Vector2.zero);
+        foreach (var label in Ghost.GetComponentsInChildren<Text>())
+        {
+            label.transform.localRotation = Quaternion.Inverse(Ghost.transform.localRotation);
+            label.transform.localScale = Vector3.one / Ghost.transform.localScale.x;
+        }
     }
 
-    public static void End()
+    public static void End(bool accepted = false)
     {
         Entry = null;
         if (Ghost != null)
         {
-            if (Application.isPlaying) UnityEngine.Object.Destroy(Ghost);
+            if (Application.isPlaying && !accepted && hasOrigin && InkUITheme.Enabled && !UIInkMotion.减少动效)
+            {
+                var returnMotion = Ghost.AddComponent<UIInkDragReturn>(); returnMotion.起点 = origin;
+            }
+            else if (Application.isPlaying) UnityEngine.Object.Destroy(Ghost);
             else UnityEngine.Object.DestroyImmediate(Ghost);
             Ghost = null;
         }
@@ -181,6 +195,7 @@ public class UIEntryRow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
     {
         if (!InkUITheme.Enabled) return;
         inkSelected = selected;
+        GetComponent<UIInkMotion>()?.选中(selected);
         if (Owner != null && Owner.inkCards)
         {
             if (button != null)
@@ -479,7 +494,9 @@ public class UIEntryList : MonoBehaviour
             }
             poolReady = true;
         }
-        foreach (var row in spawned) if (row != null) row.SetActive(false);
+        // 同一份数据刷新不重启所有行的入场，也不打断正在拖动/悬停的行。
+        int visibleCount = entries != null ? entries.Count : 0;
+        for (int i = visibleCount; i < spawned.Count; i++) if (spawned[i] != null) spawned[i].SetActive(false);
         if (emptyRow != null) emptyRow.SetActive(false);
 
         if (entries == null || entries.Count == 0)
@@ -508,6 +525,8 @@ public class UIEntryList : MonoBehaviour
             row.data = data;
             row.Bind(entries[i], OnRowClicked, OnRowAction);
             LayoutRow(row);
+            UIInkMotion.Attach(go, inkCards ? UIInkMotion.Kind.Card : UIInkMotion.Kind.Row,
+                inkCards ? row.swatch.transform : null, i < 8 ? i * .03f : -1);
         }
         Select(entries[0]);
     }
@@ -603,6 +622,9 @@ public class UIEntryList : MonoBehaviour
         }
         InkUITheme.Button(row.actionButton);
         row.SetInkSelected(row.Entry == Selected);
+        if (InkUITheme.Enabled)
+            foreach (var graphic in row.GetComponentsInChildren<Graphic>(true))
+                if (graphic.GetComponent<UIInkScrollFade>() == null) graphic.gameObject.AddComponent<UIInkScrollFade>();
     }
 
     void OnRowClicked(IPanelEntry entry) => Select(entry);

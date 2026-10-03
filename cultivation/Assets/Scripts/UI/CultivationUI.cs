@@ -171,6 +171,7 @@ public class CultivationUI : MonoBehaviour
 
     public void 隐藏()
     {
+        if (画布 != null) UIInkMotion.提笔(画布.transform);
         if (画布 != null) 画布.gameObject.SetActive(false);
     }
 

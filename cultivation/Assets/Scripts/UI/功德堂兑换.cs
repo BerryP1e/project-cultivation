@@ -80,7 +80,7 @@ public class 功德堂兑换 : MonoBehaviour
         if (打印日志) Debug.Log("[功德堂] 打开兑换（上架 " + 上架的.Count + " 件，贡献 " + 宗门贡献.当前 + "）", this);
     }
 
-    public void 关面板() { if (面板 != null) 面板.gameObject.SetActive(false); 同步幕布(); UiEscRegistry.记录关闭(); }
+    public void 关面板() { if (面板 != null) { UIInkMotion.提笔(面板.transform); 面板.gameObject.SetActive(false); } 同步幕布(); UiEscRegistry.记录关闭(); }
 
     // ============================================================ 数据
 
