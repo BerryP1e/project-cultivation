@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -38,9 +38,9 @@ public class GameGlobalOutline : MonoBehaviour
 {
     [Header("总开关")]
     [Tooltip("关掉 = 完全不画（也不建临时 RT），画面和后处理链跟没加它一样。\n" +
-             "⚠️ 默认关：这效果还没在真机画面上验证过（2026-10-03 写完只做到编译通过）。\n" +
-             "在 Inspector 里勾上就能看效果，步骤见 docs/guides/描边.md")]
-    public bool 启用 = false;
+             "2026-10-03 已在 Sect 实测：玩家一圈暖金线、开/关像素差 4.33%（见 screenshots/描边_开.png）。\n" +
+             "不想看就把它关掉；参数含义见 docs/guides/描边.md")]
+    public bool 启用 = true;
 
     [Header("描谁（对象组）")]
     [Tooltip("玩家所在组：暖金线")]
@@ -56,7 +56,7 @@ public class GameGlobalOutline : MonoBehaviour
 
     [Header("线的样子")]
     [Tooltip("采样半径（像素）= 线粗细。1~2 是细描边，3 以上偏风格化")]
-    [Range(0.4f, 8f)] public float 粗细 = 1.6f;
+    [Range(0.4f, 8f)] public float 粗细 = 2.0f;
     [Tooltip("边缘软化（抗锯齿）。太小斜边会有台阶")]
     [Range(0.01f, 1f)] public float 软化 = 0.45f;
     [Tooltip("线的强度")]
