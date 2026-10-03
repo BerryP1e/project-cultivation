@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -217,6 +217,7 @@ public class 灵田地块界面 : MonoBehaviour
         string 需求 = 灵田.取() != null ? 灵田.取().升级需求文本(块.编号) : "";
         提示文本.text = b.已满阶 ? 需求
             : (能升级 ? "可升级！" + 需求 : 需求 + "　（" + 升级原因 + "）");
+        InkUITheme.Button(升级按钮);
     }
 
     void 清空动作区()
@@ -277,6 +278,7 @@ public class 灵田地块界面 : MonoBehaviour
             string id = d.id;
             btn.onClick.AddListener(() => { 选中灵植 = id; 刷新(); });
             if (选中灵植 == d.id) btn.GetComponent<Image>().color = 强调色;
+            InkUITheme.Choice(btn, "CommonPanels/dialog-choice", 选中灵植 == d.id);
 
             种子按钮.Add(btn);
             种子文字.Add(字);
@@ -309,6 +311,7 @@ public class 灵田地块界面 : MonoBehaviour
         if (可点 && 动作 != null) btn.onClick.AddListener(动作);
         主按钮字 = btn.GetComponentInChildren<Text>();
         if (!可点 && 主按钮字 != null) 主按钮字.color = 灰字色;
+        InkUITheme.Button(btn);
         return btn;
     }
 

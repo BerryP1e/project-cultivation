@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -329,6 +329,13 @@ public class 炼丹界面 : MonoBehaviour
             }
             // 正在选的那一格高亮
             槽格[i].GetComponent<Image>().color = (i == 选中格) ? 选中格色 : new Color(0.24f, 0.23f, 0.26f, 1f);
+            if (InkUITheme.Enabled)
+            {
+                bool 足够 = !有料 || (取物品(id) != null && 板 != null && 板.物品数量(取物品(id)) >= 槽数量[i]);
+                string state = !足够 ? "disabled" : i == 选中格 ? "selected" : 有料 ? "filled" : "empty";
+                InkUITheme.Image(槽格[i].GetComponent<Image>(), "CultivationAlchemy/material-slot-" + state);
+                槽字[i].color = 足够 ? InkUITheme.Ink : new Color(.65f, .24f, .18f);
+            }
         }
     }
 
@@ -371,9 +378,12 @@ public class 炼丹界面 : MonoBehaviour
         if (预览名 != null)
             预览名.text = 结算 != null ? (结算.名 + "\n" + 结算.品 + " 品") : "?\n（配不出）";
         if (预览方块 != null)
-            预览方块.GetComponent<Image>().color = 结算 != null
+            预览方块.GetComponent<Image>().color = InkUITheme.Enabled ? Color.clear : 结算 != null
                 ? new Color(0.78f, 0.70f, 0.42f, 1f)
                 : new Color(0.35f, 0.33f, 0.36f, 1f);
+        // 保留点击成品区域切回丹方列表，透明命中区不会盖住丹炉插画。
+        if (InkUITheme.Enabled && 预览方块 != null)
+            预览方块.GetComponent<Button>().transition = Selectable.Transition.None;
 
         // ---- 开炼按钮 ----
         string 原因 = "";
@@ -385,6 +395,7 @@ public class 炼丹界面 : MonoBehaviour
         {
             开炼按钮.interactable = 可以;
             开炼按钮.GetComponent<Image>().color = 可以 ? 开炼色 : 按钮暗色;
+            InkUITheme.Button(开炼按钮, "cinnabar");
         }
         if (!可以 && 提示文本 != null && string.IsNullOrEmpty(提示文本.text)) 提示文本.text = 原因;
     }
@@ -403,6 +414,11 @@ public class 炼丹界面 : MonoBehaviour
             丹方文字[i].text = 够 ? d.名 : d.名 + "（缺料）";
             丹方底[i].color = 选 ? 按钮色 : (够 ? new Color(0.42f, 0.38f, 0.30f, 1f) : new Color(0.24f, 0.23f, 0.26f, 1f));
             丹方文字[i].color = 选 ? 按钮字色 : (够 ? 正文色 : 灰字色);
+            if (InkUITheme.Enabled)
+            {
+                InkUITheme.Choice(丹方按钮[i], "CultivationAlchemy/recipe-row", 选);
+                丹方文字[i].color = 够 ? InkUITheme.Ink : new Color(.6f, .26f, .18f);
+            }
         }
     }
 
@@ -481,6 +497,11 @@ public class 炼丹界面 : MonoBehaviour
             bool 选中 = 选中格 >= 0 && 槽物品[选中格] == d.物品id;
             背包按钮[i].GetComponent<Image>().color = 选中 ? 按钮色 : new Color(0.34f, 0.32f, 0.30f, 1f);
             背包文字[i].color = 选中 ? 按钮字色 : 正文色;
+            if (InkUITheme.Enabled)
+            {
+                InkUITheme.Choice(背包按钮[i], "SkillsPage/skills/row", 选中);
+                背包文字[i].color = InkUITheme.Ink;
+            }
         }
     }
 

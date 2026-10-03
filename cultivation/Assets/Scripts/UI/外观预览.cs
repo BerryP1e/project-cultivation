@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -181,6 +181,11 @@ public class 外观预览 : MonoBehaviour, IDragHandler, IPointerDownHandler
             预览网格 = 实例.GetComponentInChildren<SkinnedMeshRenderer>(true);
             // 预览用的模型只留渲染：碰撞 + **所有会"干活"的 NPC 脚本**都去掉
             去掉会干活的组件(实例);
+            foreach (var animator in 实例.GetComponentsInChildren<Animator>(true))
+            {
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            }
             原始网格 = 预览网格 != null ? 预览网格.sharedMesh : null;
             原始材质 = 预览网格 != null ? 预览网格.sharedMaterials : null;
         }
@@ -209,7 +214,7 @@ public class 外观预览 : MonoBehaviour, IDragHandler, IPointerDownHandler
     /// （实测报过这条 Error）。
     /// `NpcAnimator` 要留着，否则预览里的人会僵住不动。
     /// </summary>
-    static void 去掉会干活的组件(GameObject go)
+    public static void 去掉会干活的组件(GameObject go)
     {
         var 依赖方 = new System.Collections.Generic.List<MonoBehaviour>();
         MonoBehaviour 本体 = null;

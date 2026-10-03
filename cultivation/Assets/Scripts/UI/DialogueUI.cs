@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -382,9 +382,10 @@ public class DialogueUI : MonoBehaviour
     {
         Sprite sp = null;
         if (!string.IsNullOrEmpty(资源名)) sp = Resources.Load<Sprite>("立绘/" + 资源名);
+        if (sp == null && !string.IsNullOrEmpty(资源名)) sp = Resources.Load<Sprite>("UI/InkUI/Portraits/portrait-" + 资源名);
         图.sprite = sp;
-        图.color = sp != null ? Color.white : 立绘底色;
-        提示.text = sp != null ? "" : 占位字;
+        图.color = sp != null ? Color.white : (InkUITheme.Enabled ? Color.clear : 立绘底色);
+        提示.text = sp != null || InkUITheme.Enabled ? "" : 占位字;
     }
 
     // ============================================================ 回答按钮

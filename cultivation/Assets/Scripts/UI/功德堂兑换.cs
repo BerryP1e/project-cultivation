@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -46,7 +46,10 @@ public class 功德堂兑换 : MonoBehaviour
     public bool 打印日志 = false;
 
     Canvas 画布;
+    Image 幕布;
     RectTransform 面板;
+    RectTransform 兑换内容;
+    readonly List<GameObject> 兑换行 = new List<GameObject>();
     Text 贡献文本, 提示文本;
     readonly List<Button> 按钮s = new List<Button>();
     readonly List<Text> 行文本s = new List<Text>();
@@ -63,6 +66,8 @@ public class 功德堂兑换 : MonoBehaviour
     }
 
     void OnDestroy() { 宗门贡献.变化 -= 处理贡献变化; }
+    void Update() => 同步幕布();
+    void 同步幕布() { if (幕布 != null) 幕布.gameObject.SetActive(面板已开); }
 
     void 处理贡献变化(int 值) { if (面板已开) { 刷新贡献文本(); 刷新按钮(); } }
 
@@ -70,11 +75,12 @@ public class 功德堂兑换 : MonoBehaviour
     {
         if (面板 == null) 建面板();
         面板.gameObject.SetActive(true);
+        同步幕布();
         刷新();
         if (打印日志) Debug.Log("[功德堂] 打开兑换（上架 " + 上架的.Count + " 件，贡献 " + 宗门贡献.当前 + "）", this);
     }
 
-    public void 关面板() { if (面板 != null) 面板.gameObject.SetActive(false); }
+    public void 关面板() { if (面板 != null) 面板.gameObject.SetActive(false); 同步幕布(); UiEscRegistry.记录关闭(); }
 
     // ============================================================ 数据
 
@@ -140,6 +146,7 @@ public class 功德堂兑换 : MonoBehaviour
         缩放.referenceResolution = new Vector2(1920f, 1080f);
 
         var 幕 = UIBuildUtils.CreateImage("幕布", 根.transform, 幕布色);
+        幕布 = 幕;
         幕.raycastTarget = true;             // 挡住射线，别点穿到背后
         UIBuildUtils.Stretch(幕.rectTransform);
 
@@ -195,12 +202,41 @@ public class 功德堂兑换 : MonoBehaviour
 
     void 建行()
     {
+        if (InkUITheme.Enabled && 兑换内容 == null)
+        {
+            var view = UIBuildUtils.CreateRect("ExchangeViewport", 面板);
+            UIBuildUtils.Place(view, Vector2.zero, Vector2.one, new Vector2(24, 108), new Vector2(-44, -116));
+            view.gameObject.AddComponent<RectMask2D>();
+            兑换内容 = UIBuildUtils.CreateRect("ExchangeContent", view);
+            兑换内容.anchorMin = new Vector2(0, 1); 兑换内容.anchorMax = Vector2.one;
+            兑换内容.pivot = new Vector2(.5f, 1); 兑换内容.sizeDelta = Vector2.zero;
+            UIBuildUtils.AddVerticalLayout(兑换内容, 8, new RectOffset(0, 0, 0, 0));
+            兑换内容.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = 面板.gameObject.AddComponent<ScrollRect>(); scroll.viewport = view; scroll.content = 兑换内容;
+            scroll.horizontal = false; scroll.movementType = ScrollRect.MovementType.Clamped; InkUITheme.Scroll(scroll, 116);
+        }
+        foreach (var row in 兑换行) if (row != null) { row.transform.SetParent(null, false); Destroy(row); }
+        兑换行.Clear();
         foreach (var b in 按钮s) if (b != null) Object.Destroy(b.gameObject);
         foreach (var t in 行文本s) if (t != null) Object.Destroy(t.gameObject);
         按钮s.Clear(); 行文本s.Clear();
 
         for (int i = 0; i < 上架的.Count; i++)
         {
+            if (InkUITheme.Enabled)
+            {
+                int index = i;
+                var row = UIBuildUtils.CreateRect("ExchangeRow", 兑换内容);
+                row.gameObject.AddComponent<LayoutElement>().preferredHeight = 102;
+                InkUITheme.Image(row.gameObject.AddComponent<Image>(), "SkillsPage/skills/row-normal");
+                var label = UIBuildUtils.CreateText("行" + i, row, 字体, "", 19, TextAnchor.MiddleLeft, InkUITheme.Ink);
+                UIBuildUtils.Place(label.rectTransform, Vector2.zero, Vector2.one, new Vector2(16, 6), new Vector2(-172, -6));
+                var button = UIBuildUtils.CreateButton("兑换" + i, row, 字体, "兑换", 22);
+                UIBuildUtils.Place(button.transform as RectTransform, new Vector2(1, .5f), new Vector2(1, .5f), new Vector2(-156, -25), new Vector2(-12, 25));
+                button.onClick.AddListener(() => 买(index));
+                按钮s.Add(button); 行文本s.Add(label); 兑换行.Add(row.gameObject);
+                continue;
+            }
             int 序号 = i;
             float y = -116f - i * 行高;
 
@@ -239,11 +275,16 @@ public class 功德堂兑换 : MonoBehaviour
             var 图 = 按钮s[i].GetComponent<Image>();
             if (图 != null) 图.color = 够 ? 按钮可点色 : 按钮灰色;
             按钮s[i].interactable = 够;
+            InkUITheme.Button(按钮s[i]);
             if (i < 行文本s.Count && 行文本s[i] != null)
             {
                 string 说明 = string.IsNullOrWhiteSpace(it.介绍) ? "" : "　—　" + it.介绍;
                 行文本s[i].text = it.DisplayName + "　【" + it.兑换消耗贡献 + " 贡献】" + 说明;
+                if (InkUITheme.Enabled) 行文本s[i].text += "\n" + (够 ? "兑换后余额：" + (宗门贡献.当前 - it.兑换消耗贡献) : "贡献不足");
+                if (InkUITheme.Enabled) 行文本s[i].text = it.DisplayName + "　" + it.兑换消耗贡献 + " 贡献\n" + it.介绍
+                    + "\n" + (够 ? "兑换后余额：" + (宗门贡献.当前 - it.兑换消耗贡献) : "贡献不足");
                 行文本s[i].color = 够 ? 正常色 : 不足色;
+                if (InkUITheme.Enabled && 够) 行文本s[i].color = InkUITheme.Ink;
             }
         }
     }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -32,6 +32,8 @@ using UnityEngine;
 ///   echo:<文本>             回显（测试通道是否活着）
 ///   shot[:路径]             把主相机渲染成 PNG
 ///   dump                    打印当前场景结构与 Build Settings
+///   ui:open / ui:close / ui:tab:<索引>  运行时开关角色面板或切换页签（只用于截图验收，不保存场景）
+///   screen:<宽>x<高>        运行时切换窗口分辨率（双分辨率验收）
 /// </summary>
 [InitializeOnLoad]
 public static class DshBridge
@@ -48,12 +50,18 @@ public static class DshBridge
 
     static double 上次心跳;
     static readonly List<string> 日志缓存 = new List<string>();
+    static readonly List<string> 错误缓存 = new List<string>();
 
     static DshBridge()
     {
         Application.logMessageReceived += (msg, stack, type) =>
         {
-            日志缓存.Add("[" + type + "] " + msg);
+            if (type == LogType.Exception || type == LogType.Error || type == LogType.Assert)
+            {
+                错误缓存.Add("[" + type + "] " + msg + "\n" + stack);
+                if (错误缓存.Count > 100) 错误缓存.RemoveAt(0);
+            }
+            日志缓存.Add("[" + type + "] " + msg + (type == LogType.Exception || type == LogType.Error ? "\n" + stack : ""));
             if (日志缓存.Count > 400) 日志缓存.RemoveRange(0, 200);
         };
         EditorApplication.update += 轮询;
@@ -115,7 +123,12 @@ public static class DshBridge
                 break;
 
             case "console":
-                if (参数 == "clear") { 日志缓存.Clear(); 输出.Append("OK console cleared\n"); }
+                if (参数 == "clear") { 日志缓存.Clear(); 错误缓存.Clear(); 输出.Append("OK console cleared\n"); }
+                else if (参数 == "errors")
+                {
+                    输出.Append("Errors=").Append(错误缓存.Count).Append('\n');
+                    foreach (var error in 错误缓存) 输出.Append(error).Append('\n');
+                }
                 else
                 {
                     int n = 30;
@@ -404,6 +417,60 @@ public static class DshBridge
                     输出.Append("幕 = ").Append(幕 != null ? (幕.gameObject.activeSelf ? "显示中" : "隐藏") : "(null)").Append('\n');
                     var 画布 = f画布?.GetValue(实例) as Canvas;
                     输出.Append("画布.enabled = ").Append(画布 != null ? 画布.enabled.ToString() : "(null)").Append('\n');
+                }
+                break;
+
+            case "ui":
+                {
+                    // 施工验收用的运行时小入口：只调用现有 CharacterPanelUI，
+                    // 不改场景、不写存档，避免依赖窗口焦点发送按键。
+                    var panel = UnityEngine.Object.FindObjectOfType<CharacterPanelUI>();
+                    if (panel == null) { 输出.Append("FAIL ui: 找不到 CharacterPanelUI\n"); break; }
+
+                    if (参数 == "open")
+                    {
+                        panel.SetOpen(true);
+                        输出.Append("OK ui: character panel open\n");
+                        break;
+                    }
+                    if (参数 == "close")
+                    {
+                        panel.SetOpen(false);
+                        输出.Append("OK ui: character panel close\n");
+                        break;
+                    }
+
+                    const string tabPrefix = "tab:";
+                    if (参数.StartsWith(tabPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!int.TryParse(参数.Substring(tabPrefix.Length), out var index))
+                        {
+                            输出.Append("FAIL ui: tab index invalid\n");
+                            break;
+                        }
+                        panel.ShowTabByIndex(index);
+                        输出.Append("OK ui: character tab ").Append(index).Append('\n');
+                        break;
+                    }
+
+                    输出.Append("FAIL ui: unsupported parameter ").Append(参数).Append('\n');
+                }
+                break;
+
+            case "inkqa":
+                输出.Append(InkUIQa.Panel(参数)).Append('\n');
+                break;
+
+            case "screen":
+                {
+                    var parts = 参数.ToLowerInvariant().Split('x');
+                    if (parts.Length != 2 || !int.TryParse(parts[0], out var width)
+                        || !int.TryParse(parts[1], out var height) || width < 640 || height < 360)
+                    {
+                        输出.Append("FAIL screen: expected widthxheight\n");
+                        break;
+                    }
+                    输出.Append("OK screen: ").Append(InkUIQa.SetSize(width, height)).Append('\n');
                 }
                 break;
 

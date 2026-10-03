@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -28,15 +28,24 @@ public static class UIDragContext
         var img = go.GetComponent<Image>();
         img.color = UIEntryRow.TierColor(entry.DisplayTier);
         img.raycastTarget = false;
+        if (InkUITheme.Enabled) InkUITheme.Image(img, "Parts/ability-library-card");
 
         var rt = (RectTransform)go.transform;
-        rt.sizeDelta = new Vector2(200f, 40f);
+        rt.sizeDelta = InkUITheme.Enabled ? new Vector2(164, 150) : new Vector2(200f, 40f);
+        rt.localScale = InkUITheme.Enabled ? Vector3.one * 1.08f : Vector3.one;
+        if (InkUITheme.Enabled && entry.DisplayIcon != null)
+        {
+            var icon = UIBuildUtils.CreateImage("Icon", rt, Color.white);
+            icon.sprite = entry.DisplayIcon; icon.preserveAspect = true;
+            UIBuildUtils.Place(icon.rectTransform, new Vector2(0, .3f), Vector2.one, new Vector2(16, 8), new Vector2(-16, -16));
+        }
 
         if (font != null)
         {
             var label = UIBuildUtils.CreateText("Label", rt, font, entry.DisplayName, 16,
                                                 TextAnchor.MiddleCenter, new Color(0.1f, 0.1f, 0.1f));
             UIBuildUtils.Stretch(label.rectTransform, 2f);
+            if (InkUITheme.Enabled) UIBuildUtils.Place(label.rectTransform, Vector2.zero, new Vector2(1, .3f), new Vector2(8, 4), new Vector2(-8, -4));
             label.raycastTarget = false;
         }
         Ghost = go;
@@ -45,6 +54,11 @@ public static class UIDragContext
     public static void Move(Vector2 screenPosition)
     {
         if (Ghost == null) return;
+        if (InkUITheme.Enabled)
+        {
+            var delta = screenPosition - (Vector2)Ghost.transform.position;
+            Ghost.transform.localRotation = Quaternion.Euler(Mathf.Clamp(-delta.y * .15f, -8, 8), Mathf.Clamp(delta.x * .15f, -8, 8), -3);
+        }
         Ghost.transform.position = screenPosition;
     }
 
@@ -107,6 +121,9 @@ public class UIEntryRow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
     public IPanelEntry Entry { get; private set; }
     public UIEntryList Owner { get; set; }
 
+    bool inkSelected;
+    static readonly Dictionary<string, Sprite> InkSprites = new Dictionary<string, Sprite>();
+
     Action<IPanelEntry> clickHandler;
     Action<IPanelEntry> actionHandler;
 
@@ -118,7 +135,12 @@ public class UIEntryRow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         actionHandler = onAction;
 
         if (label != null) label.text = entry != null ? entry.DisplayName : "";
-        if (swatch != null) swatch.color = SwatchColor(entry);
+        if (swatch != null)
+        {
+            swatch.sprite = entry != null ? entry.DisplayIcon : null;
+            swatch.color = swatch.sprite != null ? Color.white : SwatchColor(entry);
+            swatch.preserveAspect = true;
+        }
         if (tagText != null)
         {
             tagText.text = TagOf(entry);
@@ -146,6 +168,63 @@ public class UIEntryRow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
                     actionButton.onClick.AddListener(() => actionHandler(entry));
             }
         }
+
+        SetInkSelected(false);
+    }
+
+    /// <summary>
+    /// 列表行的底图属于 UI 皮肤而不是数据颜色：品阶仍由左侧色块表达，
+    /// 行本身保留普通/悬停/选中三态。行是运行时按数据重建的，因此这里也
+    /// 直接接入，避免只给场景里最初那一批行换皮。
+    /// </summary>
+    public void SetInkSelected(bool selected)
+    {
+        if (!InkUITheme.Enabled) return;
+        inkSelected = selected;
+        if (Owner != null && Owner.inkCards)
+        {
+            if (button != null)
+            {
+                InkUITheme.Image(button.image, "Parts/ability-library-card");
+                button.transition = Selectable.Transition.ColorTint;
+                button.image.color = selected ? new Color(1f, .88f, .63f) : Color.white;
+            }
+            return;
+        }
+        if (button == null) button = GetComponent<Button>();
+        if (button == null) return;
+        if (button.targetGraphic is Image image)
+        {
+            var normal = Ink("UI/InkUI/SkillsPage/skills/row-normal");
+            var hover = Ink("UI/InkUI/SkillsPage/skills/row-hover");
+            var selectedSprite = Ink("UI/InkUI/SkillsPage/skills/row-selected");
+            if (normal != null)
+            {
+                image.sprite = selected ? (selectedSprite != null ? selectedSprite : normal) : normal;
+                image.overrideSprite = null;
+                image.type = Image.Type.Sliced;
+                image.pixelsPerUnitMultiplier = 2f;
+                image.color = Color.white;
+
+                var state = button.spriteState;
+                state.highlightedSprite = hover != null ? hover : normal;
+                state.pressedSprite = selectedSprite != null ? selectedSprite : normal;
+                state.selectedSprite = image.sprite;
+                if (selected) state.highlightedSprite = image.sprite;
+                state.disabledSprite = normal;
+                button.spriteState = state;
+                button.transition = Selectable.Transition.SpriteSwap;
+            }
+        }
+    }
+
+    static Sprite Ink(string path)
+    {
+        Sprite sprite;
+        if (InkSprites.TryGetValue(path, out sprite)) return sprite;
+        sprite = InkUITheme.Load(path.Replace("UI/InkUI/", ""));
+        InkSprites[path] = sprite;
+        return sprite;
     }
 
     /// <summary>按钮文字：被动是启用/停用，主动是启用/卸下，真灵是上阵/下阵</summary>
@@ -191,14 +270,17 @@ public class UIEntryRow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
     public void OnBeginDrag(PointerEventData e)
     {
-        if (Entry == null) return;
+        if (Entry == null || Entry is PassiveDivineAbility)
+        { GetComponentInParent<ScrollRect>()?.OnBeginDrag(e); return; }
         var layer = dragLayer != null ? dragLayer : FindCanvas();
         UIDragContext.Begin(Entry, layer, font);
         UIDragContext.Move(e.position);
     }
 
-    public void OnDrag(PointerEventData e) => UIDragContext.Move(e.position);
-    public void OnEndDrag(PointerEventData e) => UIDragContext.End();
+    public void OnDrag(PointerEventData e)
+    { if (UIDragContext.Dragging) UIDragContext.Move(e.position); else GetComponentInParent<ScrollRect>()?.OnDrag(e); }
+    public void OnEndDrag(PointerEventData e)
+    { if (UIDragContext.Dragging) UIDragContext.End(); else GetComponentInParent<ScrollRect>()?.OnEndDrag(e); }
 
     Transform FindCanvas()
     {
@@ -315,11 +397,14 @@ public class UIEntryList : MonoBehaviour
     [Header("外观")]
     public float rowHeight = 34f;
     public int fontSize = 18;
+    [NonSerialized] public bool inkCards;
 
     [Tooltip("列表为空时显示的提示")]
     public string emptyHint = "（暂无内容）";
 
     readonly List<GameObject> spawned = new List<GameObject>();
+    bool poolReady;
+    GameObject emptyRow;
     IList<IPanelEntry> lastEntries;
 
     public IPanelEntry Selected { get; private set; }
@@ -384,29 +469,46 @@ public class UIEntryList : MonoBehaviour
         // 关键：必须清掉容器里【所有】子物体，不能只清 spawned 记录的。
         // spawned 是运行时字段、不会被序列化，而编辑期生成的行是真实存在场景里的，
         // 进游戏后 spawned 是空的 —— 只清 spawned 会让新旧两批行叠在一起（重复加载）。
-        int childCount = container.childCount;
-        for (int i = childCount - 1; i >= 0; i--)
+        if (!poolReady)
         {
-            var go = container.GetChild(i).gameObject;
-            go.transform.SetParent(null, false);   // 立刻移出容器，避免这一帧内重复
-            if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
+            for (int i = container.childCount - 1; i >= 0; i--)
+            {
+                var go = container.GetChild(i).gameObject;
+                go.transform.SetParent(null, false);
+                if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
+            }
+            poolReady = true;
         }
-        spawned.Clear();
+        foreach (var row in spawned) if (row != null) row.SetActive(false);
+        if (emptyRow != null) emptyRow.SetActive(false);
 
         if (entries == null || entries.Count == 0)
         {
+            if (emptyRow == null)
+            {
             var hint = UIBuildUtils.CreateText("Empty", container, font, emptyHint, fontSize,
                                                TextAnchor.MiddleCenter, new Color(0.4f, 0.4f, 0.4f));
             var le = hint.gameObject.AddComponent<LayoutElement>();
             le.minHeight = rowHeight;
             le.preferredHeight = rowHeight;
             hint.gameObject.hideFlags = HideFlags.DontSave;   // 只存在于当前会话，不写进场景
-            spawned.Add(hint.gameObject);
+            emptyRow = hint.gameObject;
+            }
+            emptyRow.SetActive(true);
             Select(null);
             return;
         }
 
-        foreach (var e in entries) AddRow(e);
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (i >= spawned.Count) AddRow(entries[i]);
+            var go = spawned[i];
+            go.SetActive(true);
+            var row = go.GetComponent<UIEntryRow>();
+            row.data = data;
+            row.Bind(entries[i], OnRowClicked, OnRowAction);
+            LayoutRow(row);
+        }
         Select(entries[0]);
     }
 
@@ -478,6 +580,31 @@ public class UIEntryList : MonoBehaviour
         spawned.Add(rowRt.gameObject);
     }
 
+    void LayoutRow(UIEntryRow row)
+    {
+        var le = row.GetComponent<LayoutElement>(); le.minHeight = le.preferredHeight = rowHeight;
+        if (inkCards)
+        {
+            UIBuildUtils.Place(row.swatch.rectTransform, new Vector2(0, .45f), new Vector2(1, 1), new Vector2(14, 0), new Vector2(-14, -12));
+            UIBuildUtils.Place(row.label.rectTransform, new Vector2(0, .22f), new Vector2(1, .45f), new Vector2(8, 0), new Vector2(-8, 0));
+            row.label.alignment = TextAnchor.MiddleCenter; row.label.fontSize = 18;
+            UIBuildUtils.Place(row.tagText.rectTransform, Vector2.zero, new Vector2(.42f, .22f), new Vector2(8, 2), new Vector2(-2, -2));
+            UIBuildUtils.Place(row.actionButton.transform as RectTransform, new Vector2(.42f, 0), new Vector2(1, .22f), new Vector2(0, 2), new Vector2(-8, -2));
+        }
+        else if (rowHeight >= 56)
+        {
+            UIBuildUtils.Place(row.swatch.rectTransform, new Vector2(0, .5f), new Vector2(0, .5f), new Vector2(14, -23), new Vector2(60, 23));
+            UIBuildUtils.Place(row.label.rectTransform, Vector2.zero, Vector2.one, new Vector2(72, 22), new Vector2(-108, -8));
+            UIBuildUtils.Place(row.tagText.rectTransform, Vector2.zero, Vector2.one, new Vector2(72, 4), new Vector2(-108, -rowHeight + 28));
+            row.tagText.alignment = TextAnchor.MiddleLeft;
+            var action = row.actionButton.transform as RectTransform;
+            action.anchorMin = action.anchorMax = new Vector2(1, .5f); action.pivot = new Vector2(1, .5f);
+            action.anchoredPosition = new Vector2(-12, 0); action.sizeDelta = new Vector2(92, 34);
+        }
+        InkUITheme.Button(row.actionButton);
+        row.SetInkSelected(row.Entry == Selected);
+    }
+
     void OnRowClicked(IPanelEntry entry) => Select(entry);
 
     /// <summary>取数据源，没接就从 Canvas 上找</summary>
@@ -541,6 +668,8 @@ public class UIEntryList : MonoBehaviour
     {
         Selected = entry;
         if (infoTarget != null) infoTarget.Show(entry);
+        foreach (var row in GetComponentsInChildren<UIEntryRow>(true))
+            row.SetInkSelected(row.Entry != null && row.Entry == entry);
         SelectionChanged?.Invoke(entry);
     }
 }

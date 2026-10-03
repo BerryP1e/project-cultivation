@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
@@ -280,7 +280,7 @@ public class Teleporter : MonoBehaviour
         var rt = 底板.GetComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(460f, 120f + 56f * Mathf.Max(1, 选项.Length));
+        rt.sizeDelta = new Vector2(460f, (InkUITheme.Enabled ? 160f : 120f) + 56f * Mathf.Max(1, 选项.Length));
         rt.anchoredPosition = new Vector2(0f, 40f);
         底板.GetComponent<Image>().color = new Color(0.06f, 0.05f, 0.07f, 0.92f);
 
@@ -289,8 +289,8 @@ public class Teleporter : MonoBehaviour
         var 文rt = 文go.GetComponent<RectTransform>();
         文rt.anchorMin = new Vector2(0f, 1f); 文rt.anchorMax = new Vector2(1f, 1f);
         文rt.pivot = new Vector2(0.5f, 1f);
-        文rt.sizeDelta = new Vector2(-24f, 96f);
-        文rt.anchoredPosition = new Vector2(0f, -14f);
+        文rt.sizeDelta = new Vector2(-24f, InkUITheme.Enabled ? 60f : 96f);
+        文rt.anchoredPosition = new Vector2(0f, InkUITheme.Enabled ? -42f : -14f);
         文本 = 文go.GetComponent<Text>();
         文本.font = 字; 文本.fontSize = 26; 文本.alignment = TextAnchor.UpperCenter;
         文本.color = new Color(0.95f, 0.92f, 0.8f);
@@ -305,7 +305,7 @@ public class Teleporter : MonoBehaviour
             brt.anchorMin = new Vector2(0.5f, 0f); brt.anchorMax = new Vector2(0.5f, 0f);
             brt.pivot = new Vector2(0.5f, 0f);
             brt.sizeDelta = new Vector2(400f, 46f);
-            brt.anchoredPosition = new Vector2(0f, 18f + 56f * (选项.Length - 1 - i));
+            brt.anchoredPosition = new Vector2(0f, (InkUITheme.Enabled ? 30f : 18f) + 56f * (选项.Length - 1 - i));
             bool 灰 = 选项[i] == null || 选项[i].暂未开放 || !准入通过;
             bgo.GetComponent<Image>().color = 灰 ? new Color(0.22f, 0.2f, 0.22f, 1f) : new Color(0.18f, 0.32f, 0.22f, 1f);
             var bt = bgo.GetComponent<Button>();

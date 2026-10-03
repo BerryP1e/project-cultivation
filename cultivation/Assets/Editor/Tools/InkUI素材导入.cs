@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -88,7 +88,6 @@ public static class InkUI素材导入
         { "nav-tab-inactive",             new Vector4(24,  8, 24,  8) },
         { "nav-tab-active",               new Vector4(36, 12, 36, 12) },
         { "ornate-divider",               new Vector4(24,  8, 24,  8) },
-        { "title-plaque",                 new Vector4(96, 48, 96, 48) },
         { "left-parent-navigation-panel", new Vector4(96, 96, 96, 96) },
         { "learned-ability-library-panel",new Vector4(96, 96, 96, 96) },
         { "ability-detail-panel",         new Vector4(96, 96, 96, 96) },
@@ -133,6 +132,9 @@ public static class InkUI素材导入
             imp.spriteImportMode = SpriteImportMode.Single;
             imp.spritePixelsPerUnit = 100f;
             imp.alphaIsTransparency = true;
+            // 异形可交互图需要 CPU alpha 采样；大幕布、立绘不保留 CPU 副本。
+            imp.isReadable = 名.Contains("slot") || 名.StartsWith("tab-") || 名 == "plot-tag"
+                || 名.StartsWith("ivory-") || 名.StartsWith("jade-") || 名.StartsWith("cinnabar-");
             imp.mipmapEnabled = false;
             imp.wrapMode = TextureWrapMode.Clamp;
             imp.filterMode = FilterMode.Bilinear;

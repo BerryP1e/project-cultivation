@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -80,6 +80,7 @@ public class CultivationUI : MonoBehaviour
     readonly List<Image> 功法行图 = new List<Image>();
     readonly List<Text> 功法行字 = new List<Text>();
     readonly List<GongFaDefinition> 功法行 = new List<GongFaDefinition>();
+    RectTransform 功法内容;
     Text 转修预估;
     Image 选中行图;
     int 选中功法 = -1;
@@ -181,6 +182,14 @@ public class CultivationUI : MonoBehaviour
             if (页[i] != null) 页[i].SetActive(i == 当前页);
             if (页签图[i] != null) 页签图[i].color = (i == 当前页) ? 标签选中色 : 标签色;
             if (页签字[i] != null) 页签字[i].color = (i == 当前页) ? new Color(0.95f, 0.95f, 0.95f) : 字色;
+            if (InkUITheme.Enabled && 页签图[i] != null)
+            {
+                var image = 页签图[i];
+                InkUITheme.Image(image, i == 当前页 ? "SkillsPage/navigation/tab-active" : "SkillsPage/navigation/tab-normal");
+                var button = image.GetComponent<Button>();
+                button.transition = Selectable.Transition.ColorTint;
+                if (页签字[i] != null) 页签字[i].color = InkUITheme.Ink;
+            }
         }
         刷新();
     }
@@ -291,6 +300,11 @@ public class CultivationUI : MonoBehaviour
     {
         // **「已学会的功法」以 UIPanelData 为准**（那才是玩法上的真来源）；没有就退回兜底列表
         var 可转修 = 取可转修功法();
+        if (InkUITheme.Enabled && 功法内容 != null)
+        {
+            while (功法行图.Count < 可转修.Count) 建功法行(功法行图.Count);
+            for (int i = 0; i < 功法行图.Count; i++) 功法行图[i].gameObject.SetActive(i < 可转修.Count);
+        }
 
         for (int i = 0; i < 功法行字.Count && i < 可转修.Count; i++)
         {
@@ -302,6 +316,7 @@ public class CultivationUI : MonoBehaviour
                 + "　K=" + (d != null ? (d.难度等级 / 100f).ToString("0.0") : "?");
             功法行字[i].color = 是当前 ? new Color(0.15f, 0.35f, 0.15f) : 字色;
             功法行图[i].color = (i == 选中功法) ? new Color(0.80f, 0.80f, 0.55f) : 面板色;
+            if (InkUITheme.Enabled) InkUITheme.Choice(功法行图[i].GetComponent<Button>(), "SkillsPage/skills/row", i == 选中功法);
         }
     }
 
@@ -549,9 +564,24 @@ public class CultivationUI : MonoBehaviour
         靠左(标题.rectTransform, new Vector2(w, h - 86f), 18f, h - 132f, w - 36f, 32f);
 
         // 功法行（先按 全部功法 建好；运行时刷新文字与选中态）
+        if (InkUITheme.Enabled)
+        {
+            var viewport = UIBuildUtils.CreateRect("Viewport", 列表块.transform);
+            UIBuildUtils.Place(viewport, Vector2.zero, Vector2.one, new Vector2(16, 16), new Vector2(-28, -62));
+            viewport.gameObject.AddComponent<RectMask2D>();
+            功法内容 = UIBuildUtils.CreateRect("GongfaContent", viewport);
+            功法内容.anchorMin = new Vector2(0, 1); 功法内容.anchorMax = Vector2.one; 功法内容.pivot = new Vector2(.5f, 1);
+            功法内容.sizeDelta = Vector2.zero;
+            UIBuildUtils.AddVerticalLayout(功法内容, 8, new RectOffset(0, 0, 0, 0));
+            功法内容.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = 列表块.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport; scroll.content = 功法内容; scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped; InkUITheme.Scroll(scroll, 62);
+        }
         int 行数 = Mathf.Max(0, 取可转修功法().Count);
         for (int i = 0; i < 行数; i++)
         {
+            if (InkUITheme.Enabled) { 建功法行(i); continue; }
             int 号 = i;
             float y = h - 186f - i * 54f;
             if (y < 10f) break;
@@ -578,6 +608,18 @@ public class CultivationUI : MonoBehaviour
         建按钮(页根, "确认转修", new Vector2(w * 0.70f, 12f), new Vector2(240f, 62f), 点确认转修);
 
         return 页根.gameObject;
+    }
+
+    void 建功法行(int index)
+    {
+        var image = UIBuildUtils.CreateImage("功法行" + index, 功法内容, Color.white);
+        image.raycastTarget = true;
+        var layout = image.gameObject.AddComponent<LayoutElement>(); layout.preferredHeight = layout.minHeight = 58;
+        var button = image.gameObject.AddComponent<Button>(); button.targetGraphic = image;
+        button.onClick.AddListener(() => { 选中功法 = index; 刷新(); });
+        var text = UIBuildUtils.CreateText("文字", image.transform, 字体, "", 19, TextAnchor.MiddleLeft, 字色);
+        UIBuildUtils.Stretch(text.rectTransform, 16);
+        功法行图.Add(image); 功法行字.Add(text); 功法行.Add(null);
     }
 
     // ============================================================ 小工具

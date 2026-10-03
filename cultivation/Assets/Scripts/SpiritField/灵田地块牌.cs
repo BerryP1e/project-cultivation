@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -164,9 +164,10 @@ public class 灵田地块牌
         if (!该显示) return;
 
         var c = 底板.color;
-        底板.color = new Color(c.r, c.g, c.b, 0.95f);
+        底板.color = InkUITheme.Enabled ? Color.white : new Color(c.r, c.g, c.b, 0.95f);
+        if (InkUITheme.Enabled && 底板.sprite == null) InkUITheme.Image(底板, "CommonPanels/toast");
         foreach (var tx in 根.GetComponentsInChildren<Text>(true))
-            tx.color = new Color(tx.color.r, tx.color.g, tx.color.b, 1f);
+            tx.color = InkUITheme.Enabled ? InkUITheme.Ink : new Color(tx.color.r, tx.color.g, tx.color.b, 1f);
     }
 
     public void 销毁()

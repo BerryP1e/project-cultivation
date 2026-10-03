@@ -28,6 +28,7 @@ public class UIAttributeList : MonoBehaviour
     public int fontSize = 18;
 
     readonly List<GameObject> spawned = new List<GameObject>();
+    bool clearedSerializedRows;
 
     void Start()
     {
@@ -38,6 +39,17 @@ public class UIAttributeList : MonoBehaviour
     public void Rebuild()
     {
         if (container == null || font == null) return;
+        if (!clearedSerializedRows)
+        {
+            // 场景中可能已有生成器写入的属性行；首轮刷新移除，避免新旧两套重复。
+            clearedSerializedRows = true;
+            foreach (Transform child in container)
+            {
+                if (child.name != "Row") continue;
+                child.gameObject.SetActive(false);
+                if (Application.isPlaying) Destroy(child.gameObject); else DestroyImmediate(child.gameObject);
+            }
+        }
 
         // 编辑态必须用 DestroyImmediate，否则会报 "Destroy may not be called from edit mode"
         foreach (var go in spawned)

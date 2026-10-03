@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -264,6 +264,7 @@ public static class 场景自举
         // 于是打开角色面板时左边那块追踪牌会盖在它上面（用户 2026-10-02 实测报过这个）。
         // 照老规矩**不碰场景文件**，运行时抬上来。
         补HUD层(场景);
+        补HUD皮肤(场景);
     }
 
     /// <summary>角色面板在所有游玩场景里都是 `sortingOrder = 0`（场景里的默认值）—— 抬到 HUD 之上</summary>
@@ -290,6 +291,26 @@ public static class 场景自举
                     + 旧 + " → " + 角色面板层级 + "（它是全屏面板，必须能盖住 HUD）");
                 return;
             }
+    }
+
+    /// <summary>
+    /// PlayerHud 不在 CharacterUI 父页面里，单独补运行时皮肤。
+    /// 只加组件和替换 sprite，不保存场景，也不重新生成 HUD 节点。
+    /// </summary>
+    static void 补HUD皮肤(Scene 场景)
+    {
+        foreach (var 根 in 场景.GetRootGameObjects())
+        {
+            foreach (var hud in 根.GetComponentsInChildren<PlayerHud>(true))
+            {
+                if (hud == null) continue;
+                if (hud.GetComponent<UIInkHudSkin>() == null)
+                {
+                    hud.gameObject.AddComponent<UIInkHudSkin>();
+                    Debug.Log("[场景自举] 「" + 场景.name + "」的 PlayerHud 已补 UIInkHudSkin");
+                }
+            }
+        }
     }
 
     const string 角色面板物体名 = "CharacterUI";

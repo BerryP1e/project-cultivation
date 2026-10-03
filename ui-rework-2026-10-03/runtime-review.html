@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InkUI 运行时接入对照</title>
+<style>body{margin:0;background:#202622;color:#eee;font:16px system-ui}header{padding:20px;position:sticky;top:0;background:#202622;z-index:1}h1{font-size:22px;margin:0 0 12px}p{color:#bdc9bf;margin:12px 0}select{font:inherit;margin-right:16px;padding:8px}main{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px}figure{margin:0}figcaption{padding:8px}img{width:100%;background:#111}a{color:#d6ba7a}@media(max-width:900px){main{grid-template-columns:1fr}}</style>
+<header><h1>InkUI 运行时接入对照</h1><select id="panel"></select><select id="resolution"><option>1920x1080</option><option>1280x720</option></select><p>前图：关闭运行时换皮后的基础布局。后图：当前接入结果。临时验收状态未保存；幕布和导航造型仍待调整。</p></header>
+<main><figure><figcaption>前 · 基础布局</figcaption><a id="beforeLink"><img id="before"></a></figure><figure><figcaption>后 · 当前接入</figcaption><a id="afterLink"><img id="after"></a></figure></main>
+<script>
+const panels=['神通','背包','境界','法宝','灵阵','战阵','坐骑','外观','闭关修炼','境界突破','转修功法','丹房','药材选择','灵田总览','灵田地块','灵田生长中','灵田成熟','功德堂','对话','传送','传送宗门','镇妖塔HUD','镇妖塔死亡选择','HUD','Toast','暂停','身陨','起名','主菜单','存档选择'];
+const panel=document.getElementById('panel'),resolution=document.getElementById('resolution');
+panels.forEach(label=>panel.add(new Option(label,label)));
+function refresh(){['before','after'].forEach((id,i)=>{const path='../cultivation/screenshots/UI_'+panel.value+'_'+['前','后'][i]+'_'+resolution.value+'.png';document.getElementById(id).src=path;document.getElementById(id+'Link').href=path})}
+panel.onchange=resolution.onchange=refresh;refresh();
+</script></html>

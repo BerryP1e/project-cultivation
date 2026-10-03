@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 【U I 水墨换皮 · 运行时】把**已经生成好的** uGUI 节点按**名字**换成 `Assets/UIResources/InkUI/` 里的新素材。
+/// 【U I 水墨换皮 · 运行时】把已有 uGUI 节点按名字换成 `Assets/resources/UI/InkUI/` 素材。
 ///
 /// ## 为什么是"运行时按名字换"而不是改生成器 / 改场景
 ///
@@ -18,13 +18,12 @@ using UnityEngine.UI;
 /// · **换图**：按节点名给 `Image.sprite` 换素材，并把 `Image.type` / `pixelsPerUnitMultiplier` 配对
 ///   （素材是 **2× 交付**、PPU=100 ⇒ 九宫格要 `pixelsPerUnitMultiplier = 2` 才按 1× 视觉尺寸渲染）。
 /// · **换按钮**：`Button` 改成 `SpriteSwap`，按名字判**三档材质**（朱砂=仪式/危险、玉绿=主行动、素纸=次级）。
-/// · **不动逻辑**：不改任何 RectTransform 的锚点/尺寸，不改数据与开关，**不改颜色**（原来的状态着色仍然生效，
-///   它是 `Image.color` 乘在 sprite 上的）。
+/// · **布局与状态**：调用 UI神通页重排 调整运行时布局，底色复位为白、文字改墨色；数据与开关仍由原控制器负责。
 ///
 /// ## 用法
 ///
 /// 由 `场景自举` 自动补到 `CharacterUI` 上，不需要手动挂。
-/// 想临时关掉就在运行时把 `启用` 设 false 再调一次 `刷新()`，或者直接禁用这个组件再打开面板。
+/// 调试回退通过编辑器 inkqa:before 后重新进 Play；禁用组件不会还原已经换过的 Sprite。
 /// </summary>
 [DisallowMultipleComponent]
 public class UIInkSkin : MonoBehaviour
@@ -63,14 +62,33 @@ public class UIInkSkin : MonoBehaviour
     /// <summary>按钮包是 1× 交付（520×157），建议显示高 48~64 ⇒ 倍率 2.6（见 BUTTON-KIT.md）</summary>
     const float 按钮倍率 = 2.6f;
 
-    bool _换过;
 
-    void Start() => 刷新();
+    CharacterPanelUI _角色面板;
+
+    void Start()
+    {
+        // 页签切换发生在运行时，不能只在 Start 时把「神通」设成选中态。
+        // 订阅现有控制器的事件即可保持原有开关逻辑，仍然不改场景数据。
+        _角色面板 = GetComponent<CharacterPanelUI>();
+        if (_角色面板 != null) _角色面板.TabChanged += 页签切换后刷新;
+        刷新();
+    }
+
+    void OnDestroy()
+    {
+        if (_角色面板 != null) _角色面板.TabChanged -= 页签切换后刷新;
+    }
+
+    void 页签切换后刷新(CharacterTab _)
+    {
+        var r = 根 != null ? 根 : transform;
+        刷新页签(r);
+    }
 
     /// <summary>跑一遍换皮（幂等：换过的节点会再设一次同样的值）</summary>
     public void 刷新()
     {
-        if (!启用) return;
+        if (!启用 || !InkUITheme.Enabled) return;
         var r = 根 != null ? 根 : transform;
         int 面板 = 0, 页签 = 0, 行 = 0, 按钮 = 0, 进度 = 0, 滚动 = 0;
 
@@ -91,13 +109,9 @@ public class UIInkSkin : MonoBehaviour
                 if (套普通(img, "SkillsPage/skills/slot-empty", true)) 行++;
                 continue;
             }
-            // ---- 槽位里那层"图标位"（生成器铺的白色占位方块）也换成槽位底图 ----
-            //   空槽这样才对；一旦装上技能，代码会把真图标写进同一个 Image ✓ 状态不会卡住
-            if (n == "Icon" && img.transform.parent != null && img.transform.parent.name.StartsWith("Slot_"))
-            {
-                if (套普通(img, "SkillsPage/skills/slot-empty", true)) 行++;
-                continue;
-            }
+            // 槽位里的 Icon 由 UIActiveSkillSlot.Bind 按数据写入：
+            // 空槽必须保持 sprite=null，否则它会盖住真正的异形槽底；有内容时
+            // 再由数据侧 DisplayIcon 覆盖。这里故意不把空槽框塞进 Icon 层。
             // ---- 页根 / 内容容器：把它们自己的深色底**关掉**，让父级那张纸透上来 ----
             //   （生成器给每个 `Page_*` 都铺了一层深色底，不关的话整块内容区还是黑的，纸白只在边角）
             if (n == "Content" || n.StartsWith("Page_"))
@@ -178,11 +192,11 @@ public class UIInkSkin : MonoBehaviour
         if (换按钮)
             foreach (var b in r.GetComponentsInChildren<Button>(true))
             {
+                if (b.name == "Dim") continue;
                 if (b == null) continue;
                 if (套按钮(b)) 按钮++;
             }
 
-        _换过 = true;
 
         // ---- 字色：纸底上原来的淡色字（金/白）会看不清 ⇒ 统一成墨色，并去掉黑描边 ----
         int 字 = 0;
@@ -191,7 +205,7 @@ public class UIInkSkin : MonoBehaviour
             {
                 if (t == null) continue;
                 // 只改"偏亮"的字（深色字本来就能读，别乱动）
-                if (t.color.maxColorComponent > 0.55f) { t.color = 墨色; 字++; }
+                if (t.GetComponentInParent<Button>(true) == null && t.color.maxColorComponent > 0.55f) { t.color = 墨色; 字++; }
                 var o = t.GetComponent<Outline>();
                 if (o != null && o.enabled) o.enabled = false;
             }
@@ -201,6 +215,10 @@ public class UIInkSkin : MonoBehaviour
 
         // ---- 换完图之后，再按原型图**重排神通页**（幕布/左导航/六槽环+编号/卡片网格/通高详情）----
         if (重排神通页) UI神通页重排.应用(r);
+        foreach (var button in r.GetComponentsInChildren<Button>(true))
+            if (!button.name.StartsWith("Tab_") && button.name != "Row" && button.GetComponent<UIActiveSkillSlot>() == null && button.GetComponent<UISpiritSlot>() == null)
+                InkUITheme.Button(button);
+        刷新页签(r);
     }
 
     /// <summary>内板（内容分区底板）—— 名字来自 `CharacterPanelBuilder` 的分区命名</summary>
@@ -208,7 +226,7 @@ public class UIInkSkin : MonoBehaviour
     {
         "BagGrid", "Info", "ItemDesc", "AttrList", "GongFaShow", "RealmShow",
         "ActiveSkillBar", "PassiveList", "KnownList", "MountShow", "MountList",
-        "AppearanceShow", "FormationGrid", "SpiritList", "OwnedList", "ArrayList", "GridArea",
+        "AppearanceShow", "AppearanceList", "FormationGrid", "SpiritList", "OwnedList", "ArrayList", "GridArea",
     };
     static bool 是内板名(string n) => 内板.Contains(n);
 
@@ -248,6 +266,13 @@ public class UIInkSkin : MonoBehaviour
     bool 套按钮(Button b)
     {
         string n = b.gameObject.name;
+        if (b.GetComponent<UIActiveSkillSlot>() != null || b.GetComponent<UISpiritSlot>() != null) return false;
+
+        // 页签与列表行各自拥有三态素材，不能被通用按钮包覆盖。
+        if (n.StartsWith("Tab_")) return 套页签按钮(b);
+        if (n == "Row" || n.StartsWith("行_") || n.StartsWith("丹方") || n.StartsWith("背包行"))
+            return 套列表按钮(b);
+
         string 档 =
             (n.Contains("破境") || n.Contains("转修") || n.Contains("重生") || n.Contains("开炉")
              || n.Contains("开炼") || n.Contains("死亡") || n.Contains("卸下")) ? "cinnabar"
@@ -280,13 +305,154 @@ public class UIInkSkin : MonoBehaviour
         return true;
     }
 
+    bool 套页签按钮(Button b)
+    {
+        var img = b.targetGraphic as Image;
+        if (img == null) img = b.GetComponent<Image>();
+        if (img == null) return false;
+
+        var normal = 取图("SkillsPage/navigation/tab-normal");
+        var hover = 取图("SkillsPage/navigation/tab-hover");
+        var active = 取图("SkillsPage/navigation/tab-active");
+        if (normal == null) return false;
+
+        img.sprite = normal;
+        img.type = Image.Type.Sliced;
+        img.pixelsPerUnitMultiplier = 九宫倍率;
+        img.color = Color.white;
+        b.targetGraphic = img;
+        b.transition = Selectable.Transition.SpriteSwap;
+        var state = b.spriteState;
+        state.highlightedSprite = hover;
+        state.pressedSprite = active;
+        state.selectedSprite = active;
+        state.disabledSprite = normal;
+        b.spriteState = state;
+        return true;
+    }
+
+    bool 套列表按钮(Button b)
+    {
+        var img = b.targetGraphic as Image;
+        if (img == null) img = b.GetComponent<Image>();
+        if (img == null) return false;
+
+        var normal = 取图("SkillsPage/skills/row-normal");
+        var hover = 取图("SkillsPage/skills/row-hover");
+        var selected = 取图("SkillsPage/skills/row-selected");
+        if (normal == null) return false;
+
+        img.sprite = normal;
+        img.type = Image.Type.Sliced;
+        img.pixelsPerUnitMultiplier = 九宫倍率;
+        img.color = Color.white;
+        b.targetGraphic = img;
+        b.transition = Selectable.Transition.SpriteSwap;
+        var state = b.spriteState;
+        state.highlightedSprite = hover;
+        state.pressedSprite = selected;
+        state.selectedSprite = selected;
+        state.disabledSprite = normal;
+        b.spriteState = state;
+        return true;
+    }
+
+    void 刷新页签(Transform r)
+    {
+        if (!换页签 || r == null || !InkUITheme.Enabled) return;
+        string 当前 = "";
+        if (_角色面板 != null) 当前 = _角色面板.CurrentTab.ToString();
+        if (string.IsNullOrEmpty(当前))
+        {
+            foreach (var t in r.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith("Page_") && t.gameObject.activeSelf) { 当前 = t.name.Substring(5); break; }
+        }
+
+        foreach (var t in r.GetComponentsInChildren<Transform>(true))
+        {
+            if (!t.name.StartsWith("Tab_")) continue;
+            var img = t.GetComponent<Image>();
+            if (img == null) continue;
+            bool selected = t.name.Substring(4) == 当前;
+            var sp = 取图(selected ? "SkillsPage/navigation/tab-active" : "SkillsPage/navigation/tab-normal");
+            if (sp == null) continue;
+            img.sprite = sp;
+            img.overrideSprite = null;
+            img.type = Image.Type.Sliced;
+            img.pixelsPerUnitMultiplier = 九宫倍率;
+            img.color = Color.white;
+            var tabButton = t.GetComponent<Button>();
+            if (tabButton != null)
+            {
+                var state = tabButton.spriteState;
+                state.selectedSprite = sp;
+                state.highlightedSprite = selected ? sp : 取图("SkillsPage/navigation/tab-hover");
+                tabButton.spriteState = state;
+            }
+            var text = t.GetComponentInChildren<Text>(true);
+            if (text != null)
+            {
+                text.color = selected ? new Color(0.13f, 0.20f, 0.16f) : 墨色;
+                text.alignment = TextAnchor.MiddleLeft;
+                text.rectTransform.offsetMin = new Vector2(40f, 0f);
+                text.rectTransform.offsetMax = new Vector2(-8f, 0f);
+            }
+
+            // 左侧父导航的图标也是独立素材；没有图标子节点时运行时补一个，
+            // 不把它烘在立板或页签底图里，方便后续替换/禁用。
+            var icon = t.Find("InkIcon");
+            if (icon == null)
+            {
+                icon = new GameObject("InkIcon", typeof(RectTransform)).transform;
+                icon.SetParent(t, false);
+                var rt = icon as RectTransform;
+                rt.anchorMin = new Vector2(0f, 0.5f);
+                rt.anchorMax = new Vector2(0f, 0.5f);
+                rt.pivot = new Vector2(0f, 0.5f);
+                rt.anchoredPosition = new Vector2(8f, 0f);
+                rt.sizeDelta = new Vector2(30f, 30f);
+                var iconImage = icon.gameObject.AddComponent<Image>();
+                iconImage.raycastTarget = false;
+            }
+            var iconImg = icon.GetComponent<Image>();
+            if (iconImg != null)
+            {
+                var iconPath = 页签图标(t.name.Substring(4));
+                var iconSprite = 取图(iconPath);
+                if (iconSprite != null)
+                {
+                    iconImg.sprite = iconSprite;
+                    iconImg.type = Image.Type.Simple;
+                    iconImg.preserveAspect = true;
+                    iconImg.color = selected ? Color.white : new Color(0.82f, 0.78f, 0.68f, 1f);
+                }
+            }
+        }
+    }
+
+    static string 页签图标(string name)
+    {
+        switch (name)
+        {
+            case "背包": return "Icons/icon-inventory";
+            case "境界": return "Icons/icon-realm";
+            case "神通": return "Icons/icon-divine-ability";
+            case "法宝": return "Icons/icon-treasure";
+            case "灵阵": return "Icons/icon-spirit-array";
+            case "战阵": return "Icons/icon-formation";
+            case "坐骑": return "Icons/icon-mount";
+            case "外观": return "Icons/icon-appearance";
+            default: return "";
+        }
+    }
+
     static readonly Dictionary<string, Sprite> 缓存 = new Dictionary<string, Sprite>();
 
     static Sprite 取图(string 相对路径)
     {
         Sprite sp;
         if (缓存.TryGetValue(相对路径, out sp)) return sp;
-        sp = Resources.Load<Sprite>(资源根 + "/" + 相对路径);
+        sp = InkUITheme.Load(相对路径);
         if (sp == null && !缓存.ContainsKey("__警告_" + 相对路径))
         {
             缓存["__警告_" + 相对路径] = null;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -508,6 +508,7 @@ public class UIPanelData : MonoBehaviour
     public void EquipToSlot(int index, UnityEngine.Object content)
     {
         EnsureLists();
+        if (content is PassiveDivineAbility) { ShowHint("被动神通不能装备到主动技能栏"); return; }
         if (index < 0 || index >= 主动技能.Count) return;
         主动技能[index] = content;
         RaiseChanged();
@@ -516,6 +517,7 @@ public class UIPanelData : MonoBehaviour
     /// <summary>自动放进第一个空格，返回是否成功</summary>
     public bool EquipToFirstEmpty(UnityEngine.Object content)
     {
+        if (content is PassiveDivineAbility) return false;
         int i = FirstEmptySlot();
         if (i < 0) return false;
         EquipToSlot(i, content);

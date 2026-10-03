@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -100,6 +100,12 @@ public class UIEntryInfo : MonoBehaviour
         }
         else if (Current is PassiveDivineAbility p && data != null)
             data.TogglePassive(p);          // 会触发 Changed，列表跟着刷新
+        else if (Current is ActiveDivineAbility active && data != null)
+        {
+            if (data.IsEquipped(active)) data.Unequip(active);
+            else if (data.HasEmptySlot()) data.BeginPendingEquip(active);
+            else data.ShowHint("主动技能装备栏已经满了，先卸下一个再装备");
+        }
         else if (Current is MountDefinition m && data != null)
         {
             // 装备 / 取消装备坐骑。再点一次同一只 = 卸下。
@@ -140,6 +146,10 @@ public class UIEntryInfo : MonoBehaviour
         if (nameText != null) nameText.text = entry.DisplayName;
         if (tierText != null) tierText.text = "【" + entry.DisplayTier + "】";
         if (descriptionText != null) descriptionText.text = entry.DisplayDescription;
+        if (descriptionText != null && entry is ActiveDivineAbility activeInfo)
+            descriptionText.text += "\n\n灵力消耗：" + activeInfo.消耗灵力 + "\n冷却：" + activeInfo.冷却时间 + " 秒";
+        if (descriptionText != null && (entry is TreasureDefinition || entry is SpiritArrayDefinition))
+            descriptionText.text += "\n\n效果待开发";
 
         // 主动 / 被动 标识
         if (kindText != null)
@@ -169,15 +179,24 @@ public class UIEntryInfo : MonoBehaviour
         if (actionButton == null) return;
 
         var passive = Current as PassiveDivineAbility;
+        var active = Current as ActiveDivineAbility;
         var mount = Current as MountDefinition;
         var 物品 = Current as ItemDefinition;
         bool 是可用物品 = 物品 != null && 物品.可使用;
 
-        bool show = data != null && (passive != null || mount != null || 是可用物品);
+        bool show = data != null && (passive != null || active != null || mount != null || 是可用物品);
         actionButton.gameObject.SetActive(show);
         if (!show) return;
 
         actionButton.interactable = true;      // 下面各分支按需再关掉
+        if (active != null)
+        {
+            bool equipped = data.IsEquipped(active);
+            if (actionLabel != null) actionLabel.text = equipped ? "卸下神通" : "装备神通";
+            actionButton.interactable = equipped || data.HasEmptySlot();
+            InkUITheme.Button(actionButton, equipped ? "ivory" : "jade");
+            return;
+        }
 
         // ---- 可使用物品：使用（材料/提交物不会走到这里，它们 可使用=false）----
         if (是可用物品)
@@ -188,6 +207,7 @@ public class UIEntryInfo : MonoBehaviour
                 ? new Color(0.40f, 0.70f, 0.45f)      // 能用 → 绿
                 : new Color(0.45f, 0.45f, 0.45f);     // 已经学过了 → 灰
             actionButton.interactable = 能用;
+            InkUITheme.Button(actionButton);
             return;
         }
 
@@ -199,6 +219,7 @@ public class UIEntryInfo : MonoBehaviour
             actionButton.image.color = 已装备
                 ? new Color(0.85f, 0.45f, 0.35f)      // 已装备 → 点它是卸下，用暖色
                 : new Color(0.40f, 0.70f, 0.45f);     // 未装备 → 点它是装上，用冷色
+            InkUITheme.Button(actionButton);
             return;
         }
 
@@ -207,5 +228,6 @@ public class UIEntryInfo : MonoBehaviour
         actionButton.image.color = enabled
             ? new Color(0.85f, 0.45f, 0.35f)      // 已启用 → 点它是停用，用暖色
             : new Color(0.40f, 0.70f, 0.45f);     // 已停用 → 点它是启用，用冷色
+        InkUITheme.Button(actionButton);
     }
 }

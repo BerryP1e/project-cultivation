@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// 角色面板的页签，顺序与概念图左侧一致：
-/// **背包 / 境界 / 神通 / 法宝 / 灵阵 / 战阵 / 坐骑**。
+/// **背包 / 境界 / 神通 / 法宝 / 灵阵 / 战阵 / 坐骑 / 外观**。
 /// </summary>
 public enum CharacterTab
 {
@@ -16,6 +16,7 @@ public enum CharacterTab
     灵阵 = 4,
     战阵 = 5,
     坐骑 = 6,
+    外观 = 7,
 }
 
 /// <summary>一个页签按钮与它对应的页面。</summary>

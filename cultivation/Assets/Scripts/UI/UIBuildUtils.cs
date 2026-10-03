@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -22,6 +22,7 @@ public static class UIBuildUtils
     /// <summary>创建一个空的 RectTransform 节点</summary>
     public static RectTransform CreateRect(string name, Transform parent)
     {
+        InkUIRuntimeSkin.Ensure(parent);
         var go = new GameObject(name, typeof(RectTransform));
         var rt = go.GetComponent<RectTransform>();
         rt.SetParent(parent, false);

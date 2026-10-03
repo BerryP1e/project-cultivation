@@ -39,6 +39,24 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
     [Tooltip("有待装备内容时，空位的高亮色")]
     public Color emptyReadyColor = new Color(0.55f, 0.88f, 0.55f, 1f);
 
+    static Sprite emptyFrame;
+    static Sprite filledFrame;
+
+    static Sprite LoadFrame(bool filled)
+    {
+        if (!InkUITheme.Enabled) return null;
+        if (filled)
+        {
+            if (filledFrame == null)
+                filledFrame = InkUITheme.Load("SkillsPage/skills/slot-filled");
+            return filledFrame;
+        }
+
+        if (emptyFrame == null)
+            emptyFrame = InkUITheme.Load("SkillsPage/skills/slot-empty");
+        return emptyFrame;
+    }
+
     public void Bind(Object content, bool pendingHighlight = false)
     {
         Content = content;
@@ -46,6 +64,9 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
 
         if (icon != null)
         {
+            // 空槽不要让生成器的灰色占位 Image 盖住独立的异形槽底；
+            // 有真实 DisplayIcon 时才显示内容层。
+            icon.gameObject.SetActive(entry != null);
             icon.sprite = entry != null ? entry.DisplayIcon : null;
             icon.color = entry != null
                 ? (entry.DisplayIcon != null ? Color.white : UIEntryRow.TierColor(entry.DisplayTier))
@@ -61,9 +82,19 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
 
         // 有东西在等着放进来时，把空格点亮，提示玩家可以点
         if (background != null)
+        {
+            var frame = LoadFrame(content != null);
+            if (frame != null)
+            {
+                background.sprite = frame;
+                background.overrideSprite = null;
+                background.type = Image.Type.Simple;
+                background.color = Color.white;
+            }
             background.color = (content == null && pendingHighlight)
                 ? emptyReadyColor
-                : UIBuildUtils.ColorSlot;
+                : (frame != null ? Color.white : UIBuildUtils.ColorSlot);
+        }
 
         if (clearButton != null) clearButton.gameObject.SetActive(content != null);
     }
@@ -86,6 +117,7 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
     public void OnDrop(PointerEventData e)
     {
         if (!UIDragContext.Dragging || UIDragContext.Entry == null) return;
+        if (UIDragContext.Entry is PassiveDivineAbility) return;
 
         var panel = ResolveData();
         if (panel == null) return;

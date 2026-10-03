@@ -1,0 +1,669 @@
+{
+  "items": [
+    {
+      "path": "BigPieces/ability-detail-panel",
+      "x": 5,
+      "y": 9,
+      "width": 481,
+      "height": 829
+    },
+    {
+      "path": "BigPieces/learned-ability-library-panel",
+      "x": 6,
+      "y": 12,
+      "width": 944,
+      "height": 697
+    },
+    {
+      "path": "BigPieces/left-parent-navigation-panel",
+      "x": 12,
+      "y": 14,
+      "width": 256,
+      "height": 864
+    },
+    {
+      "path": "Buttons/button-atlas-original",
+      "x": 13,
+      "y": 121,
+      "width": 1511,
+      "height": 765
+    },
+    {
+      "path": "Buttons/cinnabar-disabled",
+      "x": 9,
+      "y": 6,
+      "width": 499,
+      "height": 144
+    },
+    {
+      "path": "Buttons/cinnabar-hover",
+      "x": 9,
+      "y": 8,
+      "width": 500,
+      "height": 142
+    },
+    {
+      "path": "Buttons/cinnabar-normal",
+      "x": 9,
+      "y": 8,
+      "width": 500,
+      "height": 143
+    },
+    {
+      "path": "Buttons/cinnabar-pressed",
+      "x": 9,
+      "y": 7,
+      "width": 499,
+      "height": 144
+    },
+    {
+      "path": "Buttons/cinnabar-slice-center",
+      "x": 0,
+      "y": 11,
+      "width": 280,
+      "height": 139
+    },
+    {
+      "path": "Buttons/cinnabar-slice-left",
+      "x": 9,
+      "y": 8,
+      "width": 111,
+      "height": 143
+    },
+    {
+      "path": "Buttons/cinnabar-slice-right",
+      "x": 0,
+      "y": 8,
+      "width": 109,
+      "height": 143
+    },
+    {
+      "path": "Buttons/ivory-disabled",
+      "x": 11,
+      "y": 6,
+      "width": 499,
+      "height": 145
+    },
+    {
+      "path": "Buttons/ivory-hover",
+      "x": 11,
+      "y": 8,
+      "width": 499,
+      "height": 142
+    },
+    {
+      "path": "Buttons/ivory-normal",
+      "x": 11,
+      "y": 8,
+      "width": 499,
+      "height": 143
+    },
+    {
+      "path": "Buttons/ivory-pressed",
+      "x": 11,
+      "y": 6,
+      "width": 499,
+      "height": 146
+    },
+    {
+      "path": "Buttons/ivory-slice-center",
+      "x": 0,
+      "y": 9,
+      "width": 280,
+      "height": 141
+    },
+    {
+      "path": "Buttons/ivory-slice-left",
+      "x": 11,
+      "y": 8,
+      "width": 109,
+      "height": 143
+    },
+    {
+      "path": "Buttons/ivory-slice-right",
+      "x": 0,
+      "y": 8,
+      "width": 110,
+      "height": 143
+    },
+    {
+      "path": "Buttons/jade-disabled",
+      "x": 4,
+      "y": 6,
+      "width": 506,
+      "height": 144
+    },
+    {
+      "path": "Buttons/jade-hover",
+      "x": 4,
+      "y": 8,
+      "width": 512,
+      "height": 142
+    },
+    {
+      "path": "Buttons/jade-normal",
+      "x": 4,
+      "y": 8,
+      "width": 512,
+      "height": 143
+    },
+    {
+      "path": "Buttons/jade-pressed",
+      "x": 4,
+      "y": 6,
+      "width": 512,
+      "height": 144
+    },
+    {
+      "path": "Buttons/jade-slice-center",
+      "x": 0,
+      "y": 10,
+      "width": 280,
+      "height": 140
+    },
+    {
+      "path": "Buttons/jade-slice-left",
+      "x": 4,
+      "y": 8,
+      "width": 116,
+      "height": 143
+    },
+    {
+      "path": "Buttons/jade-slice-right",
+      "x": 0,
+      "y": 8,
+      "width": 116,
+      "height": 143
+    },
+    {
+      "path": "CommonPanels/dialog-choice-hover",
+      "x": 223,
+      "y": 45,
+      "width": 274,
+      "height": 58
+    },
+    {
+      "path": "CommonPanels/dialog-choice-normal",
+      "x": 223,
+      "y": 45,
+      "width": 274,
+      "height": 58
+    },
+    {
+      "path": "CommonPanels/dialog-choice-selected",
+      "x": 223,
+      "y": 45,
+      "width": 274,
+      "height": 58
+    },
+    {
+      "path": "CommonPanels/dialog-nameplate",
+      "x": 101,
+      "y": 27,
+      "width": 278,
+      "height": 58
+    },
+    {
+      "path": "CommonPanels/dialog-scroll",
+      "x": 32,
+      "y": 54,
+      "width": 962,
+      "height": 417
+    },
+    {
+      "path": "CommonPanels/plot-tag",
+      "x": 248,
+      "y": 6,
+      "width": 504,
+      "height": 1131
+    },
+    {
+      "path": "CommonPanels/teleport-plate",
+      "x": 5,
+      "y": 358,
+      "width": 1014,
+      "height": 323
+    },
+    {
+      "path": "CommonPanels/title-plaque",
+      "x": 221,
+      "y": 73,
+      "width": 584,
+      "height": 104
+    },
+    {
+      "path": "CommonPanels/toast",
+      "x": 207,
+      "y": 32,
+      "width": 266,
+      "height": 41
+    },
+    {
+      "path": "CommonPanels/tower-floor-bar",
+      "x": 811,
+      "y": 33,
+      "width": 178,
+      "height": 15
+    },
+    {
+      "path": "CultivationAlchemy/cultivation-frame",
+      "x": 18,
+      "y": 55,
+      "width": 2013,
+      "height": 1954
+    },
+    {
+      "path": "CultivationAlchemy/furnace-stage",
+      "x": 21,
+      "y": 15,
+      "width": 1560,
+      "height": 1170
+    },
+    {
+      "path": "CultivationAlchemy/gongfa-card",
+      "x": 16,
+      "y": 248,
+      "width": 992,
+      "height": 537
+    },
+    {
+      "path": "CultivationAlchemy/ink-ring",
+      "x": 21,
+      "y": 26,
+      "width": 1363,
+      "height": 1341
+    },
+    {
+      "path": "CultivationAlchemy/material-slot-disabled",
+      "x": 84,
+      "y": 23,
+      "width": 232,
+      "height": 219
+    },
+    {
+      "path": "CultivationAlchemy/material-slot-empty",
+      "x": 84,
+      "y": 23,
+      "width": 232,
+      "height": 219
+    },
+    {
+      "path": "CultivationAlchemy/material-slot-filled",
+      "x": 84,
+      "y": 23,
+      "width": 232,
+      "height": 219
+    },
+    {
+      "path": "CultivationAlchemy/material-slot-selected",
+      "x": 84,
+      "y": 23,
+      "width": 232,
+      "height": 219
+    },
+    {
+      "path": "CultivationAlchemy/recipe-row-hover",
+      "x": 277,
+      "y": 27,
+      "width": 166,
+      "height": 10
+    },
+    {
+      "path": "CultivationAlchemy/recipe-row-normal",
+      "x": 277,
+      "y": 27,
+      "width": 166,
+      "height": 10
+    },
+    {
+      "path": "CultivationAlchemy/recipe-row-selected",
+      "x": 277,
+      "y": 27,
+      "width": 166,
+      "height": 10
+    },
+    {
+      "path": "Icons/icon-appearance",
+      "x": 7,
+      "y": 9,
+      "width": 243,
+      "height": 235
+    },
+    {
+      "path": "Icons/icon-divine-ability",
+      "x": 13,
+      "y": 8,
+      "width": 236,
+      "height": 237
+    },
+    {
+      "path": "Icons/icon-formation",
+      "x": 3,
+      "y": 0,
+      "width": 252,
+      "height": 256
+    },
+    {
+      "path": "Icons/icon-inventory",
+      "x": 14,
+      "y": 21,
+      "width": 228,
+      "height": 214
+    },
+    {
+      "path": "Icons/icon-mount",
+      "x": 11,
+      "y": 6,
+      "width": 235,
+      "height": 244
+    },
+    {
+      "path": "Icons/icon-realm",
+      "x": 2,
+      "y": 2,
+      "width": 252,
+      "height": 252
+    },
+    {
+      "path": "Icons/icon-spirit-array",
+      "x": 10,
+      "y": 14,
+      "width": 241,
+      "height": 241
+    },
+    {
+      "path": "Icons/icon-treasure",
+      "x": 25,
+      "y": 7,
+      "width": 226,
+      "height": 243
+    },
+    {
+      "path": "Parts/ability-library-card",
+      "x": 3,
+      "y": 0,
+      "width": 947,
+      "height": 315
+    },
+    {
+      "path": "Parts/active-slot-frame",
+      "x": 0,
+      "y": 0,
+      "width": 510,
+      "height": 560
+    },
+    {
+      "path": "Parts/enabled-passive-row",
+      "x": 0,
+      "y": 0,
+      "width": 950,
+      "height": 235
+    },
+    {
+      "path": "Parts/parent-navigation-tab",
+      "x": 0,
+      "y": 0,
+      "width": 950,
+      "height": 225
+    },
+    {
+      "path": "Parts/primary-action-button",
+      "x": 0,
+      "y": 0,
+      "width": 815,
+      "height": 200
+    },
+    {
+      "path": "Parts/scrollbar-track-and-thumb",
+      "x": 0,
+      "y": 0,
+      "width": 180,
+      "height": 650
+    },
+    {
+      "path": "Parts/secondary-action-button",
+      "x": 0,
+      "y": 0,
+      "width": 649,
+      "height": 200
+    },
+    {
+      "path": "Portraits/portrait-大师兄",
+      "x": 0,
+      "y": 0,
+      "width": 1144,
+      "height": 1614
+    },
+    {
+      "path": "Portraits/portrait-小梅",
+      "x": 53,
+      "y": 0,
+      "width": 1061,
+      "height": 1614
+    },
+    {
+      "path": "Portraits/portrait-成女村民",
+      "x": 131,
+      "y": 0,
+      "width": 904,
+      "height": 1608
+    },
+    {
+      "path": "Portraits/portrait-成男村民",
+      "x": 25,
+      "y": 0,
+      "width": 1099,
+      "height": 1614
+    },
+    {
+      "path": "Portraits/portrait-村民",
+      "x": 82,
+      "y": 0,
+      "width": 980,
+      "height": 1609
+    },
+    {
+      "path": "Portraits/portrait-正太村民",
+      "x": 124,
+      "y": 0,
+      "width": 931,
+      "height": 1610
+    },
+    {
+      "path": "Portraits/portrait-老头村民",
+      "x": 154,
+      "y": 1,
+      "width": 904,
+      "height": 1613
+    },
+    {
+      "path": "Portraits/portrait-胖叔村民",
+      "x": 13,
+      "y": 0,
+      "width": 1120,
+      "height": 1614
+    },
+    {
+      "path": "Skeleton/nav-tab-active",
+      "x": 18,
+      "y": 29,
+      "width": 562,
+      "height": 148
+    },
+    {
+      "path": "Skeleton/nav-tab-inactive",
+      "x": 23,
+      "y": 0,
+      "width": 446,
+      "height": 100
+    },
+    {
+      "path": "Skeleton/ornate-divider",
+      "x": 31,
+      "y": 0,
+      "width": 680,
+      "height": 112
+    },
+    {
+      "path": "Skeleton/parent-curtain-9slice-source",
+      "x": 7,
+      "y": 0,
+      "width": 1334,
+      "height": 671
+    },
+    {
+      "path": "Skeleton/parent-navigation-rail",
+      "x": 13,
+      "y": 20,
+      "width": 239,
+      "height": 894
+    },
+    {
+      "path": "Skeleton/title-plaque",
+      "x": 29,
+      "y": 21,
+      "width": 700,
+      "height": 155
+    },
+    {
+      "path": "SkillsPage/common/panel-inner",
+      "x": 35,
+      "y": 40,
+      "width": 954,
+      "height": 944
+    },
+    {
+      "path": "SkillsPage/common/panel-sheet",
+      "x": 70,
+      "y": 79,
+      "width": 1909,
+      "height": 1892
+    },
+    {
+      "path": "SkillsPage/navigation/nav-rail",
+      "x": 143,
+      "y": 379,
+      "width": 224,
+      "height": 1291
+    },
+    {
+      "path": "SkillsPage/navigation/tab-active",
+      "x": 203,
+      "y": 58,
+      "width": 559,
+      "height": 99
+    },
+    {
+      "path": "SkillsPage/navigation/tab-hover",
+      "x": 203,
+      "y": 58,
+      "width": 559,
+      "height": 99
+    },
+    {
+      "path": "SkillsPage/navigation/tab-normal",
+      "x": 203,
+      "y": 58,
+      "width": 559,
+      "height": 99
+    },
+    {
+      "path": "SkillsPage/skills/active-ring",
+      "x": 22,
+      "y": 11,
+      "width": 1358,
+      "height": 1381
+    },
+    {
+      "path": "SkillsPage/skills/badge-tier-cinnabar",
+      "x": 64,
+      "y": 30,
+      "width": 384,
+      "height": 86
+    },
+    {
+      "path": "SkillsPage/skills/badge-tier-jade",
+      "x": 64,
+      "y": 30,
+      "width": 384,
+      "height": 86
+    },
+    {
+      "path": "SkillsPage/skills/panel-detail",
+      "x": 25,
+      "y": 18,
+      "width": 978,
+      "height": 2014
+    },
+    {
+      "path": "SkillsPage/skills/row-hover",
+      "x": 335,
+      "y": 58,
+      "width": 352,
+      "height": 20
+    },
+    {
+      "path": "SkillsPage/skills/row-normal",
+      "x": 335,
+      "y": 58,
+      "width": 352,
+      "height": 20
+    },
+    {
+      "path": "SkillsPage/skills/row-selected",
+      "x": 335,
+      "y": 58,
+      "width": 352,
+      "height": 20
+    },
+    {
+      "path": "SkillsPage/skills/slot-empty",
+      "x": 9,
+      "y": 7,
+      "width": 318,
+      "height": 323
+    },
+    {
+      "path": "SkillsPage/skills/slot-filled",
+      "x": 9,
+      "y": 7,
+      "width": 318,
+      "height": 323
+    },
+    {
+      "path": "SkillsPage/skills/slot-hover",
+      "x": 9,
+      "y": 7,
+      "width": 318,
+      "height": 323
+    },
+    {
+      "path": "SkillsPage/status/bar-fill",
+      "x": 3,
+      "y": 29,
+      "width": 58,
+      "height": 6
+    },
+    {
+      "path": "SkillsPage/status/bar-track",
+      "x": 461,
+      "y": 28,
+      "width": 102,
+      "height": 9
+    },
+    {
+      "path": "SkillsPage/status/scroll-thumb",
+      "x": 26,
+      "y": 9,
+      "width": 12,
+      "height": 46
+    },
+    {
+      "path": "SkillsPage/status/scroll-track",
+      "x": 27,
+      "y": 8,
+      "width": 10,
+      "height": 111
+    }
+  ]
+}

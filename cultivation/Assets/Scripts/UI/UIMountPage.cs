@@ -259,7 +259,7 @@ public class UIMountPage : MonoBehaviour
         当前模型.transform.localRotation = Quaternion.identity;
 
         // 预览不参与任何物理 / 拾取
-        foreach (var c in 当前模型.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+        外观预览.去掉会干活的组件(当前模型);
         foreach (var sm in 当前模型.GetComponentsInChildren<SkinnedMeshRenderer>(true)) sm.updateWhenOffscreen = true;
         foreach (var an in 当前模型.GetComponentsInChildren<Animator>(true))
         {

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -199,6 +199,20 @@ public class 灵田界面 : MonoBehaviour
         //   而这里的清单要靠 <color> 把「可收 / 荒地」标出来。不打开的话标签会**照字面显示**，
         //   玩家看到的就是 `<color=#FFD96A>已成熟</color>`（实测踩到）。
         清单文本.supportRichText = true;
+        if (InkUITheme.Enabled)
+        {
+            var view = UIBuildUtils.CreateRect("FieldViewport", 面板);
+            UIBuildUtils.Place(view, Vector2.zero, Vector2.one, new Vector2(24, 88), new Vector2(-44, -112));
+            view.gameObject.AddComponent<RectMask2D>();
+            清单文本.rectTransform.SetParent(view, false);
+            清单文本.rectTransform.anchorMin = new Vector2(0, 1); 清单文本.rectTransform.anchorMax = Vector2.one;
+            清单文本.rectTransform.pivot = new Vector2(.5f, 1); 清单文本.rectTransform.sizeDelta = Vector2.zero;
+            清单文本.rectTransform.anchoredPosition = Vector2.zero;
+            清单文本.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = 面板.gameObject.AddComponent<ScrollRect>(); scroll.viewport = view; scroll.content = 清单文本.rectTransform;
+            scroll.horizontal = false; scroll.movementType = ScrollRect.MovementType.Clamped;
+            InkUITheme.Scroll(scroll, 112);
+        }
 
         提示文本 = UIBuildUtils.CreateText("提示", 面板, 字体, "", 17,
             TextAnchor.LowerLeft, 可收色);

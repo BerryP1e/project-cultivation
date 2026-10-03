@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -151,6 +151,8 @@ public class 外观页 : MonoBehaviour
         var 字 = 新字("字", 按钮.transform, 已装备 ? "已装备" : "装备", TextAnchor.MiddleCenter);
         字.color = 字色;
         拉满((RectTransform)字.transform);
+        InkUITheme.Image(底图, "SkillsPage/skills/row-normal");
+        InkUITheme.Button(btn);
 
         行.Add(go);
     }
