@@ -90,6 +90,9 @@ public static class 遮挡素材
         readonly Dictionary<Renderer, Material[]> _原 = new Dictionary<Renderer, Material[]>();
         readonly Dictionary<Material, Material> _建筑缓存 = new Dictionary<Material, Material>();
         readonly Dictionary<Material, Material> _树冠缓存 = new Dictionary<Material, Material>();
+        readonly Dictionary<Material, Material> _老缓存 = new Dictionary<Material, Material>();
+        /// <summary>这个渲染器现在用的是水墨材质（false = 走"老透明方案"）</summary>
+        readonly HashSet<Renderer> _用水墨 = new HashSet<Renderer>();
         readonly Dictionary<Renderer, float> _当前 = new Dictionary<Renderer, float>();
         readonly MaterialPropertyBlock _块 = new MaterialPropertyBlock();
 
@@ -99,8 +102,12 @@ public static class 遮挡素材
         /// <summary>本台账正在管的渲染器（外部每帧推进用）</summary>
         public IEnumerable<Renderer> 名单 => _原.Keys;
 
-        /// <summary>换成水墨材质（已有记录的不重复换）。返回是否新换了</summary>
-        public bool 换成水墨(Renderer r)
+        /// <summary>
+        /// 换成淡出材质（已有记录的不重复换）。返回是否新换了。
+        /// `希望水墨 = false` ⇒ 走**改造前那套**（`Legacy Shaders/Transparent/Diffuse`，
+        /// 观感与 2026-10-03 之前完全一致），但**淡入淡出仍然保留** —— 这是给用户的"一键退回"。
+        /// </summary>
+        public bool 换成水墨(Renderer r, bool 希望水墨 = true)
         {
             if (r == null) return false;
             if (_原.ContainsKey(r)) return false;
@@ -111,9 +118,11 @@ public static class 遮挡素材
             _原[r] = 原;
             bool 树 = 是树冠(r);
             var 换 = new Material[原.Length];
-            for (int i = 0; i < 原.Length; i++) 换[i] = 取水墨(原[i], 树);
+            for (int i = 0; i < 原.Length; i++)
+                换[i] = 希望水墨 ? 取水墨(原[i], 树) : 取老透明(原[i]);
             r.sharedMaterials = 换;
             _当前[r] = 0f;
+            if (希望水墨) _用水墨.Add(r); else _用水墨.Remove(r);
             写参数(r, 0f, 树 ? 水墨参数.树冠默认() : 水墨参数.建筑默认());
             return true;
         }
@@ -178,14 +187,49 @@ public static class 遮挡素材
         void 写参数(Renderer r, float fade, in 水墨参数 p)
         {
             _块.Clear();
-            _块.SetFloat(ID_Fade, fade);
-            _块.SetFloat(ID_Ghost, p.剪影);
-            _块.SetFloat(ID_Dissolve, p.侵蚀);
-            _块.SetFloat(ID_DissolveScale, p.侵蚀尺度);
-            _块.SetFloat(ID_EdgeWidth, p.墨边宽);
-            _块.SetFloat(ID_EdgeInk, p.墨边强度);
-            _块.SetFloat(ID_PaperAmount, p.纸纹);
+            if (_用水墨.Contains(r))
+            {
+                _块.SetFloat(ID_Fade, fade);
+                _块.SetFloat(ID_Ghost, p.剪影);
+                _块.SetFloat(ID_Dissolve, p.侵蚀);
+                _块.SetFloat(ID_DissolveScale, p.侵蚀尺度);
+                _块.SetFloat(ID_EdgeWidth, p.墨边宽);
+                _块.SetFloat(ID_EdgeInk, p.墨边强度);
+                _块.SetFloat(ID_PaperAmount, p.纸纹);
+            }
+            else
+            {
+                // 老方案（Legacy Transparent/Diffuse）：只驱动 `_Color.a`，**rgb 保留原材质自己的**
+                var ms = r.sharedMaterials;
+                var c = (ms != null && ms.Length > 0 && ms[0] != null) ? ms[0].color : Color.white;
+                _块.SetColor("_Color", new Color(c.r, c.g, c.b, Mathf.Lerp(1f, p.剪影, fade)));
+            }
             r.SetPropertyBlock(_块);
+        }
+
+        /// <summary>兜底/退回用：老方案（改造前那套 `Legacy Shaders/Transparent/Diffuse`），按源材质缓存</summary>
+        Material 取老透明(Material 源)
+        {
+            if (源 == null) return null;
+            Material 有;
+            if (_老缓存.TryGetValue(源, out 有) && 有 != null) return 有;
+
+            var sh = Shader.Find("Legacy Shaders/Transparent/Diffuse");
+            if (sh == null) sh = Shader.Find("Legacy Shaders/Transparent/Cutout/Diffuse");
+            if (sh == null) sh = Shader.Find("Unlit/Transparent");
+            if (sh == null) return 源;
+
+            var m = new Material(sh) { name = "透明_" + 源.name };
+            if (源.HasProperty("_MainTex"))
+            {
+                m.mainTexture = 源.mainTexture;
+                m.mainTextureScale = 源.mainTextureScale;
+                m.mainTextureOffset = 源.mainTextureOffset;
+            }
+            var c = 源.HasProperty("_Color") ? 源.GetColor("_Color") : Color.white;
+            m.color = new Color(c.r, c.g, c.b, 1f);
+            _老缓存[源] = m;
+            return m;
         }
 
         /// <summary>
@@ -204,7 +248,7 @@ public static class 遮挡素材
             if (_水墨 == null)
             {
                 Debug.LogWarning("[遮挡与特效开关] 找不到 shader「" + 水墨Shader名 + "」—— 退回老的透明方案（观感会掉一档）");
-                var 老的 = 取旧透明(源);
+                var 老的 = 取老透明(源);
                 缓存[源] = 老的;
                 return 老的;
             }
@@ -241,26 +285,6 @@ public static class 遮挡素材
             }
 
             缓存[源] = m;
-            return m;
-        }
-
-        /// <summary>兜底：水墨 shader 不在时，用原来的 Legacy 透明（至少不糊）</summary>
-        Material 取旧透明(Material 源)
-        {
-            var sh = Shader.Find("Legacy Shaders/Transparent/Diffuse");
-            if (sh == null) sh = Shader.Find("Legacy Shaders/Transparent/Cutout/Diffuse");
-            if (sh == null) sh = Shader.Find("Unlit/Transparent");
-            if (sh == null) return 源;
-
-            var m = new Material(sh) { name = "透明_" + 源.name };
-            if (源.HasProperty("_MainTex"))
-            {
-                m.mainTexture = 源.mainTexture;
-                m.mainTextureScale = 源.mainTextureScale;
-                m.mainTextureOffset = 源.mainTextureOffset;
-            }
-            var c = 源.HasProperty("_Color") ? 源.GetColor("_Color") : Color.white;
-            m.color = new Color(c.r, c.g, c.b, 0.22f);
             return m;
         }
     }

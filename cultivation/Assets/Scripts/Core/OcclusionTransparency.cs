@@ -56,6 +56,9 @@ public class OcclusionTransparency : MonoBehaviour
     public float 树冠余量 = 0.35f;
 
     [Header("水墨淡出（2026-10-03：不再是硬切，也不再是塑料半透明）")]
+    [Tooltip("★ **一键退回**：关掉就用改造前那套（`Legacy Shaders/Transparent/Diffuse`）的观感，\n" +
+             "但**淡入淡出仍然保留**（老材质只驱动 alpha）。想完全回到最早那个硬切版本，见文档 §7.3 的说明。")]
+    public bool 用水墨淡出 = true;
     [Tooltip("淡出时长（秒）：实心 → 只剩剪影")]
     public float 淡出秒 = 0.30f;
     [Tooltip("回场时长（秒）：剪影 → 实心。⚠️ 比淡出略长，回场才不会「啪」地弹回来")]
@@ -171,7 +174,7 @@ public class OcclusionTransparency : MonoBehaviour
         {
             var r = kv.Key;
             if (r == null) continue;
-            bool 新 = _台账.换成水墨(r);
+            bool 新 = _台账.换成水墨(r, 用水墨淡出);
             if (新 && 打印日志) Debug.Log("[遮挡与特效开关] 换成水墨：" + r.name, r);
             _保持到[r] = now + Mathf.Max(0f, 保持);
         }

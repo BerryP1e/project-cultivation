@@ -160,7 +160,12 @@ Shader "Cultivation/InkDissolve"
                 float f = saturate(_Fade);
 
                 // ---- 底色 + 一点自己的光照（没有法线贴图/光照贴图，淡出期间够用）----
-                float3 albedo = tex2D(_MainTex, i.uv).rgb * _Color.rgb;
+                // ⚠️⚠️ **必须用贴图的 alpha**：树叶/卡片材质的形状就写在 `_MainTex.a` 里（抠空的叶子）。
+                //    第一版只算了自己的淡出 alpha ⇒ 抠空的卡片变成**整块实心板**，
+                //    用户看到的就是「一片片的片状物」＋「镜头前盖了一层纸」（2026-10-03）。
+                float4 tex = tex2D(_MainTex, i.uv);
+                float3 albedo = tex.rgb * _Color.rgb;
+                float texA = tex.a * _Color.a;
                 float3 n = normalize(i.wnrm);
                 float3 amb = ShadeSH9(float4(n, 1));
                 float3 ldir = normalize(_WorldSpaceLightPos0.xyz);
@@ -187,9 +192,11 @@ Shader "Cultivation/InkDissolve"
                     col = lerp(col, _InkColor.rgb, saturate(edge * _EdgeInk));
                 }
 
-                // ---- ③ 不透明度：整体渐隐到剪影；墨边保留得更实 ----
+                // ---- ③ 不透明度：**贴图 alpha × 淡出**；墨边保留得更实 ----
                 float a = lerp(1.0, _Ghost, smoothstep(0.0, 1.0, f));
                 a = max(a, edge * _EdgeInk * 0.9);
+                a *= texA;                                   // ★ 抠空的叶子/卡片形状靠它
+                if (texA < 0.02) discard;                    // 贴图本身透明的地方直接不画（形状才对）
 
                 // ---- 纸纹（复用宣纸的归一化颗粒图，世界空间铺）----
                 float3 grain = 1.0 + (tex2D(_PaperTex, i.wpos.xz * _PaperTiling).r - 0.5) * _PaperGain;
@@ -217,6 +224,8 @@ Shader "Cultivation/InkDissolve"
             #pragma multi_compile_shadowcaster
             #include "UnityCG.cginc"
 
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
             float _Fade;
             float _Dissolve;
             float _DissolveScale;
@@ -226,11 +235,13 @@ Shader "Cultivation/InkDissolve"
             {
                 V2F_SHADOW_CASTER;
                 float3 wpos : TEXCOORD1;
+                float2 uv : TEXCOORD2;
             };
 
             v2f vert(appdata_base v)
             {
                 v2f o;
+                o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
                 TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
                 o.wpos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 return o;
@@ -269,6 +280,8 @@ Shader "Cultivation/InkDissolve"
             float4 frag(v2f i) : SV_Target
             {
                 float f = saturate(_Fade);
+                // 抠空的叶子/卡片：贴图透明的地方连影子也不该有
+                clip(tex2D(_MainTex, i.uv).a - 0.02);
                 // 只有开了侵蚀才在影子里打洞；否则影子就是跟着淡出（纯淡入淡出时别在影子上留麻点）
                 if (_Dissolve > 0.001)
                 {
