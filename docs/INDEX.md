@@ -175,6 +175,7 @@ docs/
 | **飞弹 / 子弹 / 出生点** | [guides/飞弹与子弹](guides/飞弹与子弹.md) | [guides/特效资源清单](guides/特效资源清单.md) |
 | **战阵 / 真灵** | [architecture/战阵真灵](architecture/战阵真灵.md) | [ai/踩坑总库](ai/踩坑总库.md) |
 | **坐骑 / 御风 / 飞行高度** | [architecture/坐骑与御风](architecture/坐骑与御风.md) | [guides/动画竖直处理](guides/动画竖直处理.md) |
+| **屏幕空间角色描边（Built-in）** | [guides/描边](guides/描边.md) | [guides/画面统一调色](guides/画面统一调色.md) · [architecture/游戏HUD](architecture/游戏HUD.md) |
 | **镇妖塔 / 刷怪 / 关卡难度** | [guides/镇妖塔](guides/镇妖塔.md) | [ai/踩坑总库 §H](ai/踩坑总库.md) |
 | **传送门 / 落点 / 切场景** | [architecture/传送系统](architecture/传送系统.md) | [design/任务系统 §8](design/任务系统.md) · [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **加可交互物 / 「按 F 打开」的界面** | [architecture/系统总览 §2.5](architecture/系统总览.md) · [design/交互系统](design/交互系统.md) | [ai/踩坑总库](ai/踩坑总库.md) |
