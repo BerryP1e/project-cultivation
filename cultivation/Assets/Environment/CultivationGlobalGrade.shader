@@ -66,6 +66,8 @@ Shader "Cultivation/GlobalGrade"
         _GrainAmount ("Paper Grain Amount", Range(0, 1)) = 0.30
         _GrainTiling ("Paper Grain Tiling", Range(0.5, 40)) = 3.0
         _GrainHasTex ("Paper Grain Has Texture", Range(0, 1)) = 0
+        _GrainGain   ("Paper Grain Gain (high-pass)", Range(0.2, 40)) = 6.0
+        _GrainPre    ("Paper Grain Pre-normalised", Range(0, 1)) = 1
     }
 
     SubShader
@@ -105,6 +107,8 @@ Shader "Cultivation/GlobalGrade"
             float  _GrainAmount;
             float  _GrainTiling;
             float  _GrainHasTex;
+            float  _GrainGain;
+            float  _GrainPre;
 
             float Luma(float3 c) { return dot(c, float3(0.2126, 0.7152, 0.0722)); }
 
@@ -207,25 +211,39 @@ Shader "Cultivation/GlobalGrade"
                 if (_GrainAmount > 0.0001)
                 {
                     float2 g = i.uv * _GrainTiling;
-                    float3 grain;
+                    float dev;   // 以 0 为中心的"颗粒偏离量"
                     if (_GrainHasTex > 0.5)
                     {
-                        // Any grey paper texture works. Remap it so the mean lands on
-                        // 1.0 (a multiplier), otherwise the whole picture just gets
-                        // darker or brighter instead of gaining grain.
-                        float t = Luma(tex2D(_GrainTex, g).rgb);
-                        grain = (0.55 + t * 0.90).xxx;
+                        if (_GrainPre > 0.5)
+                        {
+                            // 已归一化的纸纹（`修仙/美术/宣纸纸纹预处理` 的产物）：
+                            // 中点 0.5、±2σ ≈ ±0.25，直接取一次就够，不用再做高通。
+                            dev = (Luma(tex2D(_GrainTex, g).rgb) - 0.5) * _GrainGain;
+                        }
+                        else
+                        {
+                            // 生图（直接拍的纸）：纸的"纹"是高频、但动态范围极小，必须先高通再放大。
+                            // ⚠️ 不预处理就直接整张乘上去 = 只是整体变亮变暗 + 大块云斑变脏斑。
+                            float2 dx = float2(_GrainTex_TexelSize.x, 0);
+                            float2 dy = float2(0, _GrainTex_TexelSize.y);
+                            float c0 = Luma(tex2D(_GrainTex, g).rgb);
+                            float c1 = Luma(tex2D(_GrainTex, g + dx).rgb);
+                            float c2 = Luma(tex2D(_GrainTex, g - dx).rgb);
+                            float c3 = Luma(tex2D(_GrainTex, g + dy).rgb);
+                            float c4 = Luma(tex2D(_GrainTex, g - dy).rgb);
+                            dev = (c0 - (c1 + c2 + c3 + c4) * 0.25) * _GrainGain;
+                        }
                     }
                     else
                     {
+                        // 兜底：程序化纸纤维（没有贴图时也能出效果，不做静默失效的黑盒）
                         float n1 = ValueNoise(g * 6.0);
                         float n2 = ValueNoise(g * 23.0);
-                        // fibre: long streaks, like the fibres in xuan paper
                         float fib = ValueNoise(float2(g.x * 60.0, g.y * 3.0));
-                        float t = n1 * 0.55 + n2 * 0.25 + fib * 0.20;
-                        grain = (0.55 + t * 0.90).xxx;
+                        dev = ((n1 * 0.55 + n2 * 0.25 + fib * 0.20) - 0.5) * _GrainGain * 0.2;
                     }
-                    c *= lerp(float3(1, 1, 1), grain, saturate(_GrainAmount));
+                    float grain = clamp(1.0 + dev, 0.2, 1.8);
+                    c *= lerp(float3(1, 1, 1), grain.xxx, saturate(_GrainAmount));
                 }
 
                 // 6) Vignette, centred on screen

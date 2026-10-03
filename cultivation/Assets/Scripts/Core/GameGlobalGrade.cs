@@ -94,14 +94,24 @@ public class GameGlobalGrade : MonoBehaviour
     [Tooltip("留白阈值：亮度超过它才算纸。调低 = 更多地方变纸（会吃掉细节）")]
     [Range(0.5f, 1f)] public float 留白阈值 = 0.86f;
 
-    [Tooltip("宣纸纹理（可选）。**没填就用程序化纸纹兜底**，" +
-             "所以这个功能不会有「忘了填资产就静默失效」的黑盒状态")]
+    [Tooltip("宣纸纹理（可选）。**没填就自动去 Resources 取「默认纸纹」那张**；" +
+             "连那张也没有才退回程序化纸纹 —— 不会有「忘了填资产就静默失效」的黑盒状态")]
     public Texture 纸纹;
-    [Tooltip("纸纹强度：0 = 关。0.15~0.25 有纸的颗粒感；0.3 以上就开始像噪点了")]
-    [Range(0f, 1f)] public float 纸纹强度 = 0.20f;
+    [Tooltip("自动加载的纸纹资源名（相对 Resources）。留空 = 不走自动加载。\n" +
+             "用户 2026-10-03 提供的宣纸 → 已用 `修仙/美术/宣纸纸纹预处理` 生成归一化颗粒图放在 " +
+             "`Assets/resources/宣纸/宣纸纹理_纸纹.png`")]
+    public string 默认纸纹 = "宣纸/宣纸纹理_纸纹";
+    [Tooltip("纸纹强度：0 = 关。0.25~0.45 有纸的颗粒感；太大就是噪点")]
+    [Range(0f, 1f)] public float 纸纹强度 = 0.35f;
     [Tooltip("纸纹平铺次数（屏幕空间）。纸是不动的，所以 UV 用屏幕坐标。\n" +
-             "铺太密 = 细噪点，铺太疏 = 大块脏斑；2 左右最像纸")]
-    [Range(0.5f, 40f)] public float 纸纹平铺 = 2.2f;
+             "**1 = 整屏一张纸**（原图不是无缝的，铺开了会看到镜像接缝）；要更细的颗粒再往上加")]
+    [Range(0.5f, 40f)] public float 纸纹平铺 = 1f;
+    [Tooltip("纸纹对比（增益）。**归一化过的纸纹（默认那张）用 2 左右**；\n" +
+             "生图（没跑过预处理）要放大很多才看得见 —— 那种情况建议先去跑 `修仙/美术/宣纸纸纹预处理`")]
+    [Range(0.2f, 40f)] public float 纸纹对比 = 2f;
+    [Tooltip("纸纹是不是已归一化（`修仙/美术/宣纸纸纹预处理` 的产物：中点 0.5、±2σ ≈ ±0.25）。\n" +
+             "勾上 = 直接取一次；**不勾 = 运行时做高通**（给没预处理的生图兜底）")]
+    public bool 纸纹已归一化 = true;
 
     [Header("暗角")]
     [Tooltip("0 = 关。\n" +
@@ -139,9 +149,24 @@ public class GameGlobalGrade : MonoBehaviour
     static readonly int ID_纸纹强度 = Shader.PropertyToID("_GrainAmount");
     static readonly int ID_纸纹平铺 = Shader.PropertyToID("_GrainTiling");
     static readonly int ID_有纸纹 = Shader.PropertyToID("_GrainHasTex");
+    static readonly int ID_纸纹对比 = Shader.PropertyToID("_GrainGain");
+    static readonly int ID_纸纹归一 = Shader.PropertyToID("_GrainPre");
 
-    void OnEnable() => 确保材质();
+    void OnEnable() { 自动装纸纹(); 确保材质(); }
     void OnDisable() { if (材质 != null) { DestroyImmediate(材质); 材质 = null; } }
+
+    /// <summary>
+    /// 纸纹没手动指定时，自动从 Resources 取默认那张（用户提供的宣纸）。
+    /// **本组件是运行时由 `场景自举` 补到相机上的** ⇒ 序列化引用存不进场景，
+    /// 默认值只能靠"按资源名加载"这条路，不能指望 Inspector 里拖一下。
+    /// </summary>
+    void 自动装纸纹()
+    {
+        if (纸纹 != null || string.IsNullOrEmpty(默认纸纹)) return;
+        纸纹 = Resources.Load<Texture>(默认纸纹);
+        if (纸纹 != null) Debug.Log("[全局调色] 已自动装纸纹：" + 默认纸纹 + "（" + 纸纹.width + "x" + 纸纹.height + "）");
+        else Debug.LogWarning("[全局调色] Resources 里找不到纸纹「" + 默认纸纹 + "」—— 会退回程序化纸纹兜底");
+    }
 
     void 确保材质()
     {
@@ -182,6 +207,8 @@ public class GameGlobalGrade : MonoBehaviour
         材质.SetFloat(ID_留白阈值, 留白阈值);
         材质.SetFloat(ID_纸纹强度, 纸纹强度);
         材质.SetFloat(ID_纸纹平铺, 纸纹平铺);
+        材质.SetFloat(ID_纸纹对比, 纸纹对比);
+        材质.SetFloat(ID_纸纹归一, 纸纹已归一化 ? 1f : 0f);
         材质.SetFloat(ID_有纸纹, 纸纹 != null ? 1f : 0f);
         if (纸纹 != null) 材质.SetTexture(ID_纸纹, 纸纹);
     }
