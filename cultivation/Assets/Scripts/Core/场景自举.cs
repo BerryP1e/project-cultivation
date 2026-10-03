@@ -273,6 +273,16 @@ public static class 场景自举
             foreach (var c in 根.GetComponentsInChildren<Canvas>(true))
             {
                 if (c == null || c.name != 角色面板物体名) continue;
+
+                // ★ 顺带把「水墨换皮」补上（同样**不碰场景文件**）：
+                //   角色面板是编辑器生成的、**序列化进 5 个游玩场景**，重新生成会把运行时 UI 列表一起重排
+                //   （踩坑 A8：写脏过 +19787 行）⇒ 所以这一版走"运行时按节点名换素材"。
+                if (c.GetComponent<UIInkSkin>() == null)
+                {
+                    c.gameObject.AddComponent<UIInkSkin>();
+                    Debug.Log("[场景自举] 「" + 场景.name + "」的「" + c.name + "」缺 UIInkSkin → 已自动补上（UI 水墨换皮）");
+                }
+
                 if (c.sortingOrder >= HUD层下限) return;      // 已经比 HUD 高了，不动
                 int 旧 = c.sortingOrder;
                 c.sortingOrder = 角色面板层级;
