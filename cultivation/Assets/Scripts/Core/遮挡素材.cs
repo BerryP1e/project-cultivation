@@ -289,6 +289,44 @@ public static class 遮挡素材
         }
     }
 
+    /// <summary>
+    /// 这个渲染体是不是**叶子**（= 该淡的那部分；树干/根/枝**不该淡**）。
+    ///
+    /// 【为什么这么判】2026-10-03 实测 7 种树型（`village`，见 `docs/architecture/遮挡与特效开关 §7.6`）：
+    /// 树包的结构统一是 **不透明网格 = 木质部（树干/根/大枝）+ 带 alpha 的网格 = 叶子**
+    /// （`Cutout` / `Tree Creator Leaves` / `Transparent`）。逐种都符合：
+    ///
+    /// | 树型 | 木质部（不淡） | 叶子（淡） |
+    /// |---|---|---|
+    /// | zhangshu_01 | `_b0` Diffuse 高3.4 宽1.1 | `_a0` **Tree Creator Leaves** |
+    /// | Green_001 | `_b` Diffuse | `_a` Cutout |
+    /// | Green_003 / 005 | Diffuse | Cutout |
+    /// | dashu_001 / 003 | Diffuse | Cutout + Transparent/Diffuse |
+    /// | songshu_002 | `_d02` Diffuse | `_d01` Cutout |
+    ///
+    /// 判据用**材质的渲染队列**（`renderQueue ≥ 2450` = AlphaTest 及以上 ⇒ 带 alpha），
+    /// 而不是猜名字 —— 名字在各包里不一致（`_01` 有时是树皮、有时是叶子）。
+    /// </summary>
+    public static bool 是叶子(Renderer r)
+    {
+        if (r == null) return false;
+        var ms = r.sharedMaterials;
+        if (ms == null) return false;
+        foreach (var m in ms)
+        {
+            if (m == null) continue;
+            if (m.renderQueue >= 2450) return true;                  // AlphaTest / Transparent
+            var sh = m.shader;
+            if (sh != null)
+            {
+                string n = sh.name;
+                if (n.Contains("Cutout") || n.Contains("Transparent")
+                    || n.Contains("Leaves") || n.Contains("Foliage") || n.Contains("SpeedTree")) return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>这个渲染器是不是"树冠"（按物件名判断：树根/子件都以 environment_Tree 开头）</summary>
     public static bool 是树冠(Renderer r)
     {

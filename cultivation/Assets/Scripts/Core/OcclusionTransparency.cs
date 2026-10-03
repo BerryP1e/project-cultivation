@@ -50,6 +50,9 @@ public class OcclusionTransparency : MonoBehaviour
     [Header("树冠遮挡（按包围盒判，因为树冠没有碰撞体）")]
     [Tooltip("树冠遮挡相机→主角连线时也变透明。用户 2026-09-28 要求")]
     public bool 树冠透明 = true;
+    [Tooltip("★ **只淡树冠（叶子），树干/根/枝不淡** —— 用户 2026-10-03 明确要求。\n" +
+             "判据是材质的渲染队列（带 alpha 的 = 叶子），实测 7 种树型全符合，见 遮挡素材.是叶子")]
+    public bool 只淡树冠 = true;
     [Tooltip("树冠的淡影（比建筑更透，尽量别挡视线）")]
     [Range(0.0f, 0.9f)] public float 树冠透明度 = 0.12f;
     [Tooltip("树冠的判定用「包围盒和线段的距离」小于这个余量就算挡（米）")]
@@ -248,8 +251,22 @@ public class OcclusionTransparency : MonoBehaviour
         if (r == null) return;
         if (r.transform.IsChildOf(主角)) return;          // 主角自己不淡
         if (r is ParticleSystemRenderer) return;
+        // ★ 树只淡叶子：树干/根/枝**保持不透明**（用户 2026-10-03：「树干是不消失的」）。
+        //   放在这一处同时管住两条通路（射线打到的树干 + 树冠包围盒收进来的木质部）。
+        if (只淡树冠 && 遮挡素材.是树冠(r) && !遮挡素材.是叶子(r))
+        {
+            if (打印日志 && !_记过树干.Contains(r))
+            {
+                _记过树干.Add(r);
+                Debug.Log("[遮挡与特效开关] 树干不淡（按叶子判据跳过）：" + r.name, r);
+            }
+            return;
+        }
         if (!_本帧.ContainsKey(r)) _本帧[r] = 透明;
     }
+
+    /// <summary>已经为"树干不淡"打过日志的渲染体（免得每帧刷屏）</summary>
+    readonly HashSet<Renderer> _记过树干 = new HashSet<Renderer>();
 
     // ---------------------------------------------------------------- 通路 ②：树冠包围盒
 
