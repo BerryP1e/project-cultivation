@@ -43,10 +43,10 @@ public class GameGlobalOutline : MonoBehaviour
     public bool 启用 = true;
 
     [Header("描谁（对象组）")]
-    [Tooltip("玩家所在组：暖金线")]
-    public Color 玩家线色 = new Color(1.00f, 0.86f, 0.45f, 1f);
-    [Tooltip("其他角色（NPC / 妖魔）所在组：冷蓝线")]
-    public Color 其他线色 = new Color(0.55f, 0.75f, 1.00f, 1f);
+    [Tooltip("玩家所在组：**深墨线**（赛璐璐那种勾线）。想让玩家线更亮再自己调")]
+    public Color 玩家线色 = new Color(0.055f, 0.048f, 0.070f, 1f);
+    [Tooltip("其他角色（NPC / 妖魔）所在组：默认和玩家同色（一盘勾线）")]
+    public Color 其他线色 = new Color(0.055f, 0.048f, 0.070f, 1f);
     [Tooltip("其他角色要不要描（关掉就只描玩家一个人）")]
     public bool 描其他角色 = true;
     [Tooltip("死了的 NPC 还描不描")]
@@ -56,11 +56,11 @@ public class GameGlobalOutline : MonoBehaviour
 
     [Header("线的样子")]
     [Tooltip("采样半径（像素）= 线粗细。1~2 是细描边，3 以上偏风格化")]
-    [Range(0.4f, 8f)] public float 粗细 = 2.0f;
+    [Range(0.4f, 8f)] public float 粗细 = 0.9f;
     [Tooltip("边缘软化（抗锯齿）。太小斜边会有台阶")]
     [Range(0.01f, 1f)] public float 软化 = 0.45f;
     [Tooltip("线的强度")]
-    [Range(0f, 1f)] public float 强度 = 0.9f;
+    [Range(0f, 1f)] public float 强度 = 0.62f;
 
     [Header("三个阈值（越大越只留最明显的边）")]
     [Tooltip("深度**相对**差阈值（远处物体的绝对差天生大，所以按相对值比）")]

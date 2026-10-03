@@ -115,6 +115,13 @@ public class TowerController : MonoBehaviour
     /// <summary>正在等玩家做「下一层 / 出塔」的决定（= 通关传送点已经摆出来了）</summary>
     public bool 等待通关选择 { get; private set; }
 
+    /// <summary>
+    /// **本层清过一次怪没有**。用户 2026-10-03 报的坑：清完一层没走、下一波怪一刷，
+    /// 出口传送点就被 <see cref="处理一波刷出"/> 收掉了 ⇒ **在塔里再没有出塔的办法**（只能等死）。
+    /// 现在口径：**本层清过一次，出口就一直留着**（想去下一层 / 想出去，随时都能走）。
+    /// </summary>
+    bool 本层清过;
+
     /// <summary>正在等玩家做「退出 / 上一层」的死亡选择</summary>
     public bool 等待死亡选择 { get; private set; }
 
@@ -281,6 +288,7 @@ public class TowerController : MonoBehaviour
         塔运行中 = true;
         等待通关选择 = false;
         等待死亡选择 = false;
+        本层清过 = false;
         等待重刷 = false;
         本层已问过 = false;
         隐藏通关传送点();
@@ -335,6 +343,7 @@ public class TowerController : MonoBehaviour
 
         等待通关选择 = false;
         等待死亡选择 = false;
+        本层清过 = false;
         本层已问过 = false;
         等待重刷 = false;
 
@@ -436,6 +445,7 @@ public class TowerController : MonoBehaviour
         if (本层已问过) return;
         本层已问过 = true;
         等待通关选择 = true;
+        本层清过 = true;
         等待重刷 = true;
         显示通关传送点();
 
@@ -446,7 +456,8 @@ public class TowerController : MonoBehaviour
     }
 
     /// <summary>
-    /// **新一波刷出来了** —— 收掉通关传送点（那一轮"要不要上楼"的机会已经过去了）。
+    /// **新一波刷出来了** —— 只在**本层还没清过**的时候收掉通关传送点。
+    /// （清过一次之后就一直留着：用户 2026-10-03 报的"留在本层后再也没有出塔的办法"就是这么来的）
     ///
     /// 为什么挂这个事件而不是自己计时：重刷的时机**只有 `SpawnZone` 知道**
     /// （它有 `重生延迟` / `首刷延迟` / 立刻重刷好几条路），塔自己再算一遍必然对不上。
@@ -456,7 +467,7 @@ public class TowerController : MonoBehaviour
         本层已问过 = false;
         等待通关选择 = false;
         等待重刷 = false;
-        隐藏通关传送点();
+        if (!本层清过) 隐藏通关传送点();   // ★ 清过一次就一直留着出口（用户 2026-10-03：选留在本层之后再没有出塔的办法）
     }
 
     /// <summary>
@@ -547,7 +558,7 @@ public class TowerController : MonoBehaviour
         隐藏通关传送点();
 
         if (打印日志) Debug.Log("[镇妖塔] 玩家在第 " + 当前层 + " 层倒下 —— "
-                               + 死亡选择时限 + " 秒内选择：退出塔外 / 进入上一层", this);
+                               + 死亡选择时限 + " 秒内选择：出塔 / 继续深入（下一层）", this);
 
         死亡倒数开始?.Invoke(死亡选择时限);
         StartCoroutine(死亡选择倒计时());

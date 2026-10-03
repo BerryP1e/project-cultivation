@@ -275,8 +275,8 @@ public class TowerUI : MonoBehaviour
     {
         var 根 = 搭选择面板(父, "死亡选择", new[]
         {
-            ("退出塔外",     (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(false); })),
-            ("进入上一层",   (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(true);  })),
+            ("出塔",           (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(false); })),
+            ("继续深入 · 下一层", (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(true);  })),
         });
 
         死亡倒计时文本 = UIBuildUtils.CreateText("倒计时", 根, 字体, "", 28,
