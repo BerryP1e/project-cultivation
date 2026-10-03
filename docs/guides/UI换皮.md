@@ -15,7 +15,7 @@
 | 控制器 / 节点 | 素材 / 行为 |
 |---|---|
 | `UIInkSkin` / `Window` | `Skeleton/parent-curtain-9slice-source`，1780×970 |
-| `Sidebar` / `Tab_*` | `SkillsPage/navigation/nav-rail` 与 tab normal/hover/active；图标来自 `Icons`，文字独立 |
+| `Sidebar` / `Tab_*` | 2026-10-04：`Skeleton/parent-navigation-rail` 暗墨立板；未选项透明，当前项独立 `Skeleton/nav-tab-inactive` 素纸牌并加宽突出；八张 `Icons` 图标 44px，文字独立，左边距 64px |
 | `KnownList` / `PassiveList` | 三列 `Parts/ability-library-card` / 独立被动行；均有常显竖向滚动条 |
 | `UIActiveSkillBar` / `UIActiveSkillSlot` | active-ring / slot-empty、slot-filled；编号固定1–6，数据共用 |
 | `UIEntryList` / `UIEntryRow` | 池化复用；row-normal/hover/selected；逻辑选中与键盘焦点分别处理 |

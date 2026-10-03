@@ -14,7 +14,7 @@ public static class UI神通页重排
         if (side != null)
         {
             UIBuildUtils.Place(side, Vector2.zero, new Vector2(0, 1), new Vector2(24, 28), new Vector2(236, -28));
-            InkUITheme.Image(side.GetComponent<Image>(), "SkillsPage/navigation/nav-rail");
+            InkUITheme.Image(side.GetComponent<Image>(), "Skeleton/parent-navigation-rail");
             int index = 0;
             foreach (Transform tab in side)
             {

@@ -374,27 +374,34 @@ public class UIInkSkin : MonoBehaviour
             var img = t.GetComponent<Image>();
             if (img == null) continue;
             bool selected = t.name.Substring(4) == 当前;
-            var sp = 取图(selected ? "SkillsPage/navigation/tab-active" : "SkillsPage/navigation/tab-normal");
+            // 独立素纸牌只用于当前项；其余项直接露出暗墨立板。
+            // BigPieces 导航大件烘有固定选中项，不能拿它代替动态八页签。
+            var sp = 取图("Skeleton/nav-tab-inactive");
             if (sp == null) continue;
             img.sprite = sp;
             img.overrideSprite = null;
             img.type = Image.Type.Sliced;
             img.pixelsPerUnitMultiplier = 九宫倍率;
-            img.color = Color.white;
+            img.color = selected ? Color.white : Color.clear;
+            var tabRect = t as RectTransform;
+            if (tabRect != null) tabRect.sizeDelta = new Vector2(selected ? 20 : -16, 70);
             var tabButton = t.GetComponent<Button>();
             if (tabButton != null)
             {
                 var state = tabButton.spriteState;
                 state.selectedSprite = sp;
-                state.highlightedSprite = selected ? sp : 取图("SkillsPage/navigation/tab-hover");
+                state.highlightedSprite = sp;
+                state.pressedSprite = sp;
+                state.disabledSprite = sp;
                 tabButton.spriteState = state;
             }
             var text = t.GetComponentInChildren<Text>(true);
             if (text != null)
             {
-                text.color = selected ? new Color(0.13f, 0.20f, 0.16f) : 墨色;
+                text.color = selected ? 墨色 : new Color(.93f, .90f, .82f);
+                text.fontSize = 24;
                 text.alignment = TextAnchor.MiddleLeft;
-                text.rectTransform.offsetMin = new Vector2(40f, 0f);
+                text.rectTransform.offsetMin = new Vector2(64f, 0f);
                 text.rectTransform.offsetMax = new Vector2(-8f, 0f);
             }
 
@@ -409,12 +416,15 @@ public class UIInkSkin : MonoBehaviour
                 rt.anchorMin = new Vector2(0f, 0.5f);
                 rt.anchorMax = new Vector2(0f, 0.5f);
                 rt.pivot = new Vector2(0f, 0.5f);
-                rt.anchoredPosition = new Vector2(8f, 0f);
-                rt.sizeDelta = new Vector2(30f, 30f);
+                rt.anchoredPosition = new Vector2(12f, 0f);
+                rt.sizeDelta = new Vector2(44f, 44f);
                 var iconImage = icon.gameObject.AddComponent<Image>();
                 iconImage.raycastTarget = false;
             }
             var iconImg = icon.GetComponent<Image>();
+            var iconRect = icon as RectTransform;
+            iconRect.anchoredPosition = new Vector2(12f, 0f);
+            iconRect.sizeDelta = new Vector2(44f, 44f);
             if (iconImg != null)
             {
                 var iconPath = 页签图标(t.name.Substring(4));
@@ -424,7 +434,7 @@ public class UIInkSkin : MonoBehaviour
                     iconImg.sprite = iconSprite;
                     iconImg.type = Image.Type.Simple;
                     iconImg.preserveAspect = true;
-                    iconImg.color = selected ? Color.white : new Color(0.82f, 0.78f, 0.68f, 1f);
+                    iconImg.color = Color.white;
                 }
             }
         }
