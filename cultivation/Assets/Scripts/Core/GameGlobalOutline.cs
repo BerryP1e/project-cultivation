@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -56,11 +56,20 @@ public class GameGlobalOutline : MonoBehaviour
 
     [Header("线的样子")]
     [Tooltip("采样半径（像素）= 线粗细。1~2 是细描边，3 以上偏风格化")]
-    [Range(0.4f, 8f)] public float 粗细 = 0.9f;
+    [Range(0.4f, 8f)] public float 粗细 = 1.15f;
     [Tooltip("边缘软化（抗锯齿）。太小斜边会有台阶")]
     [Range(0.01f, 1f)] public float 软化 = 0.45f;
-    [Tooltip("线的强度")]
-    [Range(0f, 1f)] public float 强度 = 0.62f;
+    [Tooltip("线的强度。水墨线是画面主体，别低于 0.8（低于 0.7 在暗场景里几乎看不见）")]
+    [Range(0f, 1f)] public float 强度 = 0.85f;
+
+    [Header("毛笔味（2026-10-03 加水墨线用）")]
+    [Tooltip("近粗远细：0 = 等宽硬线（动漫线），0.38 = 有提按（近处按得重、远处提起来）")]
+    [Range(0f, 1f)] public float 线宽随深度 = 0.38f;
+    [Tooltip("飞白断笔：0 = 连续闭合线，0.45 = 断断续续（水墨的笔断意连）。\n" +
+             "⚠️ 只在**远景**生效，近处角色始终是实线（不然主体会被画没）")]
+    [Range(0f, 1f)] public float 飞白 = 0.45f;
+    [Tooltip("远处墨淡：越远线越淡（浓淡）。给太大等于把远景的线擦掉")]
+    [Range(0f, 1f)] public float 远处墨淡 = 0.42f;
 
     [Header("三个阈值（越大越只留最明显的边）")]
     [Tooltip("深度**相对**差阈值（远处物体的绝对差天生大，所以按相对值比）")]
@@ -213,6 +222,9 @@ public class GameGlobalOutline : MonoBehaviour
         合成材质.SetFloat("_DepthThr", 深度阈值);
         合成材质.SetFloat("_NormalThr", 法线阈值);
         合成材质.SetFloat("_IDThr", ID阈值);
+        合成材质.SetFloat("_WidthByDepth", 线宽随深度);
+        合成材质.SetFloat("_DryBrush", 飞白);
+        合成材质.SetFloat("_InkFade", 远处墨淡);
 
         Graphics.Blit(源, 目标, 合成材质);
     }

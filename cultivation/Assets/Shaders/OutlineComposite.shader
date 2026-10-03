@@ -1,4 +1,4 @@
-﻿// 描边**合成**：拿 `[Cultivation/OutlineMask]` 那两张图（法线+深度 / 组 ID），
+// 描边**合成**：拿 `[Cultivation/OutlineMask]` 那两张图（法线+深度 / 组 ID），
 // 在**屏幕空间**沿 8 个方向 × 2 个半径采样，比较 深度 / 法线 / ID 的差值 ⇒ 画线。
 //
 // 为什么这条路比"外扩网格"（`CharacterOutlineRim` + `CharacterOutlineFill`）好：
@@ -29,6 +29,11 @@ Shader "Cultivation/OutlineComposite"
         _Radius ("采样半径（像素 = 线粗细）", Range(0.4, 8)) = 1.6
         _Soft ("边缘软化（抗锯齿）", Range(0.01, 1)) = 0.45
         _Strength ("线的强度", Range(0, 1)) = 0.9
+
+        [Header(Brush)]
+        _WidthByDepth ("近粗远细（0=等宽）", Range(0, 1)) = 0.45
+        _DryBrush ("飞白断笔（0=连续线，越大越断）", Range(0, 1)) = 0.38
+        _InkFade ("远处墨淡", Range(0, 1)) = 0.55
 
         [Header(Thresholds)]
         _DepthThr ("深度阈值（相对差）", Range(0.0005, 0.3)) = 0.02
@@ -62,6 +67,9 @@ Shader "Cultivation/OutlineComposite"
             float _DepthThr;
             float _NormalThr;
             float _IDThr;
+            float _WidthByDepth;
+            float _DryBrush;
+            float _InkFade;
 
             // 一个邻居给出的"这里算不算一条边"（0 = 不是，1 = 肯定是）
             // ⚠️ 方向必须写成**字面量**逐个调用，不能搞 `static const float2 DIRS[8]` + 循环索引 ——
@@ -88,6 +96,14 @@ Shader "Cultivation/OutlineComposite"
                 return max(idEdge, max(depEdge, nrmEdge));
             }
 
+            // 廉价散列噪声：给飞白用（不需要好看，只需要"断得没有规律"）
+            float Hash21(float2 p)
+            {
+                p = frac(p * float2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return frac(p.x * p.y);
+            }
+
             fixed4 frag(v2f_img i) : SV_Target
             {
                 fixed4 col = tex2D(_MainTex, i.uv);
@@ -98,8 +114,10 @@ Shader "Cultivation/OutlineComposite"
                 // 背景像素（组 0）不画线：线只贴在角色**内侧**，不然角色外一圈会糊在场景上
                 if (cid <= 0.001) return col;
 
-                float r1 = _Radius * 0.75;   // 内圈：给实
-                float r2 = _Radius;          // 外圈：给柔（斜边不会有台阶）
+                // 毛笔的"提按"：近处按得重（线粗）、远处提起来（线细）
+                float pressScale = lerp(1.0, 1.0 - _WidthByDepth, saturate(cen.a));
+                float r1 = _Radius * 0.75 * pressScale;   // 内圈：给实
+                float r2 = _Radius * pressScale;          // 外圈：给柔（斜边不会有台阶）
 
                 float e = 0;
                 e = max(e, EdgeAt(i.uv, cen, cid, float2( 1,  0), r1));
@@ -119,8 +137,17 @@ Shader "Cultivation/OutlineComposite"
                 e = max(e, EdgeAt(i.uv, cen, cid, float2( 0.7071, -0.7071), r2));
                 e = max(e, EdgeAt(i.uv, cen, cid, float2(-0.7071, -0.7071), r2));
 
-                // 软化：把"是/不是边"变成 0~1，抗锯齿
-                float a = smoothstep(1.0 - _Soft, 1.0, e) * _Strength;
+                // 飞白：屏幕空间的散列噪声把线打断（水墨的"笔断意连"；等宽闭合线正是水墨最忌讳的）
+                // ⚠️ 两处讲究：
+                //   1) 用 smoothstep 做**软**过渡，不能用 step —— 硬 0/1 会让线在像素级爆成锯齿麻点；
+                //   2) 飞白**只在远处发生**（lerp 的权重是深度）—— 近处角色是画面主体，断笔会把主体画没。
+                float noise = Hash21(floor(i.uv * _MaskTex_TexelSize.zw * 0.35));
+                float dry = smoothstep(_DryBrush - 0.18, _DryBrush + 0.18, noise);
+                e *= lerp(1.0, dry, saturate(cen.a));
+
+                // 软化：把"是/不是边"变成 0~1，抗锯齿；远处墨色更淡（浓淡）
+                float inkFade = lerp(1.0, 1.0 - _InkFade, saturate(cen.a));
+                float a = smoothstep(1.0 - _Soft, 1.0, e) * _Strength * inkFade;
                 if (a <= 0.001) return col;
 
                 // 线色按**中心像素属于哪一组**选（玩家暖金、其他冷蓝）。⚠️ 变量别叫 line —— HLSL 保留字

@@ -55,6 +55,17 @@ Shader "Cultivation/GlobalGrade"
         // --- Vignette (0 = off) ---
         _Vignette     ("Vignette", Range(0, 1.5)) = 0.35
         _VignetteSoft ("Vignette Softness", Range(0.05, 1)) = 0.45
+
+        // --- Ink wash: ink value bands (mo fen wu se), paper white, paper grain ---
+        _InkLevels   ("Ink Levels (0 = off)", Range(0, 9)) = 5
+        _InkAmount   ("Ink Levels Amount", Range(0, 1)) = 0.35
+        _PaperWhite  ("Paper White Colour", Color) = (0.96,0.95,0.94,1)
+        _PaperAmount ("Paper White Amount", Range(0, 1)) = 0.25
+        _PaperThr    ("Paper White Threshold", Range(0.5, 1)) = 0.86
+        _GrainTex    ("Paper Grain Texture", 2D) = "white" {}
+        _GrainAmount ("Paper Grain Amount", Range(0, 1)) = 0.30
+        _GrainTiling ("Paper Grain Tiling", Range(0.5, 40)) = 3.0
+        _GrainHasTex ("Paper Grain Has Texture", Range(0, 1)) = 0
     }
 
     SubShader
@@ -84,6 +95,16 @@ Shader "Cultivation/GlobalGrade"
             float  _TintAmount;
             float  _Vignette;
             float  _VignetteSoft;
+            float  _InkLevels;
+            float  _InkAmount;
+            float4 _PaperWhite;
+            float  _PaperAmount;
+            float  _PaperThr;
+            sampler2D _GrainTex;
+            float4 _GrainTex_TexelSize;
+            float  _GrainAmount;
+            float  _GrainTiling;
+            float  _GrainHasTex;
 
             float Luma(float3 c) { return dot(c, float3(0.2126, 0.7152, 0.0722)); }
 
@@ -104,6 +125,27 @@ Shader "Cultivation/GlobalGrade"
                 float3 lin  = pow(max(cGamma, 0.0), 2.2);
                 float3 tone = HablePartial(lin * 2.0) / HablePartial(whitePoint);
                 return pow(max(tone, 0.0), 1.0 / 2.2);
+            }
+
+            float Hash21(float2 p)
+            {
+                p = frac(p * float2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return frac(p.x * p.y);
+            }
+
+            // 2-octave value noise. Used as the FALLBACK paper grain when no
+            // grain texture is assigned, so the paper effect is never a black box
+            // that silently does nothing.
+            float ValueNoise(float2 p)
+            {
+                float2 i = floor(p), f = frac(p);
+                f = f * f * (3.0 - 2.0 * f);
+                float a = Hash21(i);
+                float b = Hash21(i + float2(1, 0));
+                float c = Hash21(i + float2(0, 1));
+                float d = Hash21(i + float2(1, 1));
+                return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
             }
 
             fixed4 frag(v2f_img i) : SV_Target
@@ -133,6 +175,58 @@ Shader "Cultivation/GlobalGrade"
 
                 // 5) Tint
                 c = lerp(c, c * _Tint.rgb, _TintAmount);
+
+                // 5.5) Ink value bands ("mo fen wu se").
+                // Ink on paper has only a few discrete values, so a picture made of
+                // infinite smooth gradients reads as "3D render", not as ink.
+                // We quantise LUMA to N bands and scale RGB by the ratio, so hue is
+                // kept and only the value steps. _InkAmount blends between the
+                // original and the banded value -- full 1.0 is a hard posterise,
+                // which looks like a bug on 3D art, so the default is partial.
+                if (_InkLevels > 0.5 && _InkAmount > 0.0001)
+                {
+                    float lum  = max(Luma(c), 0.0001);
+                    float n    = max(_InkLevels, 2.0);
+                    float band = floor(lum * n + 0.5) / n;
+                    float target = lerp(lum, band, saturate(_InkAmount));
+                    c *= target / lum;
+                }
+
+                // 5.6) Paper white ("liu bai"): the brightest areas become the paper
+                // itself instead of a colour. This is what makes a sky or a bright
+                // ground read as untouched paper.
+                if (_PaperAmount > 0.0001)
+                {
+                    float w = smoothstep(_PaperThr, min(_PaperThr + 0.12, 1.0), Luma(c));
+                    c = lerp(c, _PaperWhite.rgb, w * saturate(_PaperAmount));
+                }
+
+                // 5.7) Paper grain. Screen-space on purpose: real paper does not move
+                // with the camera, and a screen-fixed grain also hides the fact that
+                // the 3D surfaces underneath are flat.
+                if (_GrainAmount > 0.0001)
+                {
+                    float2 g = i.uv * _GrainTiling;
+                    float3 grain;
+                    if (_GrainHasTex > 0.5)
+                    {
+                        // Any grey paper texture works. Remap it so the mean lands on
+                        // 1.0 (a multiplier), otherwise the whole picture just gets
+                        // darker or brighter instead of gaining grain.
+                        float t = Luma(tex2D(_GrainTex, g).rgb);
+                        grain = (0.55 + t * 0.90).xxx;
+                    }
+                    else
+                    {
+                        float n1 = ValueNoise(g * 6.0);
+                        float n2 = ValueNoise(g * 23.0);
+                        // fibre: long streaks, like the fibres in xuan paper
+                        float fib = ValueNoise(float2(g.x * 60.0, g.y * 3.0));
+                        float t = n1 * 0.55 + n2 * 0.25 + fib * 0.20;
+                        grain = (0.55 + t * 0.90).xxx;
+                    }
+                    c *= lerp(float3(1, 1, 1), grain, saturate(_GrainAmount));
+                }
 
                 // 6) Vignette, centred on screen
                 if (_Vignette > 0.0001)

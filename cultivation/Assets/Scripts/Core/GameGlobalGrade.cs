@@ -56,7 +56,7 @@ public class GameGlobalGrade : MonoBehaviour
 
     [Header("曝光与明暗")]
     [Tooltip("整体曝光。>1 提亮。<b>觉得画面昏暗就调这个</b>")]
-    [Range(0.2f, 3f)] public float 曝光 = 1.06f;
+    [Range(0.2f, 3f)] public float 曝光 = 1.14f;
 
     [Tooltip("Gain（高光乘算）。压高光就调小于 1")]
     public Color 高光 = Color.white;
@@ -66,17 +66,42 @@ public class GameGlobalGrade : MonoBehaviour
 
     [Tooltip("Lift（暗部加算）。**把死黑抬起来**用这个，比整体提亮更自然。\n" +
              "⚠️ 别给太大 —— 它会把整个画面变成一片发灰/发红，反而更脏")]
-    public Color 暗部 = new Color(0.006f, 0.007f, 0.010f, 0f);
+    public Color 暗部 = new Color(0.055f, 0.058f, 0.062f, 0f);   // 水墨：抬黑位，暗部要变成淡墨而不是死黑
 
     [Header("色彩")]
     [Tooltip("对比度。⚠️ 注意：>1 是**压暗部、提亮部**，在本来就偏暗的场景里会显得更黑")]
-    [Range(0.5f, 2f)] public float 对比度 = 1.0f;
+    [Range(0.5f, 2f)] public float 对比度 = 0.97f;
 
-    [Range(0f, 2f)] public float 饱和度 = 1.06f;
+    [Range(0f, 2f)] public float 饱和度 = 0.82f;    // 水墨：去饱和（别低于 0.7，会变灰泥）
 
     [Tooltip("染色目标色。配合 染色强度 用，做整体色调偏向（冷暖）")]
-    public Color 染色 = new Color(1f, 0.99f, 0.97f, 1f);
-    [Range(0f, 1f)] public float 染色强度 = 0.06f;
+    public Color 染色 = new Color(0.88f, 0.93f, 0.95f, 1f);   // 水墨：偏青灰
+    [Range(0f, 1f)] public float 染色强度 = 0.22f;
+
+    [Header("水墨：墨分五色 / 留白 / 纸纹（2026-10-03 路线A）")]
+    [Tooltip("墨分五色：把连续灰阶压成几档墨色。**0 = 关**。\n" +
+             "水墨画只有几层墨，无限平滑的渐变看上去就是「3D 渲染」而不是画。")]
+    [Range(0, 9)] public int 墨阶数 = 5;
+    [Tooltip("墨阶强度：0 = 不压（原样），1 = 硬分层（3D 画面会很假，像坏了）。\n" +
+             "0.3~0.45 是「有墨的层次，但不炸」。**觉得画面变脏就往下调**")]
+    [Range(0f, 1f)] public float 墨阶强度 = 0.35f;
+
+    [Tooltip("留白：亮到阈值以上的地方直接变成「纸」，而不是某个颜色。\n" +
+             "天空/亮地会读成没画过的宣纸 —— 这是水墨最像水墨的一点")]
+    [Range(0f, 1f)] public float 留白强度 = 0.25f;
+    [Tooltip("留白的纸色（别用纯白，宣纸是暖白）")]
+    public Color 纸色 = new Color(0.96f, 0.95f, 0.935f, 1f);
+    [Tooltip("留白阈值：亮度超过它才算纸。调低 = 更多地方变纸（会吃掉细节）")]
+    [Range(0.5f, 1f)] public float 留白阈值 = 0.86f;
+
+    [Tooltip("宣纸纹理（可选）。**没填就用程序化纸纹兜底**，" +
+             "所以这个功能不会有「忘了填资产就静默失效」的黑盒状态")]
+    public Texture 纸纹;
+    [Tooltip("纸纹强度：0 = 关。0.15~0.25 有纸的颗粒感；0.3 以上就开始像噪点了")]
+    [Range(0f, 1f)] public float 纸纹强度 = 0.20f;
+    [Tooltip("纸纹平铺次数（屏幕空间）。纸是不动的，所以 UV 用屏幕坐标。\n" +
+             "铺太密 = 细噪点，铺太疏 = 大块脏斑；2 左右最像纸")]
+    [Range(0.5f, 40f)] public float 纸纹平铺 = 2.2f;
 
     [Header("暗角")]
     [Tooltip("0 = 关。\n" +
@@ -105,6 +130,15 @@ public class GameGlobalGrade : MonoBehaviour
     static readonly int ID_染色强度 = Shader.PropertyToID("_TintAmount");
     static readonly int ID_暗角 = Shader.PropertyToID("_Vignette");
     static readonly int ID_暗角柔和 = Shader.PropertyToID("_VignetteSoft");
+    static readonly int ID_墨阶数 = Shader.PropertyToID("_InkLevels");
+    static readonly int ID_墨阶强度 = Shader.PropertyToID("_InkAmount");
+    static readonly int ID_纸色 = Shader.PropertyToID("_PaperWhite");
+    static readonly int ID_留白强度 = Shader.PropertyToID("_PaperAmount");
+    static readonly int ID_留白阈值 = Shader.PropertyToID("_PaperThr");
+    static readonly int ID_纸纹 = Shader.PropertyToID("_GrainTex");
+    static readonly int ID_纸纹强度 = Shader.PropertyToID("_GrainAmount");
+    static readonly int ID_纸纹平铺 = Shader.PropertyToID("_GrainTiling");
+    static readonly int ID_有纸纹 = Shader.PropertyToID("_GrainHasTex");
 
     void OnEnable() => 确保材质();
     void OnDisable() { if (材质 != null) { DestroyImmediate(材质); 材质 = null; } }
@@ -141,6 +175,15 @@ public class GameGlobalGrade : MonoBehaviour
         材质.SetFloat(ID_染色强度, 染色强度);
         材质.SetFloat(ID_暗角, 暗角);
         材质.SetFloat(ID_暗角柔和, 暗角柔和度);
+        材质.SetFloat(ID_墨阶数, 墨阶数);
+        材质.SetFloat(ID_墨阶强度, 墨阶强度);
+        材质.SetColor(ID_纸色, 纸色);
+        材质.SetFloat(ID_留白强度, 留白强度);
+        材质.SetFloat(ID_留白阈值, 留白阈值);
+        材质.SetFloat(ID_纸纹强度, 纸纹强度);
+        材质.SetFloat(ID_纸纹平铺, 纸纹平铺);
+        材质.SetFloat(ID_有纸纹, 纸纹 != null ? 1f : 0f);
+        if (纸纹 != null) 材质.SetTexture(ID_纸纹, 纸纹);
     }
 
     void OnRenderImage(RenderTexture 源, RenderTexture 目标)
