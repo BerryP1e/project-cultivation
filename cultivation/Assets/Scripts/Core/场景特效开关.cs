@@ -56,7 +56,12 @@ public class 场景特效开关 : ScriptableObject
         var 表 = 取表();
         if (表 == null || 表.表 == null) return null;
         foreach (var e in 表.表)
-            if (e != null && e.场景 == 场景名) return e;
+        {
+            // ⚠️ **必须忽略大小写**：表里写的是 `village`，而场景名是 `Village` ——
+            //    用 `==` 比会**静默取不到**（表现就是"这个场景的遮挡怎么不生效"）。
+            //    仓库里 `任务引导` / `日常循环` / `场景自举` 早就改成 OrdinalIgnoreCase 了，这里原来漏了。
+            if (e != null && string.Equals(e.场景, 场景名, System.StringComparison.OrdinalIgnoreCase)) return e;
+        }
         return null;
     }
 

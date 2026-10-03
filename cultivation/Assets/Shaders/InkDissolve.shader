@@ -282,7 +282,15 @@ Shader "Cultivation/InkDissolve"
                 float f = saturate(_Fade);
                 // 抠空的叶子/卡片：贴图透明的地方连影子也不该有
                 clip(tex2D(_MainTex, i.uv).a - 0.02);
-                // 只有开了侵蚀才在影子里打洞；否则影子就是跟着淡出（纯淡入淡出时别在影子上留麻点）
+                // ★ 影子必须跟着淡：shadow map 没有 alpha 混合，只能**按噪声把影子抠掉**。
+                //   ⚠️ 第一版只在"侵蚀 > 0"时才动影子 ⇒ 建筑淡了、影子还是实心黑，
+                //   俯视角下影子最显眼，用户就会觉得"建筑消失的效果没了"（2026-10-03）。
+                if (f > 0.001)
+                {
+                    float sn = ValueNoise(i.wpos.xz * 3.0 + i.wpos.y * 1.7);
+                    clip((1.0 - f * 1.2) - sn);
+                }
+                // 只有开了侵蚀才在影子里打墨蚀的洞
                 if (_Dissolve > 0.001)
                 {
                     float th = _Dissolve * f;
