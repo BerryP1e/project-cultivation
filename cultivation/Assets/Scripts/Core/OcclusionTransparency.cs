@@ -55,8 +55,16 @@ public class OcclusionTransparency : MonoBehaviour
     public bool 只淡树冠 = true;
     [Tooltip("树冠的淡影（比建筑更透，尽量别挡视线）")]
     [Range(0.0f, 0.9f)] public float 树冠透明度 = 0.12f;
-    [Tooltip("树冠的判定用「包围盒和线段的距离」小于这个余量就算挡（米）")]
-    public float 树冠余量 = 0.35f;
+    [Tooltip("树冠的判定用「包围盒和线段的距离」小于这个余量就算挡（米）\n" +
+             "⚠️ 2026-10-03 从 0.35 降到 0.12：包围盒本来就比可见树叶大一圈，余量再给大就会「人还没走到树下就淡了」")]
+    public float 树冠余量 = 0.12f;
+
+    [Header("判定要严一点（用户 2026-10-03：还没被挡住周围就开始隐形）")]
+    [Tooltip("★ **只有「真的挡在主角屏幕位置上」才淡**：把遮挡物投影到屏幕，\n" +
+             "必须落在主角屏幕矩形（按 `屏内余量` 外扩）里才算挡。关掉 = 回到「射线碰到就淡」")]
+    public bool 只挡主角才淡 = true;
+    [Tooltip("主角屏幕矩形往外扩多少（比例）。0.25 = 外扩四分之一，太小会漏判（边缘擦过的不淡）")]
+    [Range(0f, 1f)] public float 屏内余量 = 0.25f;
 
     [Header("水墨淡出（2026-10-03：不再是硬切，也不再是塑料半透明）")]
     [Tooltip("★ **一键退回**：关掉就用改造前那套（`Legacy Shaders/Transparent/Diffuse`）的观感，\n" +
@@ -233,6 +241,9 @@ public class OcclusionTransparency : MonoBehaviour
             var 命中s = Physics.RaycastAll(cam.transform.position, 向 / 距, 距, 掩码, QueryTriggerInteraction.Ignore);
             foreach (var h in 命中s)
             {
+                // ★ 只淡"真的挡在主角身上"的东西：把命中点投到屏幕，必须落在主角屏幕矩形里
+                if (只挡主角才淡 && !在主角屏幕范围内(cam, 采样点, h.point)) continue;
+
                 // ★ 碰撞体在根、网格在子物体上的情况很常见（环境 FBX 就是：根挂 BoxCollider、
                 //   子物体各带一个网格）。只找 GetComponentInParent 会漏掉它们 ✗
                 var 渲染s = h.collider.GetComponentsInChildren<Renderer>();
@@ -291,6 +302,9 @@ public class OcclusionTransparency : MonoBehaviour
             foreach (var 点 in 采样点)
             {
                 if (!线段近包围盒(cam.transform.position, 点, 树.盒, 树冠余量)) continue;
+                // ★ 树冠也一样：只有这个包围盒**真的落在主角屏幕位置上**才淡，
+                //   不然"从旁边路过"也会把树点亮（用户 2026-10-03 报的就是这个）
+                if (只挡主角才淡 && !在主角屏幕范围内(cam, 采样点, 树.盒.center)) continue;
                 foreach (var r in 树.渲染s)
                 {
                     if (r == null || !r.enabled || !r.gameObject.activeInHierarchy) continue;
@@ -325,9 +339,21 @@ public class OcclusionTransparency : MonoBehaviour
         foreach (var 根 in 根s)
         {
             var rs = 根.GetComponentsInChildren<Renderer>(true);
-            var 留 = new List<Renderer>();
-            foreach (var r in rs) if (r != null && !(r is ParticleSystemRenderer)) 留.Add(r);
-            if (留.Count == 0) continue;
+            var 全 = new List<Renderer>();
+            foreach (var r in rs) if (r != null && !(r is ParticleSystemRenderer)) 全.Add(r);
+            if (全.Count == 0) continue;
+
+            var 留 = 全;
+            if (只淡树冠)
+            {
+                // ★ 判定盒与"要淡的渲染体"都只用**叶子**：
+                //   整棵树的包围盒把树干/根也算进去 ⇒ 盒比可见树冠大一圈 ⇒
+                //   "人还没走到树下就淡了"（用户 2026-10-03 报的就是这个）。
+                var 叶 = new List<Renderer>();
+                foreach (var r in 全) if (遮挡素材.是叶子(r)) 叶.Add(r);
+                if (叶.Count > 0) 留 = 叶;
+                else if (打印日志) Debug.LogWarning("[遮挡与特效开关] " + 根.name + " 里没认出叶子 → 这一棵按整棵判");
+            }
 
             var 盒 = 留[0].bounds;
             for (int i = 1; i < 留.Count; i++) 盒.Encapsulate(留[i].bounds);
@@ -335,6 +361,36 @@ public class OcclusionTransparency : MonoBehaviour
         }
 
         if (打印日志) Debug.Log("[遮挡与特效开关] 树冠表重建：树 " + _树s.Count + " 棵");
+    }
+
+    /// <summary>
+    /// 这个世界点是不是**落在主角的屏幕范围里**（判定"到底挡没挡住主角"）。
+    ///
+    /// 做法：把主角几个采样点投到视口坐标 → 得到一个矩形 → 按 `屏内余量` 外扩 →
+    /// 再看这个点（以及它在相机前方的深度）是否落在矩形里。
+    /// ⚠️ 点必须在相机**前方**（`z > 0`），否则背面的东西也会被判进来。
+    /// </summary>
+    bool 在主角屏幕范围内(Camera cam, Vector3[] 采样点, Vector3 世界点)
+    {
+        var 点视口 = cam.WorldToViewportPoint(世界点);
+        if (点视口.z <= 0.01f) return false;                    // 在相机后面
+
+        float 小x = 1f, 大x = 0f, 小y = 1f, 大y = 0f;
+        int 有效 = 0;
+        foreach (var p in 采样点)
+        {
+            var v = cam.WorldToViewportPoint(p);
+            if (v.z <= 0.01f) continue;
+            小x = Mathf.Min(小x, v.x); 大x = Mathf.Max(大x, v.x);
+            小y = Mathf.Min(小y, v.y); 大y = Mathf.Max(大y, v.y);
+            有效++;
+        }
+        if (有效 == 0) return true;                             // 主角不在画面里 → 不靠这个判（保守放行）
+
+        float 宽 = Mathf.Max(0.02f, 大x - 小x), 高 = Mathf.Max(0.02f, 大y - 小y);
+        float 边 = 屏内余量;
+        小x -= 宽 * 边; 大x += 宽 * 边; 小y -= 高 * 边; 大y += 高 * 边;
+        return 点视口.x >= 小x && 点视口.x <= 大x && 点视口.y >= 小y && 点视口.y <= 大y;
     }
 
     /// <summary>线段（a→b）离包围盒最近距离是否小于 余量</summary>
