@@ -73,6 +73,7 @@ public class PlayerController : MonoBehaviour
     CharacterController controller;
     Vector3 horizontalVelocity;
     float verticalVelocity;
+    BasicJiuba01 近战普攻;
 
     void Awake()
     {
@@ -202,6 +203,10 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void FaceDirection(Vector3 moveDir)
     {
+        if (近战普攻 == null) 近战普攻 = GetComponent<BasicJiuba01>();
+        // Let the authored body turn complete around the direction captured at windup.
+        // Movement is still allowed, but must not steer an ongoing melee thrust sideways.
+        if (近战普攻 != null && 近战普攻.isActiveAndEnabled && 近战普攻.出手动作中) return;
         Vector3 face = moveDir;
 
         var 目标 = 取锁定对象();
@@ -237,6 +242,15 @@ public class PlayerController : MonoBehaviour
         transform.rotation = turnSpeed <= 0f
             ? target
             : Quaternion.RotateTowards(transform.rotation, target, turnSpeed * Time.deltaTime);
+    }
+
+    /// <summary>近战起手对准目标，保留模型视觉朝向补偿；动作中由原动画转体。</summary>
+    public void 对准攻击方向(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < .0001f) return;
+        transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up)
+            * Quaternion.Euler(0f, visualYawOffset, 0f);
     }
 
     /// <summary>优先取锁定目标，没有就取选中目标</summary>

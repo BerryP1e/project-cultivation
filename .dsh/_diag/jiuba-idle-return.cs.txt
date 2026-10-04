@@ -1,0 +1,30 @@
+var player=GameObject.Find("Player");
+var anim=player.GetComponentInChildren<Animator>();
+var driver=player.GetComponent<PlayerAnimationController>();
+var pd=GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+var gf=Resources.Load<PanelDatabase>("面板/面板库").功法.Find(g=>g.功法id=="gongfa_jiuba_xuangong");
+var report=new System.Text.StringBuilder();
+System.Collections.IEnumerator Run(){
+ pd.学会(gf);pd.当前功法=gf;pd.RaiseChanged();
+ var attack=player.GetComponent<BasicJiuba01>();attack.自动出手=false;
+ player.GetComponent<YufengFlight>().强制落地();
+ yield return new WaitForSecondsRealtime(2);
+ void Record(string label){
+  var st=anim.GetCurrentAnimatorStateInfo(0);
+  report.AppendLine(label+" state="+st.shortNameHash+" time="+st.normalizedTime+" speed="+anim.speed+" Speed="+anim.GetFloat("Speed")+" action="+driver.动作播放中+" transition="+anim.IsInTransition(0)+" hip="+anim.GetBoneTransform(HumanBodyBones.Hips).localEulerAngles);
+  foreach(var c in anim.GetCurrentAnimatorClipInfo(0))report.AppendLine("clip="+c.clip.name+" weight="+c.weight);
+  foreach(var c in anim.GetCurrentAnimatorClipInfo(0))if(c.weight>.99f && c.clip.name!="持刀_站")throw new System.Exception("Carry idle lost: "+c.clip.name);
+  var ctr=anim.runtimeAnimatorController;while(ctr is AnimatorOverrideController ov){report.AppendLine("controller="+ctr.name);ctr=ov.runtimeAnimatorController;}
+ }
+ Record("before");
+ foreach(var name in new[]{"长刀女_Attack1","长刀女_Attack2","杨戬_Attack1","杨戬_Attack2"}){
+  var clip=Resources.Load<AnimationClip>("技能动作/八九玄功/"+name);driver.PlayAction(clip);
+  yield return new WaitForSecondsRealtime(.3f);pd.RaiseChanged();
+  if(!driver.动作播放中)throw new System.Exception("Action interrupted on panel refresh");
+  yield return new WaitForSecondsRealtime(clip.length+.7f);
+  pd.RaiseChanged();yield return null;
+  Record("after "+name);
+ }
+ System.IO.File.WriteAllText("screenshots/jiuba-idle-return.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

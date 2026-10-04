@@ -8,15 +8,21 @@ var attack=player.GetComponent<BasicJiuba01>();attack.自动出手=false;attack.
 var passive=Resources.FindObjectsOfTypeAll<PassiveDivineAbility>().FirstOrDefault(x=>x.神通id==fly.神通id);
 if(passive==null){Debug.LogError("Missing flight ability");yield break;}
 pd.获得被动(passive);pd.SetPassiveEnabled(passive,true);yield return new WaitForSecondsRealtime(.4f);
-fly.切换();yield return new WaitForSecondsRealtime(1.5f);
+if(!fly.御风流程中)fly.切换();yield return new WaitForSecondsRealtime(1.5f);
 sb.AppendLine("Flight state="+fly.状态+" active="+fly.御风流程中);
 for(int i=0;i<4;i++){
 player.GetComponent<PlayerVitals>().回复灵气(10000);
 if(!fly.御风流程中){fly.切换();yield return new WaitForSecondsRealtime(1.5f);}
-while(attack.冷却剩余>0||driver.IsActionPlaying)yield return null;
+while(attack.冷却剩余>0||attack.出手动作中||driver.IsActionPlaying)yield return null;
 bool started=attack.出手();yield return new WaitForSecondsRealtime(.3f);
+if(!started||!attack.当前是御风版)throw new System.Exception("Flight attack not accepted");
 sb.AppendLine("attack="+started+" flightVariant="+attack.当前是御风版+" path="+attack.当前动作路径);
 while(driver.IsActionPlaying)yield return null;
+yield return new WaitForSecondsRealtime(.2f);
+var animator=player.GetComponentInChildren<Animator>();
+var idleClips=animator.GetCurrentAnimatorClipInfo(0);
+if(!idleClips.Any(c=>c.weight>.99f&&c.clip.name=="持刀_御风Idle"))throw new System.Exception("Flight carry idle lost after attack");
+sb.AppendLine("return=持刀_御风Idle");
 }
 fly.强制落地();yield return new WaitForSecondsRealtime(1.5f);
 sb.AppendLine("landed="+!fly.御风流程中);

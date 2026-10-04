@@ -1,0 +1,64 @@
+﻿var player=GameObject.Find("Player");var original=player.GetComponentInChildren<Animator>();var movement=player.GetComponent<PlayerController>();
+var rig=UnityEngine.Object.Instantiate(original.gameObject);rig.name="JiubaThrustProbe";
+foreach(var b in rig.GetComponentsInChildren<MonoBehaviour>(true))b.enabled=false;
+var parent=new GameObject("JiubaThrustProbeRoot");parent.transform.rotation=Quaternion.Euler(0,movement.visualYawOffset,0);parent.transform.position=new Vector3(10000,0,10000);
+rig.transform.SetParent(parent.transform,false);rig.transform.localPosition=original.transform.localPosition;rig.transform.localRotation=original.transform.localRotation;rig.transform.localScale=original.transform.localScale;
+var a=rig.GetComponent<Animator>();a.cullingMode=AnimatorCullingMode.AlwaysAnimate;a.applyRootMotion=false;
+var root=original.runtimeAnimatorController;while(root is AnimatorOverrideController ov)root=ov.runtimeAnimatorController;
+var hand=a.GetBoneTransform(HumanBodyBones.RightHand);
+foreach(var t in rig.GetComponentsInChildren<Transform>(true).Where(t=>t.name.StartsWith("八九玄功_三尖两刃刀")).ToArray())UnityEngine.Object.DestroyImmediate(t.gameObject);
+var weapon=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Weapons/八九玄功_三尖两刃刀"),hand,false);weapon.transform.localPosition=Vector3.zero;weapon.transform.localRotation=Quaternion.Euler(2.328f,254.529f,263.733f);weapon.transform.localScale=Vector3.one*.3173f;
+var smr=weapon.GetComponentInChildren<SkinnedMeshRenderer>();var mesh=new Mesh();smr.BakeMesh(mesh);mesh.RecalculateBounds();var bounds=mesh.bounds;var ext=bounds.extents;int axis=ext.x>=ext.y&&ext.x>=ext.z?0:ext.y>=ext.z?1:2;Vector3 delta=Vector3.zero;delta[axis]=ext[axis];var endA=bounds.center-delta;var endB=bounds.center+delta;
+var sb=new System.Text.StringBuilder();var allocations=new System.Collections.Generic.List<UnityEngine.Object>();
+foreach(var t in parent.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+var camGo=new GameObject("ThrustProbeCamera");allocations.Add(camGo);var cam=camGo.AddComponent<Camera>();cam.enabled=false;cam.cullingMask=1<<30;cam.orthographic=true;cam.orthographicSize=2.3f;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.23f,.25f,.28f);cam.transform.position=parent.transform.position+new Vector3(5,2.2f,5);cam.transform.LookAt(parent.transform.position+new Vector3(0,1.2f,.4f));var rt=new RenderTexture(640,512,24);allocations.Add(rt);cam.targetTexture=rt;
+var lightGo=new GameObject("ThrustProbeLight");allocations.Add(lightGo);var light=lightGo.AddComponent<Light>();light.type=LightType.Directional;light.cullingMask=1<<30;light.intensity=1.2f;light.transform.rotation=Quaternion.Euler(35,-25,0);
+a.runtimeAnimatorController = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");a.Rebind();a.speed=1;
+var driver=parent.AddComponent<PlayerAnimationController>();
+var attack=parent.AddComponent<BasicJiuba01>();attack.自动出手=false;attack.攻击键=KeyCode.None;attack.需要锁定目标=false;attack.打印战斗日志=false;attack.打印判定距离=false;attack.基础冷却=0;attack.玩家战斗属性=player.GetComponent<PlayerCombatStats>();
+var lockManager=parent.AddComponent<NpcTargeting>();lockManager.enabled=false;attack.目标管理器=lockManager;
+var target=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),parent.transform.position+Vector3.forward*1.2f,Quaternion.identity);allocations.Add(target);
+var npc=target.GetComponentInChildren<NpcInstance>();var def=UnityEngine.Object.Instantiate(npc.定义);allocations.Add(def);npc.定义=def;def.属性[AttributeType.Dodge]=0;npc.ResetHealth();
+foreach(var b in target.GetComponentsInChildren<MonoBehaviour>())if(!(b is NpcInstance))b.enabled=false;
+int hits=0; npc.结算完成+=(n,r)=>{if(r.命中)hits++;};
+System.Collections.IEnumerator Run(){try{
+ yield return new WaitForSecondsRealtime(.5f);lockManager.Lock(npc);
+ for(int i=0;i<8;i++){
+  if(i==4){attack.动作序列=attack.动作序列.Select(path=>path+"_御风").ToArray();a.SetBool("Flying",true);a.SetBool("FlyMoving",false);a.Play("Yufeng_Idle");driver.动作锁髋骨高度=false;yield return new WaitForSecondsRealtime(.4f);}
+  while(attack.出手动作中||driver.动作播放中)yield return null;
+  if(!attack.出手())throw new System.Exception("Attack not accepted");
+  int peak=0,vertices=0;bool captured=false;int beforeHits=hits;
+  yield return null;
+  while(driver.动作播放中){
+   var fx=parent.GetComponent<JiubaWeaponVfx>();
+   var ps=parent.GetComponentsInChildren<ParticleSystem>();foreach(var p in ps)peak=Mathf.Max(peak,p.particleCount);
+   foreach(var t in parent.GetComponentsInChildren<TrailRenderer>())vertices=Mathf.Max(vertices,t.positionCount);
+   if(!captured&&fx!=null&&fx.正在挥舞&&peak>3&&vertices>3&&driver.动作进度>.48f){
+    sb.AppendLine("tip="+(fx.刃尖位置-parent.transform.position)+" blade="+(smr.transform.TransformPoint(endB)-parent.transform.position)+" fxLayer="+parent.GetComponentInChildren<TrailRenderer>().gameObject.layer);yield return new WaitForEndOfFrame();cam.Render();var prev=RenderTexture.active;RenderTexture.active=rt;var tex=new Texture2D(640,512,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,640,512),0,0);tex.Apply();RenderTexture.active=prev;System.IO.File.WriteAllBytes("screenshots/jiuba-vfx-"+i+".png",tex.EncodeToPNG());UnityEngine.Object.Destroy(tex);captured=true;
+   }
+   yield return null;
+  }
+  yield return new WaitForSecondsRealtime(.5f);
+  if(peak==0||vertices<2||parent.GetComponent<JiubaWeaponVfx>().正在挥舞)throw new System.Exception("Trail emission or cleanup failed");
+  foreach(var p in parent.GetComponentsInChildren<ParticleSystem>())if(p.particleCount!=0)throw new System.Exception("Sparks remain after recovery");
+  sb.AppendLine(attack.当前动作路径+" sparksPeak="+peak+" trailVertices="+vertices+" hits="+(hits-beforeHits)+" cleaned=true");
+ }
+ // 单独对接触结算入口做正负验证，不触碰真实玩家锁定。
+ var settle=typeof(BasicJiuba01).GetMethod("结算伤害",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+ yield return new WaitForSecondsRealtime(.8f);
+ int CountFx()=>UnityEngine.Object.FindObjectsOfType<BasicSword01HitEffect>().Count(f=>Vector3.Distance(f.transform.position,parent.transform.position)<5);
+ settle.Invoke(attack,new object[]{npc.transform.position+Vector3.up,"isolated hit FX probe"});
+ if(CountFx()!=1)throw new System.Exception("Confirmed hit did not spawn exactly one effect"); foreach(var f in UnityEngine.Object.FindObjectsOfType<BasicSword01HitEffect>().Where(f=>Vector3.Distance(f.transform.position,parent.transform.position)<5))foreach(var t in f.GetComponentsInChildren<Transform>())t.gameObject.layer=30;
+ cam.orthographicSize=1.8f;cam.transform.LookAt(npc.transform.position+Vector3.up);yield return new WaitForEndOfFrame();cam.Render();var prevHit=RenderTexture.active;RenderTexture.active=rt;var hitTex=new Texture2D(640,512,TextureFormat.RGB24,false);hitTex.ReadPixels(new Rect(0,0,640,512),0,0);hitTex.Apply();RenderTexture.active=prevHit;System.IO.File.WriteAllBytes("screenshots/jiuba-vfx-impact.png",hitTex.EncodeToPNG());UnityEngine.Object.Destroy(hitTex);
+ yield return new WaitForSecondsRealtime(.8f);if(CountFx()!=0)throw new System.Exception("Hit effect leaked");
+ lockManager.ClearLock();settle.Invoke(attack,new object[]{npc.transform.position,"isolated no target probe"});if(CountFx()!=0)throw new System.Exception("No-target attack emitted impact");
+ // 打空：靶子远离真实武器轨迹，放宽出手距离仅用于本测试。
+ npc.transform.position=parent.transform.position+Vector3.forward*10;lockManager.Lock(npc);attack.出手最大距离=20;int hitBefore=hits;
+ while(attack.出手动作中)yield return null;attack.出手();yield return null;
+ while(driver.动作播放中){if(CountFx()!=0)throw new System.Exception("Air swing emitted impact");yield return null;}
+ if(hits!=hitBefore)throw new System.Exception("Air swing damaged distant target");
+ sb.AppendLine("impact: confirmed hit=1, lifetime cleanup=0, no target=0, air swing=0");
+ attack.enabled=false;yield return null;yield return null;if(parent.GetComponentsInChildren<ParticleSystem>().Length!=0)throw new System.Exception("Unequip FX cleanup failed");
+ System.IO.File.WriteAllText("screenshots/jiuba-vfx-isolated.txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{UnityEngine.Object.Destroy(parent);UnityEngine.Object.Destroy(mesh);foreach(var o in allocations)UnityEngine.Object.Destroy(o);}}
+return Run();

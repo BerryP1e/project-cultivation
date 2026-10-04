@@ -240,6 +240,14 @@ public class BasicJiuba01 : MonoBehaviour
 
     void OnEnable() => 解析引用();
 
+    JiubaWeaponVfx 刃光;
+
+    void OnDisable()
+    {
+        出手动作中 = false;
+        if (刃光 != null) 刃光.停止(true);
+    }
+
     void Update()
     {
         解析引用();
@@ -269,6 +277,7 @@ public class BasicJiuba01 : MonoBehaviour
     public bool 出手()
     {
         if (!可以出手) return false;
+        if (刃光 == null) 刃光 = GetComponent<JiubaWeaponVfx>() ?? gameObject.AddComponent<JiubaWeaponVfx>();
 
         出手动作中 = true;
         本轮已结算 = false;
@@ -278,6 +287,13 @@ public class BasicJiuba01 : MonoBehaviour
         var 片段 = 取下一片段(out var 路径, out var 是御风版);
         当前动作路径 = 路径;
         当前是御风版 = 是御风版;
+
+        var 目标 = 锁定单位;
+        if (目标 != null && 目标.根 != null)
+        {
+            var movement = GetComponent<PlayerController>();
+            if (movement != null) movement.对准攻击方向(目标.根.position - transform.position);
+        }
 
         if (打印战斗日志)
             Debug.Log("[basic_jiuba_01] 出手：片段「" + 路径 + "」"
@@ -373,6 +389,12 @@ public class BasicJiuba01 : MonoBehaviour
         // 伤害公式的唯一入口在 NpcInstance/PlayerVitals 内部的 CombatCalculator（见 ICombatTarget.受到攻击）
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 伤害倍率);
         var 结果 = 目标.受到攻击(玩家战斗属性, 规则, this);
+        if (结果.命中)
+        {
+            var 位置 = 接触点 == Vector3.zero ? 取目标体积(目标).center : 接触点;
+            BasicSword01HitEffect.Spawn(位置, 位置 - transform.position, 结果.暴击,
+                new Color(1f, 0.88f, 0.55f));
+        }
 
         if (打印战斗日志)
             Debug.Log("[basic_jiuba_01] 砍「" + 目标.名字 + "」 " + 结果

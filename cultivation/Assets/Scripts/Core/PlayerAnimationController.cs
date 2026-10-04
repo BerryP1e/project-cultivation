@@ -116,6 +116,11 @@ public class PlayerAnimationController : MonoBehaviour
 
     int 动作参数Hash;
     AnimatorOverrideController 覆盖控制器;
+    RuntimeAnimatorController 动作基础控制器;
+
+    /// <summary>动作覆盖已复制此持械控制器的映射，刷新持械时不应替换正在播放的动作。</summary>
+    public bool 保留了控制器(RuntimeAnimatorController controller) => animator != null
+        && animator.runtimeAnimatorController == 覆盖控制器 && 动作基础控制器 == controller;
     bool 动作已进入;
     float 动作开始时间;
 
@@ -228,8 +233,27 @@ public class PlayerAnimationController : MonoBehaviour
             return false;
         }
 
-        if (覆盖控制器 == null || (基 != 覆盖控制器 && 覆盖控制器.runtimeAnimatorController != 基))
-            覆盖控制器 = new AnimatorOverrideController(基);
+        if (覆盖控制器 == null || 基 != 覆盖控制器)
+        {
+            动作基础控制器 = 基;
+            // Unity unwraps a nested override's base, but does not inherit its clip mappings.
+            // Copy the effective mappings explicitly before replacing only the action clip.
+            var root = 基;
+            var layers = new System.Collections.Generic.List<AnimatorOverrideController>();
+            while (root is AnimatorOverrideController layer)
+            {
+                layers.Add(layer);
+                root = layer.runtimeAnimatorController;
+            }
+            覆盖控制器 = new AnimatorOverrideController(root);
+            var pairs = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>>();
+            for (int i = layers.Count - 1; i >= 0; i--)
+            {
+                layers[i].GetOverrides(pairs);
+                foreach (var pair in pairs)
+                    if (pair.Value != null) 覆盖控制器[pair.Key] = pair.Value;
+            }
+        }
 
         覆盖控制器[占位动作片段] = 片段;
         if (animator.runtimeAnimatorController != 覆盖控制器)

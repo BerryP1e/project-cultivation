@@ -1,0 +1,21 @@
+var source=GameObject.Find("Player").GetComponentInChildren<Animator>();var rig=UnityEngine.Object.Instantiate(source.gameObject);foreach(var b in rig.GetComponentsInChildren<MonoBehaviour>(true))b.enabled=false;
+var root=new GameObject("JiubaRecoveryProbe");root.transform.position=new Vector3(10000,0,10000);rig.transform.SetParent(root.transform,false);rig.transform.localPosition=source.transform.localPosition;rig.transform.localRotation=source.transform.localRotation;rig.transform.localScale=source.transform.localScale;
+var a=rig.GetComponent<Animator>();a.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var controller=UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");var carry=new AnimatorOverrideController(controller);
+var keys=new[]{"Armature|Idle_Loop","Armature|Walk_Loop","Armature|Sprint_Loop","御风_Idle","御风_前进"};var names=new[]{"持刀_站","持刀_走","持刀_跑","持刀_御风Idle","持刀_御风前进"};for(int i=0;i<keys.Length;i++)carry[keys[i]]=Resources.Load<AnimationClip>("技能动作/八九玄功/"+names[i]);
+a.runtimeAnimatorController=carry;a.Rebind();var driver=root.AddComponent<PlayerAnimationController>();var report=new System.Text.StringBuilder();
+System.Collections.IEnumerator Run(){try{
+ yield return new WaitForSecondsRealtime(.5f);
+ foreach(bool flying in new[]{false,true}){
+  a.SetBool("Flying",flying);a.SetBool("FlyMoving",false);a.Play(flying?"Yufeng_Idle":"Locomotion",0,0);driver.动作锁髋骨高度=!flying;yield return new WaitForSecondsRealtime(.5f);
+  foreach(var name in new[]{"长刀女_Attack1","长刀女_Attack2","杨戬_Attack1","杨戬_Attack2"}){
+   var clip=Resources.Load<AnimationClip>("技能动作/八九玄功/"+name+(flying?"_御风":""));if(!driver.PlayAction(clip))throw new System.Exception("Probe action not accepted");
+   yield return new WaitForSecondsRealtime(clip.length+1);
+   string expected=flying?"持刀_御风Idle":"持刀_站";
+   if(driver.动作播放中||!a.GetCurrentAnimatorClipInfo(0).Any(c=>c.weight>.99f&&c.clip.name==expected))throw new System.Exception("Recovery failed: "+clip.name);
+   report.AppendLine(clip.name+" -> "+expected+" speed="+a.speed+" visualY="+rig.transform.localPosition.y.ToString("F3"));
+  }
+ }
+ System.IO.File.WriteAllText("screenshots/jiuba-recovery-isolated.txt",report.ToString());Debug.Log(report.ToString());
+}finally{UnityEngine.Object.Destroy(root);UnityEngine.Object.Destroy(carry);}}
+return Run();

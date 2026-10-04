@@ -106,7 +106,7 @@ public static class JiubaMotionBaker
                 // lower-body blend. Keep the existing asset names for controller compatibility.
                 bool groundMoving = i == 1 || i == 2;
                 Bake(upper, lower, run, bases[i], names[i], groundMoving ? run.length : bases[i].length,
-                    true, !groundMoving, i == 0);
+                    true, !groundMoving, !groundMoving);
             }
         }
         AssetDatabase.SaveAssets();
@@ -116,15 +116,67 @@ public static class JiubaMotionBaker
     static void Bake(Sampler upper, Sampler lower, AnimationClip source, AnimationClip basis,
         string name, float duration, bool loop, bool split, bool freeze)
     {
+        if (name == "持刀_站")
+        {
+            // Preserve the player's native humanoid idle/root/feet. Sampling and converting
+            // the entire rig again changes its body reference and can turn the idle around.
+            var idle = UnityEngine.Object.Instantiate(basis);
+            idle.name = name;
+            foreach (var binding in AnimationUtility.GetCurveBindings(source))
+            {
+                if (binding.type != typeof(Animator) || !HumanTrait.MuscleName.Contains(binding.propertyName)) continue;
+                string muscle = binding.propertyName;
+                if (muscle.Contains("Leg") || muscle.Contains("Foot") || muscle.Contains("Toes")) continue;
+                var curve = AnimationUtility.GetEditorCurve(source, binding);
+                float value = curve.Evaluate(source.length * .5f);
+                AnimationUtility.SetEditorCurve(idle, binding, AnimationCurve.Constant(0, basis.length, value));
+            }
+            Save(idle, name);
+            return;
+        }
         if (!split)
         {
-            var native = UnityEngine.Object.Instantiate(source);
+            bool moving = name == "持刀_走" || name == "持刀_跑";
+            var native = moving ? new AnimationClip { frameRate = source.frameRate } : UnityEngine.Object.Instantiate(source);
+            if (moving)
+                foreach (var binding in AnimationUtility.GetCurveBindings(source))
+                    if (binding.type == typeof(Animator))
+                        AnimationUtility.SetEditorCurve(native, binding, AnimationUtility.GetEditorCurve(source, binding));
             native.name = name;
-            var nativeSettings = AnimationUtility.GetAnimationClipSettings(native);
+            var nativeSettings = AnimationUtility.GetAnimationClipSettings(source);
             nativeSettings.loopTime = loop;
             nativeSettings.loopBlendPositionY = true;
             nativeSettings.keepOriginalPositionY = true;
+            if (!moving)
+            {
+                // As with BingPoGuai, dropping root rotation leaves only half the thrust.
+                // Bake authored turning into the pose: player movement still stays in code.
+                nativeSettings.loopBlendOrientation = true;
+                nativeSettings.keepOriginalOrientation = true;
+            }
             AnimationUtility.SetAnimationClipSettings(native, nativeSettings);
+            if (moving)
+            {
+                // Keep the forward/back stride, attenuate the lateral leg and foot twists
+                // that become conspicuous on the player's shorter, wider proportions.
+                foreach (var binding in AnimationUtility.GetCurveBindings(native))
+                {
+                    string muscle = binding.propertyName;
+                    if (binding.type != typeof(Animator) || (!muscle.Contains("Leg") && !muscle.Contains("Foot"))) continue;
+                    if (!muscle.Contains("In-Out")) continue;
+                    var curve = AnimationUtility.GetEditorCurve(native, binding);
+                    var keys = curve.keys;
+                    float center = (keys.Min(k => k.value) + keys.Max(k => k.value)) * .5f;
+                    for (int i = 0; i < keys.Length; i++)
+                    {
+                        keys[i].value = center + (keys[i].value - center) * .25f;
+                        keys[i].inTangent *= .25f;
+                        keys[i].outTangent *= .25f;
+                    }
+                    curve.keys = keys;
+                    AnimationUtility.SetEditorCurve(native, binding, curve);
+                }
+            }
             Save(native, name);
             return;
         }
@@ -191,6 +243,20 @@ public static class JiubaMotionBaker
         var settings = AnimationUtility.GetAnimationClipSettings(result); settings.loopTime = loop;
         settings.loopBlendPositionY = true;
         settings.keepOriginalPositionY = true;
+        if (name.EndsWith("Attack1_御风"))
+        {
+            // The two thrusts need their authored turn even with flight legs. The body
+            // rotation reconstructed from the split rig instead follows the arm swing.
+            // Keep flight position/leg muscles, but use the source thrust's body rotation.
+            foreach (char axis in "xyzw")
+            {
+                var binding = EditorCurveBinding.FloatCurve("", typeof(Animator), "RootQ." + axis);
+                AnimationUtility.SetEditorCurve(result, binding, AnimationUtility.GetEditorCurve(source, binding));
+            }
+            settings.loopBlendOrientation = true;
+            settings.keepOriginalOrientation = true;
+            result.EnsureQuaternionContinuity();
+        }
         AnimationUtility.SetAnimationClipSettings(result, settings);
         Save(result, name);
     }

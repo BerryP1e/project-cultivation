@@ -125,6 +125,8 @@ public class WeaponCarryAnim : MonoBehaviour
         // The action controller may wrap this carry override. Preserve that owner instead
         // of resetting a running attack every time unrelated panel data raises Changed.
         var current = 动画器.runtimeAnimatorController;
+        var driver = GetComponent<PlayerAnimationController>();
+        if (driver != null && driver.保留了控制器(覆盖)) return;
         while (current is AnimatorOverrideController nested)
         {
             if (current == 覆盖) return;

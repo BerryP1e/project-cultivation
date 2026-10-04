@@ -1,0 +1,20 @@
+var probe=new GameObject("JiubaFacingProbe");probe.transform.position=new Vector3(10000,0,10000);
+var movement=probe.AddComponent<PlayerController>();movement.enabled=false;probe.GetComponent<CharacterController>().enabled=false;
+var attack=probe.AddComponent<BasicJiuba01>();attack.需要锁定目标=false;attack.自动出手=false;attack.打印战斗日志=false;
+var method=typeof(PlayerController).GetMethod("FaceDirection",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+System.Collections.IEnumerator Run(){try{
+ movement.对准攻击方向(Vector3.forward);var expected=Quaternion.Euler(0,movement.visualYawOffset,0);
+ if(Quaternion.Angle(probe.transform.rotation,expected)>.001f)throw new System.Exception("Visual yaw correction lost");
+ if(!attack.出手())throw new System.Exception("Probe attack not accepted");var start=probe.transform.rotation;var position=probe.transform.position;
+ method.Invoke(movement,new object[]{Vector3.left});
+ float lockedDelta=Quaternion.Angle(start,probe.transform.rotation);
+ if(lockedDelta>.001f)throw new System.Exception("Movement steered ongoing melee action");
+ yield return null;yield return null;
+ method.Invoke(movement,new object[]{Vector3.left});
+ float releasedDelta=Quaternion.Angle(start,probe.transform.rotation);
+ if(releasedDelta<.001f)throw new System.Exception("Facing did not recover after melee action");
+ if(Vector3.Distance(position,probe.transform.position)>.001f)throw new System.Exception("Facing changed position");
+ string result="Attack steering delta="+lockedDelta+" recovered="+releasedDelta+" position unchanged=True";
+ System.IO.File.WriteAllText("screenshots/jiuba-facing-isolated.txt",result);Debug.Log(result);
+}finally{UnityEngine.Object.Destroy(probe);}}
+return Run();

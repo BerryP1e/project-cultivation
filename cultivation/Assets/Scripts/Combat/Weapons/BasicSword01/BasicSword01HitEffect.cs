@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// 【basic_sword_01 专属】命中特效：飞剑穿过敌人并命中时，在穿过点炸开一小簇火花。
+/// 飞剑与近战共用命中特效：在实际接触点炸开光环与火花。
 /// 完全程序化生成（不需要任何美术资源 / 粒子系统 asset）：
 ///   · 冲击光环 —— 一圈快速扩散并淡出的亮环，最抓眼
 ///   · 光晕     —— 中心一团大光斑
@@ -15,17 +15,23 @@ public class BasicSword01HitEffect : MonoBehaviour
 {
     /// <summary>播放一次命中特效</summary>
     public static void Spawn(Vector3 position, Vector3 direction, bool crit)
+        => Spawn(position, direction, crit, crit ? new Color(1f, 0.78f, 0.28f) : new Color(0.55f, 0.90f, 1f));
+
+    /// <summary>其他近战武器复用冲击光环与碎光，可指定普通命中的主色。</summary>
+    public static void Spawn(Vector3 position, Vector3 direction, bool crit, Color color)
     {
         var go = new GameObject(crit ? "HitFX_Crit" : "HitFX");
         go.transform.position = position;
 
         var fx = go.AddComponent<BasicSword01HitEffect>();
         fx.crit = crit;
+        fx.tint = crit ? new Color(1f, 0.78f, 0.28f) : color;
         fx.dir = direction.sqrMagnitude > 1e-4f ? direction.normalized : Vector3.forward;
         fx.Build();
     }
 
     bool crit;
+    Color tint;
     Vector3 dir = Vector3.forward;
 
     // 整体规模系数：暴击更大
@@ -102,7 +108,7 @@ public class BasicSword01HitEffect : MonoBehaviour
 
     void Build()
     {
-        var 主色 = crit ? new Color(1f, 0.78f, 0.28f) : new Color(0.55f, 0.90f, 1f);
+        var 主色 = tint;
         float k = K;
 
         // ---- 冲击光环 ----
@@ -123,7 +129,10 @@ public class BasicSword01HitEffect : MonoBehaviour
         int n = crit ? 22 : 14;
         sparks = new Transform[n];
         sparkVel = new Vector3[n];
-        sparkMat = 建材质(crit ? new Color(1f, 0.72f, 0.26f) : new Color(0.88f, 0.98f, 1f), 1f, 取光斑());
+        var 火花色 = crit ? new Color(1f, .72f, .26f)
+            : tint == new Color(.55f, .90f, 1f) ? new Color(.88f, .98f, 1f)
+            : Color.Lerp(tint, Color.white, .45f);
+        sparkMat = 建材质(火花色, 1f, 取光斑());
 
         for (int i = 0; i < n; i++)
         {
@@ -255,4 +264,12 @@ public class BasicSword01HitEffect : MonoBehaviour
     }
 
     static Color SetA(Color c, float a) => new Color(c.r, c.g, c.b, Mathf.Clamp01(a));
+
+    void OnDestroy()
+    {
+        if (haloMat != null) Destroy(haloMat);
+        if (glowMat != null) Destroy(glowMat);
+        if (streakMat != null) Destroy(streakMat);
+        if (sparkMat != null) Destroy(sparkMat);
+    }
 }

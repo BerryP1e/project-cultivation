@@ -1,0 +1,19 @@
+var p=GameObject.Find("Player");var pd=GameObject.Find("CharacterUI").GetComponent<UIPanelData>();var fly=p.GetComponent<YufengFlight>();var driver=p.GetComponent<PlayerAnimationController>();var a=p.GetComponentInChildren<Animator>();var report=new System.Text.StringBuilder();
+System.Collections.IEnumerator Run(){
+ var gf=Resources.Load<PanelDatabase>("面板/面板库").功法.Find(g=>g.功法id=="gongfa_jiuba_xuangong");pd.学会(gf);pd.当前功法=gf;pd.RaiseChanged();p.GetComponent<BasicJiuba01>().自动出手=false;
+ var passive=Resources.FindObjectsOfTypeAll<PassiveDivineAbility>().First(x=>x.神通id==fly.神通id);pd.获得被动(passive);pd.SetPassiveEnabled(passive,true);p.GetComponent<PlayerVitals>().回复灵气(10000);
+ if(!fly.御风流程中)fly.切换();yield return new WaitForSecondsRealtime(1.5f);
+ bool enabled=driver.enabled;
+ try{
+ driver.enabled=false;
+ foreach(var state in new[]{"Yufeng_Idle","Yufeng_Forward"}){
+  a.SetBool("Flying",true);a.SetBool("FlyMoving",state=="Yufeng_Forward");a.Play(state,0,0);yield return new WaitForSecondsRealtime(.3f);
+  var upper=a.GetBoneTransform(HumanBodyBones.LeftUpperArm);var lower=a.GetBoneTransform(HumanBodyBones.LeftLowerArm);var uq=upper.localRotation;var lq=lower.localRotation;float upperDelta=0,lowerDelta=0;float end=Time.time+2.5f;
+  while(Time.time<end){yield return new WaitForEndOfFrame();upperDelta=Mathf.Max(upperDelta,Quaternion.Angle(uq,upper.localRotation));lowerDelta=Mathf.Max(lowerDelta,Quaternion.Angle(lq,lower.localRotation));}
+  report.AppendLine(state+" leftUpperArmMax="+upperDelta.ToString("F3")+" leftLowerArmMax="+lowerDelta.ToString("F3"));
+  if(upperDelta>1||lowerDelta>1)throw new System.Exception("Flight arm is still pumping");
+ }
+ }finally{driver.enabled=enabled;}
+ System.IO.File.WriteAllText("screenshots/jiuba-flight-arm-check.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();
