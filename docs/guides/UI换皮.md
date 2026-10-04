@@ -12,14 +12,16 @@
 
 ### 0.1 全工程映射与状态入口
 
+2026-10-04 第三阶段开工：按用户手绘与最新澄清，**父页面没有底板**。`UIInkNavigation` 在运行时隐藏 Window 与 Sidebar 的绘制，保留八个原按钮和数据事件；八颗墨点错落排布，图标中央、名称下方。`UIInkFluid` 以确定性游走、阻尼牵引和 shader 边缘噪声实现持续流墨，划过水痕、点击径向扩散；减少动效停止全部常态运动。没有整页纸纹覆盖。14 张新透明素材、双分辨率截图与录像入口见 [墨点父导航施工记录](../../ui-rework-2026-10-03/dynamic-assets-v1/施工记录.md)。**子页内容尚未按新总纲重制，以下卡片/环槽等仍是过渡布局。** 编辑器 `inkqa:dynamicbefore/dynamicafter` 后重进 Play 可对比父导航。
+
 2026-10-04 第一阶段补图：`AbilityArt/` 已接当前真实目录 8 项神通的 8 枚图标与 8 幅详情画。`UIInkAbilityArt` 按 `神通id` 查找，仅在展示层使用，不改 `DisplayIcon` 数据字段、CSV 或 ScriptableObject。资源库/被动行/六槽/HUD/拖影共用图标查询，神通详情用独立不挡射线的 `InkAbilityArtwork`，正文让出图片区。缺图仍走原图标；无详情画保持空白。素材、提示词、alpha 统计与实机截图见 [插画接入验收](../../ui-rework-2026-10-03/ability-art-v1/接入与素材验收.md)。
 
 2026-10-04 动效接入：`UIInkMotion` 共用落笔、晕开、提笔、干笔与 Timing 表，暂停菜单提供“减少动效”。面板绘制用 `UIInkReveal/UIInkClipRect` 展开，文字只淡入；关闭快照不复制业务脚本、不占射线，业务立即关闭。`UIInkNumber/UIInkFill` 只插值显示，冷却与编号排除；列表复用刷新不重启整库入场。文件桥 `inkmotion:record/status` 录制六类动作慢放；运行时墨晕优先读取 `Effects/fx-ink-blot`，缺图使用柔边几何。素底版与飞白尚缺，§10 统一纸纹未接，不能把本轮写成整套动效/材质全部完成。
 
 | 控制器 / 节点 | 素材 / 行为 |
 |---|---|
-| `UIInkSkin` / `Window` | `Skeleton/parent-curtain-9slice-source`，1780×970 |
-| `Sidebar` / `Tab_*` | 2026-10-04：`Skeleton/parent-navigation-rail` 暗墨立板；未选项透明，当前项独立 `Skeleton/nav-tab-inactive` 素纸牌并加宽突出；八张 `Icons` 图标 44px，文字独立，左边距 64px |
+| `UIInkSkin` / `Window` | 1780×970 布局容器，最新父页面不绘制底板；旧幕布仅在 dynamicbefore 对照模式保留 |
+| `UIInkNavigation` / `Tab_*` | `Dynamic/nav-ink-blot-1..8` 独立墨点；图标中央、名称下方，形变仅作用于绘制层；原 Button 切页，局部牵引 ≤8px；持续游走 ≤3px |
 | `KnownList` / `PassiveList` | 三列 `Parts/ability-library-card` / 独立被动行；均有常显竖向滚动条 |
 | `UIActiveSkillBar` / `UIActiveSkillSlot` | active-ring / slot-empty、slot-filled；编号固定1–6，数据共用 |
 | `UIEntryList` / `UIEntryRow` | 池化复用；row-normal/hover/selected；逻辑选中与键盘焦点分别处理 |

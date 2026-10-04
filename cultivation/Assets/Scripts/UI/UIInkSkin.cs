@@ -221,6 +221,7 @@ public class UIInkSkin : MonoBehaviour
             if (!button.name.StartsWith("Tab_") && button.name != "Row" && button.GetComponent<UIActiveSkillSlot>() == null && button.GetComponent<UISpiritSlot>() == null)
                 InkUITheme.Button(button);
         刷新页签(r);
+        UIInkNavigation.应用(r);
     }
 
     /// <summary>内板（内容分区底板）—— 名字来自 `CharacterPanelBuilder` 的分区命名</summary>
@@ -362,6 +363,12 @@ public class UIInkSkin : MonoBehaviour
     void 刷新页签(Transform r)
     {
         if (!换页签 || r == null || !InkUITheme.Enabled) return;
+        var dynamicNavigation = r.GetComponent<UIInkNavigation>();
+        if (UIInkNavigation.启用 && dynamicNavigation != null)
+        {
+            dynamicNavigation.刷新状态();
+            return;
+        }
         string 当前 = "";
         if (_角色面板 != null) 当前 = _角色面板.CurrentTab.ToString();
         if (string.IsNullOrEmpty(当前))

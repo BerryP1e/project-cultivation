@@ -190,7 +190,7 @@ public class UIInkMotion : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         // 没有飞白遮罩时不伪造素材；保留禁用按钮的纸底与原业务禁用状态。
         if (button == null) return;
-        var mask = InkUITheme.Load("Effects/fx-dry-brush-mask");
+        var mask = InkUITheme.Load("Dynamic/fx-dry-brush-mask") ?? InkUITheme.Load("Effects/fx-dry-brush-mask");
         if (mask == null) return;
         var child = button.transform.Find("InkDryBrush");
         if (child == null)

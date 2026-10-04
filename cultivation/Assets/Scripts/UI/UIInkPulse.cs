@@ -14,7 +14,7 @@ public class UIInkPulse : MaskableGraphic
         var go = new GameObject("InkHoverShadow", typeof(RectTransform), typeof(UIInkPulse), typeof(LayoutElement));
         go.transform.SetParent(parent, false); go.transform.SetAsFirstSibling(); go.GetComponent<LayoutElement>().ignoreLayout = true;
         var shadow = go.GetComponent<UIInkPulse>(); shadow.持久 = true; shadow.raycastTarget = false;
-        shadow.blot = InkUITheme.Load("Effects/fx-ink-blot"); shadow.color = new Color(.188f, .239f, .216f, 0);
+        shadow.blot = InkUITheme.Load("Dynamic/fx-ink-blot") ?? InkUITheme.Load("Effects/fx-ink-blot"); shadow.color = new Color(.188f, .239f, .216f, 0);
         shadow.rectTransform.anchorMin = shadow.rectTransform.anchorMax = new Vector2(.5f, .65f);
         shadow.rectTransform.sizeDelta = new Vector2(parent.rect.width * .9f, parent.rect.width * .9f);
         return shadow;
@@ -32,7 +32,7 @@ public class UIInkPulse : MaskableGraphic
         var go = new GameObject("InkPulse", typeof(RectTransform), typeof(UIInkPulse), typeof(LayoutElement));
         go.transform.SetParent(parent, false); go.GetComponent<LayoutElement>().ignoreLayout = true;
         var pulse = go.GetComponent<UIInkPulse>(); pulse.ownsBudget = true; pulse.duration = seconds; pulse.raycastTarget = false;
-        pulse.color = new Color(.188f, .239f, .216f, .17f); pulse.blot = InkUITheme.Load("Effects/fx-ink-blot");
+        pulse.color = new Color(.188f, .239f, .216f, .17f); pulse.blot = InkUITheme.Load("Dynamic/fx-ink-blot") ?? InkUITheme.Load("Effects/fx-ink-blot");
         var rt = pulse.rectTransform; rt.anchorMin = rt.anchorMax = parent.pivot;
         rt.anchoredPosition = point; rt.sizeDelta = Vector2.one * Mathf.Min(150, Mathf.Max(54, parent.rect.height));
         rt.SetAsLastSibling();

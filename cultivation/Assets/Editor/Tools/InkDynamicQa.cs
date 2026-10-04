@@ -1,0 +1,126 @@
+﻿using System;
+using System.Collections;
+using System.IO;
+using System.Text;
+using UnityEditor;
+using UnityEditor.Media;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using static UnityEngine.Object;
+
+/// <summary>父导航实际 Play 验收、半速录像；不写存档或场景。</summary>
+public static class InkDynamicQa
+{
+    static string status="idle";
+    public static string Run(string command) {
+        if(command=="status") return status;
+        if(!Application.isPlaying) return "FAIL requires Play";
+        var panel=FindObjectOfType<CharacterPanelUI>(true);
+        if(command=="parent") {
+            panel.SetOpen(true);
+            var content=panel.panelRoot.transform.Find("Window/Content");
+            if(content==null) return "FAIL missing content";
+            content.gameObject.SetActive(false);
+            var hint=panel.panelRoot.transform.Find("Window/HintBar"); if(hint!=null) hint.gameObject.SetActive(false);
+            return "OK isolated parent navigation; restart Play to restore content";
+        }
+        if(command=="paperon" || command=="paperoff") {
+            var layer=panel.GetComponentInChildren<UIInkPaperLayer>(true);
+            if(layer==null) return "FAIL missing paper layer";
+            layer.gameObject.SetActive(command=="paperon"); return "OK "+command;
+        }
+        if(status=="recording") return "FAIL recording active";
+        status="recording"; panel.StartCoroutine(Record(panel)); return "OK dynamic recording started";
+    }
+    static IEnumerator Record(CharacterPanelUI panel) {
+        string directory=Path.Combine(Application.dataPath,"../screenshots"); Directory.CreateDirectory(directory);
+        string suffix=Screen.width+"x"+Screen.height;
+        string temp=Path.Combine(Path.GetTempPath(),"inknav-"+Guid.NewGuid().ToString("N")+".mp4");
+        string final=Path.Combine(directory,"InkUI-navigation-dynamic-"+suffix+"-half-speed.mp4");
+        var log=new StringBuilder(); int failures=0;
+        Action<string,bool> check=(label,ok)=>{log.AppendLine((ok ? "PASS " : "FAIL ")+label); if(!ok) failures++;};
+        bool reduced=UIInkMotion.减少动效; var oldTab=panel.CurrentTab; bool opened=panel.IsOpen;
+        MediaEncoder encoder=null; Texture2D frame=null; UIInkFluid[] points=null;
+        float originalScale=Time.timeScale;
+        try {
+            UIInkMotion.减少动效=false; panel.SetOpen(false); yield return new WaitForSecondsRealtime(.4f);
+            encoder=new MediaEncoder(temp,new VideoTrackAttributes { frameRate=new MediaRational(5),width=(uint)Screen.width,height=(uint)Screen.height,includeAlpha=false,bitRateMode=VideoBitrateMode.Medium });
+            Vector2 home=Vector2.zero; Vector2 center=Vector2.zero; Vector2 pulled=Vector2.zero; float clock=0;
+            for(int i=0;i<130;i++) {
+                if(i==5) {
+                    panel.SetOpen(true); panel.ShowTabByIndex(0);
+                    points=panel.GetComponentsInChildren<UIInkFluid>(true);
+                    check("eight independent ink points",points.Length==8);
+                    var parentImage=points[0].transform.parent.parent.GetComponent<Image>();
+                    check("parent has no backing plate",parentImage!=null && !parentImage.enabled);
+                    check("no full-page paper overlay",panel.GetComponentInChildren<UIInkPaperLayer>()==null);
+                    check("pause uses unscaled time",Time.timeScale==0);
+                    foreach(var point in points) point.调试鼠标=new Vector2(-10000,-10000);
+                }
+                if(i==20) {
+                    home=(points[0].transform as RectTransform).anchoredPosition;
+                    clock=points[0].形变时钟;
+                    center=RectTransformUtility.WorldToScreenPoint(null,points[0].transform.Find("InkNavBlot").position);
+                }
+                if(i>=21 && i<40) {
+                    points[0].调试鼠标=center+Vector2.right*38;
+                    points[0].OnPointerMove(new PointerEventData(EventSystem.current){position=center+new Vector2((i-21)*2,0),delta=new Vector2(2,0)});
+                }
+                if(i==39) {
+                    pulled=points[0].鼠标牵引;
+                    check("nearby point attracts locally",pulled.x>0 && pulled.magnitude<=8);
+                    check("ambient shader advances while paused",points[0].形变时钟>clock);
+                    check("stable button geometry during attraction",(points[0].transform as RectTransform).anchoredPosition==home);
+                    check("motion remains subtle",points[0].绘制偏移.magnitude<=11);
+                    check("name text never scales",points[0].GetComponentInChildren<Text>().transform.localScale==Vector3.one);
+                    var trace=points[0].transform.Find("InkNavWaterTrace").GetComponent<Image>();
+                    check("crossing produces visible texture water trace",trace.sprite!=null && trace.color.a>0 && !trace.raycastTarget);
+                }
+                if(i==40) {
+                    points[0].调试鼠标=new Vector2(-10000,-10000);
+                    points[0].OnPointerClick(new PointerEventData(EventSystem.current){position=center});
+                    var image=points[0].transform.Find("InkNavBlot").GetComponent<Image>();
+                    check("click radial ripple starts at pointer",image.material.GetVector("_Ripple").z==0);
+                }
+                if(i==47) check("attraction returns after pointer leaves",points[0].鼠标牵引.magnitude<.01f);
+                if(i>=50 && i<98 && (i-50)%6==0) {
+                    int index=(i-50)/6;
+                    panel.tabs[index].button.onClick.Invoke();
+                    int active=0; foreach(var binding in panel.tabs) if(binding.page.activeSelf) active++;
+                    check("tab "+index+" original button switches exactly one page",panel.CurrentTab==(CharacterTab)index && active==1);
+                    check("tab "+index+" background stays clear",panel.tabs[index].background.color.a==0);
+                }
+                if(i==100) {
+                    var button=panel.tabs[0].button; button.interactable=false;
+                    var image=points[0].transform.Find("InkNavBlot").GetComponent<Image>();
+                    float progress=image.material.GetVector("_Ripple").z;
+                    points[0].OnPointerClick(new PointerEventData(EventSystem.current){position=center});
+                    check("disabled button rejects feedback",image.material.GetVector("_Ripple").z==progress);
+                    button.interactable=true; UIInkMotion.减少动效=true;
+                }
+                if(i==106) {
+                    bool still=true;
+                    foreach(var point in points) still &= point.绘制偏移==Vector2.zero && point.形变时钟==0;
+                    check("reduced motion stops all ambient movement",still);
+                }
+                if(i==110) { UIInkMotion.减少动效=false; panel.SetOpen(false); }
+                yield return new WaitForSecondsRealtime(.1f);
+                yield return new WaitForEndOfFrame();
+                frame=ScreenCapture.CaptureScreenshotAsTexture();
+                if(frame==null) throw new InvalidOperationException("No screenshot frame");
+                encoder.AddFrame(frame); Destroy(frame); frame=null;
+            }
+            encoder.Dispose(); encoder=null; File.Copy(temp,final,true); File.Delete(temp);
+            check("closing restores timeScale",Time.timeScale==originalScale);
+            log.AppendLine("Frames=130 CaptureFps<=10 EncodeFps=5 Failures="+failures+" Video="+final);
+            status="DONE Failures="+failures+" Video="+final;
+        } finally {
+            encoder?.Dispose(); if(frame!=null) Destroy(frame);
+            if(points!=null) foreach(var point in points) if(point!=null) point.调试鼠标=null;
+            UIInkMotion.减少动效=reduced; panel.SetOpen(opened); if(opened) panel.ShowTab(oldTab);
+            File.WriteAllText(Path.Combine(directory,"InkUI-navigation-dynamic-checks-"+suffix+".txt"),log.ToString());
+            if(status=="recording") status="FAILED; see checks and Console";
+        }
+    }
+}

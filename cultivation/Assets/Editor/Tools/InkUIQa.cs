@@ -24,6 +24,12 @@ public static class InkUIQa
     }
     public static string Panel(string command)
     {
+        if (command == "dynamicbefore" || command == "dynamicafter")
+        {
+            EditorPrefs.SetBool("InkUI.QA.DynamicBefore", command == "dynamicbefore");
+            return "OK dynamic mode=" + command + "; restart Play to apply";
+        }
+        if (command.StartsWith("dynamic:")) return InkDynamicQa.Run(command.Substring(8));
         if (command == "artbefore" || command == "artafter")
         {
             EditorPrefs.SetBool("InkUI.QA.AbilityArtBefore", command == "artbefore");

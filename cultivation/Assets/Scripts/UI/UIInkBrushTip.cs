@@ -8,7 +8,7 @@ public class UIInkBrushTip : MaskableGraphic
     public Image 填充;
     Sprite brush;
     public override Texture mainTexture => brush != null ? brush.texture : base.mainTexture;
-    protected override void Awake() { base.Awake(); raycastTarget = false; brush = InkUITheme.Load("Effects/fx-brush-tip"); }
+    protected override void Awake() { base.Awake(); raycastTarget = false; brush = InkUITheme.Load("Dynamic/fx-brush-tip") ?? InkUITheme.Load("Effects/fx-brush-tip"); }
     void LateUpdate()
     {
         if (填充 == null) return;
@@ -24,6 +24,14 @@ public class UIInkBrushTip : MaskableGraphic
     {
         vh.Clear(); var r = rectTransform.rect;
         var uv = brush != null ? UnityEngine.Sprites.DataUtility.GetOuterUV(brush) : new Vector4(0, 0, 1, 1);
+        if (brush != null)
+        {
+            vh.AddVert(new Vector3(r.xMin, r.yMin), color, new Vector2(uv.x, uv.y));
+            vh.AddVert(new Vector3(r.xMin, r.yMax), color, new Vector2(uv.x, uv.w));
+            vh.AddVert(new Vector3(r.xMax, r.yMax), color, new Vector2(uv.z, uv.w));
+            vh.AddVert(new Vector3(r.xMax, r.yMin), color, new Vector2(uv.z, uv.y));
+            vh.AddTriangle(0, 1, 2); vh.AddTriangle(2, 3, 0); return;
+        }
         var clear = color; clear.a = 0;
         vh.AddVert(new Vector3(r.xMin, r.yMin), color, new Vector2(uv.x, uv.y));
         vh.AddVert(new Vector3(r.xMin, r.yMax), color, new Vector2(uv.x, uv.w));
