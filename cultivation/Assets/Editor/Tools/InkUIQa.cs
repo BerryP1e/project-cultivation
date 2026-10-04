@@ -28,6 +28,7 @@ public static class InkUIQa
         if(command=="bagimport") { InkBagImport.Import(); return "OK bag assets imported; no scene writes"; }
         if(command.StartsWith("realm:")) return InkRealmQa.Run(command.Substring(6));
         if(command.StartsWith("skills:")) return InkSkillsQa.Run(command.Substring(7));
+        if(command.StartsWith("formation:")) return InkFormationQa.Run(command.Substring(10));
         if(command.StartsWith("bag:")) return InkBagQa.Run(command.Substring(4));
         if(command=="bagbefore" || command=="bagafter") { EditorPrefs.SetBool("InkUI.QA.BagBefore",command=="bagbefore"); return "OK "+command+"; restart Play"; }
         if (command == "dynamicbefore" || command == "dynamicafter")
@@ -279,12 +280,14 @@ public static class InkUIQa
             foreach (var spirits in role.GetComponentsInChildren<UIEntryList>())
                 if (spirits.source == ListSource.战阵成员)
                 {
-                    int count = spirits.container.GetComponentsInChildren<UIEntryRow>().Length;
+                    int count = spirits.inkWaterfall != null ? spirits.inkWaterfall.EntryCount : spirits.container.GetComponentsInChildren<UIEntryRow>().Length;
                     check("spirit catalog complete (" + count + "/" + data.GetSpirits().Count + ")", count == data.GetSpirits().Count);
                     ids.Clear(); foreach (var row in spirits.container.GetComponentsInChildren<UIEntryRow>()) ids.Add(row.GetInstanceID());
+                    if (spirits.inkWaterfall != null) foreach (var cell in spirits.GetComponentsInChildren<UIInkWaterfallCell>(true)) ids.Add(cell.GetInstanceID());
                     spirits.RebuildFromSource(); reuse = true;
                     foreach (var row in spirits.container.GetComponentsInChildren<UIEntryRow>()) reuse &= ids.Contains(row.GetInstanceID());
-                    check("spirit pool reuses existing rows", reuse);
+                    if (spirits.inkWaterfall != null) foreach (var cell in spirits.GetComponentsInChildren<UIInkWaterfallCell>(true)) reuse &= ids.Contains(cell.GetInstanceID());
+                    check("spirit pool reuses existing rows", reuse && (count == 0 || ids.Count > 0));
                 }
             role.SetOpen(false); check("closing role restores timeScale", Time.timeScale > 0);
         }

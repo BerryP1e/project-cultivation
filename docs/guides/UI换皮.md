@@ -1,153 +1,88 @@
-﻿# UI 水墨换皮（InkUI）
+﻿# UI 接入与维护
 
-> **管什么**：外部交付的 UI 素材（`ui-rework-2026-10-03/`）**怎么进工程、怎么设导入参数、怎么在运行时接到已有的 uGUI 上**；素材命名与九宫格 border 的对应关系；换皮的开关与回退。
-> **不管什么**：每个面板现在长什么样、由谁生成、锚点尺寸 —— 看 [UI现状原理图](../architecture/UI现状原理图.md)；素材本身要什么规格看 `ui-rework-2026-10-03/素材规格与提示词.md`；按钮素材的切图细节看 `ui-rework-2026-10-03/BUTTON-KIT.md`。
-> **本文件怎么查**：§1 素材放哪、§2 导入规则、§3 运行时怎么接、§4 节点名→素材映射表、§5 现状与没做的。
+> **管什么**：已接入 UI 的文件位置、运行方式、验证方法与下一步入口。
+> **不管什么**：业务规则见 [主动技能与神通](../architecture/主动技能与神通.md)、[战阵真灵](../architecture/战阵真灵.md)；设计原话见 [八页重制总纲](../design/UI重制/八页重制总纲.md)。
+> **本文件怎么查**：目录归属 → 当前完成范围 → 操作与验证 → 后续接手。
+> **来源**：当前 Assets 脚本与素材清点、Play 验证、用户确认的背包/境界/神通/战阵效果。
 
----
+## 1. 文件放在哪里
 
-## 0. 2026-10-03 接入更新
+所有下列路径从仓库根计算；Unity 工程是 cultivation/。文档仅放 docs/，截图和录像仅放 cultivation/screenshots/，不入库。
 
-当前已接入共享皮肤、HUD、角色八页、修炼三页、丹房，以及登记画布的通用框和按钮。下文早期盘点仍保留；**最终运行时覆盖由本节与代码确定**，不需要重新生成场景。
-
-### 0.1 全工程映射与状态入口
-
-境界绘圈最新澄清：总时长0.5秒，起笔缓慢但不停住，以0.14t+0.86t³连续加速；去掉收笔后抖动。此前1.56秒/停笔段已替换，见 [境界施工记录](../../ui-rework-2026-10-03/realm-assets-v1/施工记录.md)。
-
-2026-10-04 五项反馈修订：境界绘圈1.56秒、起笔停顿后加速；神通拖拽加独立跟手光核和24粒子短尾迹，并修复漂移重设拖影位置；被动改空白区随机避让分配，新增不移动已占星位；六槽使用UIInkSkillVolume单相机透明RT三维轨道/图标平面；I父页面自动隐藏血量、任务与纪年HUD，关闭后恢复此前状态。详见 [神通最新施工记录](../../ui-rework-2026-10-03/skills-dynamic-v1/施工记录.md)。
-
-2026-10-04 神通子页更新：`UIInkSkillsPage/UIInkConstellation/UIInkSkillStar` 运行时复用六个原槽位，左侧实时曲线与悬浮视差星位、中央完整神通瀑布流、右侧纯墨详情。支持库→槽装备、槽→槽原子换位、槽→库卸下和取消回弹。按用户最新要求取消独立生效被动栏；启用被动以青色卫星显示，悬停预览、点击沿用原列表选中，启用/停用仍走原数据。滚动条统一背包样式。无场景写入，素材及双分辨率验证见 [神通施工记录](../../ui-rework-2026-10-03/skills-dynamic-v1/施工记录.md)。背包、境界、神通已接；下一项战阵，法宝/灵阵暂不做。以下较早状态描述保留为历史记录。
-
-2026-10-04 境界子页更新：`UIInkRealmPage` 运行时接原 UIRealmBar/UIEntryInfo/UIAttributeList。墨圈居左、属性按手绘在右，圆弧以墨圈中心和半径计算；保留完整滚动、真实 Filled 进度与修为信息。属性重建复用行，隐藏页面同样识别重制组件，避免切页重复。滚动条统一 `InkUITheme.ScrollbarStyle`，使用背包墨轨与墨滑块。原图、提示词、动画实现及验证见 [境界施工记录](../../ui-rework-2026-10-03/realm-assets-v1/施工记录.md)。背包与境界已重制，神通、战阵、坐骑、外观待续；法宝/灵阵按总纲暂不做。
-
-2026-10-04 背包子页更新（以本段最新状态为准）：`UIInkBagPage/UIInkWaterfall` 在原库存列表和详情控制器上重构。开包动画结束后包裹淡出，物品区横向覆盖子页 1.5%–74%，按不同物品数与视口宽度自适应列数、大小和疏密；墨点物品标签支持牵引、形变、点击洇开。上下边缘使用逐像素墨纹渐隐，文字与图标通过 UV1 传递真实视口坐标，墨点由 InkFluid 同样渐隐。右侧为纯墨底和浅色文字，没有宣纸。`InkUITheme.Button` 统一接入 `UIInkActionButton`，后续子页操作按钮复用。其他七个子页仍待按新总纲重制。验收、原图与提示词见 [背包施工记录](../../ui-rework-2026-10-03/bag-assets-v1/施工记录.md)。
-
-2026-10-04 第三阶段开工：按用户手绘与最新澄清，**父页面没有底板**。`UIInkNavigation` 在运行时隐藏 Window 与 Sidebar 的绘制，保留八个原按钮和数据事件；八颗墨点错落排布，图标中央、名称下方。`UIInkFluid` 以 UIInkDensitySimulation 的二维密度/速度状态及 InkDensity.shader 进行持续平流与扩散，叠加游走和阻尼牵引，划过直接形变墨点、点击沿不规则墨点边缘洇开（圆环仅为较弱附加反馈）；减少动效停止全部常态运动。没有整页纸纹覆盖。14 张新透明素材、双分辨率截图与录像入口见 [墨点父导航施工记录](../../ui-rework-2026-10-03/dynamic-assets-v1/施工记录.md)。**子页内容尚未按新总纲重制，以下卡片/环槽等仍是过渡布局。** 编辑器 `inkqa:dynamicbefore/dynamicafter` 后重进 Play 可对比父导航。
-
-2026-10-04 第一阶段补图：`AbilityArt/` 已接当前真实目录 8 项神通的 8 枚图标与 8 幅详情画。`UIInkAbilityArt` 按 `神通id` 查找，仅在展示层使用，不改 `DisplayIcon` 数据字段、CSV 或 ScriptableObject。资源库/被动行/六槽/HUD/拖影共用图标查询，神通详情用独立不挡射线的 `InkAbilityArtwork`，正文让出图片区。缺图仍走原图标；无详情画保持空白。素材、提示词、alpha 统计与实机截图见 [插画接入验收](../../ui-rework-2026-10-03/ability-art-v1/接入与素材验收.md)。
-
-2026-10-04 动效接入：`UIInkMotion` 共用落笔、晕开、提笔、干笔与 Timing 表，暂停菜单提供“减少动效”。面板绘制用 `UIInkReveal/UIInkClipRect` 展开，文字只淡入；关闭快照不复制业务脚本、不占射线，业务立即关闭。`UIInkNumber/UIInkFill` 只插值显示，冷却与编号排除；列表复用刷新不重启整库入场。文件桥 `inkmotion:record/status` 录制六类动作慢放；运行时墨晕优先读取 `Effects/fx-ink-blot`，缺图使用柔边几何。素底版与飞白尚缺，§10 统一纸纹未接，不能把本轮写成整套动效/材质全部完成。
-
-| 控制器 / 节点 | 素材 / 行为 |
-|---|---|
-| `UIInkSkin` / `Window` | 1780×970 布局容器，最新父页面不绘制底板；旧幕布仅在 dynamicbefore 对照模式保留 |
-| `UIInkNavigation` / `Tab_*` | `Dynamic/nav-ink-blot-1..8` 独立墨点；图标中央、名称下方，形变仅作用于绘制层；原 Button 切页，局部牵引 ≤8px；持续游走 ≤3px |
-| `KnownList` / `PassiveList` | 三列 `Parts/ability-library-card` / 独立被动行；均有常显竖向滚动条 |
-| `UIActiveSkillBar` / `UIActiveSkillSlot` | active-ring / slot-empty、slot-filled；编号固定1–6，数据共用 |
-| `UIEntryList` / `UIEntryRow` | 池化复用；row-normal/hover/selected；逻辑选中与键盘焦点分别处理 |
-| 外观列表动态行 | row-normal，装备按钮按真实已装备状态禁用 |
-| `UIInkHudSkin` | ink-ring、slot-empty、bar-track、bar-fill、dialog-scroll；保留原数值、冷却与悬停 |
-| `CultivationCanvas` 主面板 / 功法信息 / 功法行 | cultivation-frame / panel-inner / gongfa-card；转修滚动列表 |
-| `AlchemyCanvas` 内容框 / 成品预览底 | panel-sheet / furnace-stage；成品透明点击区不遮住丹炉 |
-| 丹房信息板底、丹方板底、背包板底 | panel-inner；丹方行 recipe-row 三态；材料格 empty/selected/filled/disabled 来自实际摆料与库存 |
-| `灵田地块界面` / 面板 | plot-tag，Read/Write + alpha hit；保留种植、收获、挪动、升级业务 |
-| `灵田总览` / 面板 | panel-sheet，清单滚动 |
-| `功德堂Canvas` / 功德堂 | panel-sheet，兑换列表可滚动；关闭同步隐藏幕布 |
-| `对话界面` / 对话框、名字底、回答按钮 | dialog-scroll、dialog-nameplate、dialog-choice 三态；立绘优先原路径，再按同 id 查 `Portraits/portrait-<id>` |
-| `TowerCanvas` / 塔层HUD、按钮 | tower-floor-bar、共用按钮；倒计时和转层仍由原控制器负责 |
-| `传送面板` / 底板 | teleport-plate 九宫格，沿用按选项数确定高度 |
-| `ToastCanvas` / 底 | toast |
-| `PauseMenuCanvas`、`DeathScreenCanvas`、`起名界面` / 标题 | title-plaque，文字独立；保留遮罩原透明度与既有保存/复活/输入业务 |
-| `MenuCanvas` / SavePanel、Slot* | panel-sheet、row-normal，存档操作按钮用共用皮肤 |
-| `QuestGuideCanvas` / 主线追踪 | dialog-scroll；纪年右上行与设施提示底用 toast；原排序不变 |
-
-共有 95 张 PNG，包括 Parts、Skeleton、BigPieces。重跑 `Cultivation/Import InkUI Sprites` 会设置 Sprite/Single/FullRect 和保守 border。原 PNG 画布留白很大，直接铺图会缩小可见装饰；`InkUITheme` 从 `sprite-rects.json` 读取实际 alpha 边界，构造运行时裁边 Sprite，并约束 border。**不是把白底截图当透明件**，也不把标签字和图标烘进底板。
-
-按钮由 `InkUITheme.Button` 设置三材质四态，尊重 `interactable`；透明点击关闭区 `Dim` / 幕布不套按钮图。`Image.Type.Filled` 在换皮时保留，不能被统一改成 Sliced。`InkUIHitShape` 给异形槽与按钮排除透明四角，卡片拖影挂在根 Canvas 独立层、关闭 raycast，不参与列表裁剪。
-
-### 0.2 复现与回退
-
-从仓库根执行 `ui-rework-2026-10-03/capture-ui.ps1 -Group 角色 -Phase 后 -Resolution 1280x720 -Prepare`。分组还有设施（village）、宗门、塔、标题。脚本退出 Play、选择真实 GameView 固定分辨率、重开场景后再进 Play，等待实时帧刷新后使用 `ScreenCapture`；不使用图片缩放来模拟低分辨率。`inkqa:seed` 仅为截图临时授予目录中真实技能、功法、丹方，**不保存验收状态**，不用于正常游玩。
-
-编辑器回退：`inkqa:before` 设置编辑器验收开关，**重新进入 Play** 才得到生成器基础布局；`inkqa:after` 后重新进 Play 恢复新皮肤。已经换过图时禁用组件不能自动还原原 Sprite。构建版本默认启用新皮肤，不读取编辑器验收开关。前图属于“关闭运行时覆盖的基础布局”，不是从历史 commit 启动的旧版本录像。
-
-`inkqa:validate` 验证共享六槽、顺时针编号、占用位覆盖、空槽点选、被动禁拖、列表池化、境界填充、异形命中与关闭后的时间恢复。场景文件差异必须保持 0；禁止运行生成器并保存。
-
-本轮交互检查 26 项通过。根目录 `ui-rework-2026-10-03/runtime-review.html` 可切换 30 个界面或状态及两种分辨率查看前后对照；`verify-captures.ps1` 逐个核对 PNG 头的真实像素尺寸。地块纸签为 640×740，内容另加内边距；缺立绘时透明，镇妖塔暗幕文字保留明亮颜色。宗门场景没有对话来源，已跳过这项。地块三态由真实作物定义构造临时上下文，仅验证 UI，不证明村庄允许摆地。
-
-### 0.3 仍待完成的视觉和业务验证
-
-当前九宫格大底和导航标签与用户意向图存在差距；异形幕布、选中标签外突、内衬山水是下一轮视觉调整。缺失能力插画继续留空，不修改数据补假内容。传送等级置灰仍是既有死路径（未接 `刷新准入`）。种植全周期、移动放置合法性、炼制成败扣料、贡献购买、真实存档/复活和跨场景任务应另做流程回归；只截图不等于这些流程已验证。
-
-## 1. 素材放哪
-
-```
-Assets/resources/UI/InkUI/            ← ⚠️ 必须是 `resources`（小写那个）才能 Resources.Load
-├─ Buttons/           按钮 3 材质 × 4 态（520×157，1× 交付，border 120/28/120/28）
-├─ SkillsPage/        神通页：common / navigation / skills / status
-├─ CultivationAlchemy/ 丹房 + 修炼页
-├─ CommonPanels/      灵田纸签 / 对话 / Toast / 塔层条 / 传送板 / 题匾
-├─ Icons/             8 个菜单图标（256×256）
-└─ Portraits/         8 张对话立绘（1144×1614）
-```
-95 张 PNG（包括 Parts / Skeleton / BigPieces），实际总量以目录为准。**大图在导入时压 `CompressedHQ`（BC7）**，小件（图标/按钮/槽位/徽章/滚动条）留不压缩。
-
-## 2. 导入规则（**别手填**）
-
-菜单 **`修仙 / UI / 导入 InkUI 素材（Sprite + 九宫格）`**（`Assets/Editor/Tools/InkUI素材导入.cs`）：
-
-| 项 | 值 | 为什么 |
+| 内容 | 位置 | 用途 |
 |---|---|---|
-| Texture Type | `Sprite (2D and UI)` + `Single` | uGUI 用 |
-| **Mesh Type** | **`FullRect`** | 九宫格 + 异形命中都要它（`Tight` 会裁掉透明边） |
-| Pixels Per Unit | 100 | 与全工程一致 |
-| **Pivot** | **Center (0.5,0.5)** | 面板/槽位都按中心摆 |
-| Alpha Is Transparency | 开 | 异形边缘不发黑 |
-| Mip Maps / Wrap | **关 / Clamp** | UI 不做缩小采样、不重复贴图 |
-| Compression | 大图 `CompressedHQ`、小件 `Uncompressed` | 见 §1 |
-| **Sprite Border** | 按各包 `manifest.json` 的 `nineSlice` **× 2** | 素材是 **2× 交付**，manifest 写的是 1× |
+| 运行时 UI 脚本 | cultivation/Assets/Scripts/UI/ | UIInkSkin、父导航、子页、共用动效及原业务控制器 |
+| UI Shader | cultivation/Assets/Shaders/ | 墨密度/边缘/裁剪、神通与战阵预览 |
+| Unity 导入与验收脚本 | cultivation/Assets/Editor/Tools/ | InkUI素材导入、InkUIQa、各子页 QA |
+| 游戏实际读取的图片 | cultivation/Assets/resources/UI/InkUI/ | Resources.Load 的 UI/InkUI 根；保持原路径及 GUID |
+| 制作原图、切图结果、原型、清单、旧素材包 | cultivation/Assets/UIResources/InkUI/Authoring/ | 制作来源，不在 Resources 中，不会仅因放在此处就进入游戏构建 |
+| Node/PowerShell 制作与网页预览工具 | cultivation/Assets/Editor/Tools/InkUIAuthoring/ | 编辑器侧制作工具；Backups~/ 保存旧脚本副本且不编译 |
+| 用户设计要求 | [design/UI重制/](../design/UI重制/) | 八页总纲及施工单；最新用户澄清见本页完成范围 |
+| 素材规格与提示词 | [reference/UI素材/](../reference/UI素材/) | 素材规格与第二轮提示词 |
+| 原始制作记录 | [ai/archive/UI重制/](../ai/archive/UI重制/) | 历史来源，只读；不能作为当前施工状态 |
 
-工具会**逐张打日志**（尺寸 + border），并且 **border 超过图的一半就自动夹取 + 告警**（填大了九宫格会直接坏）。
-> `bar-fill` / `icon-*` / `portrait-*` / `active-ring` / `slot-*` / `ink-ring` / `furnace-stage` **不加 border**（它们不是九宫格）。
+原根目录 ui-rework-2026-10-03/ 的制作文件已迁入上述目录。314 个文件迁移前后逐件校验 SHA-256；另保留旧工具所用的42张原始生成输入，制作区合计248张PNG；映射在工具目录的 relocation-manifest.json。运行时资源不迁移，避免破坏 Resources 路径、序列化引用和九宫格设置。源素材与运行时成品分开，不要把源包直接覆盖运行时资源。
 
-⚠️ **2× 素材在 Image 上要配倍率**：`Image.type = Sliced` 时 `pixelsPerUnitMultiplier = 2`（本工程 `UIInkSkin.九宫倍率`），
-按钮包是 1× 交付、建议显示高 48–64 ⇒ 用 `2.6`（`UIInkSkin.按钮倍率`）。
+## 2. 当前完成范围
 
-## 3. 运行时怎么接（**不改场景、不改生成器**）
+父页面仍包含背包、境界、神通、法宝、灵阵、战阵、坐骑、外观八个子页。丹房独立；闭关修炼、境界突破、转修功法属于另一个父页面。运行时接入复用原业务数据与开关，不重跑生成器、不保存场景。
 
-角色面板是 `CharacterPanelBuilder` **在编辑器里生成、然后序列化进 5 个游玩场景**的；
-重新生成 + 保存场景会把运行时 UI 列表一起重排（**踩坑 A8：写脏过 +19787 行**）。所以这一版走：
-
-```
-场景自举.补HUD层()  →  给 CharacterUI 补一个 UIInkSkin（和 功德堂兑换 同一条路子）
-UIInkSkin.Start()   →  按**节点名**把 Image.sprite / Button 四态换掉
-```
-
-`Assets/Scripts/UI/UIInkSkin.cs`，只做三件事：**换图**（含 `type` 与倍率）、**换按钮**（`SpriteSwap` + 三档材质）、
-**通过 `UI神通页重排` 调整运行时布局，保留原数据关系**。分组开关：`换面板底 / 换页签 / 换列表行 / 换按钮 / 换进度条 / 换滚动条 / 换字色`，总开关 `启用`。回退方式以 §0.2 为准。
-
-> **字色**：纸底上原来的金/白字看不清 ⇒ 把"偏亮的字"统一改成墨色 `#303D37` 并关掉黑 `Outline`（只改亮字，深色字不动）。
-
-## 4. 节点名 → 素材映射（第一版覆盖到的）
-
-| 节点名（生成器里的中文串） | 素材 | 类型 |
+| 页面 | 已接入行为 | 边界与后续 |
 |---|---|---|
-| `Window` | `SkillsPage/common/panel-sheet` | Sliced ×2 |
-| `Sidebar` | `SkillsPage/navigation/nav-rail` | Sliced ×2 |
-| `Tab_背包` … `Tab_外观` | `SkillsPage/navigation/tab-normal` | Sliced ×2 |
-| `ActiveSkillBar` | `SkillsPage/skills/active-ring` | Simple（**整图、中央透明**） |
-| `Slot_0`…`Slot_5` | `SkillsPage/skills/slot-empty` | Simple（异形）；Icon 只取数据图标 |
-| `Row` / `行_*` / `丹方*` / `背包行*` | `SkillsPage/skills/row-normal` | Sliced ×2 |
-| `BagGrid`/`Info`/`ItemDesc`/`AttrList`/`GongFaShow`/`RealmShow`/`PassiveList`/`KnownList`/`MountShow`/`MountList`/`AppearanceShow`/`FormationGrid`/`SpiritList`/`OwnedList`/`ArrayList`/`GridArea` | `SkillsPage/common/panel-inner` | Sliced ×2 |
-| `Info`（**在 `Page_神通` 下**时） | `SkillsPage/skills/panel-detail` | Sliced ×2 |
-| `Track` / `进度底` / `*条底` | `SkillsPage/status/bar-track` | Sliced ×2 |
-| `Fill` / `*进度填充` | `SkillsPage/status/bar-fill` | **Filled**（保持原 type） |
-| `Scrollbar` 及其 `Handle` | `SkillsPage/status/scroll-track` / `scroll-thumb` | Sliced ×2 |
-| 任意 `Button`（按名字判三档） | `Buttons/{ivory,jade,cinnabar}-{normal,hover,pressed,disabled}` | Sliced，`SpriteSwap` |
+| 父导航 | 无父底板，八枚独立墨点；持续流动、局部牵引、标签边缘晕开；点击墨晕保留 | 鼠标划过的方向贴图水痕已取消；I 打开隐藏血量、任务、纪年 HUD，关闭恢复原状态 |
+| 背包 | 包裹开场后退场；物品瀑布流占满内容区；按数量调整尺寸，较圆的墨底，图标中间、文字靠下；墨边消隐、滚轮与滚动条；纯墨详情与墨点按钮 | 复用原选择/使用回调；不得恢复宣纸详情底或常驻大包裹 |
+| 境界 | 墨圈 0.5 秒慢起笔后连续加速；右侧圆弧属性对齐墨圈，整体左移；完整属性滚动与纯墨下栏 | 无中途停笔；属性位置按手绘图在右侧 |
+| 神通 | 六槽立体轨道、悬浮/视差；双向拖拽装备/换位/卸下；跟手光核/粒子；完整滚动神通库；纯墨详情；启用被动在空白区随机占位、避让槽位与其他星点，悬停说明、点击选中 | 无独立“生效中的被动神通”栏；同一主动神通最多占一个槽，同 ID 的不同 SO 也去重；旧重复状态保留最前槽 |
+| 战阵 | 透视九宫格与真实模型深度遮挡；右侧真灵为可滚动的柔边墨云、鼠标牵引、拖动拉伸；上阵落笔显形；下方纯墨信息与上/下阵 | 中央玩家格不可放真灵，最多 5 个；模型为烘焙姿态，尚非连续 idle 动画；不是战斗场景 |
+| 法宝、灵阵、坐骑、外观 | 保留基础换皮及原功能 | 尚未完成新的逐页互动重制；法宝/灵阵按用户要求暂缓 |
+| 修炼、丹房、灵田及其他面板 | 基础换皮与共用动效已接 | 不代表八页重制与全套材质统一全部完成 |
 
-**三档判定**（`UIInkSkin.套按钮`）：名字含 `破境/转修/重生/开炉/开炼/死亡/卸下` → **朱砂**；
-含 `装备/修炼/闭关/突破/启用/确认/兑换/使用/收获/播种/一键` → **玉绿**；其余 → **素纸**。
+滚动条统一复用背包样式。图标、底、边框、文字、按钮分件；运行时墨云和部分交互由网格/Shader 生成，不需要为每项重复制作贴图。共用动效用 unscaled 时间，暂停菜单有“减少动效”。
 
-> ⚠️ **两个坑**：
-> ① 生成器给底板/页签设了**深色 `color`**（如 `Window` 0.13 灰）—— 换 sprite 时必须把 `color` **重置成白色**，
->    否则纸白 × 0.13 = 还是黑的（第一版就是这样，看着"没换"）；
-> ② 换 sprite **不能碰 `Image.type`**：`Fill` 那条是 `Filled`，改成 Simple 就没有填充了。
+## 3. 怎么运行与验证
 
-## 5. 早期盘点与当前限制
+正常打开工程、进 Play、按 I 即可；场景自举补 UIInkSkin，由它接入父导航与 UIInkBagPage / UIInkRealmPage / UIInkSkillsPage / UIInkFormationPage。基准生成器布局只用于理解原节点关系，不代表当前运行时排版。
 
-**已生效（2026-10-03 实测，Sect）**：面板底 22 / 页签 8 / 列表行 45 / 按钮 69 / 进度条 2 / 滚动条 3 / 改字色 18；
-截图 `screenshots/换皮_神通页4.png`。
+从仓库根使用已有文件桥：
 
-上面的数量属于第一轮截图，不能作为最终验收数字。六槽编号、通高详情、资源库卡片、逻辑选中态、HUD 与其他登记画布的接入现已补充，详见 §0。
+~~~powershell
+. './.dsh/uni.ps1'
+Uni 'play:off' 20
+Uni 'refresh' 30
+# 等待编译完成后再进 Play；同时检查 Library/Bee/tundra.log.json 的编译结果。
+Uni 'play:on' 25
+Uni 'inkqa:seed' 20
+Uni 'screen:1920x1080' 20
+Uni 'inkqa:role:5' 20
+Uni 'inkqa:formation:seed' 20
+Uni 'inkqa:formation:validate' 30
+Uni 'inkqa:validate' 30
+Uni 'console:errors' 20
+Uni 'play:off' 20
+~~~
 
-当前限制仍为 §0.3 所列视觉差距、缺失能力插画、传送等级旧路径和未完成的完整业务回归。截图中的临时目录与灵田三状态只用于验收，退出 Play 后不保存；QA 会停止被动攻击组件和主线演出，避免截图时攻击 NPC 或触发剧情。
+role 的页号为背包0、境界1、神通2、法宝3、灵阵4、战阵5、坐骑6、外观7。独立验证命令为 inkqa:bag:validate、inkqa:realm:validate、inkqa:skills:validate、inkqa:formation:validate。再以 1280x720 验证排版、滚动和拖拽；检查返回的 Failures，而不是只看脚本是否执行。
+
+验收数据只在 Play 使用，不调用保存场景或存档。战阵 validate 会保存并恢复站位与选择；seed 刻意放入临时验收状态，退出 Play 恢复磁盘场景。截图命令 shot2:screenshots/文件名.png 异步保存，等保存完成后再切页。各页前后图及慢放录像留在 screenshots/。
+
+已量测的双分辨率检查：背包22项、境界16项、神通43项、战阵16项；战阵实际真灵库231项，240项压力数据池只创建16个可见单元。具体校验以当前 QA 代码返回为准。神通预览是三维轨道和图标平面，战阵预览才是 NPC 模型；不要把它们描述成同一种完整角色动画。
+
+## 4. 素材导入与制作工具
+
+现用 Sprite 已导入，日常运行无需重新导入。新增运行时成品放 resources/UI/InkUI 对应包；用“修仙 / UI / 导入 InkUI 素材（Sprite + 九宫格）”时检查日志与 border，尤其手填的 Parts / Skeleton / BigPieces。该菜单可覆盖导入参数，不要为了归档重跑它。
+
+换 sprite 时深色 Image.color 复位白；进度填充保留 Filled，不能改 Simple；2× 素材 pixelsPerUnitMultiplier=2，按钮包1×按现用2.6。纯边框与有底贴图不可混用，禁止把文本、图标与选中框烘焙成不可复用的大图。细节见 [素材规格](../reference/UI素材/素材规格与提示词.md)。
+
+网页原型入口在工具目录 index.html（早期意向预览，不是当前游戏画面）。paths.cjs / paths.ps1 统一定位 Assets 制作源和工程根。Node 工具需要 sharp、jszip、playwright；可通过 INKUI_NODE_MODULES 指定依赖目录，正常游戏运行不需要 Node。旧 build-spec 使用 Authoring/GeneratedSources 中按原生成文件名保存的42张输入，也可通过 INKUI_GENERATED_SOURCE 指定其他来源；缺少输入不能把导出成品当作原图二次生成。ability-art-v1、dynamic-assets-v1 的导出脚本已改为读取包内 source/，不依赖个人生成缓存。截图脚本从仓库根调用，输出仍在 screenshots/。
+
+可从仓库根运行 Node 工具 cultivation/Assets/Editor/Tools/InkUIAuthoring/verify-organization.cjs；它只读检查文件校验和、脚本语法、预览路径、现状文档链接及生成来源，结果写入忽略的 screenshots/InkUI-organization-verification.json。
+
+## 5. 接手顺序与禁忌
+
+先读本页当前状态，再读 [八页重制总纲](../design/UI重制/八页重制总纲.md) 的原话对照及对应草图。草图在 Authoring/screen-studies/mockups-v2/；遵循用户最后澄清：无父底板、纯墨详情、被动随机星位、统一背包滚动条。下一未完成页由用户确定，不把保留基础皮肤的页面写成重制完成。
+
+先复用已有控制器、数据入口与 QA；不要为了换皮重跑生成器或保存五个游玩场景。绝不能 git checkout 场景目录。配置表必须导入时使用“修仙 / 工具 / 安全导入配置表（不动场景）”，相关坑查 [踩坑总库](../ai/踩坑总库.md)。战阵隐藏世界 Renderer 时必须恢复原 enabled，隔离预览模型不能携带 NPC AI/碰撞/音频；MaterialPropertyBlock 在运行初始化时构造，不能在 MonoBehaviour 字段初始化器调用 Unity API。
+
+文档按 [INDEX 的文档规范](../INDEX.md) 分类：当前机制写 architecture，步骤写 guides，用户要求写 design，规格写 reference，坑写唯一踩坑库；历史记录只读。新增/移动说明同步 INDEX 的目录与任务表及 PROGRESS。禁止往 docs 放素材/脚本，也禁止向现状指南不断追加按日期排列的施工流水。
+
+提交前检查场景与原材质是否混入，明确列出本次文件。本地 commit；未经用户单独指令不 push。

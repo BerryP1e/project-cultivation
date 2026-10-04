@@ -1,45 +1,25 @@
 ﻿# UI现状原理图
 
 > **管什么**：当前工程里**游戏 UI 的真实实现** —— 每个面板谁创建它、运行时 uGUI 层级长什么样、关键数值（锚点 / 尺寸 / 位置 / 字号 / 颜色）、每块图是**纯色 Image** 还是贴图 / 九宫格、是否需要 `fillAmount`、以及开关与层级；末尾给出一份**素材接口清单**，供换皮 / 重构时按位置补 sprite。
-> **不管什么**：HUD 的冷却与悬停细节看 [游戏HUD](游戏HUD.md)；任务与对话的数据、剧情、状态机看 [任务系统](../design/任务系统.md) 与 [对话系统](../design/对话系统.md)；存档逻辑看 [存档系统](../design/存档系统.md)；丹方与材料规则看 [炼丹](../guides/炼丹.md)；地块与作物规则看 [灵田](../guides/灵田.md)；宗门贡献来源看 [宗门贡献与兑换](../guides/宗门贡献与兑换.md)；塔的层数与掉落看 [镇妖塔](../guides/镇妖塔.md)；外观解锁看 [外观系统说明](../guides/外观系统说明.md)；交互按键规矩看 [交互系统](../design/交互系统.md)；引擎 / 管线 / 字体等基本盘看 [系统总览](系统总览.md)；外部视觉方案（三套皮肤、按钮素材包）看 `ui-rework-2026-10-03/README.md` 与 `ui-rework-2026-10-03/BUTTON-KIT.md`。
+> **不管什么**：HUD 的冷却与悬停细节看 [游戏HUD](游戏HUD.md)；任务与对话的数据、剧情、状态机看 [任务系统](../design/任务系统.md) 与 [对话系统](../design/对话系统.md)；存档逻辑看 [存档系统](../design/存档系统.md)；丹方与材料规则看 [炼丹](../guides/炼丹.md)；地块与作物规则看 [灵田](../guides/灵田.md)；宗门贡献来源看 [宗门贡献与兑换](../guides/宗门贡献与兑换.md)；塔的层数与掉落看 [镇妖塔](../guides/镇妖塔.md)；外观解锁看 [外观系统说明](../guides/外观系统说明.md)；交互按键规矩看 [交互系统](../design/交互系统.md)；引擎 / 管线 / 字体等基本盘看 [系统总览](系统总览.md)；早期视觉方案见 [UI 制作归档](../ai/archive/UI重制/README.md)，当前接入操作见 [UI换皮](../guides/UI换皮.md)。
 > **本文件怎么查**：§1 全局（三条生产线 / Canvas 规格 / `sortingOrder` 总表 / 字体与色板 / ESC 协调器）｜§2 HUD｜§3 角色面板｜§4 修炼页｜§5 丹房｜§6 灵田｜§7 功德堂｜§8 任务追踪｜§9 对话｜§10 暂停·主菜单·身陨·起名｜§11 黑幕字幕｜§12 Toast｜§13 镇妖塔｜§14 传送｜§15 纪年 HUD｜**§16 素材接口清单**｜§17 换皮工作量排序与未确认项。
 > **来源**：2026-10-03 之后对 `cultivation/Assets` 的**只读**盘点（逐文件读 `.cs` + 对 `.scene` / `.prefab` 做 grep）。行号是写入本文件时的代码行号；**本文件不改任何代码、场景、Prefab**。
 
 ---
 
-## 0. 2026-10-03 运行时接入后的现状
+## 0. 当前接入层与阅读边界
 
-2026-10-04 最新修订：UIInkSkillVolume在隔离舞台以单个正交相机、透明RGBA RenderTexture、三维环面及SpriteRenderer图标平面替代UI假倾斜，30Hz且隐藏页停止渲染。UIInkDragSpark光核/粒子在拖影外跟随，UIDragContext.End统一清理；旧墨漂移只动拖影子图层。被动星位空白区随机分配、避开六槽/文字/其他启用星点。CharacterPanelUI通过缓存CanvasGroup三项状态隐藏HudCanvas、QuestGuideCanvas、ChronicleCanvas，关闭/禁用恢复，不禁用HUD业务更新。境界绘圈按最新澄清改为0.5秒，慢起笔、连续加速，无停笔段及收笔抖动。其余数据关系不变。
+原编辑器生成器提供基础节点，运行时 UIInkSkin 接入换皮和逐页布局。父导航不绘制父底板；已重制背包、境界、神通、战阵。完整文件地图、当前边界、验证入口见 [UI 接入与维护](../guides/UI换皮.md)。下文生成器的节点名、原始锚点及素材接口是基准结构，运行时子页控制器会覆盖布局，不应据此重跑生成器。
 
-2026-10-04 神通最新结构：`UIInkSkillsPage` 接原六槽和已悟列表，实时曲线连接视觉中心，悬浮图标与固定命中分离；库→槽用原EquipToSlot，槽→槽用UIPanelData.交换主动槽（一次Changed、保留双方），槽→库ClearSlot、保留已学神通。原独立PassiveList隐藏；仅启用被动生成青色卫星，悬停说明、点击Select、右侧原启用/停用回调，卫星不占快捷键。所有神通仍在可滚动虚拟瀑布流内；纯墨详情、无父底板。详见 [神通施工记录](../../ui-rework-2026-10-03/skills-dynamic-v1/施工记录.md)。
+| 接入 | 控制器 | 当前结构 |
+|---|---|---|
+| 父导航 | UIInkNavigation / UIInkDensity | 独立墨点与标签自身流动；I 打开时缓存并隐藏 HUD，关闭恢复 |
+| 背包 | UIInkBagPage / UIInkWaterfall | 包裹开场后全区瀑布流、数量自适应、纯墨详情、墨边裁剪 |
+| 境界 | UIInkRealmPage | 0.5秒连续加速墨圈，右侧圆弧属性、背包样式滚动条 |
+| 神通 | UIInkSkillsPage / UIInkSkillVolume / UIInkDragSpark | 六槽三维轨道和图标平面、双向拖拽、随机被动星点与详情 |
+| 战阵 | UIInkFormationPage / UIInkSpiritCloud | 隔离透视相机、模型烘焙姿态与九宫格，云形真灵列表 |
 
-2026-10-04 境界最新状态：UIInkRealmPage 挂在原第二子页，无父底板；左侧墨圈显示境界/功法，右侧属性按实际墨圈圆弧排列、完整滚动，下方纯墨底显示原修为信息与实际进度。仅运行时重排，不改场景及修炼逻辑。UIAttributeList 在该页复用对象，并兼容隐藏页刷新；滚动条与背包共用 InkUITheme.ScrollbarStyle。详见 [境界施工记录](../../ui-rework-2026-10-03/realm-assets-v1/施工记录.md)。
-
-2026-10-04 背包最新结构：原 `Page_背包` 内的 `UIEntryList/UIEntryInfo` 保留库存、选择与使用逻辑；`UIInkBagPage` 改为一次性开包动画 + 横向扩大的自适应循环物品流 + 独立纯墨详情底。`UIInkWaterfall` 只维护可见物品池，按库存聚合数量，少量库存不循环重复，按不同物品数自动调整大小和列数。墨点物品使用轻量 `UIInkFluid`，上下边缘按 UV1 视口坐标逐像素墨纹渐隐。通用操作按钮使用同源墨点反馈，固定命中与原回调不动。详情没有宣纸，缺图不再显示品阶色方块。其他子页仍为旧过渡布局。详见 [背包施工记录](../../ui-rework-2026-10-03/bag-assets-v1/施工记录.md)。
-
-2026-10-04 第三阶段父页面：用户确认原型**没有父底板**。`UIInkNavigation` 只保留 Window 布局容器，隐藏父幕布与 Sidebar 图片；左侧八颗大小形状各异的墨点直接叠在场景上，图标居中、名称在下，仍通过原 Button/CharacterPanelUI 切页。`UIInkFluid` 仅移动墨点与图标绘制，按钮命中位置、文字尺寸不变；有状态二维墨密度流动、局部牵引、划过墨点本体形变和沿墨点边缘洇开（圆环仅为较弱附加反馈）支持暂停与减少动效。下述子页结构仍是旧接入的过渡版本。详见 [父导航施工记录](../../ui-rework-2026-10-03/dynamic-assets-v1/施工记录.md)。
-
-2026-10-04 第一阶段补图：当前 8 项神通的卡片、被动行、共享六槽、HUD 与拖影共用 `UIInkAbilityArt.Icon`；详情增加独立透明 `InkAbilityArtwork`，对应 8 幅水墨插画，正文下移让出图片区域，按钮入口不变。图标与画按真实神通 id 查找，原表和 `DivineAbilityDefinition.图标` 不修改。换页/清空选择会更新或隐藏旧画，缺图仍保留原有回退。槽名称移到玉符边缘下方，卡片操作区避开底部装饰。见 [素材与接入验收](../../ui-rework-2026-10-03/ability-art-v1/接入与素材验收.md)。
-
-下文 §1–17 保留原生成器与序列化布局的盘点，作为接线和回退依据。**游玩画面会再经过运行时换皮；最终布局以本节为准**，没有重新生成或保存五个游玩场景。
-
-- `场景自举` 给角色页补 `UIInkSkin`，给 HUD 补 `UIInkHudSkin`。`InkUIRuntimeSkin` 在已登记画布上处理运行时新节点；动态列表、丹房材料与按钮的状态由各原控制器刷新。
-- 角色父窗口为 **1780×970**，左导航保持八页原顺序。三个页面的主动栏读同一份 `UIPanelData.主动技能`，六槽按索引顺时针 1–6。神通资源库左下三列卡片，生效被动中下独立列表，右侧通高详情；二者都可滚动，被动仍通过原入口启停。
-- 修炼三页仍属于 `CultivationCanvas`；转修列表改为滚动内容，不再按固定窗口高度截断功法。丹房独立，仍为一主材四辅材，点击成品区域返回丹方，材料扣除与结算由 `炼丹炉` 负责。
-- 所有角色 `ScrollRect` 和登记画布里的竖向列表使用常显滚动条；空列表也保留轨道。战阵使用行对象池。本机目录实际为 **231** 项，施工单的 240 是容量要求，不能为了凑数补假条目。
-- 境界 `Fill` 补上 Sprite 并保留 `Filled`；HUD 冷却保留 `Filled/Vertical/Top`。异形槽的几何命中允许中心、排除四角；地块纸签使用实际透明通道命中。
-- 外观继续使用真实 `RawImage`/隔离相机预览，补 `UnscaledTime/AlwaysAnimate`；坐骑原来已有此设置，现在两种预览共用碰撞与 NPC 行为组件剥离。没有修改 3D 模型和能力数据表。
-- 功德堂改为滚动条目，展示真实价格和兑换后余额。修复其关闭后幕布残留，并在关闭时登记 ESC；业务仍走原子扣贡献入口。
-- 原 `sortingOrder` 保留。传送板既有值 **500** 保留；等级置灰仍为无人调用的旧路径，不把它描述成已接通。
-- 地块纸签运行时为 **640×740**，子内容独立加内边距，保留四种操作；对话按真实 id 查找立绘，缺图时透明，不显示黄色占位。镇妖塔暗幕文字保持原明亮颜色。
-
-素材从 `Assets/resources/UI/InkUI` 读取，95 张 PNG 已导入为 Sprite。`sprite-rects.json` 记录透明留白边界，`InkUITheme.Load` 构造裁去留白的运行时 Sprite，原 PNG 不变。共用底、边框、按钮、文字、图标仍各自独立。
-
-2026-10-04 增加共用 `UIInkMotion`、`UIInkPulse` 及显示层数值/填充/网格裁剪组件：纸面左侧固定展开，子内容一起裁出，文字不缩放；角色及设施的关闭入口仍立即关闭并还原时间，短暂离场 Canvas 只复制可见 Image/Text，无射线。暂停菜单新增“减少动效”偏好开关；动画使用 unscaled 时间，统一六元素预算，隐藏页面会释放墨晕名额。原六槽 `InkUIHoverMotion` 停用，由共用卡片/槽位动效负责。纸纹、飞白与素底素材统一尚未完成。
-
-**视觉未定稿**：目前大幕布仍是九宫格矩形。2026-10-04 导航修正为暗墨立板、透明未选项和独立外突素纸选中牌；菜单图标由 30px 增至 44px，保持原色，浅色字只用于暗底未选项。图标仍带繁复装饰，素材风格统一尚未完成。能力大图和方形插画未交付：不新增占位画，图标继续取真实 `DisplayIcon`，缺失时保留旧品阶色块。
-
-验收入口：`.dsh` 文件桥 `inkqa:<命令>`，截图脚本在项目根 `ui-rework-2026-10-03/capture-ui.ps1`。只在 Play 中构造验收状态，不保存场景或存档；退出 Play 回到磁盘场景。截图位置为 `cultivation/screenshots/UI_<界面>_前/后_<分辨率>.png`，截图与日志不入库。详细映射及复现步骤见 [UI换皮](../guides/UI换皮.md)。
+资源读取 UI/InkUI，制作源另放 Assets/UIResources/InkUI/Authoring。共用动效、显示数值插值和裁剪仍由 UIInkMotion 等组件负责，业务入口不改。未重制页保留基础皮肤；材质统一和剩余子页仍需验收，不能标为整套完成。
 
 ## 1. 全局：UI 是怎么搭出来的
 
@@ -314,7 +294,7 @@ CharacterUI                     [Canvas, sortingOrder=0→2450]  (CharacterPanel
 | 格子底色三态 | 玩家格 `玩家格色`(0.32,0.38,0.46) / 已满 `已满色`(0.45,0.42,0.42) / 空位待放 (0.55,0.88,0.55) / 常态 `ColorSlot` | `UISpiritSlot.cs:32-38`, `:89-94` |
 
 **境界展示 `RealmShow`**（`:518-564`）：`RealmName` 30 号（anchor y 0.62~1）、`Track` 高 16（anchor y=0.40，offset(20,-8)~(-20,8)，色 0.92×3）、`Fill` = **Filled / Horizontal / fillAmount**（`:562-564`，色 `ColorAccent`）、`Percent` 20 号、`Exp` 18 号（色 0.3×3）。`UIRealmBar` 还会自己再建一个多行信息区（`UIRealmBar.cs:34-35`）。
-> ⚠️ **换皮必看**：`Fill` 的 `sprite` 是 **null**（`:535`），而工程别处反复记录「`sprite == null` 时 `fillAmount` 被忽略」（见 §1.5）。也就是说这条境界进度条**大概率不显示填充**（未实机验证）。给它一张 sprite 即可顺手修好 —— 这属于换皮时必须一起处理的一处。
+> 当前运行时 UIInkSkin 为填充段补 Sprite，并保持 Filled/Horizontal；已通过填充量验证。以下 null 描述仅指生成器基准，不能据此认定当前不显示。
 
 **属性列表 `AttrList`**（`UIAttributeList`）：`rowHeight = 26`、`fontSize = 18`（`UIAttributeList.cs:25`, `:28`），行内 `Name` MiddleLeft / `Value` MiddleRight（`:77`, `:83`）。
 
@@ -869,7 +849,7 @@ ChronicleCanvas                 [Canvas 1520, 不吃射线]
 | 角色面板 | `ActiveSkillBar/Slot_0-5`（84×84 六边形排布） | 纯色 `ColorSlot`（空位/待装备两态由代码改色） | 玉符异形底框（**六边形环**，对应 `ui-rework-2026-10-03/screen-studies/skills-assets-v1/03-active-ring.png`、`10-15-active-slot-*.png`） | 168×168（2×） | 否（异形建议整图） | 否 | **是**（这是全工程最需要异形命中的地方） |
 | 角色面板 | `ActiveSkillBar/Slot/Clear`「×」（24×24）+ 九宫 `Clear`（24×24） | 纯色按钮 | 小叉按钮（紧凑实例，端部 14–18px） | 64×64 | **是** 16/16/16/16 | 否 | 是 |
 | 角色面板 | `SpiritFormationBar/Slot_0-8`（104×104，间距 14） | 纯色 + `Swatch` 竖色条（12 宽） | 九宫棋盘格底（矩形可保留；异形重点在「格」的纸边） | 208×208（2×） | **是** 20/20/20/20 | 否 | 否 |
-| 角色面板 | `RealmShow/Track`（高 16）+ `Fill`（Filled 横） | 纯色；**`Fill` 的 sprite 是 null ⇒ 现在多半根本没显示填充**（见 §3.3 警告） | 墨线进度条（底槽九宫格 + 填充段 sprite，换上即可修好不显示的问题） | 底 512×32；填充 32×32 | 底 **是** 12/8/12/8 | **是**（横） | 否 |
+| 角色面板 | `RealmShow/Track`（高 16）+ `Fill`（Filled 横） | 生成器基准为 null；当前运行时已补 Sprite 并保留 Filled | 墨线进度条（底槽九宫格 + 填充段 sprite，换上即可修好不显示的问题） | 底 512×32；填充 32×32 | 底 **是** 12/8/12/8 | **是**（横） | 否 |
 | 角色面板 | `MountShow/Preview`、`AppearanceShow/Preview`（RawImage + RenderTexture） | **不是 Sprite** | 不需要 2D 素材；但**框**（`MountShow` / `AppearanceShow` 板）需要画框 sprite | 框 1024×640 | **是** 64/64/64/64 | 否 | 否 |
 | 角色面板 | `Info/Icon`（120×120，无图时品阶色） | 纯色占位 | 图标位底板（玉牌/木牌） + 真图标 | 240×240（2×） | **是** 24/24/24/24 | 否 | 是（玉牌异形） |
 | 角色面板 | 拖拽影子 `DragGhost`（200×40） | 纯色（品阶色） | 抬起的玉简/纸签（带阴影） | 400×80 | **是** 24/8/24/8 | 否 | 否 |
@@ -948,7 +928,7 @@ ChronicleCanvas                 [Canvas 1520, 不吃射线]
 |---|---|---|
 | 1 | **`Assets/Prefabs/CultivationUI.prefab` 是哪个生成器产出的** | `Assets/Editor/Builders/` 与 `Assets/Editor/Tools/` 下**没有**生成它的脚本；`设施界面接线.cs:15/19/107` 只在注释里提到它。预制体很可能早期手工搭的。预制体被场景引用的证据是 **fileID 相同**（`182561180186654261` 同时出现在 `CultivationUI.prefab:3` 与 `3C_Testbed.scene:35267`） |
 | 2 | **`.meta` 长格式 guid ↔ YAML 32 位 guid 的映射** | 本仓库 `.meta` 里是 44 / 56 字符的长格式，而场景写 32 位 hex（`docs/architecture/修炼与境界.md:68-81` 说「是同一根 guid 的两种写法」）。全工程多处身份判定都靠 **fileID 相同** 或**字段名吻合**，**没做官方解码验证**（`Library/` 下按 guid 搜也零命中） |
-| 3 | **角色面板的境界进度条到底显不显示** | 代码事实：`Fill` 的 sprite 为 null 且 `Type = Filled`（`CharacterPanelBuilder.cs:535`/`:562`），而 `PlayerHud.cs:126-143` 与 `CultivationUI.cs:89` 都明确补了 1×1 白图兜底、本面板**没有**。⇒ 推断不显示，但**未实机验证** |
+| 3 | **角色面板的境界进度条** | 已确认：运行时补 Sprite，保留 Filled/Horizontal 与 fillAmount；按当前 QA 验证，不再作为未确认项。 |
 | 4 | **`塔准入.cs` 不存在**（传送「等级不够置灰」是死路径） | `Teleporter.cs:90`/`:119` 注释称由它写 `需要等级` 并调 `刷新准入()`，但全工程无该文件、**无人调 `刷新准入()`**（只有 `:121` 定义）；场景里三个 `Teleporter` 的 `需要等级` 都是 0 |
 | 5 | **`CharacterTab` 枚举只有 7 项，UI 有 8 个页签** | 枚举 `CharacterPanelUI.cs:11-19`（坐骑 = 6），而 `tabNames`（builder `:123`）与 `pages`（`:150-157`）都是 8 项，「外观」靠 `(CharacterTab)7` 越界值工作（`:154-159`）。是否有别处按枚举长度判断**未确认** |
 | 6 | **`Sect.scene` 里「炼丹阁」那栋楼的对象名** | 该 `StationInteractable` 是**被剥离的 prefab instance**（`Sect.scene` 中 `界面预制体` 指向 `Assets/Prefabs/炼丹界面.prefab`），源 prefab guid 在 `.meta` 里 grep 不到 ⇒ 只能确认它是「类型=炼丹、显示名=炼丹、交互距离=11、按键 F」的那台设施 |

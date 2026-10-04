@@ -1,0 +1,23 @@
+﻿<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><title>墨点父导航 · 实机与透明素材</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#ede9dd;color:#303d37;font:16px/1.6 system-ui;padding:28px}h1{font-weight:500}h2{margin-top:36px;font-size:22px}select,button{font:inherit;padding:7px 14px;margin-right:10px;border:1px solid #899184;background:#f6f1e6;color:inherit}a{color:#526f5c}img,video{max-width:100%}.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px}figure{margin:0}figcaption{padding:8px}#assets{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}.asset{padding:14px;background:#f6f1e6}.preview{height:210px;display:flex;align-items:center;justify-content:center;background-color:#ddd;background-image:linear-gradient(45deg,#bbb 25%,transparent 25%),linear-gradient(-45deg,#bbb 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#bbb 75%),linear-gradient(-45deg,transparent 75%,#bbb 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0}.preview img{max-height:100%;object-fit:contain}.asset p{font-size:13px;word-break:break-all}.dark .preview{background:#202722}.paper .preview{background:#eee9dc}video{display:block;width:900px}.note{color:#737c6c;max-width:1000px}@media(max-width:800px){.compare{grid-template-columns:1fr}}
+</style>
+<h1>墨点父导航 · 第一批实机验收</h1>
+<p class="note">父页面没有底板。八颗墨点直接叠在场景上，原来的八个切页入口保留。下方各子页面内容仍是过渡布局，尚未按新总纲重制。</p>
+<label>页面 <select id="page"></select></label><label>分辨率 <select id="size"><option>1920x1080</option><option>1280x720</option></select></label>
+<div class="compare"><figure><img id="before"><figcaption>改前</figcaption></figure><figure><img id="after"><figcaption>改后：只对比父导航与父底板</figcaption></figure></div>
+<h2>独立父导航</h2><img id="parent">
+<h2>实机动效录像</h2><p class="note">展示开关、牵引、水痕、墨晕、八页切换及禁用路径。录像播放约为操作速度的一半。</p><video id="video" controls preload="metadata"></video>
+<h2>单件透明素材</h2><button onclick="document.body.className=''">透明棋盘</button><button onclick="document.body.className='paper'">纸白底</button><button onclick="document.body.className='dark'">深色底</button>
+<p class="note">八颗墨点与五张共用动效图已进工程。异形纸底保留为可选素材，父页面不使用它。每张图均可单独下载。</p><div id="assets"></div>
+<p><a href="../../../../UIResources/InkUI/Authoring/dynamic-assets-v1/manifest.json">尺寸与透明通道清单</a> · <a href="../../../../UIResources/InkUI/Authoring/dynamic-assets-v1/generation-map.json">完整生成提示词</a> · <a href="../../../../../../docs/ai/archive/UI重制/dynamic-assets-v1/施工记录.md">施工记录与剩余项目</a></p>
+<script>
+const pages=['背包','境界','神通','法宝','灵阵','战阵','坐骑','外观'];
+const page=document.querySelector('#page'),size=document.querySelector('#size');
+pages.forEach(p=>page.add(new Option(p,p)));
+function show(){const root='../../../../../screenshots/';before.src=root+`UI_墨点导航_before_${page.value}_${size.value}.png`;after.src=root+`UI_墨点导航_after_${page.value}_${size.value}.png`;document.getElementById('parent').src=root+`UI_父导航_无底板_${size.value}.png`;video.src=root+`InkUI-navigation-dynamic-${size.value}-half-speed.mp4`}
+page.onchange=size.onchange=show;show();
+const assets=[...Array.from({length:8},(_,i)=>[`nav-ink-blot-${i+1}`,320,320]),['fx-water-streak',512,128],['fx-ink-blot',320,320],['fx-dry-brush-mask',512,512],['fx-brush-tip',256,128],['fx-corner-stroke',256,256],['panel-ink-blob',2048,1280]];
+assets.forEach(([id,w,h])=>{const card=document.createElement('div');card.className='asset';const source=`../../../../UIResources/InkUI/Authoring/dynamic-assets-v1/export/${id}.png`;card.innerHTML=`<div class="preview"><img src="${source}"></div><p>${id}<br>${w} × ${h} · RGBA</p><a href="${source}" download>下载单件 PNG</a>`;document.querySelector('#assets').append(card)});
+</script></html>

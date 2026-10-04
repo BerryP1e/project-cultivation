@@ -1,0 +1,24 @@
+﻿<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InkUI 动效验收</title>
+<style>body{margin:24px;background:#eee9dc;color:#303d37;font:16px system-ui}main{max-width:1280px;margin:auto}button,select{margin:4px;padding:9px 14px;border:1px solid #9c8355;background:#f8f5ee;color:inherit;cursor:pointer}video{display:block;width:100%;background:#161c19;margin:16px 0}p{line-height:1.7}.muted{color:#59675c}</style>
+<main><h1>InkUI 动效验收 · 2026-10-04</h1>
+<p>实际 GameView Overlay 录制，每段 240 帧，以 5 fps 编码慢放。文字字号保持不变；编号与冷却倒计时不做数字插值。</p>
+<label>分辨率 <select id="resolution"><option>1920x1080</option><option>1280x720</option></select></label>
+<label>播放速度 <select id="rate"><option value="1">慢放</option><option value="5">5 倍</option><option value="10">10 倍</option></select></label>
+<div id="actions"></div><video id="video" controls preload="metadata"></video>
+<label>页面截图 <select id="panel"></select></label>
+<img id="shot" alt="实际 GameView 页面截图" style="display:block;width:100%;margin-top:16px">
+<p class="muted">开合、切页签、悬停、实际拖放、HUD 数字变化、Toast 均在同一段中。临时装备与气血在验收后还原，不写真实存档。素材素底版、飞白遮罩、纸纹统一仍待完成；现有金边并未靠动效变成水墨素材。</p>
+<p><a href="../../../../../docs/ai/archive/UI重制/动效接入验收-2026-10-04.md">改动及验收说明</a></p></main>
+<script>
+const video=document.getElementById('video'),resolution=document.getElementById('resolution'),rate=document.getElementById('rate');
+const panel=document.getElementById('panel'),shot=document.getElementById('shot');
+for(const [id,name] of [['role-0','背包'],['role-1','境界'],['role-2','神通'],['role-3','法宝'],['role-4','灵阵'],['role-5','战阵'],['role-6','坐骑'],['role-7','外观'],['cultivation-0','闭关修炼'],['cultivation-1','境界突破'],['cultivation-2','转修功法'],['alchemy','丹房'],['materials','丹房材料选择'],['field','灵田总览'],['contribution','功德兑换'],['teleport','传送'],['pause','暂停菜单'],['death','死亡页面'],['hud','常驻 HUD']]){const o=document.createElement('option');o.value=id;o.textContent=name;panel.append(o)}
+panel.value='role-2';
+function showShot(){shot.src='../../../../screenshots/InkUI-motion-panel-'+panel.value+'-'+resolution.value+'.png'}
+panel.onchange=showShot;
+function load(){video.src='../../../../screenshots/InkUI-motion-'+resolution.value+'-slow5.mp4';video.playbackRate=Number(rate.value);showShot()}
+resolution.onchange=load;rate.onchange=()=>video.playbackRate=Number(rate.value);
+for(const [name,time] of [['面板展开',1.8],['页签切换',6.8],['卡片悬停',10.8],['拖拽落槽',16.8],['数字滚动',22.8],['Toast',29.8],['面板关闭',36.8]]){const b=document.createElement('button');b.textContent=name;b.onclick=()=>{video.currentTime=time;video.play()};document.getElementById('actions').append(b)}load();
+</script></html>

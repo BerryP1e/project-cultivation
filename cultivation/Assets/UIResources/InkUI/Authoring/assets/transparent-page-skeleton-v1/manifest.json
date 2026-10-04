@@ -1,0 +1,43 @@
+{
+  "source": "transparent-page-skeleton-atlas-v1.png",
+  "transparent": true,
+  "usage": "parent page skeleton; curtain is intended as 9-slice source",
+  "crops": {
+    "parent-curtain-9slice-source": [
+      275,
+      0,
+      1370,
+      690
+    ],
+    "parent-navigation-rail": [
+      20,
+      0,
+      260,
+      940
+    ],
+    "nav-tab-inactive": [
+      350,
+      675,
+      500,
+      125
+    ],
+    "nav-tab-active": [
+      300,
+      775,
+      600,
+      177
+    ],
+    "ornate-divider": [
+      900,
+      675,
+      753,
+      125
+    ],
+    "title-plaque": [
+      900,
+      775,
+      753,
+      177
+    ]
+  }
+}

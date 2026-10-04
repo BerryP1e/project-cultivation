@@ -1,0 +1,73 @@
+{
+  "version": "素材规格与提示词 v1",
+  "transparentPng32": true,
+  "generatedAt": "2026-10-03T11:32:24.592Z",
+  "folders": {
+    "common": "panel-sheet.png, panel-inner.png",
+    "navigation": "nav-rail.png, tab-normal.png, tab-hover.png, tab-active.png",
+    "skills": "row-normal.png, row-hover.png, row-selected.png, active-ring.png, slot-empty.png, slot-hover.png, slot-filled.png, panel-detail.png, badge-tier-jade.png, badge-tier-cinnabar.png",
+    "status": "scroll-track.png, scroll-thumb.png, bar-track.png, bar-fill.png"
+  },
+  "nineSlice": {
+    "panel-sheet": [
+      96,
+      96,
+      96,
+      96
+    ],
+    "panel-inner": [
+      48,
+      48,
+      48,
+      48
+    ],
+    "nav-rail": [
+      24,
+      24,
+      24,
+      24
+    ],
+    "tab-*": [
+      24,
+      8,
+      24,
+      8
+    ],
+    "row-*": [
+      32,
+      8,
+      32,
+      8
+    ],
+    "panel-detail": [
+      64,
+      64,
+      64,
+      64
+    ],
+    "badge-tier-*": [
+      24,
+      8,
+      24,
+      8
+    ],
+    "scroll-track": [
+      8,
+      8,
+      8,
+      8
+    ],
+    "scroll-thumb": [
+      12,
+      12,
+      12,
+      12
+    ],
+    "bar-track": [
+      12,
+      8,
+      12,
+      8
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-03",
+  "checks": [
+    "12 equally sized PNG sprites have real transparent pixels and nearly opaque interiors",
+    "Independent transparent textures load",
+    "Hover, pressed, disabled sprite states render and enabled button clicks work",
+    "Skinned primary button still equips via empty-slot flow",
+    "Skinned alchemy action and cancel dialog remain operable",
+    "1280px viewport does not overflow horizontally",
+    "No JavaScript errors"
+  ],
+  "errors": []
+}

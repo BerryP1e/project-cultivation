@@ -3,11 +3,11 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// 把外部交付的 UI 素材（`Assets/UIResources/InkUI/**`）按规格设成 **Sprite (2D and UI)** 并写好九宫格 border。
+/// 把外部交付的 UI 素材（`Assets/resources/UI/InkUI/**`）按规格设成 **Sprite (2D and UI)** 并写好九宫格 border。
 ///
 /// ## 为什么要一个工具
 ///
-/// 素材是**按 2× 交付**的（规格表见 `ui-rework-2026-10-03/素材规格与提示词.md`），
+/// 素材是**按 2× 交付**的（规格表见 `docs/reference/UI素材/素材规格与提示词.md`），
 /// 而交付方的 `manifest.json` 里写的是 **1× 的 border**。手工在 Inspector 里一条条填 79 张图，
 /// 一定会漏、会填错，而且**border 填大了（左右之和 ≥ 宽度）会让九宫格直接坏掉**。
 /// 所以：一张表 + 自动夹取 + 逐条打日志。

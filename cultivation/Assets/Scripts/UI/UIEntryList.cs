@@ -27,6 +27,10 @@ public static class UIDragContext
         foreach(var text in Ghost.GetComponentsInChildren<Text>())text.color=new Color(.96f,.95f,.88f);
     }
     static Vector2 origin;
+    public static void ApplySpiritGhost(){
+        if(Ghost==null || Entry==null)return;foreach(var graphic in Ghost.GetComponentsInChildren<Graphic>())graphic.enabled=false;
+        var rt=Ghost.transform as RectTransform;rt.sizeDelta=new Vector2(108,108);var cloud=UIBuildUtils.CreateRect("SpiritCloud",rt);UIBuildUtils.Stretch(cloud);cloud.gameObject.AddComponent<UIInkSpiritCloud>().Initialize(Entry);
+    }
     static bool hasOrigin;
     public static UIInkDragSpark Spark {get;private set;}
 
@@ -78,6 +82,7 @@ public static class UIDragContext
         if (InkUITheme.Enabled && !UIInkMotion.减少动效)
         {
             var delta = screenPosition - (Vector2)Ghost.transform.position;
+            if(Entry is NpcDefinition){float speed=Mathf.Clamp01(delta.magnitude/140);Ghost.transform.localScale=new Vector3(1+speed*.9f,1-speed*.22f,1);Ghost.transform.localRotation=Quaternion.Euler(0,0,Mathf.Atan2(delta.y,delta.x)*Mathf.Rad2Deg);Ghost.transform.position=screenPosition;return;}
             float tilt=Entry is DivineAbilityDefinition ? 12:4;
             Ghost.transform.localRotation = Quaternion.Euler(Mathf.Clamp(-delta.y * .15f,-tilt,tilt),Mathf.Clamp(delta.x * .15f,-tilt,tilt),-4);
         }

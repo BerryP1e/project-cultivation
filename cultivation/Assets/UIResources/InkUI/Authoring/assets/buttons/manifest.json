@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "source": "button-atlas-original.png",
+  "size": {
+    "width": 520,
+    "height": 157
+  },
+  "spriteBorder": {
+    "left": 120,
+    "bottom": 28,
+    "right": 120,
+    "top": 28
+  },
+  "pivot": {
+    "x": 0.5,
+    "y": 0.5
+  },
+  "pixelsPerUnit": 100,
+  "meshType": "FullRect",
+  "mipmaps": false,
+  "wrap": "Clamp",
+  "compression": "None",
+  "alphaIsTransparency": true,
+  "generatedArt": true,
+  "sprites": [
+    {
+      "name": "ivory-normal",
+      "palette": "ivory",
+      "state": "normal",
+      "rect": {
+        "left": 11,
+        "top": 137,
+        "width": 501,
+        "height": 147
+      },
+      "file": "ivory-normal.png",
+      "alpha": {
+        "zeroPixels": 16097,
+        "partialPixels": 8566,
+        "nearlyOpaquePixels": 56977
+      }
+    },
+    {
+      "name": "jade-normal",
+      "palette": "jade",
+      "state": "normal",
+      "rect": {
+        "left": 512,
+        "top": 137,
+        "width": 512,
+        "height": 147
+      },
+      "file": "jade-normal.png",
+      "alpha": {
+        "zeroPixels": 15655,
+        "partialPixels": 9217,
+        "nearlyOpaquePixels": 56768
+      }
+    },
+    {
+      "name": "cinnabar-normal",
+      "palette": "cinnabar",
+      "state": "normal",
+      "rect": {
+        "left": 1024,
+        "top": 136,
+        "width": 501,
+        "height": 148
+      },
+      "file": "cinnabar-normal.png",
+      "alpha": {
+        "zeroPixels": 16369,
+        "partialPixels": 8454,
+        "nearlyOpaquePixels": 56817
+      }
+    },
+    {
+      "name": "ivory-hover",
+      "palette": "ivory",
+      "state": "hover",
+      "rect": {
+        "left": 11,
+        "top": 343,
+        "width": 501,
+        "height": 146
+      },
+      "file": "ivory-hover.png",
+      "alpha": {
+        "zeroPixels": 15842,
+        "partialPixels": 8932,
+        "nearlyOpaquePixels": 56866
+      }
+    },
+    {
+      "name": "jade-hover",
+      "palette": "jade",
+      "state": "hover",
+      "rect": {
+        "left": 512,
+        "top": 343,
+        "width": 512,
+        "height": 146
+      },
+      "file": "jade-hover.png",
+      "alpha": {
+        "zeroPixels": 15705,
+        "partialPixels": 9234,
+        "nearlyOpaquePixels": 56701
+      }
+    },
+    {
+      "name": "cinnabar-hover",
+      "palette": "cinnabar",
+      "state": "hover",
+      "rect": {
+        "left": 1024,
+        "top": 344,
+        "width": 501,
+        "height": 144
+      },
+      "file": "cinnabar-hover.png",
+      "alpha": {
+        "zeroPixels": 17146,
+        "partialPixels": 7824,
+        "nearlyOpaquePixels": 56670
+      }
+    },
+    {
+      "name": "ivory-pressed",
+      "palette": "ivory",
+      "state": "pressed",
+      "rect": {
+        "left": 12,
+        "top": 547,
+        "width": 500,
+        "height": 149
+      },
+      "file": "ivory-pressed.png",
+      "alpha": {
+        "zeroPixels": 16008,
+        "partialPixels": 7710,
+        "nearlyOpaquePixels": 57922
+      }
+    },
+    {
+      "name": "jade-pressed",
+      "palette": "jade",
+      "state": "pressed",
+      "rect": {
+        "left": 512,
+        "top": 548,
+        "width": 512,
+        "height": 147
+      },
+      "file": "jade-pressed.png",
+      "alpha": {
+        "zeroPixels": 16234,
+        "partialPixels": 7683,
+        "nearlyOpaquePixels": 57723
+      }
+    },
+    {
+      "name": "cinnabar-pressed",
+      "palette": "cinnabar",
+      "state": "pressed",
+      "rect": {
+        "left": 1024,
+        "top": 549,
+        "width": 501,
+        "height": 147
+      },
+      "file": "cinnabar-pressed.png",
+      "alpha": {
+        "zeroPixels": 16730,
+        "partialPixels": 7227,
+        "nearlyOpaquePixels": 57683
+      }
+    },
+    {
+      "name": "ivory-disabled",
+      "palette": "ivory",
+      "state": "disabled",
+      "rect": {
+        "left": 11,
+        "top": 757,
+        "width": 501,
+        "height": 146
+      },
+      "file": "ivory-disabled.png",
+      "alpha": {
+        "zeroPixels": 16808,
+        "partialPixels": 6925,
+        "nearlyOpaquePixels": 57907
+      }
+    },
+    {
+      "name": "jade-disabled",
+      "palette": "jade",
+      "state": "disabled",
+      "rect": {
+        "left": 512,
+        "top": 757,
+        "width": 512,
+        "height": 147
+      },
+      "file": "jade-disabled.png",
+      "alpha": {
+        "zeroPixels": 16376,
+        "partialPixels": 7665,
+        "nearlyOpaquePixels": 57599
+      }
+    },
+    {
+      "name": "cinnabar-disabled",
+      "palette": "cinnabar",
+      "state": "disabled",
+      "rect": {
+        "left": 1024,
+        "top": 757,
+        "width": 501,
+        "height": 147
+      },
+      "file": "cinnabar-disabled.png",
+      "alpha": {
+        "zeroPixels": 16390,
+        "partialPixels": 7690,
+        "nearlyOpaquePixels": 57560
+      }
+    }
+  ]
+}

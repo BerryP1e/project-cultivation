@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-03",
+  "browser": "Microsoft Edge / Playwright",
+  "checks": [
+    "All 12 main panels render",
+    "Click equipment rejects occupied slots and fills empty slots",
+    "Pointer drag equips empty nonrectangular slot",
+    "Slot drag reorders shared equipment",
+    "Occupied drag replacement supports cancel and confirm",
+    "Treasure shares the same six slots with abilities",
+    "Formation enforces five-member cap and fixed player center",
+    "Right click removes formation member",
+    "Mount and flight passive remain mutually exclusive",
+    "Known recipe success consumes exact materials and energy",
+    "Alchemy failure still consumes materials and energy",
+    "Manual ingredient drag works; unmatched recipe cannot brew",
+    "Field harvest syncs stock; planting, growth and cancel rotation work",
+    "Cultivation updates progress and consumes available attempts",
+    "All 7 supplemental panels render",
+    "Inventory search preserves text and safely renders special characters",
+    "1280px viewport has no horizontal overflow",
+    "768px viewport has no horizontal overflow",
+    "No browser JavaScript errors"
+  ],
+  "errors": []
+}

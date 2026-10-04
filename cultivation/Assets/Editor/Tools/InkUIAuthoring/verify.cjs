@@ -1,0 +1,42 @@
+﻿const inkPaths=require('./paths.cjs');
+const {chromium}=inkPaths.dependency('playwright');
+const {pathToFileURL}=require('node:url');
+const path=require('node:path');
+const fs=require('node:fs');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--disable-gpu','--no-first-run']});
+ const page=await browser.newPage({viewport:{width:1600,height:1080},deviceScaleFactor:1});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const results=[];const ok=n=>{results.push(n);console.log('PASS',n);};
+ const root=__dirname;await page.goto(pathToFileURL(path.join(root,'index.html')).href);await page.waitForTimeout(350);
+ const snap=()=>page.evaluate(()=>UIPrototype.snapshot());
+ const goto=p=>page.evaluate(p=>UIPrototype.setPage(p),p);
+ const reset=async()=>{await page.locator('#reset').click();await page.waitForTimeout(60);};
+ const drag=async(a,b)=>{const x=await page.locator(a).boundingBox(),y=await page.locator(b).boundingBox();await page.mouse.move(x.x+x.width/2,x.y+x.height/2);await page.mouse.down();await page.mouse.move(x.x+x.width/2+20,x.y+x.height/2,{steps:3});await page.mouse.move(y.x+y.width/2,y.y+y.height/2,{steps:12});await page.mouse.up();};
+ for(const p of ['skills','inventory','realm','treasures','arrays','formation','mounts','appearance','cultivation','alchemy','farm','journey']){await goto(p);assert.ok(await page.locator('#content').innerText());}
+ ok('All 12 main panels render');await reset();
+ await page.locator('[data-select="fire"]').click();await page.locator('[data-action="pending"]').click();await page.locator('[data-slot="0"]').click();assert.equal((await snap()).slots[0],'ice');await page.locator('[data-slot="1"]').click();assert.equal((await snap()).slots[1],'fire');ok('Click equipment rejects occupied slots and fills empty slots');
+ await drag('[data-select="frost"]','[data-slot="3"]');assert.equal((await snap()).slots[3],'frost');ok('Pointer drag equips empty nonrectangular slot');
+ await drag('[data-slot="3"]','[data-slot="4"]');assert.equal((await snap()).slots[4],'frost');assert.equal((await snap()).slots[3],null);ok('Slot drag reorders shared equipment');
+ await drag('[data-select="fire"]','[data-slot="0"]');assert.equal(await page.locator('#modal').isVisible(),true);await page.locator('#modal-cancel').click();assert.equal((await snap()).slots[0],'ice');
+ await drag('[data-select="fire"]','[data-slot="0"]');await page.locator('#modal-confirm').click();assert.equal((await snap()).slots[0],'fire');ok('Occupied drag replacement supports cancel and confirm');
+ await goto('treasures');await drag('[data-select="sword"]','[data-slot="5"]');await goto('skills');assert.equal((await snap()).slots[5],'sword');ok('Treasure shares the same six slots with abilities');
+ await goto('formation');for(const [id,i]of [['deer',0],['bear',1],['deer-king',2],['bear-king',3],['eye',5]])await drag(`[data-select="${id}"]`,`[data-formation-slot="${i}"]`);assert.equal((await snap()).formation.filter(Boolean).length,5);
+ await drag('[data-select="wolf"]','[data-formation-slot="6"]');assert.equal((await snap()).formation.filter(Boolean).length,5);await drag('[data-select="wolf"]','[data-formation-slot="4"]');assert.equal((await snap()).formation[4],null);ok('Formation enforces five-member cap and fixed player center');
+ await page.locator('[data-formation-slot="0"]').click({button:'right'});assert.equal((await snap()).formation.filter(Boolean).length,4);ok('Right click removes formation member');
+ await goto('mounts');await page.locator('[data-action="mount-equip"]').click();assert.equal((await snap()).passive,false);await goto('skills');await page.locator('[data-action="passive"]').click();assert.equal((await snap()).mount,null);ok('Mount and flight passive remain mutually exclusive');
+ await reset();await goto('alchemy');await page.locator('[data-recipe="0"]').click();let s=await snap();assert.equal(s.ingredients[0].n,2);assert.equal(s.ingredients[1].n,1);await page.evaluate(()=>Math.random=()=>0);await page.locator('[data-action="brew"]').click();await page.locator('#modal-confirm').click();await page.waitForTimeout(1550);s=await snap();assert.equal(s.stock.herb,10);assert.equal(s.stock.flower,7);assert.equal(s.energy,144);assert.equal(s.pills[0],4);ok('Known recipe success consumes exact materials and energy');
+ await page.evaluate(()=>Math.random=()=>.999);await page.locator('[data-action="brew"]').click();await page.locator('#modal-confirm').click();await page.waitForTimeout(1550);s=await snap();assert.equal(s.stock.herb,8);assert.equal(s.stock.flower,6);assert.equal(s.energy,136);assert.equal(s.pills[0],4);ok('Alchemy failure still consumes materials and energy');
+ await page.locator('[data-action="clear-ingredients"]').click();await drag('[data-select="herb"]','[data-ingredient-slot="0"]');assert.equal((await snap()).ingredients[0].n,1);assert.equal(await page.locator('[data-action="brew"]').isDisabled(),true);ok('Manual ingredient drag works; unmatched recipe cannot brew');
+ await goto('farm');await page.locator('[data-field="2"]').click();await page.locator('[data-action="harvest"]').click();s=await snap();assert.equal(s.fields[2].status,'empty');assert.equal(s.stock.flower,8);await page.locator('[data-action="plant"][data-crop="生灵草"]').click();await page.locator('[data-action="advance-field"]').click();assert.equal((await snap()).fields[2].status,'ready');await page.locator('[data-action="move-field"]').click();await page.keyboard.press('r');assert.equal((await snap()).rotation,1);await page.keyboard.press('Escape');assert.equal((await snap()).placement,false);ok('Field harvest syncs stock; planting, growth and cancel rotation work');
+ await goto('cultivation');await page.locator('[data-action="practice"]').click();assert.equal((await snap()).chances,1);await page.locator('[data-action="retreat"]').click();await page.locator('#modal-confirm').click();assert.equal((await snap()).chances,0);assert.equal((await snap()).progress,4);ok('Cultivation updates progress and consumes available attempts');
+ await goto('journey');for(const t of ['任务','功德堂','镇妖塔','对话','暂停','身陨','主菜单']){await page.locator(`[data-journey-tab="${t}"]`).click();assert.ok(await page.locator('#content').innerText());}ok('All 7 supplemental panels render');
+ await reset();await goto('inventory');await page.locator('#search').fill('<script>');assert.equal(await page.locator('#content script').count(),0);await page.locator('#search').fill('聚气');assert.equal(await page.locator('.inventory-grid .item-card').count(),1);ok('Inventory search preserves text and safely renders special characters');
+ await reset();await page.waitForTimeout(350);await page.screenshot({path:path.join(inkPaths.authoring,'assets/prototype-paper.png'),fullPage:true});
+ for(const theme of ['jade','seal']){await page.locator(`.themes [data-theme="${theme}"]`).click();await page.waitForTimeout(300);await page.screenshot({path:path.join(inkPaths.authoring,`assets/prototype-${theme}.png`),fullPage:true});}
+ await page.locator('.themes [data-theme="paper"]').click();for(const p of ['inventory','cultivation','alchemy','farm','formation']){await goto(p);if(p==='alchemy')await page.locator('[data-recipe="0"]').click();await page.waitForTimeout(350);await page.screenshot({path:path.join(inkPaths.authoring,`assets/prototype-${p}.png`),fullPage:true});}
+ await page.setViewportSize({width:1280,height:720});await goto('skills');await page.waitForTimeout(350);await page.screenshot({path:path.join(inkPaths.authoring,'assets/prototype-1280.png'),fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);ok('1280px viewport has no horizontal overflow');
+ await page.setViewportSize({width:768,height:1024});await goto('alchemy');await page.waitForTimeout(350);await page.screenshot({path:path.join(inkPaths.authoring,'assets/prototype-768.png'),fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);ok('768px viewport has no horizontal overflow');
+ assert.deepEqual(errors,[]);ok('No browser JavaScript errors');fs.writeFileSync(path.join(root,'verification.json'),JSON.stringify({date:'2026-10-03',browser:'Microsoft Edge / Playwright',checks:results,errors},null,2));await browser.close();
+})().catch(e=>{console.error(e);process.exit(1);});

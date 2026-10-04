@@ -1,0 +1,16 @@
+{
+  "transparentPng32": true,
+  "size": "1144x1614",
+  "sourceIds": [
+    "大师兄",
+    "村民",
+    "成男村民",
+    "成女村民",
+    "老头村民",
+    "胖叔村民",
+    "小梅",
+    "正太村民"
+  ],
+  "unityResourceName": "Resources/立绘/<id>.png",
+  "note": "本目录文件名按规格为 portrait-<id>.png；导入 Unity Resources/立绘时去掉 portrait- 前缀。"
+}

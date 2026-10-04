@@ -120,6 +120,7 @@ docs/
 │
 ├─ design/             策划原文与设计（★ 冲突时以它为准）
 │   ├─ 主线剧情.md          剧情设计（谁在哪一幕做了什么）
+│   ├─ UI重制/八页重制总纲.md · 全套UI施工单.md
 │   ├─ 任务系统.md          任务/阶段/条件/动作/标记/触发区
 │   ├─ 对话系统.md          对话表 · 选段 · 对话 UI
 │   ├─ 境界与功法设计.md     境界层级 · 灵气曲线 · 难度系数 · 功法转换
@@ -132,11 +133,13 @@ docs/
 │   ├─ 玄霄雷决与雷动千闪.md · 千劫雷狱.md · 瞬雷天闪.md · 雷云.md · 闪电链特效.md
 │   ├─ 沧澜寒渊录.md · 寒墟.md · 冰暴术.md
 │   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md
+│   ├─ UI换皮.md          当前接入范围 · Assets目录 · 验证 · 后续入口
 │   └─ 备份与恢复说明.md
 │
-├─ reference/          配置表字段.md（每张 CSV 的列与生成目标）· 外部素材来源.md（外部素材的授权 / 出处 / sha256）
+├─ reference/          UI素材/素材规格与提示词.md · 提示词-第二轮.md
+│                      配置表字段.md（每张 CSV 的列与生成目标）· 外部素材来源.md（外部素材的授权 / 出处 / sha256）
 │
-└─ ai/
+└─ ai/                 archive/UI重制/ 保存原始制作记录（只读）
     ├─ 工作规范.md      ★ "在这个项目里怎么干活"（含 §0 文档怎么写）
     ├─ 踩坑总库.md      ★ 唯一的坑库（A~H 主题 + 专题 + 硬性规矩）
     ├─ 工程与工具链.md   环境事实 · MCP/文件桥 · 常用命令 · 编辑器菜单
@@ -176,7 +179,10 @@ docs/
 | **战阵 / 真灵** | [architecture/战阵真灵](architecture/战阵真灵.md) | [ai/踩坑总库](ai/踩坑总库.md) |
 | **坐骑 / 御风 / 飞行高度** | [architecture/坐骑与御风](architecture/坐骑与御风.md) | [guides/动画竖直处理](guides/动画竖直处理.md) |
 | **屏幕空间角色描边（Built-in）** | [guides/描边](guides/描边.md) | [guides/画面统一调色](guides/画面统一调色.md) · [architecture/游戏HUD](architecture/游戏HUD.md) |
-| **UI 水墨换皮（InkUI 素材怎么进工程 / 运行时怎么接）** | [guides/UI换皮](guides/UI换皮.md) | [architecture/UI现状原理图](architecture/UI现状原理图.md) · `ui-rework-2026-10-03/素材规格与提示词.md` |
+| **UI 接入、目录归属、验证与后续施工** | [guides/UI换皮](guides/UI换皮.md) | [architecture/UI现状原理图](architecture/UI现状原理图.md) · [战阵真灵](architecture/战阵真灵.md) |
+| **UI 重制用户要求与原话** | [八页重制总纲](design/UI重制/八页重制总纲.md) | [全套UI施工单](design/UI重制/全套UI施工单.md) |
+| **UI 素材规格与提示词** | [素材规格与提示词](reference/UI素材/素材规格与提示词.md) | [第二轮提示词](reference/UI素材/提示词-第二轮.md) |
+| **UI 原始制作记录（只读历史）** | [UI制作归档](ai/archive/UI重制/README.md) | 当前状态先查 [UI换皮](guides/UI换皮.md) |
 | **镇妖塔 / 刷怪 / 关卡难度** | [guides/镇妖塔](guides/镇妖塔.md) | [ai/踩坑总库 §H](ai/踩坑总库.md) |
 | **传送门 / 落点 / 切场景** | [architecture/传送系统](architecture/传送系统.md) | [design/任务系统 §8](design/任务系统.md) · [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **加可交互物 / 「按 F 打开」的界面** | [architecture/系统总览 §2.5](architecture/系统总览.md) · [design/交互系统](design/交互系统.md) | [ai/踩坑总库](ai/踩坑总库.md) |

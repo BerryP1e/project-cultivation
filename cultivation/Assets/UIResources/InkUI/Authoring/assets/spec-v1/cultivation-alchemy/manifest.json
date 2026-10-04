@@ -1,0 +1,38 @@
+{
+  "version": "素材规格与提示词 v1",
+  "transparentPng32": true,
+  "dimensions": {
+    "furnace-stage": "1600x1200",
+    "material-slot-*": "400x264",
+    "cultivation-frame": "2048x2048",
+    "ink-ring": "1400x1400",
+    "gongfa-card": "1024x1024",
+    "recipe-row-*": "720x64"
+  },
+  "nineSlice": {
+    "cultivation-frame": [
+      96,
+      96,
+      96,
+      96
+    ],
+    "material-slot-*": [
+      32,
+      32,
+      32,
+      32
+    ],
+    "gongfa-card": [
+      48,
+      48,
+      48,
+      48
+    ],
+    "recipe-row-*": [
+      24,
+      8,
+      24,
+      8
+    ]
+  }
+}

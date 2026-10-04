@@ -49,7 +49,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         content.anchorMin=Vector2.zero; content.anchorMax=Vector2.one;
         content.offsetMin=content.offsetMax=Vector2.zero; content.pivot=new Vector2(.5f,.5f);
         UIBuildUtils.Stretch(viewport); viewport.offsetMin=new Vector2(6,8); viewport.offsetMax=new Vector2(-22,-8);
-        empty=UIBuildUtils.CreateText("Empty",viewport,owner.font,owner.source==ListSource.神通 ? "尚未掌握神通" : "包裹中暂无物品",21,TextAnchor.MiddleCenter,new Color(.9f,.9f,.83f));
+        empty=UIBuildUtils.CreateText("Empty",viewport,owner.font,owner.source==ListSource.神通 ? "尚未掌握神通" : owner.source==ListSource.战阵成员 ? "尚未获得真灵" : "包裹中暂无物品",21,TextAnchor.MiddleCenter,new Color(.9f,.9f,.83f));
         UIBuildUtils.Stretch(empty.rectTransform); empty.raycastTarget=false;
         var overlay=UIBuildUtils.CreateRect("InkScrollFlow",viewport);
         overlay.anchorMin=new Vector2(.9f,0); overlay.anchorMax=Vector2.one; overlay.offsetMin=overlay.offsetMax=Vector2.zero;
@@ -101,7 +101,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     void LateUpdate()
     {
         if(Owner==null) return;
-        if(UIDragContext.Dragging && Owner.source==ListSource.神通)return;
+        if(UIDragContext.Dragging && (Owner.source==ListSource.神通 || Owner.source==ListSource.战阵成员))return;
         float dt=Mathf.Min(Time.unscaledDeltaTime,.1f); openingAge+=dt;
         if(UIInkMotion.减少动效) Opening=false;
         if(Opening && openingAge>1.5f) Opening=false;
@@ -117,7 +117,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     {
         if(viewport==null) return;
         float desired=entries.Count<=4 ? 280 : entries.Count<=12 ? 240 : entries.Count<=30 ? 210 : entries.Count<=80 ? 180 : 160;
-        if(Owner.source==ListSource.神通)desired=170;
+        if(Owner.source==ListSource.神通 || Owner.source==ListSource.战阵成员)desired=170;
         Columns=Mathf.Clamp(Mathf.FloorToInt(viewport.rect.width/desired),1,Mathf.Min(7,Mathf.Max(1,entries.Count)));
         if(entries.Count<10) Columns=Mathf.Min(Columns,Mathf.Max(1,Mathf.CeilToInt(Mathf.Sqrt(entries.Count))));
         ItemScale=Mathf.Clamp((viewport.rect.width/Columns-20)/160,.88f,1.55f);
@@ -189,6 +189,7 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     float backdropScale=-1;
     public Material FadeMaterial;
     Graphic[] visuals;
+    UIInkSpiritCloud cloud;
     bool landed;
     public static UIInkWaterfallCell Create(RectTransform parent,UIEntryList owner)
     {
@@ -211,6 +212,7 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
         foreach(var graphic in rt.GetComponentsInChildren<Graphic>()) if(graphic!=hit) graphic.raycastTarget=false;
         foreach(var text in rt.GetComponentsInChildren<Text>()) { var outline=text.gameObject.AddComponent<Shadow>(); outline.effectColor=new Color(0,0,0,.85f); outline.effectDistance=new Vector2(1,-1); }
         cell.visuals=new Graphic[]{cell.shadow,cell.icon,cell.nameLabel,cell.tier,cell.quantity};
+        if(owner.source==ListSource.战阵成员){var particle=UIBuildUtils.CreateRect("SpiritCloud",cell.icon.transform);UIBuildUtils.Stretch(particle);cell.cloud=particle.gameObject.AddComponent<UIInkSpiritCloud>();cell.visuals=new Graphic[]{cell.shadow,cell.cloud,cell.nameLabel,cell.tier,cell.quantity};cell.tier.enabled=false;cell.quantity.enabled=false;cell.shadow.enabled=false;}
         cell.ink=rt.gameObject.AddComponent<UIInkFluid>(); cell.ink.使用密度模拟=false; cell.ink.基础浓度=2.2f;
         cell.ink.初始化(cell.shadow,null,null,null,parent.childCount);
         cell.ink.选中(false);
@@ -231,6 +233,7 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
         icon.sprite=owner.source==ListSource.神通 ? UIInkAbilityArt.Icon(entry) : entry.DisplayIcon; icon.color=Color.white;
         if(icon.sprite==null) { icon.enabled=false; }
         else icon.enabled=true;
+        if(cloud!=null){icon.enabled=false;cloud.Initialize(entry);nameLabel.enabled=false;}
         shift=velocity=Vector2.zero; hovered=false; scale=1; lastQuantity=-1; lastSelected=Entry!=owner.Selected; UpdateQuantity();
     }
     public void UpdateQuantity()
@@ -269,10 +272,10 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     public void OnPointerEnter(PointerEventData e) { hovered=true; }
     public void OnPointerExit(PointerEventData e) { hovered=false; }
     public void OnBeginDrag(PointerEventData e) {
-        if(Entry is ActiveDivineAbility) {
+        if(Entry is ActiveDivineAbility || owner.source==ListSource.战阵成员 && Entry is NpcDefinition) {
             var canvas=GetComponentInParent<Canvas>();
             UIDragContext.Begin(Entry,canvas.rootCanvas.transform,owner.font);UIDragContext.Move(e.position);
-            UIDragContext.ApplyInkGhost();
+            if(Entry is NpcDefinition)UIDragContext.ApplySpiritGhost();else UIDragContext.ApplyInkGhost();
         } else owner.inkWaterfall.OnBeginDrag(e);
     }
     public void OnDrag(PointerEventData e) {if(UIDragContext.Dragging)UIDragContext.Move(e.position);else owner.inkWaterfall.OnDrag(e);}
@@ -291,5 +294,6 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
         scale=Mathf.MoveTowards(scale,!UIInkMotion.减少动效 && hovered ? hoverScale : 1,Time.unscaledDeltaTime*(.15f/.14f));
         icon.rectTransform.localScale=Vector3.one*scale;
         if(owner.source==ListSource.神通) tier.color=new Color(.82f,.86f,.79f,hovered ? 1 : .55f);
+        if(cloud!=null)nameLabel.enabled=hovered || Entry==owner.Selected;
     }
 }

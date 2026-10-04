@@ -1,0 +1,2377 @@
+{
+  "authoringRoot": "cultivation/Assets/UIResources/InkUI/Authoring",
+  "toolkitRoot": "cultivation/Assets/Editor/Tools/InkUIAuthoring",
+  "filesVerified": 314,
+  "sourceMetaGuidCollisions": 0,
+  "files": [
+    {
+      "old": "ui-rework-2026-10-03/.gitignore",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/.gitignore",
+      "sha256": "d547d3833a4021d602deee247cce698d38186f09d9a9cd56705d3ff1f6876b7e",
+      "bytes": 19,
+      "finalSha256": "d547d3833a4021d602deee247cce698d38186f09d9a9cd56705d3ff1f6876b7e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/.gitignore",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/.gitignore",
+      "sha256": "dad79685cc9433378a632f72aa8420a451c27f12937ed22ce4843e461e76f7f1",
+      "bytes": 9,
+      "finalSha256": "dad79685cc9433378a632f72aa8420a451c27f12937ed22ce4843e461e76f7f1"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/capture-pages.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/ability-art-v1/capture-pages.ps1",
+      "sha256": "436f84a65e3942c321f115512400bff7e6602a6639635505e7f07e1b09622272",
+      "bytes": 2267,
+      "finalSha256": "436f84a65e3942c321f115512400bff7e6602a6639635505e7f07e1b09622272"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-bingbao_shu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-bingbao_shu.png",
+      "sha256": "2f0c9d1920bf8530177428f09db46dee3169c2acdd759ea15087f88c7ce5bea2",
+      "bytes": 890749,
+      "finalSha256": "2f0c9d1920bf8530177428f09db46dee3169c2acdd759ea15087f88c7ce5bea2"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-fentian_yanshu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-fentian_yanshu.png",
+      "sha256": "d06ab7266374f5860b31c22f2a0a83c6fa545402dd3fe82ad78f64f948e24329",
+      "bytes": 955328,
+      "finalSha256": "d06ab7266374f5860b31c22f2a0a83c6fa545402dd3fe82ad78f64f948e24329"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-hanxu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-hanxu.png",
+      "sha256": "44332a17f9880f41e41109e774d49e1c86518a362f7586a43f37eb68effa529f",
+      "bytes": 952865,
+      "finalSha256": "44332a17f9880f41e41109e774d49e1c86518a362f7586a43f37eb68effa529f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-leidong_qianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-leidong_qianshan.png",
+      "sha256": "abde8d7b4599082dba027460a60f0f9e8174b159fd6c10e13e32ed5909de6211",
+      "bytes": 939015,
+      "finalSha256": "abde8d7b4599082dba027460a60f0f9e8174b159fd6c10e13e32ed5909de6211"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-leiyun.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-leiyun.png",
+      "sha256": "1c7cda125e616a84ffa3fcfdbc1381ef8c440363b55432db0aecbf851588ddc7",
+      "bytes": 804280,
+      "finalSha256": "1c7cda125e616a84ffa3fcfdbc1381ef8c440363b55432db0aecbf851588ddc7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-pingxu_yufeng.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-pingxu_yufeng.png",
+      "sha256": "894e0ce9dc0f99c3658760f5d13c4aa40d25aadb5947e5f7d68583d0daedab95",
+      "bytes": 640691,
+      "finalSha256": "894e0ce9dc0f99c3658760f5d13c4aa40d25aadb5947e5f7d68583d0daedab95"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-qianjie_leiyu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-qianjie_leiyu.png",
+      "sha256": "17a3d76b1b8c3f883432733da55413d167d9e5e1ba1ebc1eac1a732e642d4734",
+      "bytes": 1082128,
+      "finalSha256": "17a3d76b1b8c3f883432733da55413d167d9e5e1ba1ebc1eac1a732e642d4734"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/art-ability-shunlei_tianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/art-ability-shunlei_tianshan.png",
+      "sha256": "f48ce908e7d041c9b7815bc3941a5c2f941d64774e3db961c5f277a6b808b330",
+      "bytes": 801801,
+      "finalSha256": "f48ce908e7d041c9b7815bc3941a5c2f941d64774e3db961c5f277a6b808b330"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-bingbao_shu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-bingbao_shu.png",
+      "sha256": "c28d681446e767e90eaad6cdccaeb474bb874b3bef569e0ee1920e74d5402a59",
+      "bytes": 77343,
+      "finalSha256": "c28d681446e767e90eaad6cdccaeb474bb874b3bef569e0ee1920e74d5402a59"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-fentian_yanshu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-fentian_yanshu.png",
+      "sha256": "7abdeceed88380566848fd6a1dca1edb8789b94d1e1ec668b26813e10459ae64",
+      "bytes": 73000,
+      "finalSha256": "7abdeceed88380566848fd6a1dca1edb8789b94d1e1ec668b26813e10459ae64"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-hanxu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-hanxu.png",
+      "sha256": "a055a29212c59d8d1cf478fac9bd6aea48fc27589842048a7cfde16ff1b247b3",
+      "bytes": 68848,
+      "finalSha256": "a055a29212c59d8d1cf478fac9bd6aea48fc27589842048a7cfde16ff1b247b3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-leidong_qianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-leidong_qianshan.png",
+      "sha256": "e6d49934e67e8320cdc87f6e5927dcd91027981791120f849862fefc936c7c16",
+      "bytes": 51651,
+      "finalSha256": "e6d49934e67e8320cdc87f6e5927dcd91027981791120f849862fefc936c7c16"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-leiyun.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-leiyun.png",
+      "sha256": "822a176954d89fd86864a4c9437eff3e8c8ab718bbd7ce1a3c5aac2b5f159a46",
+      "bytes": 68015,
+      "finalSha256": "822a176954d89fd86864a4c9437eff3e8c8ab718bbd7ce1a3c5aac2b5f159a46"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-pingxu_yufeng.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-pingxu_yufeng.png",
+      "sha256": "6a3f34c6d3e2d6605f4125e16db67f56f79959d3ad140c4c6c122ef6369879b6",
+      "bytes": 78331,
+      "finalSha256": "6a3f34c6d3e2d6605f4125e16db67f56f79959d3ad140c4c6c122ef6369879b6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-qianjie_leiyu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-qianjie_leiyu.png",
+      "sha256": "d68a8d50d712cdccca885eef6836b4f349b691f1f37f1393d21e805144b8cf7b",
+      "bytes": 81689,
+      "finalSha256": "d68a8d50d712cdccca885eef6836b4f349b691f1f37f1393d21e805144b8cf7b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export/icon-ability-shunlei_tianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/export/icon-ability-shunlei_tianshan.png",
+      "sha256": "9daff70bcb5d2eb597e9109204530f0ef6eff1c8f8cf29974ca701acd6d744f6",
+      "bytes": 96522,
+      "finalSha256": "9daff70bcb5d2eb597e9109204530f0ef6eff1c8f8cf29974ca701acd6d744f6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/export-assets.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/ability-art-v1/export-assets.ps1",
+      "sha256": "599d2af7b3160f8cccfdadee50b7d9ea53df1f0e06aa30fc4c6a39b399ce273f",
+      "bytes": 3784,
+      "finalSha256": "b767f838dca1ce91c9a4dd2592b1f25000beee7b475367d46e1c69a6823fc7bc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/generation-map.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/generation-map.json",
+      "sha256": "aeaff858089e5fe79cb0bfeae5ef234c9874d45b4b8e8052fe968ea56946f04a",
+      "bytes": 14923,
+      "finalSha256": "13142956145877feecace33e8181d43e23e22c7c61b89fc1b9cc14e18d4f50d2"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/index.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/ability-art-v1/index.html",
+      "sha256": "c11d7a00789b41544fcfdd1500f26b970991a6808eb7cbd9437122ed5b2cfcff",
+      "bytes": 3584,
+      "finalSha256": "5edb62f9c12ca39917493cbc9394307b1d6c5db39874c36ebfa9dd67a51057c4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/manifest.json",
+      "sha256": "cfdcf36572b0c253a3949ee33c386f3c8beab7a4ef8a3e8943f9fd18eacebabf",
+      "bytes": 6386,
+      "finalSha256": "cfdcf36572b0c253a3949ee33c386f3c8beab7a4ef8a3e8943f9fd18eacebabf"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-bingbao_shu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-bingbao_shu.png",
+      "sha256": "221ea7f3aad4ea384c9c23a126a3e274abfa37d2de1e51c1e1416d2b199dd15f",
+      "bytes": 2070839,
+      "finalSha256": "221ea7f3aad4ea384c9c23a126a3e274abfa37d2de1e51c1e1416d2b199dd15f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-fentian_yanshu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-fentian_yanshu.png",
+      "sha256": "cc0138ad1d8a61fdbf0b9adcae246774112b1ba195046760004e7698661acff3",
+      "bytes": 2148655,
+      "finalSha256": "cc0138ad1d8a61fdbf0b9adcae246774112b1ba195046760004e7698661acff3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-hanxu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-hanxu.png",
+      "sha256": "9d20638c19fd8ec6baa796abad814b8fbc180388e2e59e9b772a32fbf77a36e9",
+      "bytes": 2241682,
+      "finalSha256": "9d20638c19fd8ec6baa796abad814b8fbc180388e2e59e9b772a32fbf77a36e9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-leidong_qianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-leidong_qianshan.png",
+      "sha256": "a57f86e7d433f4451b4fb08974e5be2bce2c9434da458b70f6aa1a473af911c3",
+      "bytes": 2080708,
+      "finalSha256": "a57f86e7d433f4451b4fb08974e5be2bce2c9434da458b70f6aa1a473af911c3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-leiyun.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-leiyun.png",
+      "sha256": "3b3c2b928aae2d8b90af10b0353b6e8e457ed3c23a01a9a97c259c1aeef5aea4",
+      "bytes": 1843518,
+      "finalSha256": "3b3c2b928aae2d8b90af10b0353b6e8e457ed3c23a01a9a97c259c1aeef5aea4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-pingxu_yufeng.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-pingxu_yufeng.png",
+      "sha256": "69da41453f967136dda8f88e0388e45ab1b2f7e4670a5ced90cd18d5b9500fc4",
+      "bytes": 1441919,
+      "finalSha256": "69da41453f967136dda8f88e0388e45ab1b2f7e4670a5ced90cd18d5b9500fc4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-qianjie_leiyu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-qianjie_leiyu.png",
+      "sha256": "29e5174ffabe81b6c69416e2ffbe51176e9e91cd3abeb20706c69e0c96afbd40",
+      "bytes": 2412591,
+      "finalSha256": "29e5174ffabe81b6c69416e2ffbe51176e9e91cd3abeb20706c69e0c96afbd40"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/art-ability-shunlei_tianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/art-ability-shunlei_tianshan.png",
+      "sha256": "52245db7cc1d5e09480eeaf62b6c3c1e6e92784f6add6a722a6637073023b32d",
+      "bytes": 1791863,
+      "finalSha256": "52245db7cc1d5e09480eeaf62b6c3c1e6e92784f6add6a722a6637073023b32d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-bingbao_shu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-bingbao_shu.png",
+      "sha256": "59edec1fee52a504bab4deb4a9a4dde8133bfd44acac58eaaa9a658a49fcaa01",
+      "bytes": 1639124,
+      "finalSha256": "59edec1fee52a504bab4deb4a9a4dde8133bfd44acac58eaaa9a658a49fcaa01"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-fentian_yanshu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-fentian_yanshu.png",
+      "sha256": "7a16c38a43d8ca10afd40c5de8c4c4765243b63da75e30657b6bb1f3857c1190",
+      "bytes": 1518142,
+      "finalSha256": "7a16c38a43d8ca10afd40c5de8c4c4765243b63da75e30657b6bb1f3857c1190"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-hanxu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-hanxu.png",
+      "sha256": "8286bff48411f4a56dac31b35a73ba4e8a777cad0daf5ffb922316a6916f10ec",
+      "bytes": 1499998,
+      "finalSha256": "8286bff48411f4a56dac31b35a73ba4e8a777cad0daf5ffb922316a6916f10ec"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-leidong_qianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-leidong_qianshan.png",
+      "sha256": "c0e7b4972d5759cdb5b0b0771c6bd5783cd507a45ca936b7389745b449f33a1f",
+      "bytes": 1122633,
+      "finalSha256": "c0e7b4972d5759cdb5b0b0771c6bd5783cd507a45ca936b7389745b449f33a1f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-leiyun.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-leiyun.png",
+      "sha256": "5b367c7f273b24146d5470706d97d39d83ea84ed21cb2ffa00eeb5ed94226ae7",
+      "bytes": 1495926,
+      "finalSha256": "5b367c7f273b24146d5470706d97d39d83ea84ed21cb2ffa00eeb5ed94226ae7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-pingxu_yufeng.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-pingxu_yufeng.png",
+      "sha256": "7c742acb33108a6569da19d8756ef5cf3a0644d4102fd354591a4cf1ab106d75",
+      "bytes": 1772834,
+      "finalSha256": "7c742acb33108a6569da19d8756ef5cf3a0644d4102fd354591a4cf1ab106d75"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-qianjie_leiyu.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-qianjie_leiyu.png",
+      "sha256": "f8c650e82d0ffb103c395900d1cc07bae5850158e63604f70fa3452fe6756266",
+      "bytes": 1803563,
+      "finalSha256": "f8c650e82d0ffb103c395900d1cc07bae5850158e63604f70fa3452fe6756266"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/source/icon-ability-shunlei_tianshan.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/ability-art-v1/source/icon-ability-shunlei_tianshan.png",
+      "sha256": "6937eabdd50188b569913f8214e7f54e366713a77b133a904b7e84317602aae4",
+      "bytes": 2049752,
+      "finalSha256": "6937eabdd50188b569913f8214e7f54e366713a77b133a904b7e84317602aae4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ability-art-v1/接入与素材验收.md",
+      "new": "docs/ai/archive/UI重制/ability-art-v1/接入与素材验收.md",
+      "sha256": "27280953951ab9cfd212fb5e14e7a8bdefb84afbf88947e04bd8da6cf67b2fd5",
+      "bytes": 3933,
+      "finalSha256": "44538f02a04df7dbc17faa9dbf552ba9495f6ddd6ae9e817ef9c9b0094945726"
+    },
+    {
+      "old": "ui-rework-2026-10-03/app.js",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/app.js",
+      "sha256": "67e20f4c5e5cf3948db90fc81004eaea4d2ae6426aafaa4dbec8db5507aec662",
+      "bytes": 51959,
+      "finalSha256": "9dc9c774212f71e0b6ccf14080b3b9823561aae8e70698556fe4e6ea1ef10644"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/build-spec-v1-assets.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/build-spec-v1-assets.cjs",
+      "sha256": "478c337c7682bdfedb6dceeb09956ec5e7c711f37c82325f7b13ebb58377d891",
+      "bytes": 4595,
+      "finalSha256": "06a6491e36197bb804b07bd7f85946d4660b9be8c56b40ee605eac35f7fa0311"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/build-spec-v1-icons.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/build-spec-v1-icons.cjs",
+      "sha256": "c8d315d3c43c38443255e0c298cd7c98b21442a9f5e87c3728ac5111f034e1fb",
+      "bytes": 1435,
+      "finalSha256": "e1c5a43148095e73eb95650a676e567802fc9d8b21778b4fb19567bc7e8d1510"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/build-spec-v1-portraits.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/build-spec-v1-portraits.cjs",
+      "sha256": "7c6b8be5b317da91d29eb39321c0a50b5c739e9b9eeb76f991fdf1e025c81206",
+      "bytes": 1500,
+      "finalSha256": "d53d220f2dfe31f200ec6864692a1f0678088e1e435a798ce9a79aee87af6c2b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/build-spec-v1-second.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/build-spec-v1-second.cjs",
+      "sha256": "c794eb2de97dd85a427c468ba037908cd4a18dd831b3fad9a7ef4bea0f5236c3",
+      "bytes": 2983,
+      "finalSha256": "5d24b74165c772bf948e5d26e3af8f4f7aecf3059285bfe3120596309f487246"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/build-spec-v1-third.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/build-spec-v1-third.cjs",
+      "sha256": "263d480ca612aa716e73d9f15174a6bfd19bdd6787807a4439a7fcfba29b05ef",
+      "bytes": 2989,
+      "finalSha256": "96124d9c9194674c1c1ee58032da2f0f655d2381ff4ab3f8e4ec0aca44c34569"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/button-lab-preview.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/button-lab-preview.png",
+      "sha256": "c63fd04179992fe5cf3ece287a99424727437c75b3929ebb96074b58f7a3331f",
+      "bytes": 798908,
+      "finalSha256": "c63fd04179992fe5cf3ece287a99424727437c75b3929ebb96074b58f7a3331f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/button-states-preview.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/button-states-preview.png",
+      "sha256": "e8b88bc9def9d2dd327a8704844e3260aff670c695838dd3c3f1f3db01bda211",
+      "bytes": 401767,
+      "finalSha256": "e8b88bc9def9d2dd327a8704844e3260aff670c695838dd3c3f1f3db01bda211"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/button-atlas-original.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/button-atlas-original.png",
+      "sha256": "c6344ff798839401463dd5fccb028519b7e74e97a0da8278d43157a234290c0e",
+      "bytes": 2305483,
+      "finalSha256": "c6344ff798839401463dd5fccb028519b7e74e97a0da8278d43157a234290c0e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-disabled.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-disabled.png",
+      "sha256": "6457e42da5f7818e8ec7287ad5ab8ab6e055d40aecccdda546d69d884864a8c0",
+      "bytes": 176497,
+      "finalSha256": "6457e42da5f7818e8ec7287ad5ab8ab6e055d40aecccdda546d69d884864a8c0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-disabled.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-disabled.png.meta",
+      "sha256": "4aafa93e82305e7c9ad8ff5a60909edeaf3c78d44c5f9722b3c90e4be2d15f36",
+      "bytes": 1309,
+      "finalSha256": "4aafa93e82305e7c9ad8ff5a60909edeaf3c78d44c5f9722b3c90e4be2d15f36"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-hover.png",
+      "sha256": "4059d7d71612a140c54d08731d83b7fed8f7b4422bd433692514895078db28f4",
+      "bytes": 199580,
+      "finalSha256": "4059d7d71612a140c54d08731d83b7fed8f7b4422bd433692514895078db28f4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-hover.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-hover.png.meta",
+      "sha256": "cc4cdb21085429eb38c09c0e7d874826481113bc979f8352536e4e279d8288b6",
+      "bytes": 1309,
+      "finalSha256": "cc4cdb21085429eb38c09c0e7d874826481113bc979f8352536e4e279d8288b6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-normal.png",
+      "sha256": "e07a18a03ed22289547874eca13b023bcc04e01c90ff5ed8b21234fa42aea4b8",
+      "bytes": 191745,
+      "finalSha256": "e07a18a03ed22289547874eca13b023bcc04e01c90ff5ed8b21234fa42aea4b8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-normal.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-normal.png.meta",
+      "sha256": "4e622068bfbdd5bfc3a5611f724d4b6639dfff1c2b5c91677e273878e7a82251",
+      "bytes": 1309,
+      "finalSha256": "4e622068bfbdd5bfc3a5611f724d4b6639dfff1c2b5c91677e273878e7a82251"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-pressed.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-pressed.png",
+      "sha256": "d704e44179104341ae4423064aa8567edd4fb41cd992c81a610209c408ed9a97",
+      "bytes": 182599,
+      "finalSha256": "d704e44179104341ae4423064aa8567edd4fb41cd992c81a610209c408ed9a97"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-pressed.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-pressed.png.meta",
+      "sha256": "dba3344a3d7376e7d376740f5abd50d33b20cb8bc1d78157f16138c3577ac1d3",
+      "bytes": 1309,
+      "finalSha256": "dba3344a3d7376e7d376740f5abd50d33b20cb8bc1d78157f16138c3577ac1d3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-slice-center.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-slice-center.png",
+      "sha256": "0f39a7f3f44cd7c9d3d140d50232d73bec92af037bb427ea9604f08881850fe3",
+      "bytes": 102390,
+      "finalSha256": "0f39a7f3f44cd7c9d3d140d50232d73bec92af037bb427ea9604f08881850fe3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-slice-left.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-slice-left.png",
+      "sha256": "6da5b8a01b99c9b8d4b785a11a41622dfbf6de2d7eff022325e85f5daad335fb",
+      "bytes": 43767,
+      "finalSha256": "6da5b8a01b99c9b8d4b785a11a41622dfbf6de2d7eff022325e85f5daad335fb"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/cinnabar-slice-right.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/cinnabar-slice-right.png",
+      "sha256": "ac6526a9094411d87f9bb25c14298940856a246bb878f2329f76ac593e283d85",
+      "bytes": 41702,
+      "finalSha256": "ac6526a9094411d87f9bb25c14298940856a246bb878f2329f76ac593e283d85"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-disabled.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-disabled.png",
+      "sha256": "e746f1feab7f0a42e478928fe752c67406c38148f4be8b9f6f724d9cf356ab6e",
+      "bytes": 169857,
+      "finalSha256": "e746f1feab7f0a42e478928fe752c67406c38148f4be8b9f6f724d9cf356ab6e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-disabled.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-disabled.png.meta",
+      "sha256": "ba45e51cad026d21c6a04a87882031a965c3aa23b1d44bd15b67ffd7cd5d6599",
+      "bytes": 1309,
+      "finalSha256": "ba45e51cad026d21c6a04a87882031a965c3aa23b1d44bd15b67ffd7cd5d6599"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-hover.png",
+      "sha256": "a49bb62c0e3fa62d087e10e90a2476b72ef70cdc16e7065dda9fdc1da1775009",
+      "bytes": 185244,
+      "finalSha256": "a49bb62c0e3fa62d087e10e90a2476b72ef70cdc16e7065dda9fdc1da1775009"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-hover.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-hover.png.meta",
+      "sha256": "31e007f0e63616a0af9ab26c54b2c8a76b935b15e409c36e618688c73f1b87b3",
+      "bytes": 1309,
+      "finalSha256": "31e007f0e63616a0af9ab26c54b2c8a76b935b15e409c36e618688c73f1b87b3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-normal.png",
+      "sha256": "2f83257809d1f9590c3d9be8005048b11372461ad19c7a93ac2cd21e59fec292",
+      "bytes": 183532,
+      "finalSha256": "2f83257809d1f9590c3d9be8005048b11372461ad19c7a93ac2cd21e59fec292"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-normal.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-normal.png.meta",
+      "sha256": "9384924ef2a2d50f938712407db3807853779216cd2b7cc3159bd4a6272381ac",
+      "bytes": 1309,
+      "finalSha256": "9384924ef2a2d50f938712407db3807853779216cd2b7cc3159bd4a6272381ac"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-pressed.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-pressed.png",
+      "sha256": "f4aff9be6bf3dcdef0311db154cb16600c038ecc5198c673d0d4c2934aeae28d",
+      "bytes": 188641,
+      "finalSha256": "f4aff9be6bf3dcdef0311db154cb16600c038ecc5198c673d0d4c2934aeae28d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-pressed.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-pressed.png.meta",
+      "sha256": "f2ac90350be40fbb4e83d770019d4ebfc37051f93459add7d5765459c6492747",
+      "bytes": 1309,
+      "finalSha256": "f2ac90350be40fbb4e83d770019d4ebfc37051f93459add7d5765459c6492747"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-slice-center.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-slice-center.png",
+      "sha256": "1b23c24b1dee46fb0ac4cb3d54e0a9754c0ca8ffc4c7dbf489e30d72d83a9abb",
+      "bytes": 93089,
+      "finalSha256": "1b23c24b1dee46fb0ac4cb3d54e0a9754c0ca8ffc4c7dbf489e30d72d83a9abb"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-slice-left.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-slice-left.png",
+      "sha256": "9f4157a6e251ee1d880704e6985c91b2127c0445ff9e7e69000a6e5b018ed2b8",
+      "bytes": 42669,
+      "finalSha256": "9f4157a6e251ee1d880704e6985c91b2127c0445ff9e7e69000a6e5b018ed2b8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/ivory-slice-right.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/ivory-slice-right.png",
+      "sha256": "baf24b215058f5ea7bba5a41a78b4f5badaca9fa561944b200d86e67dc998ac9",
+      "bytes": 43732,
+      "finalSha256": "baf24b215058f5ea7bba5a41a78b4f5badaca9fa561944b200d86e67dc998ac9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-disabled.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-disabled.png",
+      "sha256": "05f96e535186d727b96509c54856b8e59a432366a0534114236d65d99c85519a",
+      "bytes": 174137,
+      "finalSha256": "05f96e535186d727b96509c54856b8e59a432366a0534114236d65d99c85519a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-disabled.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-disabled.png.meta",
+      "sha256": "2a0a389209efedb08ba87f7059d904af914ddcd886a9af417d7732a57be9df0e",
+      "bytes": 1309,
+      "finalSha256": "2a0a389209efedb08ba87f7059d904af914ddcd886a9af417d7732a57be9df0e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-hover.png",
+      "sha256": "d69dae1850911c07c430a3ed362594c1e886192ebb9c3709904402c718d3622b",
+      "bytes": 208574,
+      "finalSha256": "d69dae1850911c07c430a3ed362594c1e886192ebb9c3709904402c718d3622b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-hover.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-hover.png.meta",
+      "sha256": "45ea97a325be1c15b50ba02a852179d07d86697132b5f49186c65993d8c70db6",
+      "bytes": 1309,
+      "finalSha256": "45ea97a325be1c15b50ba02a852179d07d86697132b5f49186c65993d8c70db6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-normal.png",
+      "sha256": "950d713e3b99723683383aa89c113b075d3176fb95f19007727ea9c588bcb84d",
+      "bytes": 195707,
+      "finalSha256": "950d713e3b99723683383aa89c113b075d3176fb95f19007727ea9c588bcb84d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-normal.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-normal.png.meta",
+      "sha256": "657c5ff86bc433c80a2af8025b56c0081b875ab36c956c1787bbbb23f221f325",
+      "bytes": 1309,
+      "finalSha256": "657c5ff86bc433c80a2af8025b56c0081b875ab36c956c1787bbbb23f221f325"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-pressed.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-pressed.png",
+      "sha256": "342b74181349bb2f5728c91405c5f87cdd57a2174b5a345b8ed4508f07972709",
+      "bytes": 188381,
+      "finalSha256": "342b74181349bb2f5728c91405c5f87cdd57a2174b5a345b8ed4508f07972709"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-pressed.png.meta",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-pressed.png.meta",
+      "sha256": "48783bc5c6a5171fb350645b1792699ee3f1bcc22be2bf710089b46fd6ce12c6",
+      "bytes": 1309,
+      "finalSha256": "48783bc5c6a5171fb350645b1792699ee3f1bcc22be2bf710089b46fd6ce12c6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-slice-center.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-slice-center.png",
+      "sha256": "379386832680eb96c97760a897b0deb18195c9b5212f24591dcd5cdadf408384",
+      "bytes": 102975,
+      "finalSha256": "379386832680eb96c97760a897b0deb18195c9b5212f24591dcd5cdadf408384"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-slice-left.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-slice-left.png",
+      "sha256": "6cba292914324f4e3bcf11798fd8181b4af27d018dcdc4ba2c295e32b650dbc5",
+      "bytes": 42794,
+      "finalSha256": "6cba292914324f4e3bcf11798fd8181b4af27d018dcdc4ba2c295e32b650dbc5"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/jade-slice-right.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/jade-slice-right.png",
+      "sha256": "43aeb1ed804dc852e6401a664c8b192622ed3534fe97474e1526e82041270a15",
+      "bytes": 44212,
+      "finalSha256": "43aeb1ed804dc852e6401a664c8b192622ed3534fe97474e1526e82041270a15"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/manifest.json",
+      "sha256": "364aa55bae5715bda8ca599e3376f9bc20dcbca181c2f6f2f4713018321c50ca",
+      "bytes": 4787,
+      "finalSha256": "364aa55bae5715bda8ca599e3376f9bc20dcbca181c2f6f2f4713018321c50ca"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/buttons/panel-corner.svg",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/buttons/panel-corner.svg",
+      "sha256": "3eb29adbfa6c20086bd2ea0afd0c5b336951509fe52c3e3ca19fe8d0175aa2a3",
+      "bytes": 561,
+      "finalSha256": "3eb29adbfa6c20086bd2ea0afd0c5b336951509fe52c3e3ca19fe8d0175aa2a3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/core-panels.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/core-panels.png",
+      "sha256": "fc3fdcdf7ba775fe293a5a53f39a31e6eb9b8bc2252fcad5b0b2730618555466",
+      "bytes": 3403128,
+      "finalSha256": "fc3fdcdf7ba775fe293a5a53f39a31e6eb9b8bc2252fcad5b0b2730618555466"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-atlas-v1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/large-ui-pieces-atlas-v1.png",
+      "sha256": "3811e916c33111f2497d5697c09bf9ed7e9d28957d3e50a5d7753d536335e9d9",
+      "bytes": 2103186,
+      "finalSha256": "3811e916c33111f2497d5697c09bf9ed7e9d28957d3e50a5d7753d536335e9d9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-v1/ability-detail-panel.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/large-ui-pieces-v1/ability-detail-panel.png",
+      "sha256": "52a4eed2e960ed0f78f366f21b54dde42ca947946217330b93d99e718bf4769e",
+      "bytes": 876045,
+      "finalSha256": "52a4eed2e960ed0f78f366f21b54dde42ca947946217330b93d99e718bf4769e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-v1/learned-ability-library-panel.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/large-ui-pieces-v1/learned-ability-library-panel.png",
+      "sha256": "46c71c2fffe7606404a3845eecfc02b9a183bf1633a396c92d6a526121bd0d06",
+      "bytes": 1371523,
+      "finalSha256": "46c71c2fffe7606404a3845eecfc02b9a183bf1633a396c92d6a526121bd0d06"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-v1/left-parent-navigation-panel.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/large-ui-pieces-v1/left-parent-navigation-panel.png",
+      "sha256": "c7f4b89229ca3b753f864c7ea046d347966d3b5c28d51eef9dbff3b7eae608a9",
+      "bytes": 453372,
+      "finalSha256": "c7f4b89229ca3b753f864c7ea046d347966d3b5c28d51eef9dbff3b7eae608a9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-v1/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/large-ui-pieces-v1/manifest.json",
+      "sha256": "9e2f8a2d4d8462bf690c1af94784f5141c3ac2986ee0039a4a4a501f6f6f4a81",
+      "bytes": 436,
+      "finalSha256": "9e2f8a2d4d8462bf690c1af94784f5141c3ac2986ee0039a4a4a501f6f6f4a81"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-v1/README.md",
+      "new": "docs/ai/archive/UI重制/assets/large-ui-pieces-v1/README.md",
+      "sha256": "98a004155141fdd262ebf5fb612366fde5bcee0bf2d6ddf7d74bdb005b8af110",
+      "bytes": 621,
+      "finalSha256": "ac1329d224d4f43aac418f7769fa68bec88214cd7862775e7829397432fe3da7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/large-ui-pieces-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/large-ui-pieces-v1.zip",
+      "sha256": "ac667bd94e29d02b965fe07ba6bca338137b4e93ef9bd89298876f16532cf1bc",
+      "bytes": 2702630,
+      "finalSha256": "ac667bd94e29d02b965fe07ba6bca338137b4e93ef9bd89298876f16532cf1bc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/ornate-alchemy-preview.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/ornate-alchemy-preview.png",
+      "sha256": "0b14bd1c02d7709f6074e9f9bab2ddff52851c3077f7ad4ab65b3e2c1c3b65f7",
+      "bytes": 718620,
+      "finalSha256": "0b14bd1c02d7709f6074e9f9bab2ddff52851c3077f7ad4ab65b3e2c1c3b65f7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/ornate-skills-preview.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/ornate-skills-preview.png",
+      "sha256": "26ee06f863863c61ba457248cde215c22f87ecc41224bbf08de5b1b88c8b9770",
+      "bytes": 780600,
+      "finalSha256": "26ee06f863863c61ba457248cde215c22f87ecc41224bbf08de5b1b88c8b9770"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-1280.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-1280.png",
+      "sha256": "8e55fe9ff2c031943ec6954b3cd8123243f692cb4b74ffd0472e2da671704cb0",
+      "bytes": 648497,
+      "finalSha256": "8e55fe9ff2c031943ec6954b3cd8123243f692cb4b74ffd0472e2da671704cb0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-768.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-768.png",
+      "sha256": "8ac50cbdfb14181d0ea1d0526bc96afd12d2b0507055131b06e6b7e8d68fb359",
+      "bytes": 623724,
+      "finalSha256": "8ac50cbdfb14181d0ea1d0526bc96afd12d2b0507055131b06e6b7e8d68fb359"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-alchemy.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-alchemy.png",
+      "sha256": "f4634d96b70b4061aa04c124ad47a1b0baf7328203b26452faeb2e871acd109a",
+      "bytes": 688050,
+      "finalSha256": "f4634d96b70b4061aa04c124ad47a1b0baf7328203b26452faeb2e871acd109a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-cultivation.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-cultivation.png",
+      "sha256": "2e059d05f9c44cba635320110a7f8282b00307cdcdfd18e5503776482f079302",
+      "bytes": 673605,
+      "finalSha256": "2e059d05f9c44cba635320110a7f8282b00307cdcdfd18e5503776482f079302"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-farm.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-farm.png",
+      "sha256": "afe939e4e176ba07d3f115b811f84b5feee14efc939579b3fc0f88ecce04a3d1",
+      "bytes": 623661,
+      "finalSha256": "afe939e4e176ba07d3f115b811f84b5feee14efc939579b3fc0f88ecce04a3d1"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-formation.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-formation.png",
+      "sha256": "4fde274c1aed6b3e812e42ce7ce5f075f0f7bf8b4014f5de344ecfdd8957ec5d",
+      "bytes": 736269,
+      "finalSha256": "4fde274c1aed6b3e812e42ce7ce5f075f0f7bf8b4014f5de344ecfdd8957ec5d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-inventory.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-inventory.png",
+      "sha256": "14ece81060b2ab738515bc4e87f040cfc5842e25b93269624b07434dc4180946",
+      "bytes": 668845,
+      "finalSha256": "14ece81060b2ab738515bc4e87f040cfc5842e25b93269624b07434dc4180946"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-jade.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-jade.png",
+      "sha256": "908edc609ee67775be91cc5b56d1f216aac43bfcc3046be2c050b800a7a7632f",
+      "bytes": 856038,
+      "finalSha256": "908edc609ee67775be91cc5b56d1f216aac43bfcc3046be2c050b800a7a7632f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-paper.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-paper.png",
+      "sha256": "d9fd94956f553a2971dd0532cb52704b09f98f4f63d07132484e3570fde3e549",
+      "bytes": 749281,
+      "finalSha256": "d9fd94956f553a2971dd0532cb52704b09f98f4f63d07132484e3570fde3e549"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/prototype-seal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/prototype-seal.png",
+      "sha256": "7fd72228ddd6aa6c3960d1bce2f8a8359a95d1243831c231b8a081c8f2814ded",
+      "bytes": 849474,
+      "finalSha256": "7fd72228ddd6aa6c3960d1bce2f8a8359a95d1243831c231b8a081c8f2814ded"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/scene-reference.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/scene-reference.png",
+      "sha256": "979effc38479f103dd5dd368a37e9019dada7566149350bc9166d379cfeb1e9a",
+      "bytes": 861156,
+      "finalSha256": "979effc38479f103dd5dd368a37e9019dada7566149350bc9166d379cfeb1e9a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/slice-large-ui-pieces.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/slice-large-ui-pieces.cjs",
+      "sha256": "c4428e681f549860780411b40dd2ec671681b3ab14f61963d09c8a093978113b",
+      "bytes": 955,
+      "finalSha256": "9514878fa390a69492bfa6f937e3996fd94995a58c553d94e27db704e7d39e2f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/slice-page-skeleton-atlas.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/slice-page-skeleton-atlas.cjs",
+      "sha256": "df13c17e67afc3a898b63672f325a0ab05c323e61c8b41d16f756ffb43d329f7",
+      "bytes": 1174,
+      "finalSha256": "46bd3883f95257ab2b952b515ad73cc6c8a0dfbdfb60525781a21a7aab707e97"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/slice-transparent-ui-atlas.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/assets/slice-transparent-ui-atlas.cjs",
+      "sha256": "f4d73560949bf285f36b3b757784ed91aecd205a53e42fe4c2b5a9fe654e7c36",
+      "bytes": 1323,
+      "finalSha256": "969044d700a20a99875fcdbbd524e8fece4b8de387c92c19b405d6c74a699bf0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/dialog-choice-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/dialog-choice-hover.png",
+      "sha256": "4a27cb0fc139b7894f37fe2c5a5b7d71a79b9fb9bc8eeea1a821b02e91e9f9d4",
+      "bytes": 22292,
+      "finalSha256": "4a27cb0fc139b7894f37fe2c5a5b7d71a79b9fb9bc8eeea1a821b02e91e9f9d4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/dialog-choice-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/dialog-choice-normal.png",
+      "sha256": "c3795577fc05c0424eb7e73e3625ded2aa4a325bedb26f009822b01b2af08abf",
+      "bytes": 24648,
+      "finalSha256": "c3795577fc05c0424eb7e73e3625ded2aa4a325bedb26f009822b01b2af08abf"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/dialog-choice-selected.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/dialog-choice-selected.png",
+      "sha256": "67874a341f58251a71a60ad7015d7d33b1ebbd723ad182f194cd275dc830eb40",
+      "bytes": 22210,
+      "finalSha256": "67874a341f58251a71a60ad7015d7d33b1ebbd723ad182f194cd275dc830eb40"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/dialog-nameplate.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/dialog-nameplate.png",
+      "sha256": "c2e385dc1a1a4edacb2c1b579f22f2451accea26642d51948a9ab33565771615",
+      "bytes": 27891,
+      "finalSha256": "c2e385dc1a1a4edacb2c1b579f22f2451accea26642d51948a9ab33565771615"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/dialog-scroll.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/dialog-scroll.png",
+      "sha256": "25dda1d6562babd1fad41ffa7ee10c67b9f58ef37f087596b49a3b73382b0f7f",
+      "bytes": 521252,
+      "finalSha256": "25dda1d6562babd1fad41ffa7ee10c67b9f58ef37f087596b49a3b73382b0f7f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/manifest.json",
+      "sha256": "193006513b9bd9714ec16939d2d3935e72ffc638a409296edfa50578fc6efb1f",
+      "bytes": 919,
+      "finalSha256": "193006513b9bd9714ec16939d2d3935e72ffc638a409296edfa50578fc6efb1f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/plot-tag.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/plot-tag.png",
+      "sha256": "9cc44202309fb8bc01193756fabf23e18919a0e36e77d919184d3cc14265dcca",
+      "bytes": 756617,
+      "finalSha256": "9cc44202309fb8bc01193756fabf23e18919a0e36e77d919184d3cc14265dcca"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/README.md",
+      "new": "docs/ai/archive/UI重制/assets/spec-v1/common-panels/README.md",
+      "sha256": "bd77f39a904b5918af7930f09d60a6d45fca1f4593a380113d84c6a384c4f3d0",
+      "bytes": 261,
+      "finalSha256": "79154bed139176cefcd07a63500946262819b212e37c8c7f58cf06fb64c07e6b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/teleport-plate.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/teleport-plate.png",
+      "sha256": "8350081573748ef1d3039f51875da4f3a57313e349e64e87df38b5d0e07f9095",
+      "bytes": 536431,
+      "finalSha256": "8350081573748ef1d3039f51875da4f3a57313e349e64e87df38b5d0e07f9095"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/title-plaque.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/title-plaque.png",
+      "sha256": "9a11378e49e1921f858478992b9021c33ee353a9ee3865468f9b9a7ffe3af92b",
+      "bytes": 97716,
+      "finalSha256": "9a11378e49e1921f858478992b9021c33ee353a9ee3865468f9b9a7ffe3af92b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/toast.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/toast.png",
+      "sha256": "20dffe7913804b08caa6d6e1b0ee2b75cefa9bacf030e2a1fa838dc7561f3653",
+      "bytes": 18755,
+      "finalSha256": "20dffe7913804b08caa6d6e1b0ee2b75cefa9bacf030e2a1fa838dc7561f3653"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels/tower-floor-bar.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels/tower-floor-bar.png",
+      "sha256": "763b1b0e9e23090a2646f2a3369676ba01d269951a9a8c311a9f08f30e65b4fe",
+      "bytes": 6347,
+      "finalSha256": "763b1b0e9e23090a2646f2a3369676ba01d269951a9a8c311a9f08f30e65b4fe"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/common-panels-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/common-panels-v1.zip",
+      "sha256": "d2bc07ff0c2a906324844dff802ac9f6c572089d0f30e67547790a7a00c82700",
+      "bytes": 2021002,
+      "finalSha256": "d2bc07ff0c2a906324844dff802ac9f6c572089d0f30e67547790a7a00c82700"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/cultivation-frame.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/cultivation-frame.png",
+      "sha256": "3d87d32bb4f723b9429f838616b4e152e601724b3a1d0754c35bc0b6f041ce6b",
+      "bytes": 5279437,
+      "finalSha256": "3d87d32bb4f723b9429f838616b4e152e601724b3a1d0754c35bc0b6f041ce6b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/furnace-stage.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/furnace-stage.png",
+      "sha256": "917bbc1bbee12b76683b447deb1cb25ad73f4adc40242b5c130531c71b4cd598",
+      "bytes": 2988438,
+      "finalSha256": "917bbc1bbee12b76683b447deb1cb25ad73f4adc40242b5c130531c71b4cd598"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/gongfa-card.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/gongfa-card.png",
+      "sha256": "71564bb22794ac431232bf690c0bc0872e86d7d72b1577ed66a3ba66867ce43f",
+      "bytes": 1008931,
+      "finalSha256": "71564bb22794ac431232bf690c0bc0872e86d7d72b1577ed66a3ba66867ce43f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/ink-ring.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/ink-ring.png",
+      "sha256": "2dbc2645ac807048dd6597ea510d075e5c77fcdfc15b71aa112ec0a19a9c0e1e",
+      "bytes": 2169475,
+      "finalSha256": "2dbc2645ac807048dd6597ea510d075e5c77fcdfc15b71aa112ec0a19a9c0e1e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/manifest.json",
+      "sha256": "d9d5d7b42159920cdf7b63a8bfd2dfaaefb4205ca072ea8310bc89f4a263df57",
+      "bytes": 591,
+      "finalSha256": "d9d5d7b42159920cdf7b63a8bfd2dfaaefb4205ca072ea8310bc89f4a263df57"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/material-slot-disabled.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/material-slot-disabled.png",
+      "sha256": "1c5c5f15b9120240810994828d5365851bd45c953f7b6f6eaedd0371e0d422ba",
+      "bytes": 40167,
+      "finalSha256": "1c5c5f15b9120240810994828d5365851bd45c953f7b6f6eaedd0371e0d422ba"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/material-slot-empty.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/material-slot-empty.png",
+      "sha256": "4a393a79b6aab5c0458c0ccc389ad62c15c1ddfae7cb9a62c0a7ccfd5f326846",
+      "bytes": 82663,
+      "finalSha256": "4a393a79b6aab5c0458c0ccc389ad62c15c1ddfae7cb9a62c0a7ccfd5f326846"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/material-slot-filled.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/material-slot-filled.png",
+      "sha256": "32ef72332262fe67efc6f9ef7dfa07176d7798ba50aaab3190fff884393570d9",
+      "bytes": 75301,
+      "finalSha256": "32ef72332262fe67efc6f9ef7dfa07176d7798ba50aaab3190fff884393570d9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/material-slot-selected.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/material-slot-selected.png",
+      "sha256": "b000fcf2fd5031a3aaeb276e7b05755c3e91b5786e80fc357132c19dd5c2da8e",
+      "bytes": 69054,
+      "finalSha256": "b000fcf2fd5031a3aaeb276e7b05755c3e91b5786e80fc357132c19dd5c2da8e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/README.md",
+      "new": "docs/ai/archive/UI重制/assets/spec-v1/cultivation-alchemy/README.md",
+      "sha256": "f8e12a7b34267363f45fca763e871419a9d837bd01d47d26adcffbc7dd303131",
+      "bytes": 337,
+      "finalSha256": "ba3a881d2267190f773eef9f1992d7cc00e53eb93c7c1613c604554e23a18ac4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/recipe-row-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/recipe-row-hover.png",
+      "sha256": "c927bc3dd1403b66cb812d35d56a4f7bb7f811fbf651c609406077d1d9e6719f",
+      "bytes": 3051,
+      "finalSha256": "c927bc3dd1403b66cb812d35d56a4f7bb7f811fbf651c609406077d1d9e6719f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/recipe-row-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/recipe-row-normal.png",
+      "sha256": "4e5388278e859b5181fdedc7e84dd8683986579b81173d6a3ed3a03da2fed9fa",
+      "bytes": 2920,
+      "finalSha256": "4e5388278e859b5181fdedc7e84dd8683986579b81173d6a3ed3a03da2fed9fa"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy/recipe-row-selected.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy/recipe-row-selected.png",
+      "sha256": "356f94e1fff4a713adc537481f8cfa7a14ea853cc620a9326202d168a6edff8a",
+      "bytes": 2761,
+      "finalSha256": "356f94e1fff4a713adc537481f8cfa7a14ea853cc620a9326202d168a6edff8a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/cultivation-alchemy-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/cultivation-alchemy-v1.zip",
+      "sha256": "9cca726376bc7bbf3b234217dbf2368202ef2774e429e7fdac7859823bb21b67",
+      "bytes": 11710468,
+      "finalSha256": "9cca726376bc7bbf3b234217dbf2368202ef2774e429e7fdac7859823bb21b67"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-appearance.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-appearance.png",
+      "sha256": "d25e9983653720bd396371ce2c7a93486eb61aaa0c2ed3378f4da7bef82ea877",
+      "bytes": 131330,
+      "finalSha256": "d25e9983653720bd396371ce2c7a93486eb61aaa0c2ed3378f4da7bef82ea877"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-divine-ability.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-divine-ability.png",
+      "sha256": "983399ed649c3f6920c86c687355043865629c07ffb50c73031941bf7b759386",
+      "bytes": 97086,
+      "finalSha256": "983399ed649c3f6920c86c687355043865629c07ffb50c73031941bf7b759386"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-formation.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-formation.png",
+      "sha256": "90c14646a87c59e7f8ed8f46eb898019b08f2e53801f0ae3d153de2e5590f08c",
+      "bytes": 104931,
+      "finalSha256": "90c14646a87c59e7f8ed8f46eb898019b08f2e53801f0ae3d153de2e5590f08c"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-inventory.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-inventory.png",
+      "sha256": "7cf3506e4917ec835105ac85234f7d8aefc3e0c152019a854890ce8e871ba658",
+      "bytes": 101168,
+      "finalSha256": "7cf3506e4917ec835105ac85234f7d8aefc3e0c152019a854890ce8e871ba658"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-mount.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-mount.png",
+      "sha256": "71a7f18efb60c667a417e0eebb92f807e30fce98a2d78cf6ad4d5bbdb4754db5",
+      "bytes": 110928,
+      "finalSha256": "71a7f18efb60c667a417e0eebb92f807e30fce98a2d78cf6ad4d5bbdb4754db5"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-realm.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-realm.png",
+      "sha256": "d0ff704cb1bb68a03699e02fd949a3bd1bc7d485e792ff5ed051ca9c7406afc0",
+      "bytes": 105774,
+      "finalSha256": "d0ff704cb1bb68a03699e02fd949a3bd1bc7d485e792ff5ed051ca9c7406afc0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-spirit-array.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-spirit-array.png",
+      "sha256": "97addadc47aab96d1ccb81f225738b62450a2692dac6ab05b53d0453331b1fa7",
+      "bytes": 115794,
+      "finalSha256": "97addadc47aab96d1ccb81f225738b62450a2692dac6ab05b53d0453331b1fa7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/icon-treasure.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/icon-treasure.png",
+      "sha256": "3f99237dcf894a4ca6d0cf2f3963e971332e6f5103e77f779708e6fb6ee1717e",
+      "bytes": 77787,
+      "finalSha256": "3f99237dcf894a4ca6d0cf2f3963e971332e6f5103e77f779708e6fb6ee1717e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons/manifest.json",
+      "sha256": "4a57a58c7ed3f6168a8eb5b5669489820a7ab9c167271e2f19270c1209e0a480",
+      "bytes": 337,
+      "finalSha256": "4a57a58c7ed3f6168a8eb5b5669489820a7ab9c167271e2f19270c1209e0a480"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons/README.md",
+      "new": "docs/ai/archive/UI重制/assets/spec-v1/icons/README.md",
+      "sha256": "0eae0ef5a5847ed1c8ad0344f552ee973937c4f02371e11f79c94669bf8b32ab",
+      "bytes": 352,
+      "finalSha256": "c2af8c6e7b5f9fec6d6bc339e67cad1bffc907ee8dbf0bc0a63da4497ef0e427"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/icons-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/icons-v1.zip",
+      "sha256": "a0cc8dc57fffe953c08f75f5523e8bf99eb95acb046c08832b1cf93ac519b719",
+      "bytes": 846606,
+      "finalSha256": "a0cc8dc57fffe953c08f75f5523e8bf99eb95acb046c08832b1cf93ac519b719"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/manifest.json",
+      "sha256": "1e458beac3133fbd9e8c08fdafd72a20a98b405481384a7f572162dd8174569d",
+      "bytes": 394,
+      "finalSha256": "1e458beac3133fbd9e8c08fdafd72a20a98b405481384a7f572162dd8174569d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-大师兄.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-大师兄.png",
+      "sha256": "87d6fa6d709e5a0d23bb87082faba18caad415700369e8fffcceee27a9d81149",
+      "bytes": 3992191,
+      "finalSha256": "87d6fa6d709e5a0d23bb87082faba18caad415700369e8fffcceee27a9d81149"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-小梅.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-小梅.png",
+      "sha256": "e18a1c6ef2e13c7c9a3801e966f2fe93a8f481098a7601ef63713d5c4ef7a239",
+      "bytes": 2987509,
+      "finalSha256": "e18a1c6ef2e13c7c9a3801e966f2fe93a8f481098a7601ef63713d5c4ef7a239"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-成女村民.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-成女村民.png",
+      "sha256": "b2d6b547ef5f7c2d95648cd43c088b4cb30eae7cf0fb56d89c8280072121f3c6",
+      "bytes": 2489569,
+      "finalSha256": "b2d6b547ef5f7c2d95648cd43c088b4cb30eae7cf0fb56d89c8280072121f3c6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-成男村民.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-成男村民.png",
+      "sha256": "b623240cc7cc7bdf4b234253d6b5b96665f0bb106254d6e7b81f73ce6a9e0f93",
+      "bytes": 3053897,
+      "finalSha256": "b623240cc7cc7bdf4b234253d6b5b96665f0bb106254d6e7b81f73ce6a9e0f93"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-村民.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-村民.png",
+      "sha256": "5a757d937b9897437ea719292abe17eafa5f129539c78e96d3c44a4827fe65ea",
+      "bytes": 2996502,
+      "finalSha256": "5a757d937b9897437ea719292abe17eafa5f129539c78e96d3c44a4827fe65ea"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-正太村民.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-正太村民.png",
+      "sha256": "1569be4614f3d9f1eb46af74f808f8c702b15db19926d17cce4edafb8c66bb07",
+      "bytes": 2752294,
+      "finalSha256": "1569be4614f3d9f1eb46af74f808f8c702b15db19926d17cce4edafb8c66bb07"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-老头村民.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-老头村民.png",
+      "sha256": "684ddc7a305e612d5b01046be95fa796d30d10dadc47250664d2cd3dc63d7b27",
+      "bytes": 3090183,
+      "finalSha256": "684ddc7a305e612d5b01046be95fa796d30d10dadc47250664d2cd3dc63d7b27"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/portrait-胖叔村民.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits/portrait-胖叔村民.png",
+      "sha256": "3ef71c95a6992e51f98a215f88a7ea79cd9704bfea3a0271d4619da55de8c524",
+      "bytes": 3727395,
+      "finalSha256": "3ef71c95a6992e51f98a215f88a7ea79cd9704bfea3a0271d4619da55de8c524"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits/README.md",
+      "new": "docs/ai/archive/UI重制/assets/spec-v1/portraits/README.md",
+      "sha256": "bdb898ee6e61e75edfb9d082786045d0fc3844fbcace5f4e7f801625da96fe27",
+      "bytes": 265,
+      "finalSha256": "b7e562e627cee10db543880e17ed4ac356f37cb15dd865756e28bab2891345cc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/portraits-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/portraits-v1.zip",
+      "sha256": "9f3a2d9f9b9b8f614720bb30d8c3ae4e9c2ed6abf8053e9c662690495880b01d",
+      "bytes": 25067176,
+      "finalSha256": "9f3a2d9f9b9b8f614720bb30d8c3ae4e9c2ed6abf8053e9c662690495880b01d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/README.md",
+      "new": "docs/ai/archive/UI重制/assets/spec-v1/README.md",
+      "sha256": "944e95653303080f28f4a7264eed4b8ca3b33a59d7ead88d33fa0f73ea709d1b",
+      "bytes": 720,
+      "finalSha256": "f030eca36f293ee7b61d597c6ae7f8c0a24d9e4ecb145ae6bebf0123ad5e2fa6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/common/panel-inner.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/common/panel-inner.png",
+      "sha256": "c1565af4824321823089be4a32257e1ce515b0564803de1cb56804b2e980e9ee",
+      "bytes": 1191981,
+      "finalSha256": "c1565af4824321823089be4a32257e1ce515b0564803de1cb56804b2e980e9ee"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/common/panel-sheet.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/common/panel-sheet.png",
+      "sha256": "d7a560735ed147531fa1685031028fa9bdff8de0ded646cc68bcd22a7a425c7b",
+      "bytes": 4519955,
+      "finalSha256": "d7a560735ed147531fa1685031028fa9bdff8de0ded646cc68bcd22a7a425c7b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/manifest.json",
+      "sha256": "6d2fd6662116b13715da9f88898945085a714b35b2de35d340a32d4f10468f89",
+      "bytes": 1211,
+      "finalSha256": "6d2fd6662116b13715da9f88898945085a714b35b2de35d340a32d4f10468f89"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/navigation/nav-rail.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/navigation/nav-rail.png",
+      "sha256": "d7c8269ecea7efe6a71ec108c21ac5716c6feb596556f1ffceb0f369686f367a",
+      "bytes": 452233,
+      "finalSha256": "d7c8269ecea7efe6a71ec108c21ac5716c6feb596556f1ffceb0f369686f367a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/navigation/tab-active.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/navigation/tab-active.png",
+      "sha256": "0685a8a4894c73b616b7f06122d3acddca7674a1a2763ff42d4e2138d1645028",
+      "bytes": 72301,
+      "finalSha256": "0685a8a4894c73b616b7f06122d3acddca7674a1a2763ff42d4e2138d1645028"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/navigation/tab-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/navigation/tab-hover.png",
+      "sha256": "64651e4e7a8ce9fa37349e2ec8758627d2f184eb0dd0613fb149808eaaf6291b",
+      "bytes": 72930,
+      "finalSha256": "64651e4e7a8ce9fa37349e2ec8758627d2f184eb0dd0613fb149808eaaf6291b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/navigation/tab-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/navigation/tab-normal.png",
+      "sha256": "404034617255cf7dd4dd9eef2eb5c78b60b8c02d18f3e4308373c3965bcd0115",
+      "bytes": 81218,
+      "finalSha256": "404034617255cf7dd4dd9eef2eb5c78b60b8c02d18f3e4308373c3965bcd0115"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/README.md",
+      "new": "docs/ai/archive/UI重制/assets/spec-v1/skills-page/README.md",
+      "sha256": "4a2fd84d618e04f6a2f278696c12dc86da4a878bd3129a70b761a2b2c7d33d02",
+      "bytes": 552,
+      "finalSha256": "28a20ec2e26d27652fffbb78b35896ba68bdf07e55e483d09bc9d928f1e892c2"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/active-ring.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/active-ring.png",
+      "sha256": "77fe007089f991b0849b0c07b6e3ca1642bfdc16727702a41c85a70997561fa8",
+      "bytes": 1660348,
+      "finalSha256": "77fe007089f991b0849b0c07b6e3ca1642bfdc16727702a41c85a70997561fa8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/badge-tier-cinnabar.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/badge-tier-cinnabar.png",
+      "sha256": "33d976cac5ccf39c1f6ff2db0bdfecd61aaab9ca2c2116d79fa4bc5cc1353483",
+      "bytes": 40676,
+      "finalSha256": "33d976cac5ccf39c1f6ff2db0bdfecd61aaab9ca2c2116d79fa4bc5cc1353483"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/badge-tier-jade.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/badge-tier-jade.png",
+      "sha256": "e36bedea5eaa469b915d8f4eea0763bcfa3882c42865a868935988a987e6190c",
+      "bytes": 50941,
+      "finalSha256": "e36bedea5eaa469b915d8f4eea0763bcfa3882c42865a868935988a987e6190c"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/panel-detail.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/panel-detail.png",
+      "sha256": "bb3a5b46cc0b6f9897dfaf26d2a7094ed2243707aca18424155f28c9bf554629",
+      "bytes": 2373655,
+      "finalSha256": "bb3a5b46cc0b6f9897dfaf26d2a7094ed2243707aca18424155f28c9bf554629"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/row-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/row-hover.png",
+      "sha256": "b43dac03b420e48e774c016189b246d2be1cd99aac23ff45e1c37ab091fcdcee",
+      "bytes": 9966,
+      "finalSha256": "b43dac03b420e48e774c016189b246d2be1cd99aac23ff45e1c37ab091fcdcee"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/row-normal.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/row-normal.png",
+      "sha256": "bdb6dc4ee5c14b7a3e31302c6ab775d1afd0dd560cf34c5f20b3b2eb8742316f",
+      "bytes": 10088,
+      "finalSha256": "bdb6dc4ee5c14b7a3e31302c6ab775d1afd0dd560cf34c5f20b3b2eb8742316f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/row-selected.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/row-selected.png",
+      "sha256": "ab459a0ed7646b59ca7599d8f21bd7abf76e8422907432108e81fc85c03e8d08",
+      "bytes": 9007,
+      "finalSha256": "ab459a0ed7646b59ca7599d8f21bd7abf76e8422907432108e81fc85c03e8d08"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/slot-empty.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/slot-empty.png",
+      "sha256": "53a4a6702d03b85948ff5d4ea4a185da955ccf215675ae93087203388b3d5f00",
+      "bytes": 92026,
+      "finalSha256": "53a4a6702d03b85948ff5d4ea4a185da955ccf215675ae93087203388b3d5f00"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/slot-filled.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/slot-filled.png",
+      "sha256": "7a4c81d1e84e1502a48a5618b55a40d77caf8e58908ab94f241eb1b94edfd1b2",
+      "bytes": 86418,
+      "finalSha256": "7a4c81d1e84e1502a48a5618b55a40d77caf8e58908ab94f241eb1b94edfd1b2"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/skills/slot-hover.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/skills/slot-hover.png",
+      "sha256": "c41eebd513cbceaf926548952dd6e0428ba179d0457a4beda68bc17b908ba96d",
+      "bytes": 80653,
+      "finalSha256": "c41eebd513cbceaf926548952dd6e0428ba179d0457a4beda68bc17b908ba96d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/status/bar-fill.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/status/bar-fill.png",
+      "sha256": "49ee677dc8dd4409e191275ad9609b92b3d21374f82e23be86d2c267a840fe03",
+      "bytes": 290,
+      "finalSha256": "49ee677dc8dd4409e191275ad9609b92b3d21374f82e23be86d2c267a840fe03"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/status/bar-track.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/status/bar-track.png",
+      "sha256": "fe68ba9874b400e007a84c7f0084dd7185c012187f951058f1cf4f8ae69574aa",
+      "bytes": 2573,
+      "finalSha256": "fe68ba9874b400e007a84c7f0084dd7185c012187f951058f1cf4f8ae69574aa"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/status/scroll-thumb.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/status/scroll-thumb.png",
+      "sha256": "ab04c074efd14c2b04b177048aad3fd7253e7e2a0ded64d315ceeb72ee7c5369",
+      "bytes": 1804,
+      "finalSha256": "ab04c074efd14c2b04b177048aad3fd7253e7e2a0ded64d315ceeb72ee7c5369"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page/status/scroll-track.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page/status/scroll-track.png",
+      "sha256": "eb9f78d44a7854705c84a3995e76920811ed2f2148275016c2bb6d2bb0fac043",
+      "bytes": 2534,
+      "finalSha256": "eb9f78d44a7854705c84a3995e76920811ed2f2148275016c2bb6d2bb0fac043"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1/skills-page-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1/skills-page-v1.zip",
+      "sha256": "be5a25b402be2d611607e166b541307c7f9fed3065737d6477d3253e8a3b9718",
+      "bytes": 10791854,
+      "finalSha256": "be5a25b402be2d611607e166b541307c7f9fed3065737d6477d3253e8a3b9718"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/spec-v1-complete.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/spec-v1-complete.zip",
+      "sha256": "6efb7fc0e62e83dc4d69fcd308c23899fb9214b9d98180298ea0e79411e84005",
+      "bytes": 100889719,
+      "finalSha256": "6efb7fc0e62e83dc4d69fcd308c23899fb9214b9d98180298ea0e79411e84005"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/three-directions.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/three-directions.png",
+      "sha256": "efb4795c1016680446889726c949f87c3afd68b36aee526164b9013f8480bb41",
+      "bytes": 3174830,
+      "finalSha256": "efb4795c1016680446889726c949f87c3afd68b36aee526164b9013f8480bb41"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-atlas-v1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-atlas-v1.png",
+      "sha256": "095899d87c51d8dc377d900c8a563b2717b48a7e896fa9a9c76d551b03709a72",
+      "bytes": 2110677,
+      "finalSha256": "095899d87c51d8dc377d900c8a563b2717b48a7e896fa9a9c76d551b03709a72"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/manifest.json",
+      "sha256": "9d47ec111487aaeae68c66353f7d92563099c51d4a889dee280ee72d04059854",
+      "bytes": 632,
+      "finalSha256": "9d47ec111487aaeae68c66353f7d92563099c51d4a889dee280ee72d04059854"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/nav-tab-active.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/nav-tab-active.png",
+      "sha256": "397510d06c8e866b45f7964bb02d31448843b2ffe5c1e3d20217849de62e8afc",
+      "bytes": 198720,
+      "finalSha256": "397510d06c8e866b45f7964bb02d31448843b2ffe5c1e3d20217849de62e8afc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/nav-tab-inactive.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/nav-tab-inactive.png",
+      "sha256": "f0570f8fa114bc655f122e174c7637037fae655a17d1ab29e834a44ac89d69d0",
+      "bytes": 94065,
+      "finalSha256": "f0570f8fa114bc655f122e174c7637037fae655a17d1ab29e834a44ac89d69d0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/ornate-divider.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/ornate-divider.png",
+      "sha256": "459f523b21638249ab4215dacbdad4a326c54c1fcb90e81ddd78600147ff8cfc",
+      "bytes": 66538,
+      "finalSha256": "459f523b21638249ab4215dacbdad4a326c54c1fcb90e81ddd78600147ff8cfc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/parent-curtain-9slice-source.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/parent-curtain-9slice-source.png",
+      "sha256": "4fc3837a9dd02644aad8ccf1bf5f704d98662e1ef67e11fe2b0e719b8b305952",
+      "bytes": 1518714,
+      "finalSha256": "4fc3837a9dd02644aad8ccf1bf5f704d98662e1ef67e11fe2b0e719b8b305952"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/parent-navigation-rail.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/parent-navigation-rail.png",
+      "sha256": "7ad38ff0c2ff78b300b42eacc7c96dabdbe1bdd5bc19cf1c2aedcd29531ba7cf",
+      "bytes": 418559,
+      "finalSha256": "7ad38ff0c2ff78b300b42eacc7c96dabdbe1bdd5bc19cf1c2aedcd29531ba7cf"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/README.md",
+      "new": "docs/ai/archive/UI重制/assets/transparent-page-skeleton-v1/README.md",
+      "sha256": "b6046933828db5a18be3122ed32495c2cd8265a31b799128aed7b4c3014af65d",
+      "bytes": 670,
+      "finalSha256": "36faacb1b7cf61b0608c95e3d368111faee8d81cf6777bfa6b0c7dc7130f4da4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1/title-plaque.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1/title-plaque.png",
+      "sha256": "d77a74044276d793cf9c75e1a8790b24da0555fd58fdd7613a47a56074d7f4ce",
+      "bytes": 229826,
+      "finalSha256": "d77a74044276d793cf9c75e1a8790b24da0555fd58fdd7613a47a56074d7f4ce"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-page-skeleton-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-page-skeleton-v1.zip",
+      "sha256": "9616e2ee309454c4a1855f3043c781f0f356b47bfd917a242e41a810a786e46f",
+      "bytes": 2527844,
+      "finalSha256": "9616e2ee309454c4a1855f3043c781f0f356b47bfd917a242e41a810a786e46f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-atlas-v1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-atlas-v1.png",
+      "sha256": "a3b46465019c2886787c4102fe4cdaba319b4fe9225ed06111d347197b36797e",
+      "bytes": 1786497,
+      "finalSha256": "a3b46465019c2886787c4102fe4cdaba319b4fe9225ed06111d347197b36797e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/ability-library-card.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/ability-library-card.png",
+      "sha256": "24bfdf000ff8376c0e916ebf4818db03246c731fb41bc8f9b9a010f466469aaa",
+      "bytes": 521526,
+      "finalSha256": "24bfdf000ff8376c0e916ebf4818db03246c731fb41bc8f9b9a010f466469aaa"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/active-slot-frame.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/active-slot-frame.png",
+      "sha256": "db42fdeb3ebef95b7b8f5bb9849f790275755ded7f6c08d5215dd1190e39911c",
+      "bytes": 330094,
+      "finalSha256": "db42fdeb3ebef95b7b8f5bb9849f790275755ded7f6c08d5215dd1190e39911c"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/enabled-passive-row.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/enabled-passive-row.png",
+      "sha256": "597ee68a463252740956bc2353ddb178971af5f3b61395cc8f9079c3065b04b5",
+      "bytes": 372453,
+      "finalSha256": "597ee68a463252740956bc2353ddb178971af5f3b61395cc8f9079c3065b04b5"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/manifest.json",
+      "sha256": "bbcd09e44aeda0d235f72d1943d384f47a61652e0a9428823a2d9f94dc511db0",
+      "bytes": 744,
+      "finalSha256": "bbcd09e44aeda0d235f72d1943d384f47a61652e0a9428823a2d9f94dc511db0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/parent-navigation-tab.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/parent-navigation-tab.png",
+      "sha256": "95ff810d3a38aeb1f2e659db4af2b4b5f2270cf63aedbc797aed35c576eb4db3",
+      "bytes": 386102,
+      "finalSha256": "95ff810d3a38aeb1f2e659db4af2b4b5f2270cf63aedbc797aed35c576eb4db3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/primary-action-button.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/primary-action-button.png",
+      "sha256": "ec2abe1d61e81999f9b86582577b70c0f62a9ba4cfa454558eceffd20ae66d9d",
+      "bytes": 299926,
+      "finalSha256": "ec2abe1d61e81999f9b86582577b70c0f62a9ba4cfa454558eceffd20ae66d9d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/README.md",
+      "new": "docs/ai/archive/UI重制/assets/transparent-ui-v1/README.md",
+      "sha256": "b5cbb8eda1df14f329df845b18d9f0827c59cf906ddfb51d07c395660269a652",
+      "bytes": 717,
+      "finalSha256": "a49bb45365679b4a8c0e05ef5943ddfa17c5023550a4bf5c08a15276dcf83dcc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/scrollbar-track-and-thumb.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/scrollbar-track-and-thumb.png",
+      "sha256": "9597f16276aa2a14632e4fe6ac58663af124bb147c71be1393bb35963a068de6",
+      "bytes": 231849,
+      "finalSha256": "9597f16276aa2a14632e4fe6ac58663af124bb147c71be1393bb35963a068de6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1/secondary-action-button.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1/secondary-action-button.png",
+      "sha256": "e904cc2902963144ec0c291579cf25207ae109ac6546c59950f26ae9926431be",
+      "bytes": 217574,
+      "finalSha256": "e904cc2902963144ec0c291579cf25207ae109ac6546c59950f26ae9926431be"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/transparent-ui-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/transparent-ui-v1.zip",
+      "sha256": "d186e756657e854357dfe3d631e054aeab399eddf10413093b18e9d66367c197",
+      "bytes": 2361421,
+      "finalSha256": "d186e756657e854357dfe3d631e054aeab399eddf10413093b18e9d66367c197"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/xuan-paper-texture-v1.md",
+      "new": "docs/ai/archive/UI重制/assets/xuan-paper-texture-v1.md",
+      "sha256": "e92646fb3f6b9f0afb98830b54ef37315f078b38e88bdb79a937d2c05e62dd01",
+      "bytes": 313,
+      "finalSha256": "80edbc18f9b16012f8ae85a04f11b3f538982ad4be5f3b66e275ff4b85b12a3f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/assets/xuan-paper-texture-v1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/assets/xuan-paper-texture-v1.png",
+      "sha256": "57c6ef96d1cf541a91bd4f6a09a371e950dee60cd135f9223cf96e0ddacbbfd1",
+      "bytes": 2727888,
+      "finalSha256": "57c6ef96d1cf541a91bd4f6a09a371e950dee60cd135f9223cf96e0ddacbbfd1"
+    },
+    {
+      "old": "ui-rework-2026-10-03/bag-assets-v1/generation-map.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/bag-assets-v1/generation-map.json",
+      "sha256": "3f41e7dce8b81d0dc4656d96bf909cd4be020986d76d6c2efa8ab90eb2229d8a",
+      "bytes": 3500,
+      "finalSha256": "0ba5fbaba03b92c323d1064a4044c465dee5b7e8876910682750e1619bf1c297"
+    },
+    {
+      "old": "ui-rework-2026-10-03/bag-assets-v1/source/bag-info-ink.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/bag-assets-v1/source/bag-info-ink.png",
+      "sha256": "4b458f168a8c39fe6dac32735d68f7755a608845fab73e6474dce241510ac270",
+      "bytes": 2065986,
+      "finalSha256": "4b458f168a8c39fe6dac32735d68f7755a608845fab73e6474dce241510ac270"
+    },
+    {
+      "old": "ui-rework-2026-10-03/bag-assets-v1/source/bag-info-paper.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/bag-assets-v1/source/bag-info-paper.png",
+      "sha256": "83d37118baab49b5deb1b4eaec208af8808d5b7fa832fad7028b994dfa8f7153",
+      "bytes": 1854263,
+      "finalSha256": "83d37118baab49b5deb1b4eaec208af8808d5b7fa832fad7028b994dfa8f7153"
+    },
+    {
+      "old": "ui-rework-2026-10-03/bag-assets-v1/source/bag-parcel-8f.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/bag-assets-v1/source/bag-parcel-8f.png",
+      "sha256": "c578fdecf41b56951e30670c47a90370ed63332925149a07ed5c884c05830d12",
+      "bytes": 1534892,
+      "finalSha256": "c578fdecf41b56951e30670c47a90370ed63332925149a07ed5c884c05830d12"
+    },
+    {
+      "old": "ui-rework-2026-10-03/bag-assets-v1/source/fx-ink-flow-loop.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/bag-assets-v1/source/fx-ink-flow-loop.png",
+      "sha256": "b69a96f53d8ea65dfb1d4db352e6963fe4f8e68922ae1d5c6190ec967038c70f",
+      "bytes": 1114397,
+      "finalSha256": "b69a96f53d8ea65dfb1d4db352e6963fe4f8e68922ae1d5c6190ec967038c70f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/bag-assets-v1/施工记录.md",
+      "new": "docs/ai/archive/UI重制/bag-assets-v1/施工记录.md",
+      "sha256": "75cbc62e6811514407a4f24ee6532de37d518772f8f68ccea8b96fbd7223d5c5",
+      "bytes": 4489,
+      "finalSha256": "b59132ec5160fd867e9a05e3c4603de55c368686b2a16c94ddc9e3c37fcf38c8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/BUTTON-KIT.md",
+      "new": "docs/ai/archive/UI重制/BUTTON-KIT.md",
+      "sha256": "52fb0ac8f672ff26cb9eaf3d4225b0f564f899fee4c03803195595c43bab373a",
+      "bytes": 5201,
+      "finalSha256": "f514c1f153d9b31cb97e10fd69a7ac33b31dc782ab2172a065ca680cddebc7e8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/button-lab.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/button-lab.html",
+      "sha256": "d2370c58a52a8d85b56acdc611f4e77d291224cbb807c79f989d9a315f60a56a",
+      "bytes": 6124,
+      "finalSha256": "5a1e60a48633da26a7a5bca041ff992c5de2f06d0592799840feb5782066827d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/button-verification.json",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/button-verification.json",
+      "sha256": "dfa652ae409e1d487ccbbf26b6311f860dac2399475490c9a7ff5e4fd0d580bd",
+      "bytes": 491,
+      "finalSha256": "dfa652ae409e1d487ccbbf26b6311f860dac2399475490c9a7ff5e4fd0d580bd"
+    },
+    {
+      "old": "ui-rework-2026-10-03/capture-motion-panels.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/capture-motion-panels.ps1",
+      "sha256": "1fc6a96ca5ee557ead7a80191878397da51c1369a74ab6ba551482088cb68ce9",
+      "bytes": 1655,
+      "finalSha256": "1fc6a96ca5ee557ead7a80191878397da51c1369a74ab6ba551482088cb68ce9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/capture-ui.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/capture-ui.ps1",
+      "sha256": "17344cd5e2a91913eff04809cb62923bb0cf3ecd949b283f6344c40d1c17c12a",
+      "bytes": 2181,
+      "finalSha256": "17344cd5e2a91913eff04809cb62923bb0cf3ecd949b283f6344c40d1c17c12a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/.gitignore",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/.gitignore",
+      "sha256": "dad79685cc9433378a632f72aa8420a451c27f12937ed22ce4843e461e76f7f1",
+      "bytes": 9,
+      "finalSha256": "dad79685cc9433378a632f72aa8420a451c27f12937ed22ce4843e461e76f7f1"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/capture-navigation.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/dynamic-assets-v1/capture-navigation.ps1",
+      "sha256": "7fd087fdf97c11bd335b078d8c1a0e6bc21a2903dc6a74879c64bed1fe970daa",
+      "bytes": 2301,
+      "finalSha256": "1d0c600260395356ce3f532a4ae314f8b8743c2ac362388a36c02e536a28c5f8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/fx-brush-tip.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/fx-brush-tip.png",
+      "sha256": "808691e6acdcfafacee302d112c2606665e4fd0db09fd8422dd45430cc4251da",
+      "bytes": 7519,
+      "finalSha256": "808691e6acdcfafacee302d112c2606665e4fd0db09fd8422dd45430cc4251da"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/fx-corner-stroke.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/fx-corner-stroke.png",
+      "sha256": "ba35fde5364dfe72bf1f0d8e5ea832b03ea5a505fcbfbfcf7e6363d431078067",
+      "bytes": 12796,
+      "finalSha256": "ba35fde5364dfe72bf1f0d8e5ea832b03ea5a505fcbfbfcf7e6363d431078067"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/fx-dry-brush-mask.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/fx-dry-brush-mask.png",
+      "sha256": "5eee3690e67d1f8305b7e669cfffa89ed83be72d7f3ed7b1de690acfb24bc696",
+      "bytes": 95210,
+      "finalSha256": "5eee3690e67d1f8305b7e669cfffa89ed83be72d7f3ed7b1de690acfb24bc696"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/fx-ink-blot.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/fx-ink-blot.png",
+      "sha256": "b551612952229ff7560cded59e4524f197dfb250307577962a531505a2092cb6",
+      "bytes": 74057,
+      "finalSha256": "b551612952229ff7560cded59e4524f197dfb250307577962a531505a2092cb6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/fx-water-streak.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/fx-water-streak.png",
+      "sha256": "4b1372aca1d06c81dff99993c2a0f7e0ba035ba9a0af9c846876084a5f1cd4be",
+      "bytes": 36966,
+      "finalSha256": "4b1372aca1d06c81dff99993c2a0f7e0ba035ba9a0af9c846876084a5f1cd4be"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-1.png",
+      "sha256": "a160557ff6e02300b3214e6b32ecdbb25a98f50d32ce9f192f657f48b918f060",
+      "bytes": 81162,
+      "finalSha256": "a160557ff6e02300b3214e6b32ecdbb25a98f50d32ce9f192f657f48b918f060"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-2.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-2.png",
+      "sha256": "17bfe09939722b8a2e8bb3533133a4c5823f8698986ce2152b2483d128b9e657",
+      "bytes": 71531,
+      "finalSha256": "17bfe09939722b8a2e8bb3533133a4c5823f8698986ce2152b2483d128b9e657"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-3.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-3.png",
+      "sha256": "a51f532e56e988be00a3f0b96992a3743c1033ed1ceefa7e9617629856515bc3",
+      "bytes": 59160,
+      "finalSha256": "a51f532e56e988be00a3f0b96992a3743c1033ed1ceefa7e9617629856515bc3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-4.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-4.png",
+      "sha256": "4e166b3891cfc9800fd0868d2c8b29fe3b3ead2394ea6f7f61b604acfe49f00b",
+      "bytes": 59605,
+      "finalSha256": "4e166b3891cfc9800fd0868d2c8b29fe3b3ead2394ea6f7f61b604acfe49f00b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-5.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-5.png",
+      "sha256": "a07176a0cf437a3149bb9a8d8847c8813bc2dc1d49db71c42b4eb508cfdd1703",
+      "bytes": 85890,
+      "finalSha256": "a07176a0cf437a3149bb9a8d8847c8813bc2dc1d49db71c42b4eb508cfdd1703"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-6.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-6.png",
+      "sha256": "747c519dd886b9bcd4cd96310a429b6f53c621386323c939d592c618c91d876b",
+      "bytes": 74351,
+      "finalSha256": "747c519dd886b9bcd4cd96310a429b6f53c621386323c939d592c618c91d876b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-7.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-7.png",
+      "sha256": "ae22da1cad7a440c6ec74af9a18eb3d43d97bc14f8c9ed9e39ea594b48d3482f",
+      "bytes": 110700,
+      "finalSha256": "ae22da1cad7a440c6ec74af9a18eb3d43d97bc14f8c9ed9e39ea594b48d3482f"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/nav-ink-blot-8.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/nav-ink-blot-8.png",
+      "sha256": "ecd812e93a2781f7231a112ac87e2ee592dd22501cc37def9f1cb3ab667c130e",
+      "bytes": 84986,
+      "finalSha256": "ecd812e93a2781f7231a112ac87e2ee592dd22501cc37def9f1cb3ab667c130e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export/panel-ink-blob.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/export/panel-ink-blob.png",
+      "sha256": "317f56b2e5438a73b5dba2b8af5f7e2ee708f3e7f97bea2842c50cbb681056e3",
+      "bytes": 1687668,
+      "finalSha256": "317f56b2e5438a73b5dba2b8af5f7e2ee708f3e7f97bea2842c50cbb681056e3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/export-assets.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/dynamic-assets-v1/export-assets.ps1",
+      "sha256": "23f2e984792261bef18f5226bef9daa7fb31c1fa3d6442e4724e8745ab52bb71",
+      "bytes": 3367,
+      "finalSha256": "ed20489eb8217888ff418e32f5d965893010cfe944b4875be562a002b1fdec56"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/generation-map.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/generation-map.json",
+      "sha256": "c9930652fe61a4dce0eadee716e9c79b78c03f23b7677efa216d0b82ad28c746",
+      "bytes": 12256,
+      "finalSha256": "b27121a3adccd39a89a6e766e5a6b9b1e7b01595a0edc56378441cef3bff037b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/index.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/dynamic-assets-v1/index.html",
+      "sha256": "fdb6b8d5fba0235f4bcaa5ca9980dd3e5cbf57b3de145a010c3c67422221889e",
+      "bytes": 3961,
+      "finalSha256": "5cfca60889fe74cf0768a39783a99bb95ef05399fb41df649b7401d39c75823c"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/manifest.json",
+      "sha256": "cb1777ff51982a3294e61040c209d4149b95dd8ef27c44cc48089595280e5bbf",
+      "bytes": 4295,
+      "finalSha256": "cb1777ff51982a3294e61040c209d4149b95dd8ef27c44cc48089595280e5bbf"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/fx-brush-tip.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/fx-brush-tip.png",
+      "sha256": "b60b84eff6d9f4fdf547b1d79fc27fad26741e975c2efc4b841390f01f4f36a4",
+      "bytes": 357250,
+      "finalSha256": "b60b84eff6d9f4fdf547b1d79fc27fad26741e975c2efc4b841390f01f4f36a4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/fx-corner-stroke.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/fx-corner-stroke.png",
+      "sha256": "ebf923c772a67f0339a79ad3b3d1813b05b10e12b3b5c7f277c0f1d92acaed48",
+      "bytes": 1086855,
+      "finalSha256": "ebf923c772a67f0339a79ad3b3d1813b05b10e12b3b5c7f277c0f1d92acaed48"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/fx-dry-brush-mask.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/fx-dry-brush-mask.png",
+      "sha256": "4808f5143e9fcf94495743c6c07fdd461ba2ef3ce4c724a756b3cdb539b813a4",
+      "bytes": 1161193,
+      "finalSha256": "4808f5143e9fcf94495743c6c07fdd461ba2ef3ce4c724a756b3cdb539b813a4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/fx-ink-blot.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/fx-ink-blot.png",
+      "sha256": "7e79716ebc5a4f6dfc3fee1c14a1cba466099be5cbe25a219642372540f8186e",
+      "bytes": 1887339,
+      "finalSha256": "7e79716ebc5a4f6dfc3fee1c14a1cba466099be5cbe25a219642372540f8186e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/fx-water-streak.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/fx-water-streak.png",
+      "sha256": "7957b73126935f04226292817ec7ada316110a7a6689b5ebd4c49a018f903a14",
+      "bytes": 916329,
+      "finalSha256": "7957b73126935f04226292817ec7ada316110a7a6689b5ebd4c49a018f903a14"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-1.png",
+      "sha256": "ed89e7e90c2f1d66c19a19d5974f454cf437ae3244d301d0bde242a1c5921ff7",
+      "bytes": 1458182,
+      "finalSha256": "ed89e7e90c2f1d66c19a19d5974f454cf437ae3244d301d0bde242a1c5921ff7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-2.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-2.png",
+      "sha256": "9a6ca37397126d1ee20226aa37c5d410da3992ed2f0c6994158d6a4b11651bd0",
+      "bytes": 2035871,
+      "finalSha256": "9a6ca37397126d1ee20226aa37c5d410da3992ed2f0c6994158d6a4b11651bd0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-3.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-3.png",
+      "sha256": "f79b46a3e542c49c6798468f565552216f8b5ec62e5a5442266e613ea53678a7",
+      "bytes": 1845200,
+      "finalSha256": "f79b46a3e542c49c6798468f565552216f8b5ec62e5a5442266e613ea53678a7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-4.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-4.png",
+      "sha256": "f3e4662e2f20ff9684c4c55b7af5793d9e78ed2376e8ea397326e39afcc90187",
+      "bytes": 1427923,
+      "finalSha256": "f3e4662e2f20ff9684c4c55b7af5793d9e78ed2376e8ea397326e39afcc90187"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-5.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-5.png",
+      "sha256": "d7fe095dad9fc298d1cdc7c04bbd43645c2e859a4f53659507264779dfd330c9",
+      "bytes": 1291147,
+      "finalSha256": "d7fe095dad9fc298d1cdc7c04bbd43645c2e859a4f53659507264779dfd330c9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-6.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-6.png",
+      "sha256": "7076f8996d60a86357c24fb0628e439a4c0a5981e773c38f9030bb086ed065c8",
+      "bytes": 2125333,
+      "finalSha256": "7076f8996d60a86357c24fb0628e439a4c0a5981e773c38f9030bb086ed065c8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-7.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-7.png",
+      "sha256": "2f85601cd564f599bf0ac0eb1b4f8f90308d2086bd6969cc3495a3f51107eae8",
+      "bytes": 1613189,
+      "finalSha256": "2f85601cd564f599bf0ac0eb1b4f8f90308d2086bd6969cc3495a3f51107eae8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/nav-ink-blot-8.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/nav-ink-blot-8.png",
+      "sha256": "e9875f9a21ffd2cacda6535fd04293ad51065b8bd0883630343e0bca67f0306b",
+      "bytes": 2290325,
+      "finalSha256": "e9875f9a21ffd2cacda6535fd04293ad51065b8bd0883630343e0bca67f0306b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/source/panel-ink-blob.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/dynamic-assets-v1/source/panel-ink-blob.png",
+      "sha256": "1c8dd38d8568baf6f421763917c7c100e856f8e2eb6b3bfc3c2cc609588123b0",
+      "bytes": 972813,
+      "finalSha256": "1c8dd38d8568baf6f421763917c7c100e856f8e2eb6b3bfc3c2cc609588123b0"
+    },
+    {
+      "old": "ui-rework-2026-10-03/dynamic-assets-v1/施工记录.md",
+      "new": "docs/ai/archive/UI重制/dynamic-assets-v1/施工记录.md",
+      "sha256": "7b2d7bfb2f828fb7f70d6d6fd32c174bb8e2d00ae8dcdc1f05ae31c8c442c01d",
+      "bytes": 7032,
+      "finalSha256": "fe950cd01580fe174a26d97e4470da6219a0e2fb40fee01cef6fb9e4d6154c81"
+    },
+    {
+      "old": "ui-rework-2026-10-03/gallery.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/gallery.html",
+      "sha256": "642bc58616066b1f109668ad2714957326a34f2156a0002e24edac4de63d26ba",
+      "bytes": 3460,
+      "finalSha256": "6737a105e110226511651e8d694fa94613f915aaa2a38c9b7ebf0fff49b6bcb1"
+    },
+    {
+      "old": "ui-rework-2026-10-03/index.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/index.html",
+      "sha256": "bedd71dbe235f19a819c91443d385db6eb14c8cbf60bd0eb60f8f7a8ae353a6b",
+      "bytes": 4175,
+      "finalSha256": "6fe0d2eb7c27e255da0dad42b89399eea8a028a583816ac4d6f4bfefca9c4715"
+    },
+    {
+      "old": "ui-rework-2026-10-03/InkOrnate-Unity-Sprites.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/InkOrnate-Unity-Sprites.zip",
+      "sha256": "34f4762fdb2965196d8de6922f47116d9e49ba70373669de2292e898f031b3a3",
+      "bytes": 2256972,
+      "finalSha256": "34f4762fdb2965196d8de6922f47116d9e49ba70373669de2292e898f031b3a3"
+    },
+    {
+      "old": "ui-rework-2026-10-03/InkUIRuntimeSkin.pre-motion.cs.bak",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/Backups~/InkUIRuntimeSkin.pre-motion.cs.bak",
+      "sha256": "620f2db5bef9f635e753ee955de285fc70e06e54635d859deaa1d17583589c60",
+      "bytes": 8716,
+      "finalSha256": "620f2db5bef9f635e753ee955de285fc70e06e54635d859deaa1d17583589c60"
+    },
+    {
+      "old": "ui-rework-2026-10-03/motion-review.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/motion-review.html",
+      "sha256": "485f90774c537a878967133a6eba4e4383f8dd2eaeae5401fcb03570f6c337cd",
+      "bytes": 3124,
+      "finalSha256": "4d5842ad5539ffb5969bcdf0b4e42d275f0515730136039e03bf1e5f45d6f006"
+    },
+    {
+      "old": "ui-rework-2026-10-03/ornate.css",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/ornate.css",
+      "sha256": "0e087465deb8d09aef1b2fb12563df596b1d6bb95e423261bf98bc05deefe23d",
+      "bytes": 4860,
+      "finalSha256": "8dc6da63b1d7d743ecba8ae63b2b293753b87c41be876b19da7be22185e761fd"
+    },
+    {
+      "old": "ui-rework-2026-10-03/README.md",
+      "new": "docs/ai/archive/UI重制/README.md",
+      "sha256": "98caffde7f76deb507b843e16806f510ea7a456964622848106a5e2a9266bc21",
+      "bytes": 14704,
+      "finalSha256": "d27cac253085bd2507c3817654a3333cae1d723313f8ce4cb393a06204e4a9c1"
+    },
+    {
+      "old": "ui-rework-2026-10-03/realm-assets-v1/generation-map.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/realm-assets-v1/generation-map.json",
+      "sha256": "d3bd8a75b434055cfe2e4b546b7b767cbe1d9e5ff683d1c21968fabfa5bf1296",
+      "bytes": 1081,
+      "finalSha256": "659633dd6268c8cfa75a3b043daab21e79ea38d883e213a2f422e85aa3596345"
+    },
+    {
+      "old": "ui-rework-2026-10-03/realm-assets-v1/source/fx-ink-circle.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/realm-assets-v1/source/fx-ink-circle.png",
+      "sha256": "0a1528885eaa7efe1056e78868405d6b4720fc9d8e4f69a5ae8c4618841ca3ff",
+      "bytes": 848324,
+      "finalSha256": "0a1528885eaa7efe1056e78868405d6b4720fc9d8e4f69a5ae8c4618841ca3ff"
+    },
+    {
+      "old": "ui-rework-2026-10-03/realm-assets-v1/施工记录.md",
+      "new": "docs/ai/archive/UI重制/realm-assets-v1/施工记录.md",
+      "sha256": "2d2dc01ee40c07c8bee4873f13b6bbebffbe7597d5fdb6c290f3c4882ec1c8e1",
+      "bytes": 3143,
+      "finalSha256": "0f8dc29aeac81a698c18fd79b43953edf28870f89011d74691c2e9eb7b8ca279"
+    },
+    {
+      "old": "ui-rework-2026-10-03/refinements.css",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/refinements.css",
+      "sha256": "0b212fc9e5820a47cb0490ab97b7519bbb78542183e7c7d75d5a3d277e988017",
+      "bytes": 857,
+      "finalSha256": "05835f2e5cb90b9b88586606abec4d13a71745baaa6cfcb649fbc4230edf4af7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/runtime-review.html",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/runtime-review.html",
+      "sha256": "2e325f4a3ef094c88f0ec09f46f94a36bb180c2a7c2efa158fb40a536e831e28",
+      "bytes": 2898,
+      "finalSha256": "688c69ca1b6cd51040756a3b9207d1c5e97b37f144ac6d445a6a3a78bfed9baa"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/extract-skills-assets.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/screen-studies/extract-skills-assets.cjs",
+      "sha256": "ae5bd493845a191ab8b57ca52a9b21caf4e60a3e5d126858c4052fce8e67e4f7",
+      "bytes": 1608,
+      "finalSha256": "e7c43ee151f7611dc58824ee7ead0e48722a9f3187f4cef8bd6c9852133220b8"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/mockups-v2/图1-父幕布.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/mockups-v2/图1-父幕布.png",
+      "sha256": "24599a8364c2d3636c0acd517d84acf471ea19795b91bb522bc736c34736f18a",
+      "bytes": 18284,
+      "finalSha256": "24599a8364c2d3636c0acd517d84acf471ea19795b91bb522bc736c34736f18a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/mockups-v2/图2-背包.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/mockups-v2/图2-背包.png",
+      "sha256": "83330abc3b2e6f9abeb93f26b57bbe59b000e7dc90aba97b08eeaa434b1ec826",
+      "bytes": 58334,
+      "finalSha256": "83330abc3b2e6f9abeb93f26b57bbe59b000e7dc90aba97b08eeaa434b1ec826"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/mockups-v2/图3-境界.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/mockups-v2/图3-境界.png",
+      "sha256": "0852cf9b2cae10ca4ce34186adee665e0b4a47ab8536806c27230d0cfef8c59c",
+      "bytes": 58331,
+      "finalSha256": "0852cf9b2cae10ca4ce34186adee665e0b4a47ab8536806c27230d0cfef8c59c"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/mockups-v2/图4-神通.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/mockups-v2/图4-神通.png",
+      "sha256": "1f04ac664d4de15fa2088b952351b0471c0372459fb816bc78e4b92aaa982264",
+      "bytes": 69627,
+      "finalSha256": "1f04ac664d4de15fa2088b952351b0471c0372459fb816bc78e4b92aaa982264"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/mockups-v2/图5-战阵.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/mockups-v2/图5-战阵.png",
+      "sha256": "01a7582c9c3449fe98b776aac820450f427acc23d362f3a05010d5cc592eda3a",
+      "bytes": 93414,
+      "finalSha256": "01a7582c9c3449fe98b776aac820450f427acc23d362f3a05010d5cc592eda3a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/README.md",
+      "new": "docs/ai/archive/UI重制/screen-studies/README.md",
+      "sha256": "55f4096d0acd183bb9d853bb75a72300aeecd64c7e365e7081aeae41362f46ef",
+      "bytes": 1022,
+      "finalSha256": "623e16ec94ec8a35b9113fb7d03461c30ed0fb6a269605f01065193934e8510e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/00-full-clean.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/00-full-clean.png",
+      "sha256": "49b42e03545461f7a999534b77221278388a277762bfc39a45c4ec32de505370",
+      "bytes": 4087493,
+      "finalSha256": "49b42e03545461f7a999534b77221278388a277762bfc39a45c4ec32de505370"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/01-parent-curtain-and-frame.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/01-parent-curtain-and-frame.png",
+      "sha256": "8b5994331d1c4110a24af51b62fb1585249cae149535fb5ccfedaa4ee1b210ee",
+      "bytes": 2697697,
+      "finalSha256": "8b5994331d1c4110a24af51b62fb1585249cae149535fb5ccfedaa4ee1b210ee"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/02-parent-navigation.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/02-parent-navigation.png",
+      "sha256": "aa03030e2aaf6d817b72642c66d674a6b6ea07657df05ed50bda078ef1d00c56",
+      "bytes": 310212,
+      "finalSha256": "aa03030e2aaf6d817b72642c66d674a6b6ea07657df05ed50bda078ef1d00c56"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/03-active-ring.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/03-active-ring.png",
+      "sha256": "2828320baeedab541b5bb0127f5d941c68cc46624c56a65f4bee381278f21d84",
+      "bytes": 444950,
+      "finalSha256": "2828320baeedab541b5bb0127f5d941c68cc46624c56a65f4bee381278f21d84"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/04-learned-ability-library.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/04-learned-ability-library.png",
+      "sha256": "b0bffb5a4492c510b4e7879fe805a626f08835ec2972131f842725275a56ed74",
+      "bytes": 429153,
+      "finalSha256": "b0bffb5a4492c510b4e7879fe805a626f08835ec2972131f842725275a56ed74"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/05-enabled-passive-list.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/05-enabled-passive-list.png",
+      "sha256": "08f36417252afcb372e7d4cb94943cbbca5e699a77abfb951d892a8200a32bbc",
+      "bytes": 283101,
+      "finalSha256": "08f36417252afcb372e7d4cb94943cbbca5e699a77abfb951d892a8200a32bbc"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/06-ability-detail-panel.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/06-ability-detail-panel.png",
+      "sha256": "e55e5d703a9569df90b7bc3de9ef02145dff46bdab1448b10b5488ae76a39a1e",
+      "bytes": 731028,
+      "finalSha256": "e55e5d703a9569df90b7bc3de9ef02145dff46bdab1448b10b5488ae76a39a1e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/07-hud-and-active-slots.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/07-hud-and-active-slots.png",
+      "sha256": "c19ad71d0e64af6d59c9298594b02e7dfa45c507e894beddce625fd979eef9d9",
+      "bytes": 309073,
+      "finalSha256": "c19ad71d0e64af6d59c9298594b02e7dfa45c507e894beddce625fd979eef9d9"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/08-library-scrollbar.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/08-library-scrollbar.png",
+      "sha256": "713d97e41a6650b1d0a14cad71c3483553e71bfa6a44e07f07f1d9ede8e98630",
+      "bytes": 18598,
+      "finalSha256": "713d97e41a6650b1d0a14cad71c3483553e71bfa6a44e07f07f1d9ede8e98630"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/09-passive-scrollbar.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/09-passive-scrollbar.png",
+      "sha256": "8186cb89f52df39756cacaaa42e2cfeb2413453b0d46d40d11f2c29a6c0069e4",
+      "bytes": 19844,
+      "finalSha256": "8186cb89f52df39756cacaaa42e2cfeb2413453b0d46d40d11f2c29a6c0069e4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/10-active-slot-1.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/10-active-slot-1.png",
+      "sha256": "317a5c94974e3beb249e23ee95d91653be2d1210dae53bbfdfa5b8d74c12881a",
+      "bytes": 40548,
+      "finalSha256": "317a5c94974e3beb249e23ee95d91653be2d1210dae53bbfdfa5b8d74c12881a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/11-active-slot-2.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/11-active-slot-2.png",
+      "sha256": "feb129d472c82a36cc4360d812941bf060d95269891f95c60d1bd7e4cfa1985b",
+      "bytes": 40383,
+      "finalSha256": "feb129d472c82a36cc4360d812941bf060d95269891f95c60d1bd7e4cfa1985b"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/12-active-slot-3.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/12-active-slot-3.png",
+      "sha256": "e6fe27c27153d323913fba4e1cafb2142de07bf79c203cdca78c813df3a4a16d",
+      "bytes": 42937,
+      "finalSha256": "e6fe27c27153d323913fba4e1cafb2142de07bf79c203cdca78c813df3a4a16d"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/13-active-slot-4.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/13-active-slot-4.png",
+      "sha256": "f160804932b1087ea62ff915982fa048201ced984a11ccab83faec68271cc9da",
+      "bytes": 44672,
+      "finalSha256": "f160804932b1087ea62ff915982fa048201ced984a11ccab83faec68271cc9da"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/14-active-slot-5.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/14-active-slot-5.png",
+      "sha256": "f50e232e42e650af4bbc9e535acd08ab20421eb56372b96d9e4ff31f17ce846a",
+      "bytes": 43066,
+      "finalSha256": "f50e232e42e650af4bbc9e535acd08ab20421eb56372b96d9e4ff31f17ce846a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/15-active-slot-6.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/15-active-slot-6.png",
+      "sha256": "b7576882e5f5688efe3ce121a564c75d3f65f49874b9a5fcabc0005d51cd98ff",
+      "bytes": 43839,
+      "finalSha256": "b7576882e5f5688efe3ce121a564c75d3f65f49874b9a5fcabc0005d51cd98ff"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/manifest.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1/manifest.json",
+      "sha256": "fe21b3dcec4417ab77dccbc5f6003e70bb69a5571dae33c88d3b6191f528e0eb",
+      "bytes": 1480,
+      "finalSha256": "fe21b3dcec4417ab77dccbc5f6003e70bb69a5571dae33c88d3b6191f528e0eb"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1/README.md",
+      "new": "docs/ai/archive/UI重制/screen-studies/skills-assets-v1/README.md",
+      "sha256": "ea709506dff7d6c437d36d9ce070facdec38188a75475bbaeb47cda5129407ef",
+      "bytes": 941,
+      "finalSha256": "eecdbee62a1d0658d8d0259105fb11ff2ba70ee736daa1b2626c959ace906251"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-assets-v1.zip",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-assets-v1.zip",
+      "sha256": "10a0580659220b123da3b6e8b4011221f0cfacf575a4fa7c89d50f68db466afe",
+      "bytes": 9592989,
+      "finalSha256": "10a0580659220b123da3b6e8b4011221f0cfacf575a4fa7c89d50f68db466afe"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-scroll-passives-v2.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-scroll-passives-v2.png",
+      "sha256": "e0811d30295bcc6239d589adabb2f06ae3304c3a86454bc20c34b42e6849f8aa",
+      "bytes": 3145594,
+      "finalSha256": "e0811d30295bcc6239d589adabb2f06ae3304c3a86454bc20c34b42e6849f8aa"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/skills-scroll-passives-v3-clean.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/skills-scroll-passives-v3-clean.png",
+      "sha256": "4a7faf729085cc4499c02c8a5225d433de1e8867276b7e2f0e66f7e2457d0f31",
+      "bytes": 2890982,
+      "finalSha256": "4a7faf729085cc4499c02c8a5225d433de1e8867276b7e2f0e66f7e2457d0f31"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/specs.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/screen-studies/specs.json",
+      "sha256": "b665aca35b5fb308b609f2479bf92eb99d5ebdcacee267adb0c74bfbfbf606a4",
+      "bytes": 25251,
+      "finalSha256": "b665aca35b5fb308b609f2479bf92eb99d5ebdcacee267adb0c74bfbfbf606a4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/screen-studies/神通修订说明.md",
+      "new": "docs/ai/archive/UI重制/screen-studies/神通修订说明.md",
+      "sha256": "88432c0fdf479e7f92f400196f6c8242c3a91a608ed6766cb9db5cc2929d162d",
+      "bytes": 1834,
+      "finalSha256": "b92f7a734d95b43b375435111a4aeb02e4fe10fd1de8c90db2a676c988a3724a"
+    },
+    {
+      "old": "ui-rework-2026-10-03/skills-dynamic-v1/generation-map.json",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/skills-dynamic-v1/generation-map.json",
+      "sha256": "1969f5af9753f3a163b418f9abc465a18d31dc1bff75bab794893258fbe29757",
+      "bytes": 2721,
+      "finalSha256": "1002169c2b9e51c7736e2bc143bc997bc3db1b9b3756d2d79452775f7bcb505c"
+    },
+    {
+      "old": "ui-rework-2026-10-03/skills-dynamic-v1/source/fx-star-map.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/skills-dynamic-v1/source/fx-star-map.png",
+      "sha256": "ec435bc511b61318a69ba53821cde7760fd146cfe0eb55dc8999f55cd7a95416",
+      "bytes": 168394,
+      "finalSha256": "ec435bc511b61318a69ba53821cde7760fd146cfe0eb55dc8999f55cd7a95416"
+    },
+    {
+      "old": "ui-rework-2026-10-03/skills-dynamic-v1/source/fx-star-particle.png",
+      "new": "cultivation/Assets/UIResources/InkUI/Authoring/skills-dynamic-v1/source/fx-star-particle.png",
+      "sha256": "75464d9c4875f881d5ca1f998d5282c35481faca653791ba13871aac8bd90114",
+      "bytes": 340123,
+      "finalSha256": "75464d9c4875f881d5ca1f998d5282c35481faca653791ba13871aac8bd90114"
+    },
+    {
+      "old": "ui-rework-2026-10-03/skills-dynamic-v1/施工记录.md",
+      "new": "docs/ai/archive/UI重制/skills-dynamic-v1/施工记录.md",
+      "sha256": "dffa86521bbaef8cb1b42367ef45306a5c08c867659acd0f703e74a7e67c583a",
+      "bytes": 5690,
+      "finalSha256": "d697931cf618506c1fa93ad507f618fed23c6afab0c21ce96ff342de95ac2819"
+    },
+    {
+      "old": "ui-rework-2026-10-03/slice-buttons.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/slice-buttons.cjs",
+      "sha256": "52c58421d4825b65638311c6643484bdea725adf579f9971cf9b95a3eccb32fe",
+      "bytes": 5872,
+      "finalSha256": "dbb085336f10850c507232b1b93f3e0ee4409c0c086a908b0ffb39d9b952af21"
+    },
+    {
+      "old": "ui-rework-2026-10-03/styles.css",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/styles.css",
+      "sha256": "e1a322160096c84335ca4a60bc9c036908f8e9bef32458639d0e17c6602ca420",
+      "bytes": 21988,
+      "finalSha256": "a7928ef649e4392a313a4afc501b5898dc908edb8ffa9c844b8a15bbfd6293e5"
+    },
+    {
+      "old": "ui-rework-2026-10-03/UIEntryList.pre-motion.cs.bak",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/Backups~/UIEntryList.pre-motion.cs.bak",
+      "sha256": "f4d310a59291ebc81f98c79becabaa03af0ce4c810bd0a98301718eb17e73131",
+      "bytes": 26719,
+      "finalSha256": "f4d310a59291ebc81f98c79becabaa03af0ce4c810bd0a98301718eb17e73131"
+    },
+    {
+      "old": "ui-rework-2026-10-03/UIInkSkin.pre-navigation.cs.bak",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/Backups~/UIInkSkin.pre-navigation.cs.bak",
+      "sha256": "8c29a769205fb056b2fda191a2378dd1a7a4f06b6beb99d13753f54679ddeca6",
+      "bytes": 21211,
+      "finalSha256": "8c29a769205fb056b2fda191a2378dd1a7a4f06b6beb99d13753f54679ddeca6"
+    },
+    {
+      "old": "ui-rework-2026-10-03/verification.json",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/verification.json",
+      "sha256": "c6e14f0c2ef4fb2fc274263838afbe38da84aa0fafc217f59b868f3dd48626df",
+      "bytes": 1172,
+      "finalSha256": "c6e14f0c2ef4fb2fc274263838afbe38da84aa0fafc217f59b868f3dd48626df"
+    },
+    {
+      "old": "ui-rework-2026-10-03/verify-buttons.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/verify-buttons.cjs",
+      "sha256": "315885e65eff5d9d77dc760d2b61439f6b844298f268824355a75e8ab62432c0",
+      "bytes": 4133,
+      "finalSha256": "af22797fb79f3c0f06bf7a7893236c915b3116040afdf1fd75b4d52a758f0e75"
+    },
+    {
+      "old": "ui-rework-2026-10-03/verify-captures.ps1",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/verify-captures.ps1",
+      "sha256": "ee48b8fce282762a6a645eb79242bb4ccfe336669bc42a99f0cc22bf73034437",
+      "bytes": 1817,
+      "finalSha256": "ee48b8fce282762a6a645eb79242bb4ccfe336669bc42a99f0cc22bf73034437"
+    },
+    {
+      "old": "ui-rework-2026-10-03/verify.cjs",
+      "new": "cultivation/Assets/Editor/Tools/InkUIAuthoring/verify.cjs",
+      "sha256": "3a150c09708ad9ef31905d68c3dc4c22e31d16daba18af6f34d84a40470ec623",
+      "bytes": 8482,
+      "finalSha256": "a7b8f3eb319238ba3c44cf9b59609b09da26e51fcab9f0f5800119b988f69e82"
+    },
+    {
+      "old": "ui-rework-2026-10-03/全套UI施工单.md",
+      "new": "docs/design/UI重制/全套UI施工单.md",
+      "sha256": "f0530ae0d26ec8f17b0ee430d72a6d5c4b41e8231038cf7657bb4311dedc69c8",
+      "bytes": 21205,
+      "finalSha256": "fba745577142f040b4d37c5542cadf181749ee059e987e4fc3214f441b341e8e"
+    },
+    {
+      "old": "ui-rework-2026-10-03/八页重制总纲.md",
+      "new": "docs/design/UI重制/八页重制总纲.md",
+      "sha256": "503209f10a55d638921f956fe6284cefd6c630d8a667e2b2f079eb5382830bb8",
+      "bytes": 19195,
+      "finalSha256": "60ad981d090779417078e455028904f7debc5160d427832215a42324e2490be7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/动效接入验收-2026-10-04.md",
+      "new": "docs/ai/archive/UI重制/动效接入验收-2026-10-04.md",
+      "sha256": "de8a8fbae4ce43d5850d4cf7af2118800113657fd06bd563d965419747dde1e2",
+      "bytes": 5557,
+      "finalSha256": "72d6a8384e55f4be6dc0ccb74931ac6986ddbec6c03df306c7679a162c5617b4"
+    },
+    {
+      "old": "ui-rework-2026-10-03/导航修正验收-2026-10-04.md",
+      "new": "docs/ai/archive/UI重制/导航修正验收-2026-10-04.md",
+      "sha256": "b6fc60c32f4a597f0432c34f481fd75b0533379db77074ba7016342d28c3b709",
+      "bytes": 1801,
+      "finalSha256": "1ffd5bc6532390452f009f8e5a411a2d5e7f4553d3df75f638101fb02b395924"
+    },
+    {
+      "old": "ui-rework-2026-10-03/接入交接说明.md",
+      "new": "docs/ai/archive/UI重制/接入交接说明.md",
+      "sha256": "371b039b59e05a0a97813e2413f4a6c68425e9d57c07ccf822d03791c4830cfa",
+      "bytes": 6086,
+      "finalSha256": "f55c023db20302336d197a5b8b760caab549463be5ef6c31ad093574a069ed73"
+    },
+    {
+      "old": "ui-rework-2026-10-03/接入验收报告.md",
+      "new": "docs/ai/archive/UI重制/接入验收报告.md",
+      "sha256": "cc3a6d612755ec41185d98f123c1fc39737f2fe7ada9627b1650a65a65b65a60",
+      "bytes": 6962,
+      "finalSha256": "352f0626a934c9bd4799dd0b21c2a243dedf26bf1c8fcdf37b8bbc9484652359"
+    },
+    {
+      "old": "ui-rework-2026-10-03/提示词-第二轮.md",
+      "new": "docs/reference/UI素材/提示词-第二轮.md",
+      "sha256": "6eb874b49d5f4c1eddcfcea90e6c07c7378583d860a109336e09c6e5c0cfcbf1",
+      "bytes": 7962,
+      "finalSha256": "0c134500a64de81f6c794ce8a44ecefdbe59130cb53a2bb63f45476b3e3fc3a7"
+    },
+    {
+      "old": "ui-rework-2026-10-03/素材规格与提示词.md",
+      "new": "docs/reference/UI素材/素材规格与提示词.md",
+      "sha256": "d6e5dca6830165d3ad714ef725f08bdcdc36cbc1091f9e60f265404dc35a0c63",
+      "bytes": 13574,
+      "finalSha256": "f4f3e9b7d3f4156cce10befd2fcb19775c1cdda93c9529e5c87df7164a9e79e0"
+    }
+  ],
+  "additionalGenerationInputs": [
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-02fd4bc0-0d7f-4edb-9a7d-ee5df9f5076d.png",
+      "sha256": "9974ebac9b0b3a1d205ca3c70f2e880181f0e17810e02d15b75f9d9dc126d09f"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-07a2627c-b4ff-434d-a0c0-76993be4757d.png",
+      "sha256": "14da1dbec74587dceab46f79679a93a2dec12b662dd9266531309488234103a1"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-08627b7a-7546-49c4-816f-22c46ed95205.png",
+      "sha256": "4190f9716a6853dc16ef8e117003f7f33ba19f3ef8e0c943e2a18a737311fe2e"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-08663ee1-9bbe-4374-86ac-975f70358fbf.png",
+      "sha256": "508d01cdcec36dd425faf0bf2455b2c9c03e5a9a7a659b70c23f4080ea9da1d8"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-0abb9ff5-e57a-417e-91ff-ffe4ec6409d1.png",
+      "sha256": "e1d5c185c1d17e6e4c2ea872d192bc368887e5f574d729252e47584ec90b81d5"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-0e1c3761-0753-4d92-b127-c87ae3100a3e.png",
+      "sha256": "782a4c5a2f0d4b567a9242e1d0d43135623e995cfccb42d93e95bf4624bc46b6"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-0ef026e1-4738-4c4e-933c-b26444dc5174.png",
+      "sha256": "28ab67496a229bad67df7c81e71e2784cde04f54e1003f22e82e5e8e257fb147"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-12354f43-1a52-490a-8ce4-e4281dd96fc2.png",
+      "sha256": "60672220c76c67e468db09ac252f045f4d504a8a6d8e43851e35e13ea8761ac8"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-1a4af8b3-b044-4f9b-96de-04b34c660167.png",
+      "sha256": "71c808d2f3085988e44da99244e4f90d45ec54191089af2ae09fd653567c6625"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-1f3da19d-0c20-436e-9b6a-55809465f532.png",
+      "sha256": "ad3b9a5585cf2d7b8f10ff1b35ec433b5ec80360d1bb23926609fec023588b9d"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-23a9f11c-7126-4ed9-b47d-50679a25787b.png",
+      "sha256": "48dd1c51d4b6e9ac13dfab19a1bc8a57d7c7d773f72ec27cc11c09d3ec7e4bd9"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-2496ac5f-7ca0-491e-ba81-4f73bf8f2401.png",
+      "sha256": "136bba80b5d9606dfee70a055c73e47cc534315e86232754628b8abdcb39a83e"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-348633d3-f04f-4206-ac4f-0488a98a467a.png",
+      "sha256": "6e50bab43d6549c334462317f042b336f33a7e11d2323ce7ab93c09304cc5663"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-434fdb95-0b03-4286-bd17-470a3ea06e27.png",
+      "sha256": "81799e7c55ac7c5db196da59de8e3e537316b0518fdaaaa5abf6054066ffc1fe"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-463dda0e-0791-4208-84a1-3a983b154d1b.png",
+      "sha256": "0d09d2889eed8c199241f1695f8ad823617c1128da9dcc7970ebc533d57580a1"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-4b98b7a3-e1d8-442f-8fff-a44067217795.png",
+      "sha256": "0cecaebb55c47a7b6b07fef3f52de2d8888436e894465c19f209e45e8fade331"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-4c7b06b1-ccd3-466d-b7e8-f1ef2f6d32eb.png",
+      "sha256": "959067fa065f9caecd18fa6e37e671720bd22758234be1e560e51ae2ac759c4c"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-4d07cbf0-83d9-4cba-ab56-9f48f6876deb.png",
+      "sha256": "040850f45581cb5960a53715920a67251d138436f9bbcedd3858de09c943a630"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-4e1a211e-f17d-4869-a3be-4961046217da.png",
+      "sha256": "026c98e05ee30f7b43b1afc9f2d1ef084e2d3b093dbba93e8c3bf8e9d24d0852"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-5fbe03a5-b01f-4540-8310-14f3470568d7.png",
+      "sha256": "1b3cf0ceb2b9f591811f12c5a44e6b6bf17054f97cd066004f7fe661720e5d19"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-68eb7443-80d9-4dca-8c1f-29dc9c41307c.png",
+      "sha256": "3d6648a5536272e89fe2607999384588361f920e868d267090d0688b29cbbdc0"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-6b32af37-63c4-4993-a785-6548e1c28b88.png",
+      "sha256": "bda0c98d13791f3e992f64d677dfab10fa5a02c773cdd0068ac04a394ca1998f"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-6effefa3-a1d5-461a-b5be-96fe1998ce65.png",
+      "sha256": "3db227076edd9aaa38fadc57b06b008642f0a52230f77a446e05dff136e6e3d1"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-8ae4cb3d-1014-4e0c-8376-279c64bde3b0.png",
+      "sha256": "908b2e8d91a687bf1c4083be7a412b4c94572e67e5f5de1d57f1e0d9f41949f8"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-8efd4ea3-67ca-459c-ae9f-cf707b9d5df1.png",
+      "sha256": "a6f284b3c51a8d8d4f32ec319c06391857e67b63c4b9eca92fb016ac55ec31df"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-9262174f-263d-4a9e-a0ec-cec27dd8b12b.png",
+      "sha256": "d32db889f7a3193fbc4f1a6c784e7f380dfaa8e9a523af64271081542adf8240"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-9747ba7b-9b09-477a-a9b3-95f738cb5678.png",
+      "sha256": "d48f136c59177e559274daa3cca9dee30e667fcef0919c2ca99f64aa674d1e29"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-a0c4a8b9-1370-4685-abd5-58d1ddaa76b7.png",
+      "sha256": "cc1c62f45645e24fdd73cab9094a0b0019d2a78a7247dafd687a4c2b9ad5461e"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-a2608f56-2170-47b4-b107-f62927714053.png",
+      "sha256": "3003cedb790934fc8b218ea1264e58ab4c6f6496b414f7dc375754bc45084e42"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-a7e5d764-66d2-4120-9189-28009ff38262.png",
+      "sha256": "95ec00e349832635fcc9c60809eae09d8d0a83a0876eae1ffad94181559deb23"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-aebad655-f5e7-44cf-9c23-2689d59b23e0.png",
+      "sha256": "7a989d5e67a7c00f871d048da4b55607816a43ac4adee740ba1021b9be9d3fbf"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-aee5bf8e-b7df-4ca5-a222-a5b3b3e2aed3.png",
+      "sha256": "b450c302eb9fa8e01e291f231e92159686507f86b4cf642de37c82812cc4f299"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-b6afdad4-d6e8-43ca-bfeb-6e6a9bc0de33.png",
+      "sha256": "2eb0809c4f1e58430118a97306f6c4ae9b8fa71f84ac2047073ae0b090e172dc"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-bbcf74a8-c760-4ab4-b87f-1e8792d8c285.png",
+      "sha256": "bcd8bc1a27ca71af95e856579cc5e9b368b1147934b64b83b16ec2b2471c3372"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-bec17297-190c-46fa-8ffe-54f81db533a5.png",
+      "sha256": "f3233cd8617fb7d4871828fcb73d5f1c39f7912b3123f40d3f8f492884162bdb"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-c0eee237-2e85-4969-b81f-1e8ddd094f28.png",
+      "sha256": "b745610e39a97cc7539fdb2ff39b681e8a73f301f26ebf0c9d0e27862a2e1db2"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-d034fc34-05cc-482f-a7a0-ffb8da250663.png",
+      "sha256": "d413fffea45ba09fb9d6177550684e177aaf8699805d0d6989e62389a8d63fe2"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-dc977179-c2d7-4d8c-b8b6-ab134df62544.png",
+      "sha256": "7399a66ccb62f82cba131bb73943912bbd4acd2c2f6c0169ecee39c46789b928"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-e0968124-a5a4-451f-9ba5-bd3b157fbec1.png",
+      "sha256": "bc7e0016bb497327faf4ee334444fa3d8947f09c2c65768b5e689a8916a83e95"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-f0725ab2-e217-4ca9-acbe-c7b436674e5c.png",
+      "sha256": "eea568ca89249e76fd47685b8ae4ac553fe21374fee5a726e00de4a185a894b9"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-f14645e8-eac7-4c93-9bcd-93c653ebf5a3.png",
+      "sha256": "9999146ecf5d6c8160218240c7c09c2808ddc73dc66d0db874b59365ba5f86a4"
+    },
+    {
+      "file": "cultivation/Assets/UIResources/InkUI/Authoring/GeneratedSources/exec-f2549084-2340-41e1-bf38-977a3a734e61.png",
+      "sha256": "d5740ed86bf62e5c7423f09db3ab72ce89de19cdb6a818cae8383d27f3f817e9"
+    }
+  ],
+  "note": "sha256 verifies original bytes at move time; finalSha256 records intentional path/document edits. Runtime Resources and GUIDs were not relocated."
+}

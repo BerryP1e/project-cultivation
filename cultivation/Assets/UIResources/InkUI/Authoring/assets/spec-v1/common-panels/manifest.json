@@ -1,0 +1,64 @@
+{
+  "version": "素材规格与提示词 v1",
+  "transparentPng32": true,
+  "dimensions": {
+    "plot-tag": "1000x1140",
+    "dialog-scroll": "1024x512",
+    "dialog-nameplate": "480x112",
+    "dialog-choice-*": "720x148",
+    "toast": "680x104",
+    "tower-floor-bar": "1800x80",
+    "teleport-plate": "1024x1024",
+    "title-plaque": "1024x240"
+  },
+  "nineSlice": {
+    "plot-tag": [
+      48,
+      48,
+      48,
+      48
+    ],
+    "dialog-scroll": [
+      48,
+      32,
+      48,
+      32
+    ],
+    "dialog-nameplate": [
+      24,
+      16,
+      24,
+      16
+    ],
+    "dialog-choice-*": [
+      32,
+      16,
+      32,
+      16
+    ],
+    "toast": [
+      24,
+      16,
+      24,
+      16
+    ],
+    "tower-floor-bar": [
+      24,
+      12,
+      24,
+      12
+    ],
+    "teleport-plate": [
+      48,
+      48,
+      48,
+      48
+    ],
+    "title-plaque": [
+      48,
+      48,
+      48,
+      48
+    ]
+  }
+}

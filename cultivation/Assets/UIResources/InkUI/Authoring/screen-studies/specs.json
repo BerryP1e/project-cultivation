@@ -1,0 +1,243 @@
+[
+  {
+    "id": "01-cultivation",
+    "name": "闭关修炼",
+    "scene": "个人洞府 · 修炼小屋",
+    "sources": [
+      "docs/architecture/修炼与境界.md",
+      "docs/guides/时间系统.md",
+      "cultivation/Assets/Scripts/UI/CultivationUI.cs"
+    ],
+    "rules": "Current cultivation technique, rank and K, current realm, progress, remaining attempts, daily opportunities and used count; two distinct actions 修炼一次 and 闭关. Existing screenshots show 炼气第1层, 0/100, total spirit qi0, +2 per attempt, max90 levels. Do not invent energy minigames.",
+    "variants": [
+      "A · 横卷内观：left three cultivation tabs; current technique slip on left; large central ink circle with 炼气第1层; horizontal progress below; attempts and two ornate actions at bottom.",
+      "B · 小屋入境：visible isometric meditation room and seated silhouette in central world space; restrained left technique parchment and right realm/stat scroll; actions as small desk-level UI retaining all counts.",
+      "C · 丹田玉盘：asymmetrical broken ink circular progress seal dominates left; three ribbon tabs at upper right; right compact stacked technique/attempt cards; two ornate buttons immediately under progress."
+    ],
+    "text": "闭关修炼 / 境界突破 / 转修功法 / 太虚炼气诀 / 炼气第1层 / 0 / 100 / 修炼一次 / 闭关",
+    "scrolling": "长说明区域必要时独立滚动，关键状态与主按钮保持可见。"
+  },
+  {
+    "id": "02-breakthrough",
+    "name": "境界突破",
+    "scene": "个人洞府 · 修炼小屋",
+    "sources": [
+      "docs/design/境界与功法设计.md",
+      "cultivation/Assets/Scripts/Player/PlayerCultivation.cs"
+    ],
+    "rules": "A deliberate risky confirmation screen, not gear equipment. Show current and target realm, required/accumulated spirit qi, current success probability and failure loss. Current screenshot uses base75%, optional correct-realm pill95%; show failure loses this realm's accumulated qi. Pill belongs to current realm, no guarantee-success fake button. Keep other cultivation tabs reachable.",
+    "variants": [
+      "A · 破境卷：two realm seals side by side current→target; clean vertical probability and cost list to right; warning directly above ornate 确认突破.",
+      "B · 关隘墨环：large broken ink probability ring 75% central, small pill socket to right with 95% comparison, steps conditions→probability→confirm along bottom.",
+      "C · 双页问道：open manuscript spread; left page current realm/accumulation, right page target/probability; cinnabar risk note and a single lower-center ornate confirmation seal."
+    ],
+    "text": "境界突破 / 炼气第1层 / 炼气第2层 / 成功率 75% / 服丹后 95% / 失败将散去本层灵气 / 确认突破 / 返回",
+    "scrolling": "长说明区域必要时独立滚动，关键状态与主按钮保持可见。"
+  },
+  {
+    "id": "03-technique-switch",
+    "name": "转修功法",
+    "scene": "个人洞府 · 修炼小屋",
+    "sources": [
+      "docs/design/境界与功法设计.md",
+      "cultivation/Assets/Scripts/Player/PlayerCultivation.cs"
+    ],
+    "rules": "Select among already learned cultivation methods, preview BEFORE and AFTER realm before confirming. 太虚炼气诀 玄品 K1.0 and 青云剑诀 地品 K2.6. Going from lowerK to higherK costs5% total accumulated qi; higherK→lowerK does not increase realm and respects new technique cap. No skill-tree unlock mechanics.",
+    "variants": [
+      "A · 双卷对照：learned techniques list at left, side-by-side current/target details in main area, fixed realm forecast strip and confirm at bottom.",
+      "B · 玉简书架：horizontal fan of physical-looking learned jade manuals in center with selected lifted volume; current/target compact comparison in right parchment; clear 5% note.",
+      "C · 书案换卷：large open book current left, selected next right; narrow top shelf for learned techniques; down arrow connects preview to ornate 确认转修."
+    ],
+    "text": "转修功法 / 已学功法 / 太虚炼气诀 / 青云剑诀 / 当前 / 转修后预估 / 灵气损耗 5% / 确认转修",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "04-inventory",
+    "name": "背包",
+    "scene": "角色面板 · 随时查看",
+    "sources": [
+      "docs/design/物品系统.md",
+      "cultivation/Assets/Scripts/UI/UIEntryList.cs"
+    ],
+    "rules": "Owned item inventory not shop. Category filters, counts, selected item's name, quality, description and use action. Items include 冰暴术玉简,聚气丹,炼气破境丹,生灵草,凝露花,灵田开拓令. No invented weight or currency systems. Placeable field token works only in personal cave; show scene restriction when relevant.",
+    "variants": [
+      "A · 藏物横卷：left character nav, center 5-column item grid and slim category tabs, fixed right selected-item details, ornate 使用 action.",
+      "B · 百宝匣：shallow ornamental wooden-and-paper inventory tray in center; material and pill icon compartments, selected item lifted with separate shadow; bottom tooltip scroll and right use action.",
+      "C · 清单笺册：dense readable vertical inventory list with icons, quantities and category, right half large item illustration and description; compact top search. Explicitly list mode instead of grid."
+    ],
+    "text": "背包 / 全部 / 丹药 / 玉简 / 灵材 / 聚气丹 / 使用 / 已选物品",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "05-realm",
+    "name": "境界与属性",
+    "scene": "角色面板 · 角色成长总览",
+    "sources": [
+      "docs/architecture/修炼与境界.md",
+      "cultivation/Assets/Scripts/UI/UIAttributeList.cs"
+    ],
+    "rules": "Read-only overview with realm, level1/90, technique, difficultyK, progress, totalqi and grouped stats. HP320 attack42 defense18 spirit150 plus crit, insight, dodge, regeneration and modifiers. Distinguish progress from combat energy. Do not invent a remote cultivation button bypassing actual cabin.",
+    "variants": [
+      "A · 内观三栏：left grouped stats basic/combat/recovery; center stylized low-poly character silhouette and large realm title; right current technique and realm progress.",
+      "B · 境界长卷：horizontal cultivation journey strip across top, current realm dominant; lower left grouped readable attributes, lower right technique manuscript; keep future realm labels subdued.",
+      "C · 道骨笺页：left large circular realm seal with technique booklet below, right two-column organized attribute sheet with expandable advanced stats; parchment tabs not every stat in ornate box."
+    ],
+    "text": "境界 / 炼气第1层 / 第1级 / 共90级 / 当前功法 / 太虚炼气诀 / 气血 320 / 攻击 42 / 防御 18 / 灵力 150",
+    "scrolling": "长说明区域必要时独立滚动，关键状态与主按钮保持可见。"
+  },
+  {
+    "id": "06-abilities",
+    "name": "神通",
+    "scene": "角色面板 · 六槽主动装备与被动启停",
+    "sources": [
+      "docs/architecture/主动技能与神通.md",
+      "cultivation/Assets/Scripts/UI/UIActiveSkillBar.cs"
+    ],
+    "rules": "Exactly six shared ACTIVE equipment slots for abilities/treasures/arrays, indices1–6. Separate learned ability library and passive list with enable/disable. Use 冰暴术,焚天炎术,雷动千闪,寒墟; passive凭虚御风. Show one lifted drag card and target slot contour, right skill information. No extra seventh center slot; center is decorative. Slot1..6 maps same HUD.",
+    "variants": [
+      "A · 六道玉环：six irregular jade talismans around empty ink ring; library of four cards below, selected details right; passive strip separate.",
+      "B · 山形灵枢：six irregular talisman slots along asymmetrical rising cloud/mountain arc across middle; left vertical skill list; right skill details; large scene negative space around arc.",
+      "C · 扇骨符阵：six wedge-shaped talisman blades in HALF FAN, numbered left-to-right1–6; bottom library, right open scroll detail; passive toggles top-right independent."
+    ],
+    "text": "神通 / 六道灵枢 / 神通·法宝·灵阵共用 / 已悟神通 / 冰暴术 / 焚天炎术 / 雷动千闪 / 寒墟 / 凭虚御风 / 装备 / 卸下",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "07-treasures",
+    "name": "法宝",
+    "scene": "角色面板 · 法宝收藏、详情与共享槽位",
+    "sources": [
+      "cultivation/Assets/Scripts/UI/UIPanelData.cs",
+      "cultivation/Assets/Scripts/Data/TreasureDefinition.cs"
+    ],
+    "rules": "Treasure system effects are pending development. Clearly label '法宝效果待开发' in one small note. Existing UI still needs owned treasure list, selected item preview/description, shared six active slots. Sample treasure art sword/bell/jade mirror may be used labelled 示例, not established real content. Do not invent forging, upgrades, affixes, refinement costs or equipment stats.",
+    "variants": [
+      "A · 藏器玉环：same six-slot ring used by skill screen above collection cards; selected sword illustration within right scroll; concise pending-effect note.",
+      "B · 器阁展台：large middle floating sword on shallow bronze pedestal, owned treasure thumbnails left, compact six shared slots across bottom, right details and 装备.",
+      "C · 藏器扇册：folded paper artifact catalogue occupies left half; selected treasure diagram and description right; six talisman slots in asymmetrical jade band above action row."
+    ],
+    "text": "法宝 / 已有法宝 / 法宝效果待开发 / 六槽共用 / 示例 / 装备 / 卸下",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "08-arrays",
+    "name": "灵阵",
+    "scene": "角色面板 · 已学灵阵与共享槽位",
+    "sources": [
+      "cultivation/Assets/Scripts/Data/SpiritArrayDefinition.cs",
+      "cultivation/Assets/Scripts/UI/UIEntryInfo.cs"
+    ],
+    "rules": "Spirit-array effect system pending. Show 已学灵阵, selected diagram preview, range/duration/target/cost fields as dashes or illustrative only; shared six active slots. Explicit small 灵阵效果待开发. Must not turn this into nine-grid creature formation: that is a separate system. Do not introduce resource-consuming field deployment or new crafting gameplay.",
+    "variants": [
+      "A · 阵图玉环：shared six talisman ring at top, learned array library at bottom, right array-diagram parchment and pending-effect note.",
+      "B · 阵盘研读：large circular geometric ink array diagram in left center, learned diagram scroll list far left, right explanatory card, six compact active slots along lower band.",
+      "C · 阵谱折页：overlapping landscape parchment diagram panels arranged like folding book; selected page central; six irregular hanging talismans across upper right; information and equip lower right."
+    ],
+    "text": "灵阵 / 已学灵阵 / 六槽共用 / 灵阵效果待开发 / 范围 / 持续时间 / 布置消耗 / 装备",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "09-formation",
+    "name": "战阵",
+    "scene": "角色面板 · 真灵布阵",
+    "sources": [
+      "docs/architecture/战阵真灵.md",
+      "cultivation/Assets/Scripts/Formation/SpiritFormationLayout.cs"
+    ],
+    "rules": "Exactly3x3 board with fixed PLAYER center index4. Eight outer positions, MAX5 creatures simultaneously. Upper row means PLAYER FORWARD, not camera absolute north. Owned roster includes monsters and humans sorted monsters first, group families and realm. Show 白鹿精·幼,白鹿精·王,白熊精·壮,百眼魔君·幼. Do not reduce to only five visible usable positions. Drag ghost placement/selected outline and occupied count3/5.",
+    "variants": [
+      "A · 九宫阵笺：flat3x3 ink grid central, player center, clear 前方↑; roster below, details right, ornate 上阵 下阵.",
+      "B · 沙盘布阵：slightly tilted jade-and-paper3x3 tactical board with small 3D-looking creature pawns, center human pawn; list right and info left; fixed board orientation.",
+      "C · 真灵棋卷：large circular broken ink boundary enclosing exactly3x3 positions on paper, center player's seal; family-grouped roster left, detailed portrait right, count3/5 top."
+    ],
+    "text": "战阵 / 前方 / 玩家 / 已上阵 3/5 / 最多5名 / 白鹿精·幼 / 白熊精·壮 / 上阵 / 下阵",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "10-mounts",
+    "name": "坐骑",
+    "scene": "角色面板 · 3D预览、门槛与装备",
+    "sources": [
+      "docs/architecture/坐骑与御风.md",
+      "cultivation/Assets/Scripts/UI/UIMountPage.cs"
+    ],
+    "rules": "Large real3D-style preview with idle and pointer rotation; owned mount list with unlock realm threshold, selected description and buffs, equip/unequip. Examples 灵翅,狼骑,灵鹿,灵鹤. Selected 灵翅 from original screenshot, movement+.2 dodge+2% illustrative. Equip mount auto disables passive凭虚御风, enable flight unequips mount. No pet feeding or breeding.",
+    "variants": [
+      "A · 云台观骑：large top 3D wing preview, owned mount strip bottom-left, fixed details bottom-right and equipped action; rotation hint underneath preview.",
+      "B · 行云立轴：large central white deer or crane3D specimen on ink-cloud dais, owned mounts slim left, detailed vertical parchment right, ornate装备坐骑.",
+      "C · 山水游骑：full scenic cloud and mountain preview with selected mount center-left, minimal overlaid bottom thumbnail rail and floating right info scroll; horizontal drag guide arc."
+    ],
+    "text": "坐骑 / 灵翅 / 灵鹿 / 狼骑 / 灵鹤 / 境界门槛 / 乘骑增益 / 装备坐骑 / 装备坐骑将停用凭虚御风 / 拖动旋转",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "11-appearance",
+    "name": "外观",
+    "scene": "角色面板 · 整体外观预览与解锁",
+    "sources": [
+      "docs/guides/外观系统说明.md",
+      "cultivation/Assets/Scripts/UI/外观页.cs"
+    ],
+    "rules": "Two actual outfits: 村中少年 default and 修仙者 unlocked by completing sect-joining quest. Full-body young male game character, same skeletal model, outfit switching only. Left/right rotation only, no vertical orbit. Show owned/locked/equipped distinctly and requirement 完成入宗任务. No combat stat bonuses, no per-slot dressing or gear rarity, no gacha cosmetics.",
+    "variants": [
+      "A · 衣冠双栏：left owned outfit list with equipped badge; large full-body character preview on right parchment, bottom horizontal-only rotation hint and 应用外观.",
+      "B · 镜台试衣：central circular antique mirror with full-body stylized character, two outfit cards below, lock condition on right small paper slip, ornate应用外观.",
+      "C · 人物立绘卷：large character center-left over ink bamboo background, narrow right outfit catalogue showing default and locked sect robes, fixed outfit explanation and application button."
+    ],
+    "text": "外观 / 村中少年 / 修仙者 / 已装备 / 完成入宗任务解锁 / 左右拖动旋转 / 应用外观",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "12-alchemy",
+    "name": "丹房",
+    "scene": "太虚宗 · 炼丹阁",
+    "sources": [
+      "docs/guides/炼丹.md",
+      "cultivation/Assets/Scripts/Data/灵丹定义.cs"
+    ],
+    "rules": "Recipes聚气丹 清障丹 愈伤丹 回春丹; one main slot plus exactly4aux slots. Selected聚气丹 ingredients生灵草2 凝露花1,energy8,rate90%,effect+25 accumulatedqi. Failed attempt consumes ingredients+energy too. Learned recipes auto fill; manual materials must match known recipe. Pill rank fixed one品, no quality selector, fire slider, timing minigame.",
+    "variants": [
+      "A · 丹炉三栏：left recipe list, center furnace and five horizontal ingredient slots, material tray below, right result/rate/cost and 开炉炼丹.",
+      "B · 环炉药盘：central bronze furnace with one main tray in front and four auxiliary trays on shallow semicircle, known recipe scroll left, ingredient drawer and result details right; one herb lifted during drag.",
+      "C · 丹方书案：open recipe book left with ingredients checklist, five ingredient bowls center below small furnace preview, right result seal and probability; ornate main action anchored bottom."
+    ],
+    "text": "丹房 / 聚气丹 / 清障丹 / 愈伤丹 / 回春丹 / 主材 / 辅材 / 生灵草×2 / 凝露花×1 / 成丹率90% / 灵气8 / 失败也消耗材料与灵气 / 开炉炼丹",
+    "scrolling": "列表区必须有清晰可拖动的竖向滚动条与滑块；底部露出下一行，表达尚有更多内容。鼠标悬停列表时滚轮仅滚动该列表，不移动装备位、详情、材料槽、主操作按钮或整张面板。长列表提供名称搜索、分类筛选、数量与无结果提示；切换选中项保留滚动位置，切换分类分别保存位置。拖拽时靠近列表边缘自动缓慢滚动，松手后恢复；点击、滚动与拖拽使用移动阈值区分。模型预览区域拖动旋转，不夺取列表的滚轮输入。"
+  },
+  {
+    "id": "13-spirit-field",
+    "name": "灵田互动",
+    "scene": "个人洞府 · 世界内地块近距交互",
+    "sources": [
+      "docs/guides/灵田.md",
+      "cultivation/Assets/Scripts/UI/灵田地块界面.cs"
+    ],
+    "rules": "LIGHTWEIGHT world-context interaction, not fullscreen administrative inventory. Existing herb plot visible and unobscured. Status card '第1块地 一阶下品 生灵草 生长中53% 还需约1.4天'; actions when growing disabled尚未成熟, 挪动地块,升级 with requirement境界3级 +升阶令3. Mature harvest and empty plant are states, not simultaneous active actions. Automatic growth only, no watering/fertilizing. Moving closes card and uses ghost plot,R45deg,left confirm,right/Esc cancel. No predefined grids in world opening0plots. Small sample plot exists for design.",
+    "variants": [
+      "A · 随田纸签：small ivory feather-edged vertical parchment at right of selected actual plot, anchored by subtle line, no dark full-screen backdrop; only4 relevant interaction areas.",
+      "B · 叶形浮笺：organic leaf-shaped compact card near plot with concise progress ring, harvest status, two small ornate buttons and condition line; rest of world visible.",
+      "C · 地边横签：horizontal low profile information/action ribbon along bottom just above HUD, selected plot highlighted in scene, slim seed drawer on left only when needed; inset transparent relocation ghost and R45° hint outside main card."
+    ],
+    "text": "第1块地 / 一阶下品 / 生灵草 / 生长中 / 53% / 还需约1.4天 / 尚未成熟 / 挪动地块 / 升级 / 境界3级 / 升阶令×3",
+    "scrolling": "长说明区域必要时独立滚动，关键状态与主按钮保持可见。"
+  },
+  {
+    "id": "14-hud",
+    "name": "常驻HUD与世界交互",
+    "scene": "洞府、村庄、野外、镇妖塔 · 战斗与探索",
+    "sources": [
+      "docs/architecture/游戏HUD.md",
+      "docs/guides/时间系统.md",
+      "docs/guides/任务引导.md",
+      "docs/design/交互系统.md"
+    ],
+    "rules": "World must dominate at least80% of screen, NO large menu panel. Lower LEFT one cultivation icon and exactly6 ability icons mapped1–6, health320/320 and combat qi150/150 as two slim bars, extra small cultivation-attempt progress. Names not always visible, selected icon fixed tooltip above HUD. Vertical cooldown mask, countdown8 and .2 examples. Topright TaiXu date and daily opportunities distinct used count; quest tracker subordinate just below. F nearby interaction; targeting health over enemy. Keep HUD small, no extra empty hotbar or invented minimap.",
+    "variants": [
+      "A · 玉符横列：compact left-bottom horizontal six irregular jade slots and separate cultivation seal, brushstroke vital bars; tooltip above; top-right small calendar and quest slip.",
+      "B · 折扇短栏：six small talisman fan blades on a SHALLOW curve anchored lower left, same1–6 order and thin vitals; compact upper-right scroll calendar; ample center battlefield.",
+      "C · 墨线轻HUD：mostly borderless ink glyphs with six tiny gold outlined irregular icons lower-left, one current technique seal, two highly legible hairline bars, contextual information only on hover and F interaction. Minimal ornamental weight but same ricepaper palette."
+    ],
+    "text": "太虚历1年1月1日 / 子时 / 修炼机会2/10 / 今日已用0 / 320/320 / 150/150 / 1 2 3 4 5 6 / F 交互",
+    "scrolling": "长说明区域必要时独立滚动，关键状态与主按钮保持可见。"
+  }
+]
