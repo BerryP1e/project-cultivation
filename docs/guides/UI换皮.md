@@ -12,7 +12,7 @@
 
 ### 0.1 全工程映射与状态入口
 
-2026-10-04 第三阶段开工：按用户手绘与最新澄清，**父页面没有底板**。`UIInkNavigation` 在运行时隐藏 Window 与 Sidebar 的绘制，保留八个原按钮和数据事件；八颗墨点错落排布，图标中央、名称下方。`UIInkFluid` 以 UIInkDensitySimulation 的二维密度/速度状态及 InkDensity.shader 进行持续平流与扩散，叠加游走和阻尼牵引，划过水痕、点击径向扩散；减少动效停止全部常态运动。没有整页纸纹覆盖。14 张新透明素材、双分辨率截图与录像入口见 [墨点父导航施工记录](../../ui-rework-2026-10-03/dynamic-assets-v1/施工记录.md)。**子页内容尚未按新总纲重制，以下卡片/环槽等仍是过渡布局。** 编辑器 `inkqa:dynamicbefore/dynamicafter` 后重进 Play 可对比父导航。
+2026-10-04 第三阶段开工：按用户手绘与最新澄清，**父页面没有底板**。`UIInkNavigation` 在运行时隐藏 Window 与 Sidebar 的绘制，保留八个原按钮和数据事件；八颗墨点错落排布，图标中央、名称下方。`UIInkFluid` 以 UIInkDensitySimulation 的二维密度/速度状态及 InkDensity.shader 进行持续平流与扩散，叠加游走和阻尼牵引，划过直接形变墨点、点击沿不规则墨点边缘洇开（圆环仅为较弱附加反馈）；减少动效停止全部常态运动。没有整页纸纹覆盖。14 张新透明素材、双分辨率截图与录像入口见 [墨点父导航施工记录](../../ui-rework-2026-10-03/dynamic-assets-v1/施工记录.md)。**子页内容尚未按新总纲重制，以下卡片/环槽等仍是过渡布局。** 编辑器 `inkqa:dynamicbefore/dynamicafter` 后重进 Play 可对比父导航。
 
 2026-10-04 第一阶段补图：`AbilityArt/` 已接当前真实目录 8 项神通的 8 枚图标与 8 幅详情画。`UIInkAbilityArt` 按 `神通id` 查找，仅在展示层使用，不改 `DisplayIcon` 数据字段、CSV 或 ScriptableObject。资源库/被动行/六槽/HUD/拖影共用图标查询，神通详情用独立不挡射线的 `InkAbilityArtwork`，正文让出图片区。缺图仍走原图标；无详情画保持空白。素材、提示词、alpha 统计与实机截图见 [插画接入验收](../../ui-rework-2026-10-03/ability-art-v1/接入与素材验收.md)。
 

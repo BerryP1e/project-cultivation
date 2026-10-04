@@ -15,8 +15,40 @@ public static class InkDynamicQa
     static string status="idle";
     public static string Run(string command) {
         if(command=="status") return status;
+        if(command=="shaders") {
+            var result=new StringBuilder();
+            foreach(var name in new[]{"Cultivation/UI/InkFluid","Hidden/Cultivation/InkDensity"}) {
+                var shader=Shader.Find(name); result.AppendLine(name+" supported="+(shader!=null && shader.isSupported));
+                if(shader!=null) foreach(var message in ShaderUtil.GetShaderMessages(shader)) result.AppendLine(message.severity+" "+message.message+" line="+message.line);
+            }
+            return result.ToString();
+        }
         if(!Application.isPlaying) return "FAIL requires Play";
         var panel=FindObjectOfType<CharacterPanelUI>(true);
+        if(command=="edgeprobe") {
+            var ink=panel.GetComponentsInChildren<UIInkFluid>(true)[0].transform.Find("InkNavBlot").GetComponent<Image>();
+            var material=new Material(ink.material);
+            var target=RenderTexture.GetTemporary(256,256,0,RenderTextureFormat.ARGB32);
+            var previous=RenderTexture.active;
+            var pixels=new Texture2D(256,256,TextureFormat.RGBA32,false);
+            try {
+                material.SetVector("_Ripple",new Vector4(.5f,.5f,1,0));
+                material.SetVector("_Pointer",new Vector4(-10,-10,0,0));
+                material.SetFloat("_Reveal",1); material.SetColor("_Color",new Color(.38f,.42f,.39f,1));
+                float[] area=new float[2];
+                for(int pass=0;pass<2;pass++) {
+                    material.SetFloat("_Bleed",pass);
+                    RenderTexture.active=target; GL.Clear(true,true,Color.clear);
+                    Graphics.Blit(ink.sprite.texture,target,material);
+                    RenderTexture.active=target; pixels.ReadPixels(new Rect(0,0,256,256),0,0); pixels.Apply();
+                    foreach(var color in pixels.GetPixels()) if(color.a>.04f) area[pass]++;
+                    File.WriteAllBytes(Path.Combine(Application.dataPath,"../screenshots/InkUI-edge-probe-"+pass+".png"),pixels.EncodeToPNG());
+                }
+                string result=(area[0]>0 && area[1]>area[0]*1.05f ? "PASS" : "FAIL")+" ink silhouette area (ring disabled) "+area[0]+" -> "+area[1];
+                File.WriteAllText(Path.Combine(Application.dataPath,"../screenshots/InkUI-edge-probe.txt"),result);
+                return result;
+            } finally { RenderTexture.active=previous; RenderTexture.ReleaseTemporary(target); Destroy(pixels); Destroy(material); }
+        }
         if(command=="parent") {
             panel.SetOpen(true);
             var content=panel.panelRoot.transform.Find("Window/Content");
@@ -53,6 +85,8 @@ public static class InkDynamicQa
                     panel.SetOpen(true); panel.ShowTabByIndex(0);
                     points=panel.GetComponentsInChildren<UIInkFluid>(true);
                     check("eight independent ink points",points.Length==8);
+                    var fluidShader=Shader.Find("Cultivation/UI/InkFluid");
+                    check("ink display shader supported and compiles",fluidShader!=null && fluidShader.isSupported && !ShaderUtil.ShaderHasError(fluidShader));
                     var parentImage=points[0].transform.parent.parent.GetComponent<Image>();
                     check("parent has no backing plate",parentImage!=null && !parentImage.enabled);
                     check("no full-page paper overlay",panel.GetComponentInChildren<UIInkPaperLayer>()==null);
@@ -68,8 +102,7 @@ public static class InkDynamicQa
                     center=RectTransformUtility.WorldToScreenPoint(null,points[0].transform.Find("InkNavBlot").position);
                 }
                 if(i>=21 && i<40) {
-                    points[0].调试鼠标=center+Vector2.right*38;
-                    points[0].OnPointerMove(new PointerEventData(EventSystem.current){position=center+new Vector2((i-21)*2,0),delta=new Vector2(2,0)});
+                    points[0].调试鼠标=center+new Vector2((i-21)*3-18,12);
                 }
                 if(i==39) {
                     pulled=points[0].鼠标牵引;
@@ -78,8 +111,10 @@ public static class InkDynamicQa
                     check("stable button geometry during attraction",(points[0].transform as RectTransform).anchoredPosition==home);
                     check("motion remains subtle",points[0].绘制偏移.magnitude<=11);
                     check("name text never scales",points[0].GetComponentInChildren<Text>().transform.localScale==Vector3.one);
-                    var trace=points[0].transform.Find("InkNavWaterTrace").GetComponent<Image>();
-                    check("crossing produces visible texture water trace",trace.sprite!=null && trace.color.a>0 && !trace.raycastTarget);
+                    check("no independent rotating water trace",points[0].transform.Find("InkNavWaterTrace")==null);
+                    var ink=points[0].transform.Find("InkNavBlot").GetComponent<Image>();
+                    check("pointer changes ink shader itself",ink.material.GetVector("_Pointer").z>.5f);
+                    check("transparent drawing margin reserved",ink.rectTransform.rect.width>=140);
                 }
                 if(i==40) {
                     points[0].调试鼠标=new Vector2(-10000,-10000);
@@ -88,6 +123,7 @@ public static class InkDynamicQa
                     check("click radial ripple starts at pointer",image.material.GetVector("_Ripple").z==0);
                 }
                 if(i==47) check("attraction returns after pointer leaves",points[0].鼠标牵引.magnitude<.01f);
+                if(i==41) check("click spreads silhouette edge",points[0].transform.Find("InkNavBlot").GetComponent<Image>().material.GetFloat("_Bleed")>.3f);
                 if(i>=50 && i<98 && (i-50)%6==0) {
                     int index=(i-50)/6;
                     panel.tabs[index].button.onClick.Invoke();

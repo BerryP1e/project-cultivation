@@ -36,7 +36,7 @@ public sealed class UIInkDensitySimulation
             solver.SetFloat("_Step",step); solver.SetFloat("_Clock",clock);
             solver.SetVector("_Pointer",new Vector4(pointer.x,pointer.y,inside ? 1 : 0,0));
             solver.SetVector("_Drag",new Vector4(velocity.x,velocity.y,0,0));
-            solver.SetVector("_Click",new Vector4(click.x,click.y,Mathf.Clamp01(clickAge/.55f),1));
+            solver.SetVector("_Click",new Vector4(click.x,click.y,Mathf.Clamp01(clickAge/1.1f),1));
             Graphics.Blit(read,write,solver); var swap=read; read=write; write=swap; 步数++;
         }
     }
