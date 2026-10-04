@@ -10,6 +10,8 @@ Shader "Cultivation/UI/InkFluid"
         _Density ("Density", Float) = 1
         _Reveal ("Reveal", Float) = 1
         _Ripple ("Ripple Center Progress", Vector) = (0.5,0.5,1,0)
+        _InkState ("Density State", 2D) = "black" {}
+        _HasState ("Has State", Float) = 0
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
         _StencilOp ("Stencil Operation", Float) = 0
@@ -37,9 +39,11 @@ Shader "Cultivation/UI/InkFluid"
             struct appdata { float4 vertex:POSITION; float4 color:COLOR; float2 uv:TEXCOORD0; };
             struct v2f { float4 vertex:SV_POSITION; fixed4 color:COLOR; float2 uv:TEXCOORD0; float4 world:TEXCOORD1; };
             sampler2D _MainTex;
+            sampler2D _InkState;
             fixed4 _Color, _TextureSampleAdd;
             float4 _ClipRect, _Ripple;
             float _Clock, _Seed, _Deform, _Density, _Reveal;
+            float _HasState;
             float hash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
             float noise(float2 p) {
                 float2 a=floor(p), b=frac(p); b=b*b*(3-2*b);
@@ -53,12 +57,16 @@ Shader "Cultivation/UI/InkFluid"
                 fixed4 c=ink*i.color;
                 c.rgb=i.color.rgb;
                 c.a*=1-dot(ink.rgb,float3(.2126,.7152,.0722))*.72;
+                if(_HasState>.5) c.a=tex2D(_InkState,i.uv+d*_Deform).r*i.color.a;
+                c.a*=.82+.18*noise(p*2+float2(_Clock*.35,_Clock*.22));
                 c.a=saturate(c.a*_Density);
                 float revealNoise=noise(i.uv*9+_Seed)*.09;
                 c.a*=smoothstep(i.uv.x-revealNoise-.04,i.uv.x-revealNoise+.04,_Reveal*1.14);
-                float radius=_Ripple.z*.72;
-                float ring=1-smoothstep(.01,.065,abs(length(i.uv-_Ripple.xy)-radius));
-                c.a=saturate(c.a+ring*_Ripple.w*(1-_Ripple.z)*.16);
+                float radius=.025+_Ripple.z*.55;
+                float ring=1-smoothstep(.014,.065,abs(length(i.uv-_Ripple.xy)-radius));
+                float wet=ring*_Ripple.w*(1-_Ripple.z);
+                c.rgb=lerp(c.rgb,float3(.80,.82,.73),wet*.7);
+                c.a=saturate(c.a+wet*.5);
                 #ifdef UNITY_UI_CLIP_RECT
                 c.a*=UnityGet2DClipping(i.world.xy,_ClipRect);
                 #endif

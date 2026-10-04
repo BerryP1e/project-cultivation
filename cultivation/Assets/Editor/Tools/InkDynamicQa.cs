@@ -44,9 +44,10 @@ public static class InkDynamicQa
         MediaEncoder encoder=null; Texture2D frame=null; UIInkFluid[] points=null;
         float originalScale=Time.timeScale;
         try {
-            UIInkMotion.减少动效=false; panel.SetOpen(false); yield return new WaitForSecondsRealtime(.4f);
+            UIInkMotion.减少动效=false; panel.SetOpen(false); yield return new WaitForSecondsRealtime(.4f); originalScale=Time.timeScale;
             encoder=new MediaEncoder(temp,new VideoTrackAttributes { frameRate=new MediaRational(5),width=(uint)Screen.width,height=(uint)Screen.height,includeAlpha=false,bitRateMode=VideoBitrateMode.Medium });
             Vector2 home=Vector2.zero; Vector2 center=Vector2.zero; Vector2 pulled=Vector2.zero; float clock=0;
+            float[] idleDensity=null; int idleSteps=0;
             for(int i=0;i<130;i++) {
                 if(i==5) {
                     panel.SetOpen(true); panel.ShowTabByIndex(0);
@@ -58,7 +59,10 @@ public static class InkDynamicQa
                     check("pause uses unscaled time",Time.timeScale==0);
                     foreach(var point in points) point.调试鼠标=new Vector2(-10000,-10000);
                 }
+                if(i==10) { idleDensity=ReadDensity(points[0].墨密度纹理 as RenderTexture); idleSteps=points[0].模拟步数; }
                 if(i==20) {
+                    float difference=DensityDifference(idleDensity,ReadDensity(points[0].墨密度纹理 as RenderTexture));
+                    check("GPU density evolves without pointer; mean delta="+difference.ToString("F6"),difference>.0001f && points[0].模拟步数>idleSteps);
                     home=(points[0].transform as RectTransform).anchoredPosition;
                     clock=points[0].形变时钟;
                     center=RectTransformUtility.WorldToScreenPoint(null,points[0].transform.Find("InkNavBlot").position);
@@ -109,6 +113,8 @@ public static class InkDynamicQa
                 yield return new WaitForEndOfFrame();
                 frame=ScreenCapture.CaptureScreenshotAsTexture();
                 if(frame==null) throw new InvalidOperationException("No screenshot frame");
+                if(i==10 || i==20 || i==39 || i==41 || i==43)
+                    File.WriteAllBytes(Path.Combine(directory,"InkUI-fluid-"+suffix+"-frame-"+i+".png"),frame.EncodeToPNG());
                 encoder.AddFrame(frame); Destroy(frame); frame=null;
             }
             encoder.Dispose(); encoder=null; File.Copy(temp,final,true); File.Delete(temp);
@@ -122,5 +128,21 @@ public static class InkDynamicQa
             File.WriteAllText(Path.Combine(directory,"InkUI-navigation-dynamic-checks-"+suffix+".txt"),log.ToString());
             if(status=="recording") status="FAILED; see checks and Console";
         }
+    }
+    static float[] ReadDensity(RenderTexture texture) {
+        if(texture==null) return null;
+        var previous=RenderTexture.active;
+        var copy=new Texture2D(texture.width,texture.height,TextureFormat.RGBAFloat,false,true);
+        try {
+            RenderTexture.active=texture; copy.ReadPixels(new Rect(0,0,texture.width,texture.height),0,0); copy.Apply();
+            var colors=copy.GetPixels(); var density=new float[colors.Length];
+            for(int i=0;i<density.Length;i++) density[i]=colors[i].r;
+            return density;
+        } finally { RenderTexture.active=previous; Destroy(copy); }
+    }
+    static float DensityDifference(float[] a,float[] b) {
+        if(a==null || b==null || a.Length!=b.Length) return 0;
+        float difference=0; for(int i=0;i<a.Length;i++) difference+=Mathf.Abs(a[i]-b[i]);
+        return difference/a.Length;
     }
 }
