@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>循环错列瀑布流：仅创建可见范围的单元，数据仍由 UIEntryList 管理。</summary>
-public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     public UIEntryList Owner { get; private set; }
     public int EntryCount => entries.Count;
@@ -49,7 +49,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         content.anchorMin=Vector2.zero; content.anchorMax=Vector2.one;
         content.offsetMin=content.offsetMax=Vector2.zero; content.pivot=new Vector2(.5f,.5f);
         UIBuildUtils.Stretch(viewport); viewport.offsetMin=new Vector2(6,8); viewport.offsetMax=new Vector2(-22,-8);
-        empty=UIBuildUtils.CreateText("Empty",viewport,owner.font,"包裹中暂无物品",21,TextAnchor.MiddleCenter,new Color(.9f,.9f,.83f));
+        empty=UIBuildUtils.CreateText("Empty",viewport,owner.font,owner.source==ListSource.神通 ? "尚未掌握神通" : "包裹中暂无物品",21,TextAnchor.MiddleCenter,new Color(.9f,.9f,.83f));
         UIBuildUtils.Stretch(empty.rectTransform); empty.raycastTarget=false;
         var overlay=UIBuildUtils.CreateRect("InkScrollFlow",viewport);
         overlay.anchorMin=new Vector2(.9f,0); overlay.anchorMax=Vector2.one; overlay.offsetMin=overlay.offsetMax=Vector2.zero;
@@ -89,6 +89,11 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         ScrollBy(delta); speed=delta/Mathf.Max(.001f,Time.unscaledDeltaTime); previousDrag=point;
     }
     public void OnEndDrag(PointerEventData e) { dragging=false; }
+    public void OnDrop(PointerEventData e){
+        if(Owner.source!=ListSource.神通 || UIDragContext.OriginSlot<0 || UIDragContext.OriginData!=Owner.data)return;
+        int slot=UIDragContext.OriginSlot;
+        if(slot<Owner.data.主动技能.Count && Owner.data.主动技能[slot]==UIDragContext.Entry as UnityEngine.Object){Owner.data.ClearSlot(slot);UIDragContext.End(true);UIInkPulse.Emit(transform as RectTransform,Vector2.zero,.25f);}
+    }
     Vector2 Local(Vector2 screen,Camera camera)
     { RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport,screen,camera,out var result); return result; }
     void BarChanged(float value)
@@ -96,6 +101,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     void LateUpdate()
     {
         if(Owner==null) return;
+        if(UIDragContext.Dragging && Owner.source==ListSource.神通)return;
         float dt=Mathf.Min(Time.unscaledDeltaTime,.1f); openingAge+=dt;
         if(UIInkMotion.减少动效) Opening=false;
         if(Opening && openingAge>1.5f) Opening=false;
@@ -111,6 +117,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     {
         if(viewport==null) return;
         float desired=entries.Count<=4 ? 280 : entries.Count<=12 ? 240 : entries.Count<=30 ? 210 : entries.Count<=80 ? 180 : 160;
+        if(Owner.source==ListSource.神通)desired=170;
         Columns=Mathf.Clamp(Mathf.FloorToInt(viewport.rect.width/desired),1,Mathf.Min(7,Mathf.Max(1,entries.Count)));
         if(entries.Count<10) Columns=Mathf.Min(Columns,Mathf.Max(1,Mathf.CeilToInt(Mathf.Sqrt(entries.Count))));
         ItemScale=Mathf.Clamp((viewport.rect.width/Columns-20)/160,.88f,1.55f);
@@ -163,7 +170,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
 }
 
 /// <summary>固定命中单元；只牵引、放大图标，不移动名称或按钮。</summary>
-public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     public IPanelEntry Entry { get; private set; }
     public Vector2 Scatter { get; private set; }
@@ -221,7 +228,7 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
         icon.rectTransform.localRotation=Quaternion.Euler(0,0,(b-.5f)*8);
         shadow.rectTransform.localRotation=Quaternion.Euler(0,0,(a-.5f)*26);
         tier.text=entry.DisplayTier+" · "+(entry is ItemDefinition item ? (item.可使用 ? "可使用" : "不可使用") : UIEntryRow.TagOf(entry));
-        icon.sprite=entry.DisplayIcon; icon.color=Color.white;
+        icon.sprite=owner.source==ListSource.神通 ? UIInkAbilityArt.Icon(entry) : entry.DisplayIcon; icon.color=Color.white;
         if(icon.sprite==null) { icon.enabled=false; }
         else icon.enabled=true;
         shift=velocity=Vector2.zero; hovered=false; scale=1; lastQuantity=-1; lastSelected=Entry!=owner.Selected; UpdateQuantity();
@@ -261,6 +268,16 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     }
     public void OnPointerEnter(PointerEventData e) { hovered=true; }
     public void OnPointerExit(PointerEventData e) { hovered=false; }
+    public void OnBeginDrag(PointerEventData e) {
+        if(Entry is ActiveDivineAbility) {
+            var canvas=GetComponentInParent<Canvas>();
+            UIDragContext.Begin(Entry,canvas.rootCanvas.transform,owner.font);UIDragContext.Move(e.position);
+            UIDragContext.ApplyInkGhost();
+        } else owner.inkWaterfall.OnBeginDrag(e);
+    }
+    public void OnDrag(PointerEventData e) {if(UIDragContext.Dragging)UIDragContext.Move(e.position);else owner.inkWaterfall.OnDrag(e);}
+    public void OnEndDrag(PointerEventData e) {if(UIDragContext.Dragging)UIDragContext.End();else owner.inkWaterfall.OnEndDrag(e);}
+    void OnDisable(){hovered=false;if(UIDragContext.Entry==Entry)UIDragContext.End();}
     void LateUpdate()
     {
         var canvas=GetComponentInParent<Canvas>();
@@ -270,7 +287,9 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
         var goal=UIInkMotion.减少动效 ? Vector2.zero : Vector2.ClampMagnitude(local-new Vector2(0,18),6)*Mathf.Clamp01(1-distance/110);
         shift=Vector2.SmoothDamp(shift,goal,ref velocity,.1f,100,Time.unscaledDeltaTime);
         icon.rectTransform.anchoredPosition=new Vector2(0,18*Mathf.Max(1,displayScale))+shift;
-        scale=Mathf.MoveTowards(scale,!UIInkMotion.减少动效 && hovered ? 1.15f : 1,Time.unscaledDeltaTime*(.15f/.14f));
+        float hoverScale=owner.source==ListSource.神通 ? 1.1f : 1.15f;
+        scale=Mathf.MoveTowards(scale,!UIInkMotion.减少动效 && hovered ? hoverScale : 1,Time.unscaledDeltaTime*(.15f/.14f));
         icon.rectTransform.localScale=Vector3.one*scale;
+        if(owner.source==ListSource.神通) tier.color=new Color(.82f,.86f,.79f,hovered ? 1 : .55f);
     }
 }

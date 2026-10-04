@@ -14,6 +14,17 @@ public static class UIDragContext
     public static IPanelEntry Entry { get; private set; }
     public static GameObject Ghost { get; private set; }
     public static bool Dragging => Entry != null;
+    public static int OriginSlot {get;private set;}=-1;
+    public static UIPanelData OriginData {get;private set;}
+    public static void BeginFromSlot(UIActiveSkillSlot slot,Transform canvasRoot,Font font){
+        if(!(slot.Content is IPanelEntry entry) || entry is PassiveDivineAbility)return;
+        Begin(entry,canvasRoot,font);OriginSlot=slot.index;OriginData=slot.ResolveData();
+    }
+    public static void ApplyInkGhost(){
+        if(Ghost==null)return;var image=Ghost.GetComponent<Image>();image.sprite=InkUITheme.Load("Dynamic/nav-ink-blot-4");image.type=Image.Type.Simple;
+        var fluid=image.gameObject.AddComponent<UIInkFluid>();fluid.使用密度模拟=false;fluid.基础浓度=2.2f;fluid.初始化(image,null,null,null,0);
+        foreach(var text in image.GetComponentsInChildren<Text>())text.color=new Color(.96f,.95f,.88f);
+    }
     static Vector2 origin;
     static bool hasOrigin;
 
@@ -63,7 +74,8 @@ public static class UIDragContext
         if (InkUITheme.Enabled && !UIInkMotion.减少动效)
         {
             var delta = screenPosition - (Vector2)Ghost.transform.position;
-            Ghost.transform.localRotation = Quaternion.Euler(Mathf.Clamp(-delta.y * .1f, -4, 4), Mathf.Clamp(delta.x * .1f, -4, 4), -4);
+            float tilt=Entry is DivineAbilityDefinition ? 12:4;
+            Ghost.transform.localRotation = Quaternion.Euler(Mathf.Clamp(-delta.y * .15f,-tilt,tilt),Mathf.Clamp(delta.x * .15f,-tilt,tilt),-4);
         }
         Ghost.transform.position = screenPosition + (InkUITheme.Enabled && !UIInkMotion.减少动效 ? Vector2.up * 12 : Vector2.zero);
         foreach (var label in Ghost.GetComponentsInChildren<Text>())
@@ -76,6 +88,7 @@ public static class UIDragContext
     public static void End(bool accepted = false)
     {
         Entry = null;
+        OriginSlot=-1;OriginData=null;
         if (Ghost != null)
         {
             if (Application.isPlaying && !accepted && hasOrigin && InkUITheme.Enabled && !UIInkMotion.减少动效)

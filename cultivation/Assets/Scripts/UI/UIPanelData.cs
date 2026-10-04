@@ -514,6 +514,15 @@ public class UIPanelData : MonoBehaviour
         RaiseChanged();
     }
 
+    /// <summary>装备星位之间交换，校验拖拽原内容，统一通知一次。</summary>
+    public bool 交换主动槽(int from,int to,UnityEngine.Object expected)
+    {
+        EnsureLists();
+        if(from<0 || to<0 || from>=主动技能.Count || to>=主动技能.Count || 主动技能[from]!=expected || expected==null || expected is PassiveDivineAbility)return false;
+        if(from==to)return true;
+        var target=主动技能[to];主动技能[to]=expected;主动技能[from]=target;RaiseChanged();return true;
+    }
+
     /// <summary>自动放进第一个空格，返回是否成功</summary>
     public bool EquipToFirstEmpty(UnityEngine.Object content)
     {

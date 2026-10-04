@@ -1,0 +1,28 @@
+{
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "asset": "source/fx-star-particle.png",
+      "source": "C:/Users/Rihyo/.codex/generated_images/01a100c9-a72a-7181-bb8d-2e11705180ee/exec-1a10ee57-c0f1-4394-a54a-1316ee47651c.png",
+      "prompt": "One standalone tiny soft ink-star particle for Chinese cultivation game UI: warm white very small irregular luminous ink center, organic speckled wisps softly fading with alpha, a restrained four-point center, airy white and faint pale gold, centered square canvas, particle occupies middle half with entirely transparent outer margins, no paper, no background, no rectangular texture, no text, no hard glow ring, no multiple separate icons. Genuine RGBA alpha cutout, optimized for a 20-pixel star.",
+      "transparent_background": true,
+      "status": "used",
+      "usage": "Ambient, equipped and enabled-passive stars; code supplies hover, attraction and selection."
+    },
+    {
+      "asset": "source/fx-star-map.png",
+      "source": "C:/Users/Rihyo/.codex/generated_images/01a100c9-a72a-7181-bb8d-2e11705180ee/exec-b6c573b7-519c-4e00-89de-b3c9b23776ca.png",
+      "prompt": "Standalone Chinese cultivation ancient constellation UI texture, tall portrait aspect ratio 1:2. Pure black ink thin calligraphic curved connecting strokes, many tiny ink star dots with feathered transparent fringes, no paper or background. Exactly SIX hollow small circular node outlines along a meandering vertical constellation path at these normalized x,y positions (origin bottom left): (.30,.90), (.24,.73), (.64,.57), (.52,.40), (.79,.25), (.54,.08). Each circle diameter 0.11 of canvas width, completely empty inside; connected in this order with subtle curved thin ink lines, loosely scattered tiny stars outside this path. Restrained airy hand-painted ink wash, irregular dry-brush line, not geometric gold ornaments. Genuine alpha transparent canvas everywhere except ink strokes and dots. No text, letters, numbers, illustration, buildings, characters, paper rectangle, glow, colors. Production UI asset, centered safe margins.",
+      "transparent_background": true,
+      "status": "reference-only",
+      "usage": "Superseded by live curved mesh lines after user requested dimensional bidirectional dragging. Not rendered at runtime."
+    }
+  ],
+  "reuse": [
+    "Realm/fx-ink-circle",
+    "Dynamic/nav-ink-blot-4",
+    "Bag/bag-info-ink",
+    "AbilityArt icons and details"
+  ],
+  "animation": "Six fixed logical slots; floating visual surfaces, depth shadow, perspective rotation, curved mesh lines following actual visual centers; bidirectional drag with atomic slot swap. Enabled passives use hoverable and selectable satellites, no separate passive list."
+}

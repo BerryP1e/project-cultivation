@@ -127,7 +127,9 @@ public class UIActiveSkillSlot : MonoBehaviour, IDropHandler
         var obj = UIDragContext.Entry as Object;
         if (obj == null) return;
 
-        panel.EquipToSlot(index, obj);
+        if(UIDragContext.OriginSlot>=0 && UIDragContext.OriginData==panel) {
+            if(!panel.交换主动槽(UIDragContext.OriginSlot,index,obj)) {UIDragContext.End();return;}
+        } else panel.EquipToSlot(index, obj);
         UIDragContext.End(true);
     }
 

@@ -27,6 +27,7 @@ public static class InkUIQa
         if(command=="state") return "Play="+EditorApplication.isPlaying+" Changing="+EditorApplication.isPlayingOrWillChangePlaymode+" Compiling="+EditorApplication.isCompiling+" Log="+Application.consoleLogPath;
         if(command=="bagimport") { InkBagImport.Import(); return "OK bag assets imported; no scene writes"; }
         if(command.StartsWith("realm:")) return InkRealmQa.Run(command.Substring(6));
+        if(command.StartsWith("skills:")) return InkSkillsQa.Run(command.Substring(7));
         if(command.StartsWith("bag:")) return InkBagQa.Run(command.Substring(4));
         if(command=="bagbefore" || command=="bagafter") { EditorPrefs.SetBool("InkUI.QA.BagBefore",command=="bagbefore"); return "OK "+command+"; restart Play"; }
         if (command == "dynamicbefore" || command == "dynamicafter")
@@ -249,19 +250,24 @@ public static class InkUIQa
             {
                 var slot = bar.slots[i]; var pos = ((RectTransform)slot.transform).anchoredPosition;
                 var expected = new Vector2(Mathf.Sin(i * Mathf.PI / 3), Mathf.Cos(i * Mathf.PI / 3)) * 143;
-                var number = bar.transform.Find("InkNumbers/InkSlotNumber_" + i).GetComponent<Text>();
-                check("clockwise slot " + (i + 1), slot.index == i && Vector2.Distance(pos, expected) < 1 && number.text == (i + 1).ToString() && number.font != null && number.isActiveAndEnabled);
+                var skills=bar.GetComponentInParent<UIInkSkillsPage>();
+                var number = skills!=null ? slot.transform.Find("StarNumber").GetComponent<Text>() : bar.transform.Find("InkNumbers/InkSlotNumber_" + i).GetComponent<Text>();
+                bool positionValid=skills!=null ? Vector2.Distance(((RectTransform)slot.transform).anchorMin,skills.星位锚点(i))<.001f : Vector2.Distance(pos,expected)<1;
+                check("fixed slot " + (i + 1), slot.index == i && positionValid && number.text == (i + 1).ToString() && number.font != null && number.isActiveAndEnabled);
             }
             foreach (var scroll in role.GetComponentsInChildren<ScrollRect>())
                 check("permanent scroll " + scroll.name, scroll.verticalScrollbar != null && scroll.verticalScrollbarVisibility == ScrollRect.ScrollbarVisibility.Permanent);
             var list = role.GetComponentInChildren<UIEntryList>();
             var ids = new HashSet<int>(); foreach (var row in list.container.GetComponentsInChildren<UIEntryRow>()) ids.Add(row.GetInstanceID());
+            if(list.inkWaterfall!=null)foreach(var cell in list.GetComponentsInChildren<UIInkWaterfallCell>(true))ids.Add(cell.GetInstanceID());
             list.RebuildFromSource(); bool reuse = true;
             foreach (var row in list.container.GetComponentsInChildren<UIEntryRow>()) reuse &= ids.Contains(row.GetInstanceID());
+            if(list.inkWaterfall!=null)foreach(var cell in list.GetComponentsInChildren<UIInkWaterfallCell>(true))reuse &= ids.Contains(cell.GetInstanceID());
             check("rows reused on data refresh", reuse && ids.Count > 0);
             foreach (var row in list.container.GetComponentsInChildren<UIEntryRow>())
                 if (row.Entry is PassiveDivineAbility) { row.OnBeginDrag(new PointerEventData(EventSystem.current)); check("passive cannot start equipment drag", !UIDragContext.Dragging); break; }
-            var slotHit = bar.slots[0].GetComponent<InkUIHitShape>(); var rt = (RectTransform)slotHit.transform;
+            if(list.inkWaterfall!=null)foreach(var cell in list.GetComponentsInChildren<UIInkWaterfallCell>())if(cell.Entry is PassiveDivineAbility){cell.OnBeginDrag(new PointerEventData(EventSystem.current));check("passive cannot start equipment drag",!UIDragContext.Dragging);cell.OnEndDrag(new PointerEventData(EventSystem.current));break;}
+            ICanvasRaycastFilter slotHit = bar.slots[0].GetComponent<UIInkSkillStar>();if(slotHit==null)slotHit=bar.slots[0].GetComponent<InkUIHitShape>(); var rt = (RectTransform)bar.slots[0].transform;
             Vector2 center = RectTransformUtility.WorldToScreenPoint(null, rt.TransformPoint(rt.rect.center));
             Vector2 corner = RectTransformUtility.WorldToScreenPoint(null, rt.TransformPoint(rt.rect.max - Vector2.one));
             check("irregular slot center accepts hit", slotHit.IsRaycastLocationValid(center, null));
