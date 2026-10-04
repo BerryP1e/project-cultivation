@@ -414,6 +414,7 @@ public class UIEntryList : MonoBehaviour
     public float rowHeight = 34f;
     public int fontSize = 18;
     [NonSerialized] public bool inkCards;
+    [NonSerialized] public UIInkWaterfall inkWaterfall;
 
     [Tooltip("列表为空时显示的提示")]
     public string emptyHint = "（暂无内容）";
@@ -481,6 +482,7 @@ public class UIEntryList : MonoBehaviour
     {
         lastEntries = entries;
         if (container == null || font == null) return;
+        if(inkWaterfall!=null) { inkWaterfall.SetEntries(entries); return; }
 
         // 关键：必须清掉容器里【所有】子物体，不能只清 spawned 记录的。
         // spawned 是运行时字段、不会被序列化，而编辑期生成的行是真实存在场景里的，

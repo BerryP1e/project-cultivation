@@ -15,6 +15,8 @@ Shader "Cultivation/UI/InkFluid"
         _Pointer ("Pointer UV Hover", Vector) = (-10,-10,0,0)
         _Drag ("Pointer Velocity", Vector) = (0,0,0,0)
         _Bleed ("Silhouette Edge Bleed", Float) = 0
+        _FadeEnabled ("Viewport Ink Fade", Float) = 0
+        _FadeBounds ("Viewport Bounds Width", Vector) = (0,0,82,0)
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
         _StencilOp ("Stencil Operation", Float) = 0
@@ -40,8 +42,8 @@ Shader "Cultivation/UI/InkFluid"
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            struct appdata { float4 vertex:POSITION; float4 color:COLOR; float2 uv:TEXCOORD0; };
-            struct v2f { float4 vertex:SV_POSITION; fixed4 color:COLOR; float2 uv:TEXCOORD0; float4 world:TEXCOORD1; };
+            struct appdata { float4 vertex:POSITION; float4 color:COLOR; float2 uv:TEXCOORD0; float2 edge:TEXCOORD1; };
+            struct v2f { float4 vertex:SV_POSITION; fixed4 color:COLOR; float2 uv:TEXCOORD0; float4 world:TEXCOORD1; float2 edge:TEXCOORD2; };
             sampler2D _MainTex;
             sampler2D _InkState;
             fixed4 _Color, _TextureSampleAdd;
@@ -50,12 +52,14 @@ Shader "Cultivation/UI/InkFluid"
             float _HasState;
             float4 _Pointer,_Drag;
             float _Bleed;
+            float _FadeEnabled;
+            float4 _FadeBounds;
             float hash(float2 p) { return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
             float noise(float2 p) {
                 float2 a=floor(p), b=frac(p); b=b*b*(3-2*b);
                 return lerp(lerp(hash(a),hash(a+float2(1,0)),b.x),lerp(hash(a+float2(0,1)),hash(a+1),b.x),b.y);
             }
-            v2f vert(appdata v) { v2f o; o.world=v.vertex; o.vertex=UnityObjectToClipPos(v.vertex); o.color=v.color*_Color; o.uv=v.uv; return o; }
+            v2f vert(appdata v) { v2f o; o.world=v.vertex; o.vertex=UnityObjectToClipPos(v.vertex); o.color=v.color*_Color; o.uv=v.uv; o.edge=v.edge; return o; }
             float densityAt(float2 uv) {
                 if(any(uv<0) || any(uv>1)) return 0;
                 if(_HasState>.5) return tex2D(_InkState,uv).r;
@@ -94,6 +98,11 @@ Shader "Cultivation/UI/InkFluid"
                 float wet=ring*_Ripple.w*(1-_Ripple.z)*.35;
                 c.rgb=lerp(c.rgb,float3(.80,.82,.73),wet*.7);
                 c.a=saturate(c.a+wet*.5);
+                if(_FadeEnabled>.5) {
+                    float edgeDistance=min(i.edge.y-_FadeBounds.x,_FadeBounds.y-i.edge.y);
+                    float fibre=noise(i.edge*.045)*12+noise(i.edge*.16)*5;
+                    c.a*=smoothstep(5+fibre,_FadeBounds.z+fibre,edgeDistance);
+                }
                 #ifdef UNITY_UI_CLIP_RECT
                 c.a*=UnityGet2DClipping(i.world.xy,_ClipRect);
                 #endif

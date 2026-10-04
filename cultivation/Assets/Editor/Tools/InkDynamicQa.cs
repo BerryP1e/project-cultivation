@@ -26,7 +26,7 @@ public static class InkDynamicQa
         if(!Application.isPlaying) return "FAIL requires Play";
         var panel=FindObjectOfType<CharacterPanelUI>(true);
         if(command=="edgeprobe") {
-            var ink=panel.GetComponentsInChildren<UIInkFluid>(true)[0].transform.Find("InkNavBlot").GetComponent<Image>();
+            var ink=panel.tabs[0].button.transform.Find("InkNavBlot").GetComponent<Image>();
             var material=new Material(ink.material);
             var target=RenderTexture.GetTemporary(256,256,0,RenderTextureFormat.ARGB32);
             var previous=RenderTexture.active;
@@ -83,7 +83,8 @@ public static class InkDynamicQa
             for(int i=0;i<130;i++) {
                 if(i==5) {
                     panel.SetOpen(true); panel.ShowTabByIndex(0);
-                    points=panel.GetComponentsInChildren<UIInkFluid>(true);
+                    points=new UIInkFluid[panel.tabs.Count];
+                    for(int pointIndex=0;pointIndex<points.Length;pointIndex++) points[pointIndex]=panel.tabs[pointIndex].button.GetComponent<UIInkFluid>();
                     check("eight independent ink points",points.Length==8);
                     var fluidShader=Shader.Find("Cultivation/UI/InkFluid");
                     check("ink display shader supported and compiles",fluidShader!=null && fluidShader.isSupported && !ShaderUtil.ShaderHasError(fluidShader));

@@ -14,6 +14,10 @@ public class UIInkFluid : MonoBehaviour, IPointerClickHandler
     Vector2 velocity,offset,attraction,releaseFrom;
     float seed,elapsed,releaseTime=1,clickTime=2,entranceTime,hover;
     bool selected,near;
+    public bool 使用密度模拟=true;
+    public float 基础浓度=1;
+    public RectTransform 渐隐视口;
+    public bool 渐隐启用;
     public Vector2 绘制偏移 => offset;
     public Vector2 鼠标牵引 => attraction;
     public float 形变时钟 => material!=null ? material.GetFloat("_Clock") : 0;
@@ -31,7 +35,7 @@ public class UIInkFluid : MonoBehaviour, IPointerClickHandler
         if(oldTrace!=null) { oldTrace.gameObject.SetActive(false); Destroy(oldTrace.gameObject); }
         if(material==null) { var shader=Shader.Find("Cultivation/UI/InkFluid"); if(shader!=null) material=new Material(shader); }
         if(material!=null) { blot.material=material; material.SetFloat("_Seed",seed); }
-        if(simulation==null && blot.sprite!=null) simulation=new UIInkDensitySimulation(blot.sprite.texture,seed);
+        if(使用密度模拟 && simulation==null && blot.sprite!=null) simulation=new UIInkDensitySimulation(blot.sprite.texture,seed);
         entranceTime=0;
     }
     public void 选中(bool value) {
@@ -91,8 +95,10 @@ public class UIInkFluid : MonoBehaviour, IPointerClickHandler
             material.SetFloat("_Bleed",reduced ? 0 : Mathf.SmoothStep(0,1,clickTime/.12f)*(1-Mathf.SmoothStep(.25f,1.1f,clickTime)));
             material.SetTexture("_InkState",墨密度纹理);
             material.SetFloat("_HasState",墨密度纹理!=null ? 1 : 0);
-            material.SetFloat("_Density",(selected ? 1.35f : .85f)+(reduced ? 0 : Mathf.Max(0,1-clickTime/.3f)*.3f));
+            material.SetFloat("_Density",基础浓度*((selected ? 1.35f : .85f)+(reduced ? 0 : Mathf.Max(0,1-clickTime/.3f)*.3f)));
             material.SetFloat("_Reveal",reduced ? 1 : Mathf.Clamp01(entranceTime/.18f));
+            material.SetFloat("_FadeEnabled",渐隐启用 && 渐隐视口!=null ? 1 : 0);
+            if(渐隐视口!=null) material.SetVector("_FadeBounds",new Vector4(渐隐视口.rect.yMin,渐隐视口.rect.yMax,82,0));
             var ripple=material.GetVector("_Ripple"); ripple.z=Mathf.Clamp01(clickTime/.55f); ripple.w=reduced ? 0 : 1; material.SetVector("_Ripple",ripple);
         }
     }

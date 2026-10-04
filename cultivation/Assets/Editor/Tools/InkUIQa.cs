@@ -24,6 +24,10 @@ public static class InkUIQa
     }
     public static string Panel(string command)
     {
+        if(command=="state") return "Play="+EditorApplication.isPlaying+" Changing="+EditorApplication.isPlayingOrWillChangePlaymode+" Compiling="+EditorApplication.isCompiling+" Log="+Application.consoleLogPath;
+        if(command=="bagimport") { InkBagImport.Import(); return "OK bag assets imported; no scene writes"; }
+        if(command.StartsWith("bag:")) return InkBagQa.Run(command.Substring(4));
+        if(command=="bagbefore" || command=="bagafter") { EditorPrefs.SetBool("InkUI.QA.BagBefore",command=="bagbefore"); return "OK "+command+"; restart Play"; }
         if (command == "dynamicbefore" || command == "dynamicafter")
         {
             EditorPrefs.SetBool("InkUI.QA.DynamicBefore", command == "dynamicbefore");
