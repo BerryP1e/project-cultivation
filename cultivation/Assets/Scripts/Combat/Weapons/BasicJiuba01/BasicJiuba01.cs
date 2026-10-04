@@ -65,8 +65,8 @@ public class BasicJiuba01 : MonoBehaviour
     [Tooltip("动作播到百分之多少时开判定窗（0.4 = 动画 40% 节点）")]
     [Range(0.05f, 0.95f)] public float 出手进度 = 0.4f;
 
-    [Tooltip("出手冷却（秒）。实际冷却 = 这个值 ÷ 攻速系数，和太虚炼气诀同一套换算")]
-    public float 基础冷却 = 1.1f;
+    [Tooltip("两次起手的最小间隔（秒），从起手开始计时，和动作并行。0 = 上一段结束立即接下一段，不额外等冷却。实际间隔跟随攻速缩短")]
+    [Min(0f)] public float 基础冷却 = 0f;
 
     [Tooltip("**自动出手**：冷却好了、且锁定了目标，就自己打，不用按键")]
     public bool 自动出手 = true;
@@ -150,7 +150,7 @@ public class BasicJiuba01 : MonoBehaviour
         ? Mathf.Max(0.1f, 玩家战斗属性.当前属性[AttributeType.AttackSpeed])
         : 1f;
 
-    public float 实际冷却 => 基础冷却 / Mathf.Max(0.1f, 攻速系数);
+    public float 实际冷却 => Mathf.Max(0f, 基础冷却) / Mathf.Max(0.1f, 攻速系数);
     public float 冷却剩余 => Mathf.Max(0f, 下次可出手时间 - Time.time);
 
     /// <summary>实际冷却的别名（跟着攻速缩放的那个值）</summary>
@@ -262,7 +262,6 @@ public class BasicJiuba01 : MonoBehaviour
         if (出手动作中 && (动画 == null || !动画.动作播放中))
         {
             出手动作中 = false;
-            下次可出手时间 = Time.time + 实际冷却;
         }
 
         // ★ 没锁定目标就不会走到这里（可以出手 里判了），所以"没锁定时不攻击、也不进冷却"自然成立
@@ -280,6 +279,7 @@ public class BasicJiuba01 : MonoBehaviour
         if (刃光 == null) 刃光 = GetComponent<JiubaWeaponVfx>() ?? gameObject.AddComponent<JiubaWeaponVfx>();
 
         出手动作中 = true;
+        下次可出手时间 = Time.time + 实际冷却;
         本轮已结算 = false;
         本次最近距离 = 0f; 本次最近有效 = false; 上次阈值 = 0f;
         缓存目标体积有效 = false;

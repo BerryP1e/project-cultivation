@@ -1,0 +1,54 @@
+﻿var player=GameObject.Find("Player");var original=player.GetComponentInChildren<Animator>();var movement=player.GetComponent<PlayerController>();
+var rig=UnityEngine.Object.Instantiate(original.gameObject);rig.name="JiubaThrustProbe";
+foreach(var b in rig.GetComponentsInChildren<MonoBehaviour>(true))b.enabled=false;
+var parent=new GameObject("JiubaThrustProbeRoot");parent.transform.rotation=Quaternion.Euler(0,movement.visualYawOffset,0);parent.transform.position=new Vector3(10000,0,10000);
+rig.transform.SetParent(parent.transform,false);rig.transform.localPosition=original.transform.localPosition;rig.transform.localRotation=original.transform.localRotation;rig.transform.localScale=original.transform.localScale;
+var a=rig.GetComponent<Animator>();a.cullingMode=AnimatorCullingMode.AlwaysAnimate;a.applyRootMotion=false;
+var root=original.runtimeAnimatorController;while(root is AnimatorOverrideController ov)root=ov.runtimeAnimatorController;
+var hand=a.GetBoneTransform(HumanBodyBones.RightHand);
+foreach(var t in rig.GetComponentsInChildren<Transform>(true).Where(t=>t.name.StartsWith("八九玄功_三尖两刃刀")).ToArray())UnityEngine.Object.DestroyImmediate(t.gameObject);
+var weapon=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("Weapons/八九玄功_三尖两刃刀"),hand,false);weapon.transform.localPosition=Vector3.zero;weapon.transform.localRotation=Quaternion.Euler(2.328f,254.529f,263.733f);weapon.transform.localScale=Vector3.one*.3173f;
+var smr=weapon.GetComponentInChildren<SkinnedMeshRenderer>();var mesh=new Mesh();smr.BakeMesh(mesh);mesh.RecalculateBounds();var bounds=mesh.bounds;var ext=bounds.extents;int axis=ext.x>=ext.y&&ext.x>=ext.z?0:ext.y>=ext.z?1:2;Vector3 delta=Vector3.zero;delta[axis]=ext[axis];var endA=bounds.center-delta;var endB=bounds.center+delta;
+var sb=new System.Text.StringBuilder();var allocations=new System.Collections.Generic.List<UnityEngine.Object>();
+foreach(var t in parent.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+var camGo=new GameObject("ThrustProbeCamera");allocations.Add(camGo);var cam=camGo.AddComponent<Camera>();cam.enabled=false;cam.cullingMask=1<<30;cam.orthographic=true;cam.orthographicSize=2.3f;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.23f,.25f,.28f);cam.transform.position=parent.transform.position+new Vector3(5,2.2f,5);cam.transform.LookAt(parent.transform.position+new Vector3(0,1.2f,.4f));var rt=new RenderTexture(640,512,24);allocations.Add(rt);cam.targetTexture=rt;
+var lightGo=new GameObject("ThrustProbeLight");allocations.Add(lightGo);var light=lightGo.AddComponent<Light>();light.type=LightType.Directional;light.cullingMask=1<<30;light.intensity=1.2f;light.transform.rotation=Quaternion.Euler(35,-25,0);
+a.runtimeAnimatorController = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");a.Rebind();a.speed=1;
+var driver=parent.AddComponent<PlayerAnimationController>();
+var attack=parent.AddComponent<BasicJiuba01>();attack.自动出手=false;attack.攻击键=KeyCode.None;attack.需要锁定目标=false;attack.打印战斗日志=false;attack.打印判定距离=false;attack.玩家战斗属性=player.GetComponent<PlayerCombatStats>();
+var lockManager=parent.AddComponent<NpcTargeting>();lockManager.enabled=false;attack.目标管理器=lockManager;
+var target=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),parent.transform.position+Vector3.forward*1.2f,Quaternion.identity);allocations.Add(target);
+var npc=target.GetComponentInChildren<NpcInstance>();var def=UnityEngine.Object.Instantiate(npc.定义);allocations.Add(def);npc.定义=def;def.属性[AttributeType.Dodge]=0;npc.ResetHealth();
+foreach(var b in target.GetComponentsInChildren<MonoBehaviour>())if(!(b is NpcInstance))b.enabled=false;
+int hits=0; npc.结算完成+=(n,r)=>{if(r.命中)hits++;};
+if(attack.基础冷却!=0)throw new System.Exception("Default melee delay is not zero");
+float lastEnd=-1;driver.动作播完+=()=>lastEnd=Time.time;
+System.Collections.IEnumerator Run(){try{
+ yield return new WaitForSecondsRealtime(.5f);lockManager.Lock(npc);
+ foreach(bool flight in new[]{false,true}){
+  attack.自动出手=false;while(attack.出手动作中||driver.动作播放中)yield return null;
+  attack.动作序列=new[]{"长刀女_Attack1","长刀女_Attack2","杨戬_Attack1","杨戬_Attack2"}.Select(n=>"技能动作/八九玄功/"+n+(flight?"_御风":"")).ToArray();
+  a.SetBool("Flying",flight);a.SetBool("FlyMoving",false);a.Play(flight?"Yufeng_Idle":"Locomotion");driver.动作锁髋骨高度=!flight;
+  yield return new WaitForSecondsRealtime(.4f);
+  int initial=attack.出手序号,last=initial;lastEnd=-1;float timeout=Time.realtimeSinceStartup+25;
+  attack.自动出手=true;
+  while(attack.出手序号<initial+5){
+   if(Time.realtimeSinceStartup>timeout)throw new System.Exception("Continuous attack stalled");
+   if(attack.出手序号!=last){
+    if(lastEnd>=0){float gap=Time.time-lastEnd;sb.AppendLine((flight?"flight":"ground")+" next="+attack.当前动作路径+" endToStart="+gap.ToString("F4")+"s");if(gap>Time.deltaTime*2+.025f)throw new System.Exception("Unexpected post-action delay");}
+    last=attack.出手序号;
+   }
+   yield return null;
+  }
+  attack.自动出手=false;while(attack.出手动作中||driver.动作播放中)yield return null;
+ }
+ // 旧组件即使还留着 1.1，也从起手扣时间，收招不能再叠加完整 1.1。
+ attack.基础冷却=1.1f;yield return null;float start=Time.time;if(!attack.出手())throw new System.Exception("Legacy cadence probe rejected");
+ yield return null;while(attack.出手动作中||driver.动作播放中)yield return null;
+ float elapsed=Time.time-start;float expected=Mathf.Max(0,1.1f/attack.攻速系数-elapsed);
+ if(Mathf.Abs(attack.冷却剩余-expected)>.025f)throw new System.Exception("Cooldown restarted at recovery");
+ sb.AppendLine("legacy 1.1: elapsed="+elapsed.ToString("F3")+" remaining="+attack.冷却剩余.ToString("F3")+" expected="+expected.ToString("F3"));
+ sb.AppendLine("hits="+hits+" all sequential, no overlapping actions");
+ System.IO.File.WriteAllText("screenshots/jiuba-cadence-isolated.txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{UnityEngine.Object.Destroy(parent);UnityEngine.Object.Destroy(mesh);foreach(var o in allocations)UnityEngine.Object.Destroy(o);}}
+return Run();
