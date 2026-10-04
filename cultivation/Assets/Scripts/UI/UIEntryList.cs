@@ -21,12 +21,14 @@ public static class UIDragContext
         Begin(entry,canvasRoot,font);OriginSlot=slot.index;OriginData=slot.ResolveData();
     }
     public static void ApplyInkGhost(){
-        if(Ghost==null)return;var image=Ghost.GetComponent<Image>();image.sprite=InkUITheme.Load("Dynamic/nav-ink-blot-4");image.type=Image.Type.Simple;
+        if(Ghost==null)return;var hit=Ghost.GetComponent<Image>();hit.sprite=null;hit.color=Color.clear;
+        var image=UIBuildUtils.CreateImage("InkDragBlot",Ghost.transform,new Color(.05f,.08f,.075f));image.sprite=InkUITheme.Load("Dynamic/nav-ink-blot-4");image.transform.SetAsFirstSibling();UIBuildUtils.Stretch(image.rectTransform,-12);
         var fluid=image.gameObject.AddComponent<UIInkFluid>();fluid.使用密度模拟=false;fluid.基础浓度=2.2f;fluid.初始化(image,null,null,null,0);
-        foreach(var text in image.GetComponentsInChildren<Text>())text.color=new Color(.96f,.95f,.88f);
+        foreach(var text in Ghost.GetComponentsInChildren<Text>())text.color=new Color(.96f,.95f,.88f);
     }
     static Vector2 origin;
     static bool hasOrigin;
+    public static UIInkDragSpark Spark {get;private set;}
 
     public static void Begin(IPanelEntry entry, Transform canvasRoot, Font font)
     {
@@ -65,11 +67,13 @@ public static class UIDragContext
             label.raycastTarget = false;
         }
         Ghost = go;
+        if(entry is DivineAbilityDefinition){var effect=UIBuildUtils.CreateRect("DragLight",canvasRoot);effect.SetAsLastSibling();Spark=effect.gameObject.AddComponent<UIInkDragSpark>();Spark.Initialize();}
     }
 
     public static void Move(Vector2 screenPosition)
     {
         if (Ghost == null) return;
+        if(Spark!=null)Spark.Follow(screenPosition);
         if (!hasOrigin) { origin = screenPosition; hasOrigin = true; }
         if (InkUITheme.Enabled && !UIInkMotion.减少动效)
         {
@@ -88,6 +92,7 @@ public static class UIDragContext
     public static void End(bool accepted = false)
     {
         Entry = null;
+        if(Spark!=null){if(Application.isPlaying)UnityEngine.Object.Destroy(Spark.gameObject);else UnityEngine.Object.DestroyImmediate(Spark.gameObject);Spark=null;}
         OriginSlot=-1;OriginData=null;
         if (Ghost != null)
         {

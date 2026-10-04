@@ -14,6 +14,21 @@ public class UIInkSkillsPage : MonoBehaviour
     public Material 星点描边材质=>mapMaterial;
     public Vector2 星位锚点(int index)=>positions[index];
     readonly Dictionary<IPanelEntry,UIInkStarParticle> passiveStars=new Dictionary<IPanelEntry,UIInkStarParticle>();
+    readonly Dictionary<IPanelEntry,Vector2> passivePositions=new Dictionary<IPanelEntry,Vector2>();
+    readonly System.Random starRandom=new System.Random();
+    public bool 星位空白有效(Vector2 normalized,IPanelEntry ignored=null){
+        var bounds=((RectTransform)星图.transform).rect;var point=Vector2.Scale(normalized,bounds.size);
+        foreach(var slot in positions){var delta=point-Vector2.Scale(slot,bounds.size);if(Mathf.Abs(delta.x)<83 && delta.y>-78 && delta.y<65)return false;}
+        foreach(var pair in passivePositions)if(pair.Key!=ignored && 星图.data.IsPassiveEnabled(pair.Key as PassiveDivineAbility) && Vector2.Distance(point,Vector2.Scale(pair.Value,bounds.size))<65)return false;
+        return normalized.x>=.06f && normalized.x<=.92f && normalized.y>=.09f && normalized.y<=.91f;
+    }
+    Vector2 AllocateStar(IPanelEntry entry){
+        if(passivePositions.TryGetValue(entry,out var old) && 星位空白有效(old,entry))return old;
+        for(int i=0;i<600;i++){var p=new Vector2(.06f+(float)starRandom.NextDouble()*.86f,.09f+(float)starRandom.NextDouble()*.82f);if(星位空白有效(p,entry)){passivePositions[entry]=p;return p;}}
+        // 极密星图扩大画布时才需要更多空间；优先网格寻找仍未占据的空白。
+        for(float y=.09f;y<=.91f;y+=.045f)for(float x=.06f;x<=.92f;x+=.045f){var p=new Vector2(x,y);if(星位空白有效(p,entry)){passivePositions[entry]=p;return p;}}
+        return old;
+    }
     readonly Vector2[] positions={new Vector2(.30f,.90f),new Vector2(.24f,.73f),new Vector2(.64f,.57f),new Vector2(.52f,.40f),new Vector2(.79f,.25f),new Vector2(.54f,.08f)};
     UIInkSkillStar[] slots;
     Material mapMaterial;
@@ -61,6 +76,7 @@ public class UIInkSkillsPage : MonoBehaviour
             slots[i]=rt.gameObject.AddComponent<UIInkSkillStar>();slots[i].Initialize(slot,i,mapMaterial);
         }
         constellation.Nodes=slots;
+        星图.gameObject.AddComponent<UIInkSkillVolume>().Initialize(星图,slots);
         UIBuildUtils.Place(已悟神通.transform as RectTransform,new Vector2(.47f,.08f),new Vector2(.73f,.96f),Vector2.zero,Vector2.zero);
         已悟神通.inkCards=false;
         瀑布流=已悟神通.gameObject.AddComponent<UIInkWaterfall>();瀑布流.Initialize(已悟神通);瀑布流.Skip();
@@ -108,8 +124,7 @@ public class UIInkSkillsPage : MonoBehaviour
                 rt.gameObject.AddComponent<UIInkPassiveStar>().Initialize(this,keep);
                 passiveStars.Add(entry,particle);
             }
-            var starRect=particle.transform as RectTransform;starRect.anchorMin=starRect.anchorMax=positions[被动星数%6];
-            float angle=(135+被动星数/6*137.5f)*Mathf.Deg2Rad;starRect.anchoredPosition=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*(78+被动星数/6*18);
+            var starRect=particle.transform as RectTransform;starRect.anchorMin=starRect.anchorMax=AllocateStar(entry);starRect.anchoredPosition=Vector2.zero;
             particle.gameObject.SetActive(true);被动星数++;
         }
     }

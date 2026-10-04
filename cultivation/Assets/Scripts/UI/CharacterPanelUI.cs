@@ -76,6 +76,18 @@ public class CharacterPanelUI : MonoBehaviour
     // 暂停前的时间缩放，关闭时原样恢复
     float cachedTimeScale = 1f;
     bool timeScaleCached;
+    readonly Dictionary<CanvasGroup,Vector3> hiddenHud=new Dictionary<CanvasGroup,Vector3>();
+    float nextHudScan;
+    void SuppressHud(){
+        foreach(var canvas in FindObjectsOfType<Canvas>(true)){
+            if(canvas.name!="HudCanvas" && canvas.name!="QuestGuideCanvas" && canvas.name!="ChronicleCanvas")continue;
+            var group=canvas.GetComponent<CanvasGroup>();if(group==null)group=canvas.gameObject.AddComponent<CanvasGroup>();
+            if(!hiddenHud.ContainsKey(group))hiddenHud.Add(group,new Vector3(group.alpha,group.interactable?1:0,group.blocksRaycasts?1:0));
+            group.alpha=0;group.interactable=false;group.blocksRaycasts=false;
+        }
+    }
+    void RestoreHud(){foreach(var pair in hiddenHud)if(pair.Key!=null){pair.Key.alpha=pair.Value.x;pair.Key.interactable=pair.Value.y>0;pair.Key.blocksRaycasts=pair.Value.z>0;}hiddenHud.Clear();}
+    void LateUpdate(){if(IsOpen && Time.unscaledTime>=nextHudScan){nextHudScan=Time.unscaledTime+.5f;SuppressHud();}}
 
     void Awake()
     {
@@ -105,6 +117,7 @@ public class CharacterPanelUI : MonoBehaviour
     public void SetOpen(bool open, bool snap = false)
     {
         IsOpen = open;
+        if(open)SuppressHud();else {RestoreHud();UIDragContext.End(true);}
 
         if (panelRoot != null)
         {
@@ -144,17 +157,20 @@ public class CharacterPanelUI : MonoBehaviour
 
     void OnDisable()
     {
+        RestoreHud();UIDragContext.End(true);
         RestoreTimeScale();
     }
 
     void OnDestroy()
     {
+        RestoreHud();
         RestoreTimeScale();
     }
 
     /// <summary>切换到指定页签</summary>
     public void ShowTab(CharacterTab tab)
     {
+        if(tab!=CurrentTab)UIDragContext.End(true);
         CurrentTab = tab;
         int active = (int)tab;
 

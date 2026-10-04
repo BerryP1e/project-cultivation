@@ -9,6 +9,8 @@
 
 ## 1. 结构
 
+2026-10-04：I角色父页面打开时，CharacterPanelUI暂时把HudCanvas、QuestGuideCanvas和ChronicleCanvas的CanvasGroup alpha置零、交互/射线关闭；关闭或控制器禁用时恢复此前三项状态。HUD数据继续更新；不靠提高面板sortingOrder遮挡。每0.5秒补扫晚创建HUD。
+
 | 东西 | 在哪 |
 |---|---|
 | 生成器（编辑器） | `Assets/Editor/Builders/HudBuilder.cs`，菜单 **修仙 / 生成游戏界面 HUD** |

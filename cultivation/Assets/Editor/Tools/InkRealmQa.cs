@@ -38,6 +38,9 @@ public static class InkRealmQa
         }
         var log=new StringBuilder(); int passed=0,failed=0;
         System.Action<bool,string> check=(ok,name)=>{log.AppendLine((ok?"PASS ":"FAIL ")+name);if(ok)passed++;else failed++;};
+        check(Mathf.Approximately(UIInkRealmPage.绘圈时长,1.56f),"brush duration doubled");
+        check(Mathf.Approximately(UIInkRealmPage.绘圈进度(.20f),UIInkRealmPage.绘圈进度(.45f)),"brush pauses after initial stroke");
+        check(UIInkRealmPage.绘圈进度(1.5f)-UIInkRealmPage.绘圈进度(1.3f)>UIInkRealmPage.绘圈进度(.9f)-UIInkRealmPage.绘圈进度(.7f),"brush accelerates into finish");
         check(page.属性.transform.localPosition.x>page.墨圈.transform.parent.localPosition.x,"attributes on right");
         check(page.属性滚动!=null && page.属性滚动.verticalScrollbar!=null,"scroll and visible thumb retained");
         check(page.属性滚动.verticalScrollbar.handleRect.GetComponent<Image>().sprite==InkUITheme.Load("Dynamic/nav-ink-blot-4"),"shared backpack scrollbar");
@@ -69,14 +72,16 @@ public static class InkRealmQa
         MediaEncoder encoder=null;Texture2D frame=null;
         try {
             panel.SetOpen(true); panel.ShowTab(CharacterTab.背包);yield return new WaitForSecondsRealtime(.3f);
-            encoder=new MediaEncoder(temp,new VideoTrackAttributes{frameRate=new MediaRational(5),width=(uint)Screen.width,height=(uint)Screen.height,includeAlpha=false,bitRateMode=VideoBitrateMode.Medium});
             for(int i=0;i<45;i++) {
+                if(i>=2 && panel.CurrentTab!=CharacterTab.境界)panel.ShowTab(CharacterTab.境界);
                 if(i==2)panel.ShowTab(CharacterTab.境界);
                 if(i==22)panel.tabs[1].page.GetComponent<UIInkRealmPage>().属性滚动.verticalNormalizedPosition=0;
                 if(i==32)panel.tabs[1].page.GetComponent<UIInkRealmPage>().属性滚动.verticalNormalizedPosition=1;
-                yield return new WaitForSecondsRealtime(.1f);yield return new WaitForEndOfFrame();
-                frame=ScreenCapture.CaptureScreenshotAsTexture();encoder.AddFrame(frame);
-                if(i==16)File.WriteAllBytes(Path.Combine(dir,"UI_境界_after_"+suffix+".png"),frame.EncodeToPNG());
+                yield return new WaitForSecondsRealtime(.1f);if(i>=2 && panel.CurrentTab!=CharacterTab.境界)panel.ShowTab(CharacterTab.境界);yield return new WaitForEndOfFrame();
+                frame=ScreenCapture.CaptureScreenshotAsTexture();
+                if(encoder==null){suffix=frame.width+"x"+frame.height;final=Path.Combine(dir,"InkUI-realm-"+suffix+"-half-speed.mp4");encoder=new MediaEncoder(temp,new VideoTrackAttributes{frameRate=new MediaRational(5),width=(uint)frame.width,height=(uint)frame.height,includeAlpha=false,bitRateMode=VideoBitrateMode.Medium});}
+                encoder.AddFrame(frame);
+                if(i==20)File.WriteAllBytes(Path.Combine(dir,"UI_境界_after_"+suffix+".png"),frame.EncodeToPNG());
                 if(i==7 || i==26)File.WriteAllBytes(Path.Combine(dir,"UI_境界_after_"+suffix+"-frame-"+i+".png"),frame.EncodeToPNG());
                 Object.Destroy(frame);frame=null;
             }

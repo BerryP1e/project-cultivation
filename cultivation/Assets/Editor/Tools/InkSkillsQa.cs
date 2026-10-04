@@ -21,6 +21,15 @@ public static class InkSkillsQa
         }
         if(!Application.isPlaying)return "FAIL requires Play";
         var panel=Object.FindObjectOfType<CharacterPanelUI>(true);var page=panel.tabs[2].page.GetComponent<UIInkSkillsPage>();if(page==null || page.瀑布流==null)return "FAIL missing skills view";
+        if(command=="hud"){
+            bool open=panel.IsOpen;var tab=panel.CurrentTab;panel.SetOpen(false);var states=new Dictionary<CanvasGroup,Vector3>();
+            foreach(var canvas in Object.FindObjectsOfType<Canvas>(true))if(canvas.name=="HudCanvas" || canvas.name=="ChronicleCanvas" || canvas.name=="QuestGuideCanvas"){var group=canvas.GetComponent<CanvasGroup>();if(group!=null)states[group]=new Vector3(group.alpha,group.interactable?1:0,group.blocksRaycasts?1:0);}
+            var late=new GameObject("QuestGuideCanvas",typeof(Canvas),typeof(CanvasGroup));var special=late.GetComponent<CanvasGroup>();special.alpha=.37f;special.blocksRaycasts=false;states[special]=new Vector3(.37f,1,0);
+            bool hidden=true,restored=true;
+            try{panel.SetOpen(true);foreach(var pair in states)hidden&=pair.Key.alpha==0 && !pair.Key.blocksRaycasts && !pair.Key.interactable;panel.SetOpen(false);foreach(var pair in states)restored&=Mathf.Approximately(pair.Key.alpha,pair.Value.x) && pair.Key.interactable==(pair.Value.y>0) && pair.Key.blocksRaycasts==(pair.Value.z>0);}
+            finally{Object.Destroy(late);panel.SetOpen(open);if(open)panel.ShowTab(tab);}
+            return (hidden&&restored?"PASS":"FAIL")+" HUD hidden on open and exact previous state restored on close; canvases="+states.Count;
+        }
         if(command=="inspect"){var g=page.星图.GetComponentInChildren<UIInkConstellation>();return g==null?"missing graph":"graph enabled="+g.enabled+" active="+g.gameObject.activeInHierarchy+" nodes="+(g.Nodes==null?-1:g.Nodes.Length)+" progress="+g.Progress+" segments="+g.SegmentCount+" rect="+g.rectTransform.rect+" cull="+g.canvasRenderer.cull+" color="+g.color+" material="+g.material.name;}
         if(command=="record"){if(status=="recording")return "FAIL recording active";status="recording";panel.StartCoroutine(Record(panel,page));return "OK skills recording started";}
         var log=new StringBuilder();int passed=0,failed=0;System.Action<bool,string> check=(ok,label)=>{log.AppendLine((ok?"PASS ":"FAIL ")+label);if(ok)passed++;else failed++;};
@@ -29,6 +38,9 @@ public static class InkSkillsQa
         for(int i=0;i<6;i++)check(page.星图.slots[i].index==i && Vector2.Distance(((RectTransform)page.星图.slots[i].transform).anchorMin,page.星位锚点(i))<.001f,"fixed star index "+(i+1));
         check(page.已悟神通.source==ListSource.神通 && page.生效被动.source==ListSource.生效被动,"mastered versus enabled passive sources preserved");
         check(page.被动星数==page.星图.data.GetPassiveAbilities().Count,"enabled passives get separate stars without using slots");
+        bool free=true;foreach(var star in page.星图.GetComponentsInChildren<UIInkPassiveStar>())free&=page.星位空白有效(((RectTransform)star.transform).anchorMin,star.Entry);
+        check(free,"passives occupy distinct free space away from active slots");
+        var volume=page.星图.GetComponent<UIInkSkillVolume>();check(volume!=null && volume.三维就绪 && volume.三维星位数==6,"six real 3D previews rendered to transparent target");
         check(page.已悟神通.GetComponent<ScrollRect>().verticalScrollbar!=null,"shared backpack scrollbar on mastered library");
         check(!page.生效被动.gameObject.activeSelf,"enabled passive list replaced by satellite stars");
         foreach(var star in page.星图.GetComponentsInChildren<UIInkPassiveStar>()){
@@ -49,7 +61,12 @@ public static class InkSkillsQa
         if(drag!=null){var saved=page.星图.data.主动技能[0];var second=page.星图.data.主动技能[1];var ability=drag.Entry as Object;
             try{
                 drag.OnBeginDrag(new PointerEventData(EventSystem.current));check(UIDragContext.Entry==drag.Entry && UIDragContext.Ghost.GetComponentInParent<RectMask2D>()==null,"original drag context outside masks");
+                check(UIDragContext.Spark!=null && UIDragContext.Spark.粒子数==24,"drag has visible cursor light and bounded particle pool");
+                UIDragContext.Move(new Vector2(Screen.width*.5f,Screen.height*.5f));
+                check(Vector2.Distance(UIDragContext.Spark.transform.position,new Vector2(Screen.width*.5f,Screen.height*.5f))<1,"drag light follows actual pointer position");
+                check(UIDragContext.Ghost.GetComponent<UIInkFluid>()==null,"ink drift only moves child art, never drag root");
                 page.星图.slots[0].OnDrop(new PointerEventData(EventSystem.current));check(page.星图.data.主动技能[0]==ability && !UIDragContext.Dragging,"drop uses original EquipToSlot");
+                check(UIDragContext.Spark==null,"drag light clears on accepted drop");
                 var source=page.星图.slots[0].GetComponent<UIInkSkillStar>();source.OnBeginDrag(new PointerEventData(EventSystem.current));check(UIDragContext.OriginSlot==0,"equipped star is a drag source");
                 int changes=0;System.Action changed=()=>changes++;page.星图.data.Changed+=changed;
                 try{page.星图.slots[1].OnDrop(new PointerEventData(EventSystem.current));}finally{page.星图.data.Changed-=changed;}
@@ -76,6 +93,7 @@ public static class InkSkillsQa
         try{
             panel.SetOpen(true);panel.ShowTab(CharacterTab.背包);yield return new WaitForSecondsRealtime(.3f);
             for(int i=0;i<50;i++){
+                if(i>=2 && panel.CurrentTab!=CharacterTab.神通)panel.ShowTab(CharacterTab.神通);
                 if(i==2)panel.ShowTabByIndex(2);
                 if(i==20)page.瀑布流.OnScroll(new PointerEventData(EventSystem.current){scrollDelta=new Vector2(0,-2)});
                 if(i==22){foreach(var cell in page.已悟神通.GetComponentsInChildren<UIInkWaterfallCell>())if(cell.Entry is ActiveDivineAbility){drag=cell;break;}if(drag!=null)drag.OnBeginDrag(new PointerEventData(EventSystem.current){position=RectTransformUtility.WorldToScreenPoint(null,drag.transform.position)});}
@@ -92,10 +110,10 @@ public static class InkSkillsQa
                 if(i==35 && page.生效被动.data.GetPassiveAbilities().Count>0)page.详情.Show(page.生效被动.data.GetPassiveAbilities()[0]);
                 if(i==35){var stars=page.星图.GetComponentsInChildren<UIInkPassiveStar>();if(stars.Length>0)stars[0].OnPointerEnter(new PointerEventData(EventSystem.current));}
                 if(i==39)foreach(var star in page.星图.GetComponentsInChildren<UIInkPassiveStar>())star.OnPointerExit(new PointerEventData(EventSystem.current));
-                yield return new WaitForSecondsRealtime(.1f);yield return new WaitForEndOfFrame();frame=ScreenCapture.CaptureScreenshotAsTexture();
+                yield return new WaitForSecondsRealtime(.1f);if(i>=2 && panel.CurrentTab!=CharacterTab.神通)panel.ShowTab(CharacterTab.神通);yield return new WaitForEndOfFrame();frame=ScreenCapture.CaptureScreenshotAsTexture();
                 if(encoder==null){suffix=frame.width+"x"+frame.height;final=Path.Combine(dir,"InkUI-skills-"+suffix+"-half-speed.mp4");encoder=new MediaEncoder(temp,new VideoTrackAttributes{frameRate=new MediaRational(5),width=(uint)frame.width,height=(uint)frame.height,includeAlpha=false,bitRateMode=VideoBitrateMode.Medium});}
                 encoder.AddFrame(frame);
-                if(i==15)File.WriteAllBytes(Path.Combine(dir,"UI_神通_after_"+suffix+".png"),frame.EncodeToPNG());if(i==7 || i==38)File.WriteAllBytes(Path.Combine(dir,"UI_神通_after_"+suffix+"-frame-"+i+".png"),frame.EncodeToPNG());Object.Destroy(frame);frame=null;
+                if(i==15)File.WriteAllBytes(Path.Combine(dir,"UI_神通_after_"+suffix+".png"),frame.EncodeToPNG());if(i==7 || i==24 || i==38)File.WriteAllBytes(Path.Combine(dir,"UI_神通_after_"+suffix+"-frame-"+i+".png"),frame.EncodeToPNG());Object.Destroy(frame);frame=null;
             }encoder.Dispose();encoder=null;File.Copy(temp,final,true);File.Delete(temp);status="DONE "+final;
         }finally{encoder?.Dispose();if(frame!=null)Object.Destroy(frame);UIDragContext.End(true);if(saved==null)page.星图.data.ClearSlot(0);else page.星图.data.EquipToSlot(0,saved);if(second==null)page.星图.data.ClearSlot(1);else page.星图.data.EquipToSlot(1,second);foreach(var particle in page.星图.GetComponentsInChildren<UIInkStarParticle>(true))particle.调试局部鼠标=null;foreach(var star in page.星图.GetComponentsInChildren<UIInkPassiveStar>())star.OnPointerExit(new PointerEventData(EventSystem.current));panel.SetOpen(opened);if(opened)panel.ShowTab(oldTab);if(status=="recording")status="FAILED see Console";}
     }
