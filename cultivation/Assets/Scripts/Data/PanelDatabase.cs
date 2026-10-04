@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -20,6 +20,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "面板库", menuName = "修仙/面板库", order = 20)]
 public class PanelDatabase : ScriptableObject
 {
+    [Tooltip("所有功法定义，用于跨场景按 id 查找与读档；不是玩家已学功法")]
+    public List<GongFaDefinition> 功法 = new List<GongFaDefinition>();
+
     [Tooltip("所有神通（主动 + 被动）。由「修仙/面板/收集面板目录」自动填充")]
     public List<DivineAbilityDefinition> 神通 = new List<DivineAbilityDefinition>();
 

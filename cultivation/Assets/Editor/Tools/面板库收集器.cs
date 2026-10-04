@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -37,6 +37,13 @@ public static class 面板库收集器
             库 = ScriptableObject.CreateInstance<PanelDatabase>();
             AssetDatabase.CreateAsset(库, 资产路径);
         }
+
+        // ---- 功法目录：所有场景与读档共用，不写玩家的已学列表 ----
+        库.功法 = new List<GongFaDefinition>();
+        foreach (var g in AssetDatabase.FindAssets("t:GongFaDefinition", new[] { "Assets/Data/Generated/GongFaDefinition" }))
+            库.功法.Add(AssetDatabase.LoadAssetAtPath<GongFaDefinition>(AssetDatabase.GUIDToAssetPath(g)));
+        库.功法.RemoveAll(x => x == null);
+        库.功法.Sort((a, b) => string.CompareOrdinal(a.功法id, b.功法id));
 
         // ---- 神通：主动 + 被动 ----
         库.神通 = new List<DivineAbilityDefinition>();

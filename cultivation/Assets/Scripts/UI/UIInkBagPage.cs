@@ -86,6 +86,7 @@ public class UIInkBagPage : MonoBehaviour
         parcel.raycastTarget=true;
         var parcelClick=parcel.gameObject.AddComponent<Button>(); parcelClick.transition=Selectable.Transition.None; parcelClick.targetGraphic=parcel; parcelClick.onClick.AddListener(Skip);
         Waterfall=grid.gameObject.AddComponent<UIInkWaterfall>(); Waterfall.Initialize(list);
+        Waterfall.AllowLoop=false;
         Waterfall.AnimationLayer=transform;
         foreach(var text in new[]{info.nameText,info.tierText,info.kindText,info.descriptionText})
             if(text!=null) { var effect=text.GetComponent<UIInkReveal>(); if(effect==null) effect=text.gameObject.AddComponent<UIInkReveal>(); textReveals.Add(effect); }

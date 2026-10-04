@@ -69,7 +69,8 @@ public static class InkBagQa
             bag.Waterfall.OnScroll(new PointerEventData(EventSystem.current){scrollDelta=new Vector2(0,-1)});
             check("wheel scrolls upward in paused panel",bag.Waterfall.ScrollOffset>0);
             for(int i=0;i<40;i++) bag.Waterfall.ScrollBy(500);
-            check("looping scroll reuses cells",bag.Waterfall.PoolCount==pool);
+            check("finite scroll reuses cells",bag.Waterfall.PoolCount==pool);
+            check("bag does not loop and clamps at bottom",!bag.Waterfall.AllowLoop && Mathf.Abs(bag.Waterfall.ScrollOffset-bag.Waterfall.MaxScrollOffset)<.01f);
             var usable=created[0]; usable.可使用=true; usable.使用效果=effect;
             data.物品=new List<ItemDefinition>{usable,usable,usable}; data.RaiseChanged();
             list.Select(usable);

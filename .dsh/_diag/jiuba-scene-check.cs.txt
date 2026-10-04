@@ -1,0 +1,22 @@
+var sb=new System.Text.StringBuilder();
+System.Collections.IEnumerator Run(){
+var pd=UnityEngine.Object.FindObjectOfType<UIPanelData>();
+var gf=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+pd.学会(gf);pd.当前功法=gf;pd.RaiseChanged();
+UnityEngine.Object.FindObjectOfType<CharacterPanelUI>().SetOpen(false,true);
+foreach(var scene in new[]{"3C_Testbed","village","Sect_Wilderness","Demon-Suppressing Tower","Sect"}){
+var op=UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene);while(!op.isDone)yield return null;
+yield return new WaitForSecondsRealtime(1);
+pd=UnityEngine.Object.FindObjectOfType<UIPanelData>();var p=GameObject.Find("Player");
+var loader=p.GetComponent<PlayerAbilityLoader>();var attack=p.GetComponent<BasicJiuba01>();var driver=p.GetComponent<PlayerAnimationController>();
+var carry=p.GetComponent<WeaponCarryAnim>();var weapon=p.GetComponent<武器挂载>();
+var cultivation=p.GetComponent<PlayerCultivation>();var current=pd.当前功法;pd.当前功法=null;bool lookup=cultivation.取功法(gf.功法id)==gf;pd.当前功法=current;
+sb.AppendLine("idLookup="+lookup+" cutsceneLock="+(attack!=null&&attack.演出中));
+// Isolate combat from automatic scene-entry dialogue during this diagnostic only.
+var cutscene=p.GetComponent<演出锁>();if(cutscene!=null)cutscene.enabled=false;
+sb.AppendLine(scene+" gf="+(pd.当前功法==gf)+" learned="+pd.已学(gf)+" loader="+(loader!=null)+" loaderPanel="+(loader!=null&&loader.面板数据==pd)+" attack="+(attack!=null&&attack.enabled)+" driver="+(driver!=null)+" carry="+(carry!=null&&carry.enabled)+" weapon="+(weapon!=null&&weapon.enabled));
+if(attack!=null){attack.自动出手=false;attack.需要锁定目标=false;bool started=attack.出手();yield return new WaitForSecondsRealtime(.3f);sb.AppendLine("started="+started+" playing="+(driver!=null&&driver.IsActionPlaying));}
+}
+System.IO.File.WriteAllText("screenshots/jiuba-scene-check.txt",sb.ToString());Debug.Log(sb.ToString());
+}
+return Run();

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -644,6 +644,12 @@ public class PlayerCultivation : MonoBehaviour
     {
         if (string.IsNullOrEmpty(id)) return null;
         if (面板数据 != null && 面板数据.当前功法 != null && 面板数据.当前功法.功法id == id) return 面板数据.当前功法;
+        // Scene-local serialized tables predate newly added arts. The Resources catalog
+        // is the shared source for save restoration in every gameplay scene and builds.
+        var 库 = PanelDatabase.取();
+        if (库 != null && 库.功法 != null)
+            foreach (var g in 库.功法)
+                if (g != null && g.功法id == id) return g;
         if (功法表 != null)
             foreach (var g in 功法表)
                 if (g != null && g.功法id == id) return g;

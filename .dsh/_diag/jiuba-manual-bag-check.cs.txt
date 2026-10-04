@@ -1,0 +1,33 @@
+var panel=GameObject.Find("CharacterUI").GetComponent<CharacterPanelUI>();
+var pd=panel.GetComponent<UIPanelData>();
+var item=UnityEditor.AssetDatabase.LoadAssetAtPath<ItemDefinition>("Assets/Data/Generated/ItemDefinition/item_gongfa_jiuba_xuangong.asset");
+var gf=((学功法效果)item.使用效果).取功法();
+System.Collections.IEnumerator Run(){
+var oldItems=new System.Collections.Generic.List<ItemDefinition>(pd.物品);
+var oldKnown=new System.Collections.Generic.List<GongFaDefinition>(pd.已学功法);var oldCurrent=pd.当前功法;
+var sb=new System.Text.StringBuilder();
+try{
+pd.已学功法.Remove(gf);pd.给物品(item,1);int before=pd.物品数量(item);
+bool used=物品使用器.使用(item,pd);bool consumed=pd.物品数量(item)==before-1;bool known=pd.已学(gf);
+bool duplicateBlocked=!物品使用器.可使用(item,pd);
+sb.AppendLine("manual used="+used+" learned="+known+" consumed="+consumed+" duplicateBlocked="+duplicateBlocked);
+if(!used||!known||!consumed||!duplicateBlocked)throw new System.Exception("Manual learning failed");
+pd.物品.Clear();
+foreach(var guid in UnityEditor.AssetDatabase.FindAssets("t:ItemDefinition",new[]{"Assets/Data/Generated/ItemDefinition"}))pd.给物品(UnityEditor.AssetDatabase.LoadAssetAtPath<ItemDefinition>(UnityEditor.AssetDatabase.GUIDToAssetPath(guid)),1);
+panel.SetOpen(true,true);panel.ShowTabByIndex(0);yield return new WaitForSecondsRealtime(.5f);
+var page=panel.GetComponentInChildren<UIInkBagPage>(true);page.Skip();yield return null;
+var flow=page.Waterfall;
+flow.ScrollBy(1000000);yield return null;float bottom=flow.ScrollOffset,max=flow.MaxScrollOffset;
+flow.ScrollBy(1000000);yield return null;bool bottomClamped=Mathf.Abs(flow.ScrollOffset-bottom)<.01f;
+var visible=flow.GetComponentsInChildren<UIInkWaterfallCell>().Where(x=>x.gameObject.activeInHierarchy).ToArray();
+bool unique=visible.Select(x=>x.Entry).Distinct().Count()==visible.Length;
+flow.ScrollBy(-1000000);yield return null;bool topClamped=flow.ScrollOffset==0;
+sb.AppendLine("loop="+flow.AllowLoop+" entries="+flow.EntryCount+" max="+max+" bottom="+bottom+" bottomClamped="+bottomClamped+" topClamped="+topClamped+" unique="+unique);
+if(flow.AllowLoop||!bottomClamped||!topClamped||!unique||max<=0)throw new System.Exception("Finite scrolling failed");
+}finally{pd.物品=oldItems;pd.已学功法=oldKnown;pd.当前功法=oldCurrent;pd.RaiseChanged();}
+JiubaDebugTools.GiveManual();
+panel.SetOpen(true,true);panel.ShowTabByIndex(0);yield return new WaitForSecondsRealtime(.5f);
+var bag=panel.GetComponentInChildren<UIInkBagPage>(true);bag.Skip();bag.Waterfall.Owner.Select(item);
+System.IO.File.WriteAllText("screenshots/jiuba-manual-bag-check.txt",sb.ToString());Debug.Log(sb.ToString());
+}
+return Run();

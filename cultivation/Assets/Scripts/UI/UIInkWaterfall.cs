@@ -4,13 +4,15 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>循环错列瀑布流：仅创建可见范围的单元，数据仍由 UIEntryList 管理。</summary>
+/// <summary>错列瀑布流：可选循环，仅创建可见范围的单元，数据仍由 UIEntryList 管理。</summary>
 public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     public UIEntryList Owner { get; private set; }
     public int EntryCount => entries.Count;
     public int PoolCount => cells.Count;
     public float ScrollOffset => offset;
+    public bool AllowLoop = true;
+    public float MaxScrollOffset => viewport==null ? 0 : Mathf.Max(0,ContentHeight-viewport.rect.height);
     public bool Opening { get; private set; }
     public Vector2 LaunchPoint;
     public Transform AnimationLayer;
@@ -66,19 +68,21 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         }
         empty.gameObject.SetActive(entries.Count==0);
         if(scrollbar!=null) scrollbar.gameObject.SetActive(entries.Count>0);
-        offset=entries.Count==0 ? 0 : Mathf.Repeat(offset,Cycle);
+        if(entries.Count==0) offset=0;
         if(Owner.Selected==null || !entries.Contains(Owner.Selected)) Owner.Select(entries.Count>0 ? entries[0] : null);
         Refresh(true);
     }
     float Cycle => Mathf.Max(1,Mathf.CeilToInt(entries.Count/(float)Columns))*Pitch;
     public int Quantity(IPanelEntry entry) => entry!=null && quantities.TryGetValue(entry,out int value) ? value : 0;
-    bool Looping => viewport!=null && Cycle>viewport.rect.height;
+    float ContentHeight => Cycle+(Columns-1)*25+36*ItemScale;
+    bool Looping => AllowLoop && viewport!=null && Cycle>viewport.rect.height;
+    bool Scrollable => Looping || MaxScrollOffset>0;
     public void Open()
     {
         openingAge=0; Opening=!UIInkMotion.减少动效; speed=0; Refresh(true);
     }
     public void Skip() { Opening=false; openingAge=10; Refresh(false); }
-    public void ScrollBy(float pixels) { offset=Looping ? offset+pixels : 0; Refresh(false); }
+    public void ScrollBy(float pixels) { offset=Scrollable ? offset+pixels : 0; Refresh(false); }
     public void OnScroll(PointerEventData e)
     { Skip(); ScrollBy(-e.scrollDelta.y*78); speed=-e.scrollDelta.y*210; }
     public void OnBeginDrag(PointerEventData e)
@@ -97,7 +101,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     Vector2 Local(Vector2 screen,Camera camera)
     { RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport,screen,camera,out var result); return result; }
     void BarChanged(float value)
-    { if(settingBar) return; Skip(); offset=(1-value)*Cycle; speed=0; Refresh(false); }
+    { if(settingBar) return; Skip(); offset=(1-value)*(Looping ? Cycle : MaxScrollOffset); speed=0; Refresh(false); }
     void LateUpdate()
     {
         if(Owner==null) return;
@@ -105,8 +109,8 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         float dt=Mathf.Min(Time.unscaledDeltaTime,.1f); openingAge+=dt;
         if(UIInkMotion.减少动效) Opening=false;
         if(Opening && openingAge>1.5f) Opening=false;
-        if(!dragging && Mathf.Abs(speed)>.1f) { if(Looping) offset+=speed*dt; speed*=Mathf.Exp(-dt*7); }
-        if(Mathf.Abs(offset)>100000) offset=Mathf.Repeat(offset,Cycle);
+        if(!dragging && Mathf.Abs(speed)>.1f) { if(Scrollable) offset+=speed*dt; speed*=Mathf.Exp(-dt*7); }
+        if(Looping && Mathf.Abs(offset)>100000) offset=Mathf.Repeat(offset,Cycle);
         Refresh(false);
         if(flow!=null) {
             var uv=flow.uvRect; uv.y=Time.unscaledTime*.12f; flow.uvRect=uv;
@@ -134,21 +138,24 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
             cells.Add(cell);
         }
         float width=Mathf.Max(100,(viewport.rect.width-18)/Columns);
-        if(!Looping) offset=0;
-        int start=Looping ? Mathf.FloorToInt(offset/Pitch)-1 : 0;
+        if(!Looping) {
+            offset=Mathf.Clamp(offset,0,MaxScrollOffset);
+            if(offset<=0 && speed<0 || offset>=MaxScrollOffset && speed>0) speed=0;
+        }
+        int start=Scrollable ? Mathf.FloorToInt(offset/Pitch)-1 : 0;
         int dataRows=Mathf.Max(1,Mathf.CeilToInt(entries.Count/(float)Columns));
         for(int i=0;i<cells.Count;i++) {
             var cell=cells[i]; if(i>=count) { cell.gameObject.SetActive(false); continue; }
             cell.FadeMaterial=fade.Material;
             int row=start+i/Columns,col=i%Columns;
-            int wrapped=((row%dataRows)+dataRows)%dataRows;
+            int wrapped=Looping ? ((row%dataRows)+dataRows)%dataRows : row;
             int index=wrapped*Columns+col;
-            if(index>=entries.Count || !Looping && row>=dataRows) { cell.gameObject.SetActive(false); continue; }
+            if(index<0 || index>=entries.Count || !Looping && row>=dataRows) { cell.gameObject.SetActive(false); continue; }
             cell.gameObject.SetActive(true);
             if(rebind || cell.Entry!=entries[index]) cell.Bind(entries[index]);
             cell.Rect.sizeDelta=new Vector2(width-14,140*ItemScale);
             cell.Layout(ItemScale,BackdropScale);
-            float top=Looping ? viewport.rect.height*.5f : Mathf.Min(viewport.rect.height*.5f,dataRows*Pitch*.5f);
+            float top=Scrollable ? viewport.rect.height*.5f : Mathf.Min(viewport.rect.height*.5f,ContentHeight*.5f);
             Vector2 target=new Vector2(9+col*width+width*.5f,top-row*Pitch+offset-Pitch*.5f-col*25);
             target.x-=viewport.rect.width*.5f;
             target+=cell.Scatter;
@@ -161,8 +168,8 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
             cell.UpdateQuantity();
         }
         if(scrollbar!=null && entries.Count>0) {
-            settingBar=true; scrollbar.size=Mathf.Clamp01(viewport.rect.height/Cycle);
-            scrollbar.SetValueWithoutNotify(1-Mathf.Repeat(offset,Cycle)/Cycle); settingBar=false;
+            settingBar=true; scrollbar.size=Mathf.Clamp01(viewport.rect.height/(Looping ? Cycle : ContentHeight));
+            scrollbar.SetValueWithoutNotify(Looping ? 1-Mathf.Repeat(offset,Cycle)/Cycle : MaxScrollOffset>0 ? 1-offset/MaxScrollOffset : 1); settingBar=false;
         }
     }
     void OnDisable() { dragging=false; speed=0; }
