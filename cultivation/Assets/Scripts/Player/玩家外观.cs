@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **玩家外观** —— 换外观 = **只换蒙皮网格和材质**，不换人。
@@ -71,13 +71,37 @@ public class 玩家外观 : MonoBehaviour
             var t = transform.Find("Player_Visual");
             玩家视觉 = t != null ? t : transform;
         }
-        网格 = 玩家视觉 != null ? 玩家视觉.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+        网格 = 找身体网格();
         if (网格 != null)
         {
             原网格 = 网格.sharedMesh;
             原材质 = 网格.sharedMaterials;
         }
         else Debug.LogWarning("[外观] 在 " + (玩家视觉 != null ? 玩家视觉.name : "?") + " 底下找不到 SkinnedMeshRenderer，换外观会没反应", this);
+    }
+
+    /// <summary>装备会在 Awake 阶段挂到手骨下，层级中的第一个蒙皮不一定是身体。</summary>
+    SkinnedMeshRenderer 找身体网格()
+    {
+        if (玩家视觉 == null) return null;
+        var animator = 玩家视觉.GetComponentInChildren<Animator>(true);
+        Transform hip = animator != null && animator.isHuman && animator.avatar != null && animator.avatar.isValid
+            ? animator.GetBoneTransform(HumanBodyBones.Hips) : null;
+        var weapon = GetComponent<武器挂载>();
+        SkinnedMeshRenderer fallback = null;
+        int boneCount = -1;
+        foreach (var candidate in 玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (candidate.sharedMesh == null) continue;
+            if (weapon != null && weapon.实例 != null && candidate.transform.IsChildOf(weapon.实例.transform)) continue;
+            var bones = candidate.bones;
+            if (bones == null) continue;
+            foreach (var bone in bones)
+                if (hip != null && bone == hip) return candidate;
+            // Generic/non-human fallback: prefer the body rig over a one-bone attachment.
+            if (bones.Length > boneCount) { fallback = candidate; boneCount = bones.Length; }
+        }
+        return fallback;
     }
 
     void Start()

@@ -107,6 +107,10 @@ public class 武器挂载 : MonoBehaviour
     void OnDisable()
     {
         if (面板数据 != null) 面板数据.Changed -= 刷新;
+        // During scene teardown the panel and hierarchy are already being destroyed.
+        // Do not search inactive scene objects or recreate children from this callback.
+        // Disabling only the component for a cutscene still refreshes while its GO is active.
+        if (!gameObject.activeInHierarchy) return;
 
         // ⚠️ 这里**不能无脑销毁武器**，也**不能什么都不做** —— 两种"被关掉"长得一模一样：
         //   · **过场**：`演出锁` 把 Player 上所有 MonoBehaviour 关掉 ⇒ 刀必须留在手里；

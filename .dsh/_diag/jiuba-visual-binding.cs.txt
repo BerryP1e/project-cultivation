@@ -1,0 +1,5 @@
+var p=GameObject.Find("Player");var appearance=p.GetComponent<玩家外观>();
+var skin=appearance.GetType().GetField("网格",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(appearance) as SkinnedMeshRenderer;
+var weapon=p.GetComponent<武器挂载>();
+var wr=weapon.实例!=null?weapon.实例.GetComponentInChildren<SkinnedMeshRenderer>(true):null;
+return "appearanceRenderer="+(skin!=null?skin.name:"null")+" appearanceMesh="+(skin!=null&&skin.sharedMesh!=null?skin.sharedMesh.name:"null")+" weaponRenderer="+(wr!=null?wr.name:"null")+" weaponMesh="+(wr!=null&&wr.sharedMesh!=null?wr.sharedMesh.name:"null")+" sameRenderer="+(skin==wr);

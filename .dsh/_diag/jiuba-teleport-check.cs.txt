@@ -1,0 +1,42 @@
+System.Collections.IEnumerator Run(){
+var sb=new System.Text.StringBuilder();
+var pd=UnityEngine.Object.FindObjectOfType<UIPanelData>();
+var gf=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+var manual=UnityEditor.AssetDatabase.LoadAssetAtPath<ItemDefinition>("Assets/Data/Generated/ItemDefinition/item_gongfa_jiuba_xuangong.asset");
+if(!pd.已学(gf)){pd.给物品(manual,1);if(!物品使用器.使用(manual,pd))throw new System.Exception("Manual learning failed");}
+pd.当前功法=gf;pd.RaiseChanged();
+UnityEngine.Object.FindObjectOfType<CharacterPanelUI>().SetOpen(false,true);
+for(int round=0;round<3;round++){
+var source=UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+var portals=UnityEngine.Object.FindObjectsOfType<Teleporter>();
+Teleporter chosen=null;int option=-1;
+foreach(var portal in portals)for(int i=0;i<portal.选项.Length;i++){
+var o=portal.选项[i];if(o==null||o.暂未开放||string.IsNullOrEmpty(o.场景)||!portal.准入通过||portal.选项接管!=null)continue;
+if(chosen==null || o.场景=="3C_Testbed" || o.场景=="Sect"){chosen=portal;option=i;}
+}
+if(chosen==null){sb.AppendLine("No available portal in "+source);break;}
+var destination=chosen.选项[option].场景;sb.AppendLine("portal="+chosen.name+" "+source+" -> "+destination);
+chosen.执行(option);
+float deadline=Time.realtimeSinceStartup+25;
+while(黑幕字幕.过渡进行中&&Time.realtimeSinceStartup<deadline)yield return null;
+yield return new WaitForSecondsRealtime(.5f);
+pd=UnityEngine.Object.FindObjectOfType<UIPanelData>();var p=GameObject.Find("Player");
+var loader=p.GetComponent<PlayerAbilityLoader>();var attack=p.GetComponent<BasicJiuba01>();var driver=p.GetComponent<PlayerAnimationController>();
+var animator=p.GetComponentInChildren<Animator>();
+var attachment=p.GetComponent<武器挂载>();var weaponObject=attachment!=null?attachment.实例:null;
+var wr=weaponObject!=null?weaponObject.GetComponentInChildren<SkinnedMeshRenderer>(true):null;
+var appearance=p.GetComponent<玩家外观>();
+var body=appearance!=null?appearance.GetType().GetField("网格",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(appearance) as SkinnedMeshRenderer:null;
+var expected=Resources.Load<GameObject>("Weapons/八九玄功_三尖两刃刀").GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh;
+bool binding=wr!=null&&wr!=body&&wr.sharedMesh==expected;
+bool finite=true;int vertices=0;
+if(wr!=null){var mesh=new Mesh();wr.BakeMesh(mesh);foreach(var v in mesh.vertices){vertices++;if(float.IsNaN(v.x)||float.IsNaN(v.y)||float.IsNaN(v.z)||float.IsInfinity(v.x)||float.IsInfinity(v.y)||float.IsInfinity(v.z))finite=false;}UnityEngine.Object.Destroy(mesh);}
+sb.AppendLine("bodyRenderer="+(body!=null?body.name:"null")+" weaponMesh="+(wr!=null&&wr.sharedMesh!=null?wr.sharedMesh.name:"null")+" binding="+binding+" finite="+finite+" vertices="+vertices);
+if(!binding||!finite||vertices==0)throw new System.Exception("Teleport corrupted weapon renderer");
+sb.AppendLine("arrived="+UnityEngine.SceneManagement.SceneManager.GetActiveScene().name+" transfer="+跨场景数据.正在接力+" cutscene="+黑幕字幕.演出中+" gf="+(pd.当前功法==gf)+" loaderPanel="+(loader!=null&&loader.面板数据==pd)+" attack="+(attack!=null&&attack.enabled)+" carry="+(p.GetComponent<WeaponCarryAnim>()!=null&&p.GetComponent<WeaponCarryAnim>().enabled)+" weapon="+(p.GetComponent<武器挂载>()!=null&&p.GetComponent<武器挂载>().enabled)+" animator="+(animator!=null&&animator.enabled));
+if(attack!=null){attack.自动出手=false;attack.需要锁定目标=false;sb.AppendLine("canAttack="+attack.可以出手+" lock="+attack.演出中+" actionFlag="+attack.出手动作中+" cooldown="+attack.冷却剩余);bool started=attack.出手();yield return new WaitForSecondsRealtime(.3f);sb.AppendLine("started="+started+" driverPlaying="+(driver!=null&&driver.IsActionPlaying));yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("screenshots/jiuba-teleport-"+UnityEngine.SceneManagement.SceneManager.GetActiveScene().name+".png");while(driver!=null&&driver.IsActionPlaying)yield return null;}
+if(黑幕字幕.过渡进行中)break;
+}
+System.IO.File.WriteAllText("screenshots/jiuba-teleport-check.txt",sb.ToString());Debug.Log(sb.ToString());
+}
+return Run();
