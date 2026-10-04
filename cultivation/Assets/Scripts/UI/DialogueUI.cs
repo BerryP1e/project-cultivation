@@ -6,20 +6,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// **对话框 UI** —— 布局照用户给的示意图：
-///   · 左侧一整条「人物立绘」大图（约 30% 宽，从下方 25% 一直到屏幕底）
-///   · 右侧一整条「玩家立绘」
-///   · 下方偏左灰底框：左上角深色「NPC名字」标签 + 框内「对话内容」
-///   · 灰底框右侧竖排「回答1 / 回答2 / 回答3」按钮
-///
-/// 三个设计要点：
-///   ① **界面是运行时自己搭出来的**（不依赖预制体 / 不依赖美术），立绘补图后自动生效：
-///      往 `Assets/resources/立绘/<名字>.png` 一放，对话表 `立绘` 列写上名字即可。
-///   ② **情绪是可扩展的**：对话表 `情绪` 列 + `情绪强度` 列 →
-///      <see cref="播放情绪"/>。内置 震动/冒泡/发怒/害羞/惊讶，
-///      新情绪既能写进 <see cref="自定义情绪"/> 注册表，也能在这里加一段表现，**不用改数据表结构**。
-///   ③ **条件 / 任务接口**：候选段由 <see cref="DialogueDatabase.取段"/> 结合
-///      <see cref="对话标记"/> 过滤（需要标记 / 排除标记 / 优先），任务管理器只管加删标记。
+/// 无立绘的水墨对话：框内左上姓名、居中正文、下方居中回答。
+/// 保留选段条件、跨树跳转、任务回调与强制演出接口。
 /// </summary>
 [DisallowMultipleComponent]
 public class DialogueUI : MonoBehaviour
@@ -46,20 +34,9 @@ public class DialogueUI : MonoBehaviour
     [Header("外观（留空/默认即可，示意图形状）")]
     public Font 字体;
 
-    public Color 立绘底色 = new Color(0.93f, 0.90f, 0.43f, 0.92f);      // 示意图里的黄块 = 立绘占位
-    public Color 文本框底色 = new Color(0.62f, 0.62f, 0.62f, 0.92f);
-    public Color 名字底色 = new Color(0.24f, 0.24f, 0.26f, 0.95f);
-    public Color 文字色 = new Color(0.06f, 0.06f, 0.08f, 1f);
-    public Color 名字字色 = new Color(0.96f, 0.96f, 0.96f, 1f);
-    public Color 回答底色 = new Color(0.80f, 0.80f, 0.80f, 0.96f);
-    public Color 回答悬停色 = new Color(0.95f, 0.92f, 0.70f, 1f);
-
-    [Header("立绘大小（用户 2026-09-27 定的全局规则：谁在说话谁放大，另一边缩小）")]
-    [Tooltip("说话方的立绘缩放")]
-    [Range(0.5f, 1.5f)] public float 说话方缩放 = 1f;
-
-    [Tooltip("不说话方的立绘缩放")]
-    [Range(0.5f, 1.5f)] public float 非说话方缩放 = 0.82f;
+    public Color 文本框底色 = new Color(.025f, .035f, .045f, .96f);
+    public Color 文字色 = new Color(.92f, .93f, .88f);
+    public Color 名字字色 = new Color(.76f, .81f, .77f);
 
     [Header("行为")]
     [Tooltip("没有回答的段落，按这个键继续下一段")]
@@ -69,8 +46,6 @@ public class DialogueUI : MonoBehaviour
 
     GameObject 根;
     RectTransform 根RT;
-    Image 左立绘, 右立绘;
-    Text 左立绘提示, 右立绘提示;
     Image 文本框底;
     Text 名字文本, 内容文本;
     RectTransform 回答列;
@@ -256,10 +231,6 @@ public class DialogueUI : MonoBehaviour
             ? (string.IsNullOrEmpty(起名界面.当前名字) ? "主角" : 起名界面.当前名字)
             : 临时说话人;
         内容文本.text = 临时台词;
-        贴立绘(左立绘, 左立绘提示, null, "人物立绘");
-        贴立绘(右立绘, 右立绘提示, null, "玩家立绘");
-        if (左立绘 != null) 左立绘.rectTransform.localScale = Vector3.one * (玩家在说 ? 非说话方缩放 : 说话方缩放);
-        if (右立绘 != null) 右立绘.rectTransform.localScale = Vector3.one * (玩家在说 ? 说话方缩放 : 非说话方缩放);
         // 按钮回调走 当前继续回调（多行演出会改它），没有就用默认的"收起"
         var 回调 = 当前继续回调 ?? (System.Action)(() => { 是临时演出 = false; 收起来(); });
         加按钮("继续 ▸", () => 回调());
@@ -297,9 +268,6 @@ public class DialogueUI : MonoBehaviour
         当前分段 = 段;
         名字文本.text = d.取说话人(当前NPC != null ? 当前NPC.gameObject.name : "");
         内容文本.text = d.文本;
-        贴立绘(左立绘, 左立绘提示, d.立绘, "人物立绘");
-        贴立绘(右立绘, 右立绘提示, d.玩家立绘, "玩家立绘");
-        按说话方缩放立绘(d);          // ★ 说话方放大、非说话方缩小
         建回答(d);
         播放情绪(d.情绪, d.情绪强度);
 
@@ -370,31 +338,13 @@ public class DialogueUI : MonoBehaviour
         显示分段(段);
     }
 
-    void 按说话方缩放立绘(DialogueDefinition d)
-    {
-        string npc名 = 当前NPC != null ? 当前NPC.gameObject.name : "";
-        bool 是NPC在说 = string.IsNullOrEmpty(d.说话人) || d.说话人 == npc名;
-
-        if (左立绘 != null) 左立绘.rectTransform.localScale = Vector3.one * (是NPC在说 ? 说话方缩放 : 非说话方缩放);
-        if (右立绘 != null) 右立绘.rectTransform.localScale = Vector3.one * (是NPC在说 ? 非说话方缩放 : 说话方缩放);
-    }
-
-    void 贴立绘(Image 图, Text 提示, string 资源名, string 占位字)
-    {
-        Sprite sp = null;
-        if (!string.IsNullOrEmpty(资源名)) sp = Resources.Load<Sprite>("立绘/" + 资源名);
-        if (sp == null && !string.IsNullOrEmpty(资源名)) sp = Resources.Load<Sprite>("UI/InkUI/Portraits/portrait-" + 资源名);
-        图.sprite = sp;
-        图.color = sp != null ? Color.white : (InkUITheme.Enabled ? Color.clear : 立绘底色);
-        提示.text = sp != null || InkUITheme.Enabled ? "" : 占位字;
-    }
-
     // ============================================================ 回答按钮
 
     void 清回答()
     {
         for (int i = 0; i < 回答按钮.Count; i++) if (回答按钮[i] != null) Destroy(回答按钮[i]);
         回答按钮.Clear();
+        if (回答列 != null) 回答列.anchoredPosition = Vector2.zero;
     }
 
     void 建回答(DialogueDefinition d)
@@ -427,20 +377,23 @@ public class DialogueUI : MonoBehaviour
         var go = new GameObject("回答" + (回答按钮.Count + 1), typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(回答列, false);
         var rt = (RectTransform)go.transform;
-        rt.sizeDelta = new Vector2(0f, 74f);
+        rt.sizeDelta = new Vector2(0f, 78f);
         var le = go.AddComponent<LayoutElement>();
-        le.preferredHeight = 74f;
-        le.minHeight = 52f;
+        le.preferredHeight = 78f;
+        le.minHeight = 78f;
 
         var img = go.GetComponent<Image>();
-        img.color = 回答底色;
+        img.sprite = InkUITheme.Load("Dynamic/nav-ink-blot-4");
+        img.type = Image.Type.Simple;
+        img.color = new Color(.025f,.040f,.045f,.94f);
         img.raycastTarget = true;
+        go.AddComponent<UIInkDialogueBackdrop>();
 
         var btn = go.GetComponent<Button>();
         var 颜色 = btn.colors;
         颜色.normalColor = Color.white;
-        颜色.highlightedColor = 回答悬停色;
-        颜色.pressedColor = new Color(0.7f, 0.68f, 0.55f, 1f);
+        颜色.highlightedColor = new Color(1.5f,1.65f,1.6f,1);
+        颜色.pressedColor = new Color(.7f,.85f,.8f,1);
         btn.colors = 颜色;
         btn.onClick.AddListener(() => { if (点击 != null) 点击(); });
 
@@ -450,15 +403,16 @@ public class DialogueUI : MonoBehaviour
         trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
         trt.offsetMin = new Vector2(10f, 4f); trt.offsetMax = new Vector2(-10f, -4f);
         t.font = 取字体();
-        t.fontSize = 26;
-        t.alignment = TextAnchor.MiddleLeft;
-        t.color = 文字色;
+        t.fontSize = 27;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.color = new Color(.90f,.92f,.88f);
         t.horizontalOverflow = HorizontalWrapMode.Wrap;
         t.verticalOverflow = VerticalWrapMode.Truncate;
         t.text = 文字;
         t.raycastTarget = false;
 
         回答按钮.Add(go);
+        le.preferredHeight = Mathf.Max(78, t.preferredHeight + 30);
     }
 
     // ============================================================ 每帧
@@ -502,7 +456,7 @@ public class DialogueUI : MonoBehaviour
         }
     }
 
-    /// <summary>震动：整个对话框 + 立绘一起抖（表示震惊）</summary>
+    /// <summary>震动：整个对话框抖动（表示震惊）</summary>
     public IEnumerator 震动(float 强度)
     {
         if (根RT == null) yield break;
@@ -519,7 +473,7 @@ public class DialogueUI : MonoBehaviour
         根RT.anchoredPosition = 原;
     }
 
-    /// <summary>冒泡：从人物立绘下方冒出一串泡泡</summary>
+    /// <summary>冒泡：从对话框姓名附近冒出一串泡泡</summary>
     public IEnumerator 冒泡(float 强度)
     {
         int 个数 = Mathf.Clamp(Mathf.RoundToInt(6f * 强度), 2, 16);
@@ -532,15 +486,15 @@ public class DialogueUI : MonoBehaviour
 
     IEnumerator 一颗泡(float 延迟, float 强度)
     {
-        if (左立绘 == null) yield break;
+        if (文本框底 == null) yield break;
         yield return new WaitForSecondsRealtime(延迟);
         var go = new GameObject("泡", typeof(RectTransform), typeof(Image));
-        go.transform.SetParent(左立绘.transform, false);
+        go.transform.SetParent(文本框底.transform, false);
         var rt = (RectTransform)go.transform;
         float 大小 = UnityEngine.Random.Range(16f, 34f) * Mathf.Clamp(强度, 0.4f, 2f);
         rt.sizeDelta = new Vector2(大小, 大小);
         float x = UnityEngine.Random.Range(-0.3f, 0.3f);
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f + x, 0.12f);
+        rt.anchorMin = rt.anchorMax = new Vector2(0.12f + x * .12f, 0.75f);
         rt.anchoredPosition = Vector2.zero;
         var img = go.GetComponent<Image>();
         img.sprite = 取圆点();
@@ -645,9 +599,14 @@ public class DialogueUI : MonoBehaviour
 
     void 搭界面()
     {
+        var existing = FindObjectOfType<PlayerHud>(true);
+        if (字体 == null && existing != null && existing.气血文字 != null) 字体 = existing.气血文字.font;
+        文字色 = new Color(.92f,.93f,.88f); 名字字色 = new Color(.76f,.81f,.77f);
+        文本框底色 = new Color(.025f,.035f,.045f,.96f);
         var 画布 = gameObject.GetComponent<Canvas>();
         if (画布 == null) 画布 = gameObject.AddComponent<Canvas>();
         画布.renderMode = RenderMode.ScreenSpaceOverlay;
+        画布.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1;
         画布.sortingOrder = 2600;      // ★ 要**高于** StationInteractor 的占位幕布(2500)，低于暂停菜单(3000)
         if (gameObject.GetComponent<CanvasScaler>() == null)
         {
@@ -668,51 +627,63 @@ public class DialogueUI : MonoBehaviour
         根RT = (RectTransform)根.transform;
         铺满(根RT, Vector4.zero);
 
-        // 左：人物立绘（0 → 29.8% 宽，从底到 74.7% 高）
-        左立绘 = 建图("人物立绘", 根.transform, 立绘底色);
-        摆块((RectTransform)左立绘.transform, 0f, 0f, 0.298f, 0.747f);
-        左立绘提示 = 建字("人物立绘字", 左立绘.transform, 取字体(), 34, 文字色, TextAnchor.MiddleCenter);
-        铺满((RectTransform)左立绘提示.transform, Vector4.zero);
-        左立绘提示.text = "人物立绘";
-
-        // 右：玩家立绘（77.4% → 1）
-        右立绘 = 建图("玩家立绘", 根.transform, 立绘底色);
-        摆块((RectTransform)右立绘.transform, 0.774f, 0f, 1f, 0.747f);
-        右立绘提示 = 建字("玩家立绘字", 右立绘.transform, 取字体(), 30, 文字色, TextAnchor.MiddleCenter);
-        铺满((RectTransform)右立绘提示.transform, Vector4.zero);
-        右立绘提示.text = "玩家立绘";
-
-        // 中下：灰底对话框（13.2% → 68.4% 宽，底 → 27.7% 高）
+        // 上方偏中的墨边对话框。
         文本框底 = 建图("对话框", 根.transform, 文本框底色);
-        摆块((RectTransform)文本框底.transform, 0.132f, 0f, 0.684f, 0.277f);
+        摆块((RectTransform)文本框底.transform, 0.29f, .64f, .81f, .86f);
+        文本框底.sprite = InkUITheme.Load("Dynamic/panel-ink-blob");文本框底.type=Image.Type.Simple;
         文本框底.raycastTarget = true;
+        文本框底.gameObject.AddComponent<UIInkDialogueBackdrop>();
 
         // 名字标签（框内左上角）
-        var 名字底 = 建图("名字底", 文本框底.transform, 名字底色);
+        var 名字底 = 建图("名字底", 文本框底.transform, Color.clear);
         var 名字RT = (RectTransform)名字底.transform;
         名字RT.anchorMin = 名字RT.anchorMax = new Vector2(0f, 1f);
         名字RT.pivot = new Vector2(0f, 1f);
-        名字RT.anchoredPosition = new Vector2(18f, -12f);
-        名字RT.sizeDelta = new Vector2(240f, 56f);
-        名字文本 = 建字("名字", 名字底.transform, 取字体(), 28, 名字字色, TextAnchor.MiddleLeft);
+        名字RT.anchoredPosition = new Vector2(65f, -16f);
+        名字RT.sizeDelta = new Vector2(420f, 46f);
+        名字文本 = 建字("名字", 名字底.transform, 取字体(), 23, 名字字色, TextAnchor.MiddleLeft);
         铺满((RectTransform)名字文本.transform, new Vector4(18f, 10f, 0f, 0f));
 
         // 正文
         内容文本 = 建字("对话内容", 文本框底.transform, 取字体(), 32, 文字色, TextAnchor.MiddleCenter);
-        铺满((RectTransform)内容文本.transform, new Vector4(38f, 38f, 76f, 26f));
+        内容文本.resizeTextForBestFit = true;
+        内容文本.resizeTextMinSize = 24;
+        内容文本.resizeTextMaxSize = 32;
+        铺满((RectTransform)内容文本.transform, new Vector4(86f, 86f, 65f, 42f));
+        var close = new GameObject("关闭对话",typeof(RectTransform),typeof(Image),typeof(Button));close.transform.SetParent(文本框底.transform,false);
+        var closeRt=(RectTransform)close.transform;closeRt.anchorMin=closeRt.anchorMax=new Vector2(1,1);closeRt.sizeDelta=new Vector2(46,46);closeRt.anchoredPosition=new Vector2(-65,-40);
+        close.GetComponent<Image>().color=Color.clear;close.GetComponent<Button>().onClick.AddListener(收起来);
+        var closeText=建字("关闭字",close.transform,取字体(),29,名字字色,TextAnchor.MiddleCenter);closeText.text="×";铺满(closeText.rectTransform,Vector4.zero);
 
-        // 右：回答列（72.9% → 88.5% 宽，10% → 27.7% 高）
-        var 列 = new GameObject("回答列", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        列.transform.SetParent(根.transform, false);
+        // 下方居中的回答列；长列表可以滚动。
+        var viewport = new GameObject("回答视口",typeof(RectTransform),typeof(ScrollRect),typeof(Image),typeof(UIInkViewportFade));viewport.transform.SetParent(根.transform,false);
+        var viewportRt=(RectTransform)viewport.transform;摆块(viewportRt,.18f,.08f,.82f,.39f);viewport.GetComponent<Image>().color=Color.clear;
+        viewport.GetComponent<UIInkViewportFade>().FadeWidth = 18;
+        var 列 = new GameObject("回答列", typeof(RectTransform), typeof(VerticalLayoutGroup),typeof(ContentSizeFitter));
+        列.transform.SetParent(viewport.transform, false);
         var 列RT = (RectTransform)列.transform;
-        摆块(列RT, 0.729f, 0.098f, 0.885f, 0.277f);
+        列RT.anchorMin=new Vector2(0,1);列RT.anchorMax=Vector2.one;列RT.pivot=new Vector2(.5f,1);列RT.offsetMin=Vector2.zero;列RT.offsetMax=Vector2.zero;
+        列.GetComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
+        var scroll=viewport.GetComponent<ScrollRect>();scroll.content=列RT;scroll.viewport=viewportRt;scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=35;
         回答列 = 列RT;
         var vlg = 列.GetComponent<VerticalLayoutGroup>();
         vlg.spacing = 14f;
-        vlg.childAlignment = TextAnchor.UpperLeft;
+        vlg.childAlignment = TextAnchor.UpperCenter;
         vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
+        vlg.childControlHeight = true;
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
+        vlg.padding = new RectOffset(0, 28, 8, 8);
+        var track = 建图("回答滚动条", viewport.transform, Color.white);
+        var trackRt = track.rectTransform;
+        trackRt.anchorMin = new Vector2(1, 0); trackRt.anchorMax = Vector2.one;
+        trackRt.offsetMin = new Vector2(-16, 8); trackRt.offsetMax = new Vector2(0, -8);
+        track.raycastTarget = true;
+        var handle = 建图("Handle", track.transform, Color.white);
+        铺满(handle.rectTransform, new Vector4(2, 2, 2, 2)); handle.raycastTarget = true;
+        var bar = track.gameObject.AddComponent<Scrollbar>(); bar.direction = Scrollbar.Direction.BottomToTop;
+        bar.handleRect = handle.rectTransform; bar.targetGraphic = handle;
+        scroll.verticalScrollbar = bar; scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+        InkUITheme.ScrollbarStyle(bar);
     }
 }

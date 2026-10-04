@@ -1,0 +1,34 @@
+// Isolated rig; never changes the actual player's art, input or action state.
+var original=GameObject.Find("Player").GetComponentInChildren<Animator>();
+var rig=Object.Instantiate(original.gameObject);rig.name="DefaultRunSteadyQA";
+foreach(var b in rig.GetComponentsInChildren<MonoBehaviour>(true))b.enabled=false;
+var parent=new GameObject("DefaultRunSteadyQARoot");parent.transform.position=new Vector3(10000,0,10000);
+rig.transform.SetParent(parent.transform,false);rig.transform.localPosition=original.transform.localPosition;rig.transform.localRotation=original.transform.localRotation;rig.transform.localScale=original.transform.localScale;
+var animator=rig.GetComponent<Animator>();animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;animator.speed=0;
+var root=UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");
+var source=UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/resources/Animation Library/1/UAL1_Standard.fbx").OfType<AnimationClip>();
+var sb=new System.Text.StringBuilder();var handler=new HumanPoseHandler(animator.avatar,animator.transform);var pose=new HumanPose();
+foreach(var t in parent.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+var cameraRoot=new GameObject("DefaultRunQACamera");var cam=cameraRoot.AddComponent<Camera>();cam.enabled=false;cam.cullingMask=1<<30;cam.orthographic=true;cam.orthographicSize=1.15f;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.23f,.25f,.28f);cam.transform.position=parent.transform.position+new Vector3(4,1.5f,6);cam.transform.LookAt(parent.transform.position+Vector3.up*1.05f);
+var lightRoot=new GameObject("DefaultRunQALight");var light=lightRoot.AddComponent<Light>();light.type=LightType.Directional;light.cullingMask=1<<30;light.intensity=1.2f;light.transform.rotation=Quaternion.Euler(35,-25,0);
+var target=new RenderTexture(320,480,24);cam.targetTexture=target;
+System.Collections.IEnumerator Run(){try{
+ foreach(var mode in new[]{"Walk","Run"})foreach(var variant in new[]{"before","after"}){
+  string name=mode=="Walk"?"Armature|Walk_Loop":"Armature|Sprint_Loop";
+  var clip=variant=="before"?source.First(c=>c.name==name):UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Animations/Locomotion/Player"+mode+"Steady.anim");
+  var ctrl=new AnimatorOverrideController(root);ctrl[name]=clip;animator.runtimeAnimatorController=ctrl;animator.Rebind();animator.SetFloat("Speed",mode=="Walk"?1.4f:6);animator.SetBool("Flying",false);
+  var muscles=new[]{"UpperChest Twist Left-Right","Chest Left-Right","Left Upper Leg Twist In-Out","Left Foot Twist In-Out"};
+  var indices=muscles.Select(m=>System.Array.IndexOf(HumanTrait.MuscleName,m)).ToArray();float[] lo=Enumerable.Repeat(float.MaxValue,4).ToArray(),hi=Enumerable.Repeat(float.MinValue,4).ToArray();
+  float yawLo=999,yawHi=-999,rollLo=999,rollHi=-999,lastYaw=0,continuousYaw=0;
+  var sheet=new Texture2D(1280,480,TextureFormat.RGB24,false);int shot=0;
+  for(int i=0;i<60;i++){animator.Play("Locomotion",0,i/60f);animator.Update(0);yield return new WaitForEndOfFrame();handler.GetHumanPose(ref pose);var e=pose.bodyRotation.eulerAngles;if(i>0)continuousYaw+=Mathf.DeltaAngle(lastYaw,e.y);lastYaw=e.y;float yaw=continuousYaw,roll=Mathf.DeltaAngle(0,e.z);yawLo=Mathf.Min(yawLo,yaw);yawHi=Mathf.Max(yawHi,yaw);rollLo=Mathf.Min(rollLo,roll);rollHi=Mathf.Max(rollHi,roll);for(int j=0;j<4;j++)if(indices[j]>=0){lo[j]=Mathf.Min(lo[j],pose.muscles[indices[j]]);hi[j]=Mathf.Max(hi[j],pose.muscles[indices[j]]);}
+   if(i==6||i==21||i==36||i==51){cam.Render();var old=RenderTexture.active;RenderTexture.active=target;sheet.ReadPixels(new Rect(0,0,320,480),shot++*320,0);RenderTexture.active=old;}
+  }
+  sheet.Apply();System.IO.File.WriteAllBytes("screenshots/default-run-"+mode+"-"+variant+".png",sheet.EncodeToPNG());Object.Destroy(sheet);
+  sb.AppendLine(mode+" "+variant+" "+string.Join("; ",muscles.Select((m,j)=>m+"="+(indices[j]<0?"absent":(hi[j]-lo[j]).ToString("F4")))));
+  sb.AppendLine("bodyYawSpan="+(yawHi-yawLo).ToString("F2")+" bodyRollSpan="+(rollHi-rollLo).ToString("F2"));
+  Object.Destroy(ctrl);
+ }
+ System.IO.File.WriteAllText("screenshots/default-run-steady-check.txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{handler.Dispose();Object.Destroy(parent);Object.Destroy(cameraRoot);Object.Destroy(lightRoot);target.Release();Object.Destroy(target);}}
+return Run();

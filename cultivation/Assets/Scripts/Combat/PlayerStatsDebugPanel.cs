@@ -1,10 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 临时调试面板（IMGUI 实现，不依赖任何 prefab / Canvas）。
 ///
 /// 用途：把玩家的【全部数值】都做成可实时拖动/输入，方便测试。
-/// 打开方式：默认 F1 键。改动即刻生效（走 PlayerCombatStats 的调试数值覆盖）。
+/// 打开方式：默认 P 键。改动即刻生效（走 PlayerCombatStats 的调试数值覆盖）。
 ///
 /// 面板关闭时如果还开着「调试覆盖」，数值依然生效；点【恢复常规结算】才会关掉。
 /// </summary>
@@ -12,9 +12,9 @@ public class PlayerStatsDebugPanel : MonoBehaviour
 {
     [Header("开关")]
     [Tooltip("显示/隐藏调试面板的按键")]
-    public KeyCode 开关按键 = KeyCode.F1;
+    public KeyCode 开关按键 = KeyCode.P;
 
-    [Tooltip("进入游戏时是否默认显示。★ 默认关（用户 2026-09-26：一进游戏就糊一大块面板，F1 自己开）")]
+    [Tooltip("进入游戏时是否默认显示。★ 默认关（用户 2026-09-26：一进游戏就糊一大块面板，P 自己开）")]
     public bool 启动时显示 = false;
 
     [Header("引用")]
@@ -38,6 +38,8 @@ public class PlayerStatsDebugPanel : MonoBehaviour
 
     void Awake()
     {
+        // 兼容五个旧场景的序列化 F1，不为改键重存场景。
+        if (开关按键 == KeyCode.F1) 开关按键 = KeyCode.P;
         if (玩家战斗属性 == null) 玩家战斗属性 = GetComponent<PlayerCombatStats>();
         if (玩家气血 == null) 玩家气血 = GetComponent<PlayerVitals>();
         显示 = 启动时显示;

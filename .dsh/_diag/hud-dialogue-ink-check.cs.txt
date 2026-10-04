@@ -1,0 +1,45 @@
+using UnityEngine.UI;
+// Fixture data only: never edits the real player's loadout, cooldown or cultivation art.
+var hud=Object.FindObjectOfType<PlayerHud>();var originalData=hud.面板数据;var originalCaster=hud.施放器;
+var fixture=new GameObject("HudInkQAData");fixture.SetActive(false);var data=fixture.AddComponent<UIPanelData>();
+var db=Resources.Load<PanelDatabase>("面板/面板库");data.主动技能=db.神通.OfType<ActiveDivineAbility>().Take(6).Cast<UnityEngine.Object>().ToList();
+while(data.主动技能.Count<6)data.主动技能.Add(null);
+var caster=fixture.AddComponent<ActiveSkillCaster>();caster.enabled=false;caster.面板数据=data;
+var cooldown=(float[])typeof(ActiveSkillCaster).GetField("冷却剩余",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(caster);
+var ui=DialogueUI.确保();bool owned=!DialogueUI.正在显示;var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+var sb=new System.Text.StringBuilder();
+System.Collections.IEnumerator Run(){try{
+ hud.面板数据=data;hud.施放器=caster;hud.RefreshAll();
+ for(int i=0;i<6;i++)cooldown[i]=caster.冷却总秒(i)*(i%3==0?1:i%3==1?.5f:0);
+ yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
+ foreach(var g in hud.GetComponentsInChildren<UIInkHudSkill>()){sb.AppendLine(g.name+" k="+g.墨晕比例+" pos="+((RectTransform)g.transform).anchoredPosition);}
+ foreach(var g in hud.GetComponentsInChildren<UIInkVitalBranch>()){var mesh=g.canvasRenderer.GetMesh();if(mesh==null||mesh.vertexCount<100)throw new System.Exception("Missing branch mesh");sb.AppendLine("branch verts="+mesh.vertexCount+" fill="+g.Source.fillAmount);}
+ sb.AppendLine("P="+Object.FindObjectOfType<PlayerStatsDebugPanel>().开关按键+" cultivationHud="+hud.transform.Find("修炼").gameObject.activeSelf);
+ sb.AppendLine("cooldown shader="+hud.技能格们[0].图标.material.shader.name+" supported="+hud.技能格们[0].图标.material.shader.isSupported);
+ ScreenCapture.CaptureScreenshot("screenshots/hud-ink-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();
+ hud.ShowInfo(2);yield return new WaitForEndOfFrame();
+ if(!hud.信息幕布.activeSelf)throw new System.Exception("Equipped skill hover information missing");
+ ScreenCapture.CaptureScreenshot("screenshots/hud-ink-tooltip-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();hud.HideInfo();
+ sb.AppendLine("skill hover information: pass");
+ if(owned){
+  var show=DialogueUI.演出("编衣人","道友断吾语无休无止乎？");show.MoveNext();
+  typeof(DialogueUI).GetMethod("清回答",flags).Invoke(ui,null);
+  var add=typeof(DialogueUI).GetMethod("加按钮",flags);int clicks=0;
+  add.Invoke(ui,new object[]{"道友可语人言了？",(System.Action)(()=>clicks++)});add.Invoke(ui,new object[]{"因我已知取道之法",(System.Action)(()=>clicks++)});
+  Canvas.ForceUpdateCanvases();yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
+  var root=(GameObject)typeof(DialogueUI).GetField("根",flags).GetValue(ui);if(root.GetComponentsInChildren<Image>(true).Any(i=>i.name.Contains("立绘")))throw new System.Exception("Portrait remains");
+  sb.AppendLine("dialogue name="+root.GetComponentsInChildren<Text>().First(t=>t.name=="名字").text+" buttons="+root.GetComponentsInChildren<Button>().Length);
+  ScreenCapture.CaptureScreenshot("screenshots/dialogue-ink-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();
+  root.GetComponentsInChildren<Button>().First(b=>b.name=="回答1").onClick.Invoke();if(clicks!=1)throw new System.Exception("Answer callback failed");
+  for(int n=0;n<4;n++)add.Invoke(ui,new object[]{new string('字',110),(System.Action)(()=>clicks++)});Canvas.ForceUpdateCanvases();yield return null;
+  var scroll=root.GetComponentInChildren<ScrollRect>();sb.AppendLine("long answers content="+scroll.content.rect.height+" viewport="+scroll.viewport.rect.height);
+  if(scroll.content.rect.height<=scroll.viewport.rect.height)throw new System.Exception("Long answers do not scroll");
+  scroll.verticalNormalizedPosition=0;yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
+  ScreenCapture.CaptureScreenshot("screenshots/dialogue-ink-long-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();
+  if(root.GetComponentsInChildren<UIInkDialogueBackdrop>().First(b=>b.name=="回答1").IsRaycastLocationValid(Vector2.zero,null))throw new System.Exception("Off-viewport answer receives clicks");
+  sb.AppendLine("answer callback / bottom scroll / off-viewport raycast / close: pass");
+  root.GetComponentsInChildren<Button>().First(b=>b.name=="关闭对话").onClick.Invoke();if(DialogueUI.正在显示)throw new System.Exception("Close failed");
+ }
+ System.IO.File.WriteAllText("screenshots/hud-dialogue-ink-check-"+Screen.width+".txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{hud.面板数据=originalData;hud.施放器=originalCaster;hud.RefreshAll();if(owned)DialogueUI.关闭();Object.Destroy(fixture);}}
+return Run();

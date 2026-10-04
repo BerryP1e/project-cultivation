@@ -1,25 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 游戏内 HUD。左下角一小块，全部用**方框**：
-///
-///   ┌────┐ ┌─┐┌─┐┌─┐┌─┐┌─┐┌─┐
-///   │功法│ │1││2││3││4││5││6│
-///   └────┘ └─┘└─┘└─┘└─┘└─┘└─┘
-///   气血 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-///   灵气 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-///
-/// **不显示任何名字**：鼠标移到格子上会弹出半透明「信息幕布」，移开就消失
-/// （见 <see cref="HudHoverTarget"/> 与 <see cref="显示信息"/>）。
-///
-/// 由 <c>Assets/Editor/Builders/HudBuilder.cs</c> 生成
-/// （菜单：修仙 / 生成游戏界面 HUD）。
-///
-/// 冷却表现：技能进冷却后
-///   · 图标整体变暗
-///   · 中央实时显示剩余秒数
-///   · 暗部遮罩的 fillAmount = 冷却比例（1 → 0），所以暗部【逐渐消退】
+/// HUD 数据与悬停提示。UIInkHudSkin 将现有节点重排为左下连续气血/灵力与右侧六技能位；
+/// UIInkHudSkill 负责悬浮墨轨道及墨晕冷却，修炼次数由境界页展示。
+/// 编辑器 HudBuilder 仅负责基础节点，换皮不重新生成或保存场景。
 /// </summary>
 public class PlayerHud : MonoBehaviour
 {
@@ -28,6 +13,7 @@ public class PlayerHud : MonoBehaviour
     {
         [Tooltip("整格的方形底图（同时也是鼠标悬停的接收体）")]
         public Image 底;
+        [System.NonSerialized] public bool 墨晕冷却;
 
         [Tooltip("技能图标")]
         public Image 图标;
@@ -103,6 +89,8 @@ public class PlayerHud : MonoBehaviour
         解析引用();
         补齐贴图();
         隐藏信息();
+        var oldCultivation = transform.Find("修炼");
+        if (oldCultivation != null) oldCultivation.gameObject.SetActive(false);
     }
 
     void Update()
@@ -110,7 +98,7 @@ public class PlayerHud : MonoBehaviour
         刷新功法();
         刷新技能栏();
         刷新数值条();
-        刷新修炼进度();
+        // 修炼次数只在境界页显示，旧序列化条留作兼容，HUD 不刷新它。
     }
 
     void 解析引用()
@@ -211,7 +199,7 @@ public class PlayerHud : MonoBehaviour
 
             if (g.冷却遮罩 != null)
             {
-                g.冷却遮罩.gameObject.SetActive(冷却中);
+                g.冷却遮罩.gameObject.SetActive(冷却中 && !g.墨晕冷却);
                 if (冷却中)
                 {
                     g.冷却遮罩.color = 冷却遮罩色;
@@ -391,6 +379,15 @@ public class PlayerHud : MonoBehaviour
         if (幕布品阶 != null) 幕布品阶.text = 品阶;
         if (幕布正文 != null) 幕布正文.text = 正文;
         信息幕布.SetActive(true);
+        var rt = 信息幕布.transform as RectTransform;
+        if (rt != null)
+        {
+            var bounds = ((RectTransform)transform).rect;
+            rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
+            rt.anchoredPosition = 槽位 >= 0
+                ? new Vector2(bounds.width - rt.rect.width - 135, Mathf.Clamp(bounds.height*.5f+230-槽位*92-rt.rect.height*.5f,24,bounds.height-rt.rect.height-24))
+                : new Vector2(28,140);
+        }
     }
 
     /// <summary>鼠标移开时收起幕布</summary>
@@ -400,7 +397,7 @@ public class PlayerHud : MonoBehaviour
     }
 
     // ---- ASCII 别名 ----
-    public void RefreshAll() { 刷新功法(); 刷新技能栏(); 刷新数值条(); 刷新修炼进度(); }
+    public void RefreshAll() { 刷新功法(); 刷新技能栏(); 刷新数值条(); }
     public void ShowInfo(int slot) => 显示信息(slot);
     public void HideInfo() => 隐藏信息();
 }

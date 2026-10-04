@@ -111,7 +111,7 @@ docs/
 │   ├─ 战斗与伤害.md        伤害公式 · 受伤飘字
 │   ├─ 修炼与境界.md        修炼小屋 · 功法等级换算 · 破境
 │   ├─ 主动技能与神通.md     技能槽 · 施放流程 · 特效摆放
-│   ├─ 游戏HUD.md          左下角 HUD · 冷却表现 · 悬停幕布 · 修炼次数进度条
+│   ├─ 游戏HUD.md          枝形血灵条 · 右侧六技能 · 墨晕冷却 · 悬停墨幕
 │   ├─ 敌人AI.md           无寻路的接近模型 · 各只怪的实现
 │   ├─ 战阵真灵.md          站位 · 真灵列表
 │   ├─ 坐骑与御风.md        摆位 · 对地高度 · Shift 切换 · 互斥
@@ -133,7 +133,7 @@ docs/
 │   ├─ 玄霄雷决与雷动千闪.md · 千劫雷狱.md · 瞬雷天闪.md · 雷云.md · 闪电链特效.md
 │   ├─ 沧澜寒渊录.md · 寒墟.md · 冰暴术.md
 │   ├─ 八九玄功.md         近战普攻 · 完整攻击与御风重定向 · 杨戬 Run 持械移动 · 手骨握持标定
-│   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md
+│   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md · 默认移动动画.md
 │   ├─ UI换皮.md          当前接入范围 · Assets目录 · 验证 · 后续入口
 │   └─ 备份与恢复说明.md
 │
@@ -173,7 +173,7 @@ docs/
 | **炼丹 / 丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | `Assets/Scripts/Alchemy/炼丹炉.cs` |
 | **伤害公式 / 属性 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) | `Assets/Scripts/Combat/CombatCalculator.cs` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
-| **左下角 HUD / 冷却显示 / 悬停提示 / 修炼进度条** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
+| **气血/灵力 HUD / 右侧六技能 / 墨晕冷却 / 悬停提示** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
 | **加一个 NPC 的 AI** | [architecture/敌人AI](architecture/敌人AI.md) | [ai/踩坑总库 §专题：NPC/敌人 AI](ai/踩坑总库.md) |
 | **怪物近战 / 出手站位** | [guides/怪物近战判定](guides/怪物近战判定.md) | [architecture/敌人AI](architecture/敌人AI.md) |
 | **飞弹 / 子弹 / 出生点** | [guides/飞弹与子弹](guides/飞弹与子弹.md) | [guides/特效资源清单](guides/特效资源清单.md) |
@@ -188,7 +188,7 @@ docs/
 | **传送门 / 落点 / 切场景** | [architecture/传送系统](architecture/传送系统.md) | [design/任务系统 §8](design/任务系统.md) · [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **加可交互物 / 「按 F 打开」的界面** | [architecture/系统总览 §2.5](architecture/系统总览.md) · [design/交互系统](design/交互系统.md) | [ai/踩坑总库](ai/踩坑总库.md) |
 | **改了 UI / 角色 / 相机要同步到所有场景** | [architecture/系统总览 §2.6](architecture/系统总览.md)（`SceneRigSyncer`） | [ai/踩坑总库](ai/踩坑总库.md) |
-| **编辑场景时 UI 挡视线 / F1 面板默认开** | [architecture/系统总览 §2.7](architecture/系统总览.md)（`UICanvasBoot`） | [architecture/游戏HUD](architecture/游戏HUD.md) |
+| **编辑场景时 UI 挡视线 / P 调试面板默认开** | [architecture/系统总览 §2.7](architecture/系统总览.md)（`UICanvasBoot`） | [architecture/游戏HUD](architecture/游戏HUD.md) |
 | **鼠标选中/锁定敌人 · 神识范围** | [design/交互系统](design/交互系统.md) | [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **树冠/建筑挡住视线、镜头看不见主角** | [architecture/遮挡与特效开关](architecture/遮挡与特效开关.md) | — |
 | **场景生成 / 摆点（村庄）** | [guides/村庄场景生成说明](guides/村庄场景生成说明.md) | [architecture/系统总览 §1](architecture/系统总览.md) |
@@ -201,6 +201,7 @@ docs/
 | **冰系功法「沧澜寒渊录」+ 寒墟 / 冰暴术** | [guides/沧澜寒渊录](guides/沧澜寒渊录.md) | [guides/寒墟](guides/寒墟.md) · [guides/冰暴术](guides/冰暴术.md) |
 | **近战普攻功法「八九玄功」**（完整攻击与御风重定向 · 杨戬 Run 移动 · 武器手骨轴与缩放 · 实机检查） | [guides/八九玄功](guides/八九玄功.md) | [guides/玄霄雷决与雷动千闪](guides/玄霄雷决与雷动千闪.md) · [architecture/主动技能与神通](architecture/主动技能与神通.md) |
 | **动画上下晃 / 人悬空** | [guides/动画竖直处理](guides/动画竖直处理.md) | [ai/踩坑总库 §B](ai/踩坑总库.md) |
+| **默认Walk/Run左右摆动** | [guides/默认移动动画](guides/默认移动动画.md) | [guides/八九玄功](guides/八九玄功.md) |
 | **要动编辑器工具 / MCP 桥** | [ai/工程与工具链](ai/工程与工具链.md) | [ai/工作规范](ai/工作规范.md) |
 | **★ 先看看别人踩过什么坑** | [ai/踩坑总库](ai/踩坑总库.md) | — |
 | **★ 干活流程 / 编码 / 验证规矩** | [ai/工作规范](ai/工作规范.md) | — |
