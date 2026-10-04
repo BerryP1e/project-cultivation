@@ -102,6 +102,13 @@ public class BasicJiuba01 : MonoBehaviour
     [Tooltip("把武器判定的包围盒往外扩多少米（判定宽容度）")]
     public float 判定外扩 = 0.15f;
 
+    [Tooltip("刀的横截面半径（米）。留 0 = 自动取蒙皮网格的次小半轴")]
+    public float 武器半径 = 0f;
+
+    [Tooltip("★ 每次出手把「判定窗内刀与目标的**最小距离**」打进日志 —— 用来**量**出手进度/判定窗口/判定外扩，\n" +
+             "别猜（工程 NPC 侧踩过：用猜的外扩 ⇒ 穷奇 8 秒 0 次接触、0 伤害）")]
+    public bool 打印判定距离 = true;
+
     [Tooltip("★ 勾上（默认）= **必须先用右键锁定一个目标**才出手，没锁定就不出手、也不进冷却。\n" +
              "关掉 = 可以空砍（但仍然只对锁定目标结算伤害）")]
     public bool 需要锁定目标 = true;
@@ -183,6 +190,11 @@ public class BasicJiuba01 : MonoBehaviour
     float 下次可出手时间;
     bool 本轮已结算;
 
+    // 每次出手的判定标定数据（用于"量"窗口/外扩，见 打印判定距离）
+    float 本次最近距离;
+    bool 本次最近有效;
+    float 上次阈值;
+
     // ---- 锁定目标（和 BasicFrostSpike01 同一套：死了就当没锁）----
 
     public ICombatTarget 锁定单位
@@ -260,6 +272,7 @@ public class BasicJiuba01 : MonoBehaviour
 
         出手动作中 = true;
         本轮已结算 = false;
+        本次最近距离 = 0f; 本次最近有效 = false; 上次阈值 = 0f;
         缓存目标体积有效 = false;
 
         var 片段 = 取下一片段(out var 路径, out var 是御风版);
@@ -332,7 +345,9 @@ public class BasicJiuba01 : MonoBehaviour
             if (打印战斗日志)
                 Debug.Log("[basic_jiuba_01] 打空：「" + 取目标名() + "」没被武器扫到"
                     + "（窗口 " + 出手进度.ToString("0.##") + "~" + 止.ToString("0.##")
-                    + "，动作进度 " + 进度.ToString("0.###") + "）", this);
+                    + "，动作进度 " + 进度.ToString("0.###")
+                    + (打印判定距离 && 本次最近有效 ? "，窗口内刀离目标最近 " + 本次最近距离.ToString("F2") + " 米（判定阈值 " + 上次阈值.ToString("F2") + "）" : "")
+                    + "）", this);
         }
     }
 
@@ -439,7 +454,9 @@ public class BasicJiuba01 : MonoBehaviour
 
                 Vector3 cp, cq;
                 float 距 = 线段距离(端A, 端B, q1, q2, out cp, out cq);
-                if (距 <= 世界半径 + 武器半径 + 判定外扩)
+                上次阈值 = 世界半径 + 武器半径 + 判定外扩;
+                if (!本次最近有效 || 距 < 本次最近距离) { 本次最近距离 = 距; 本次最近有效 = true; }
+                if (距 <= 上次阈值)
                 {
                     接触点 = cq;
                     return true;
@@ -480,16 +497,14 @@ public class BasicJiuba01 : MonoBehaviour
             if (r is ParticleSystemRenderer) continue;
 
             var smr = r as SkinnedMeshRenderer;
-            if (smr != null && smr.sharedMesh != null && smr.bones != null && smr.bones.Length == 1 && smr.bones[0] != null)
+            if (smr != null && smr.sharedMesh != null)
             {
-                var m = smr.bones[0].localToWorldMatrix * smr.sharedMesh.bindposes[0];
-                var b = smr.sharedMesh.bounds;
-                var 半 = b.size * 0.5f;
-                int 轴 = (半.x >= 半.y && 半.x >= 半.z) ? 0 : (半.y >= 半.z ? 1 : 2);
-                var d = 轴 == 0 ? new Vector3(半.x, 0f, 0f) : (轴 == 1 ? new Vector3(0f, 半.y, 0f) : new Vector3(0f, 0f, 半.z));
-                端A = m.MultiplyPoint3x4(b.center - d);
-                端B = m.MultiplyPoint3x4(b.center + d);
-                半径 = Mathf.Max(0.05f, Mathf.Min(半.x, Mathf.Min(半.y, 半.z)));
+                if (!线段已标定 || 线段SMR != smr) 标定线段(smr);
+                if (!线段已标定) continue;
+                端A = 线段SMR.transform.TransformPoint(线段本地A);
+                端B = 线段SMR.transform.TransformPoint(线段本地B);
+                var 缩 = 线段SMR.transform.lossyScale;
+                半径 = 线段本地半径 * Mathf.Max(Mathf.Abs(缩.x), Mathf.Max(Mathf.Abs(缩.y), Mathf.Abs(缩.z)));
                 return true;
             }
 
@@ -503,6 +518,47 @@ public class BasicJiuba01 : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    SkinnedMeshRenderer 线段SMR;
+    Vector3 线段本地A, 线段本地B;
+    float 线段本地半径 = 0.15f;
+    bool 线段已标定;
+
+    /// <summary>
+    /// ★ 用 `SkinnedMeshRenderer.BakeMesh` **问 Unity 要蒙皮后的真实顶点**来标定刀身线段。
+    ///
+    /// 为什么不能手算：先前用 `bone.localToWorldMatrix × bindpose × 网格包围盒` 算，
+    /// 结果与**画面上刀的位置**对不上（算出来刀在脚下一米多、与靶子差 1.8 米，而截图里刀端在胸前）
+    /// —— 那个 prefab 的渲染体被重新挂过父节点，bindpose 是原模型坐标系里烘的，手算式不再成立。
+    /// `BakeMesh` 拿到的是**引擎自己的蒙皮结果**，不会再出现"算出来的刀和看到的刀不是同一把"。
+    /// 烘一次就缓存（端点存渲染体本地坐标，每帧只做一次 TransformPoint）。
+    /// </summary>
+    void 标定线段(SkinnedMeshRenderer smr)
+    {
+        var 烘 = new Mesh();
+        try
+        {
+            smr.BakeMesh(烘);
+            var 界 = 烘.bounds;
+            var 半 = 界.size * 0.5f;
+            int 轴 = (半.x >= 半.y && 半.x >= 半.z) ? 0 : (半.y >= 半.z ? 1 : 2);
+            var d = 轴 == 0 ? new Vector3(半.x, 0f, 0f) : (轴 == 1 ? new Vector3(0f, 半.y, 0f) : new Vector3(0f, 0f, 半.z));
+            线段本地A = 界.center - d;
+            线段本地B = 界.center + d;
+            线段本地半径 = 武器半径 > 0f ? 武器半径 : Mathf.Max(0.05f, Mathf.Min(半.x, Mathf.Min(半.y, 半.z)));
+            线段SMR = smr;
+            线段已标定 = true;
+            if (打印战斗日志)
+                Debug.Log("[basic_jiuba_01] 刀身线段已标定（BakeMesh）：本地 " + 线段本地A.ToString("F3") + " → " + 线段本地B.ToString("F3")
+                          + "，长 " + Vector3.Distance(线段本地A, 线段本地B).ToString("F2") + " 米，半径 " + 线段本地半径.ToString("F3"), this);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[basic_jiuba_01] BakeMesh 标定失败：" + e.Message + " → 本轮退回盒相交", this);
+            线段已标定 = false;
+        }
+        finally { UnityEngine.Object.DestroyImmediate(烘); }
     }
 
     /// <summary>两条线段之间的最近距离（Ericson, Real-Time Collision Detection 的 ClosestPtSegmentSegment）</summary>
