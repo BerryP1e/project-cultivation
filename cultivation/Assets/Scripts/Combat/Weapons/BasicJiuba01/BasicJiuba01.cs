@@ -14,8 +14,8 @@ using UnityEngine;
 ///
 /// ```
 /// 选中一段动作（地面版 / 御风版）
-///   ↓ 播到 出手进度（默认 0.4）
-///   ↓ 在 [出手进度, 出手进度+判定窗口] 这段进度里【逐帧】拿武器网格和锁定目标的身躯求交
+///   ↓ 播到本次出手进度（普通 0.4，第二段 0.2）
+///   ↓ 从本次出手进度到原窗口结束点【逐帧】拿武器网格和锁定目标的身躯求交
 /// 碰到的那一帧 → 只结算一次【物理 + 普通攻击】伤害（打的是锁定目标）
 /// ```
 ///
@@ -64,6 +64,14 @@ public class BasicJiuba01 : MonoBehaviour
 
     [Tooltip("动作播到百分之多少时开判定窗（0.4 = 动画 40% 节点）")]
     [Range(0.05f, 0.95f)] public float 出手进度 = 0.4f;
+
+    [Tooltip("第二段长刀女 Attack2（含御风版）提前开窗的进度；只提前起点，保留原结束点。仍以武器实际接触为准，不会到进度就强制扣血")]
+    [Range(0.05f, 0.4f)] public float 第二段出手进度 = 0.2f;
+
+    /// <summary>按当前动作选择判定起点，第二段不再沿用其他动作的 40%。</summary>
+    public float 本次出手进度 => 当前动作路径.EndsWith("/长刀女_Attack2")
+        || 当前动作路径.EndsWith("/长刀女_Attack2_御风")
+        ? Mathf.Min(出手进度, 第二段出手进度) : 出手进度;
 
     [Tooltip("两次起手的最小间隔（秒），从起手开始计时，和动作并行。0 = 上一段结束立即接下一段，不额外等冷却。实际间隔跟随攻速缩短")]
     [Min(0f)] public float 基础冷却 = 0f;
@@ -301,8 +309,8 @@ public class BasicJiuba01 : MonoBehaviour
                 + "｜目标「" + 取目标名() + "」"
                 + "｜攻速 " + 攻速系数.ToString("0.##")
                 + "｜冷却 " + 实际冷却.ToString("0.##") + "s"
-                + "｜出手进度 " + 出手进度.ToString("0.##")
-                + "｜判定窗口 " + 出手进度.ToString("0.##") + "~" + Mathf.Clamp01(出手进度 + 判定窗口).ToString("0.##"), this);
+                + "｜出手进度 " + 本次出手进度.ToString("0.##")
+                + "｜判定窗口 " + 本次出手进度.ToString("0.##") + "~" + Mathf.Clamp01(出手进度 + 判定窗口).ToString("0.##"), this);
 
         if (动画 != null && 片段 != null)
         {
@@ -332,11 +340,12 @@ public class BasicJiuba01 : MonoBehaviour
         float 进度 = 动画 != null ? 动画.动作进度 : 1f;
         bool 还在播 = 动画 != null && 动画.动作播放中;
         float 止 = Mathf.Clamp01(出手进度 + 判定窗口);
+        float 起 = 本次出手进度;
 
         // 没开网格判定 / 没配武器名 / 武器节点找不到 → 退回「到出手进度就打」
         if (!用武器网格判定 || string.IsNullOrEmpty(武器节点名) || 取武器判定体() == null)
         {
-            if (进度 >= 出手进度 || !还在播)
+            if (进度 >= 起 || !还在播)
             {
                 本轮已结算 = true;
                 结算伤害(Vector3.zero, "到进度即结算（没用武器网格判定）");
@@ -344,7 +353,7 @@ public class BasicJiuba01 : MonoBehaviour
             return;
         }
 
-        if (进度 >= 出手进度 && 进度 <= 止)
+        if (进度 >= 起 && 进度 <= 止)
         {
             if (武器扫到目标(out var 接触点))
             {
@@ -360,7 +369,7 @@ public class BasicJiuba01 : MonoBehaviour
             本轮已结算 = true;
             if (打印战斗日志)
                 Debug.Log("[basic_jiuba_01] 打空：「" + 取目标名() + "」没被武器扫到"
-                    + "（窗口 " + 出手进度.ToString("0.##") + "~" + 止.ToString("0.##")
+                    + "（窗口 " + 起.ToString("0.##") + "~" + 止.ToString("0.##")
                     + "，动作进度 " + 进度.ToString("0.###")
                     + (打印判定距离 && 本次最近有效 ? "，窗口内刀离目标最近 " + 本次最近距离.ToString("F2") + " 米（判定阈值 " + 上次阈值.ToString("F2") + "）" : "")
                     + "）", this);
