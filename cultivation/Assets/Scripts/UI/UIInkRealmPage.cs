@@ -19,11 +19,10 @@ public class UIInkRealmPage : MonoBehaviour
     float age;
     Material ringMaterial;
     static readonly Color Light = new Color(.96f,.95f,.88f);
-    public const float 绘圈时长=1.56f;
+    public const float 绘圈时长=.5f;
     public static float 绘圈进度(float seconds){
-        if(seconds<.18f)return Mathf.Clamp01(seconds/.18f)*.08f;
-        if(seconds<.50f)return .08f;
-        return .08f+.92f*Mathf.Pow(Mathf.Clamp01((seconds-.50f)/(绘圈时长-.50f)),2.2f);
+        float t=Mathf.Clamp01(seconds/绘圈时长);
+        return .14f*t+.86f*t*t*t;
     }
 
     public static void 应用(Transform root)
@@ -118,7 +117,7 @@ public class UIInkRealmPage : MonoBehaviour
         bottomInk.sizeDelta=new Vector2(bottom.rect.height*1.05f,bottom.rect.width*1.10f);
         float t=UIInkMotion.减少动效 ? 10 : age;
         墨圈.fillAmount=绘圈进度(t);
-        circle.localEulerAngles=new Vector3(0,0,t>绘圈时长 && t<绘圈时长+.22f ? Mathf.Sin((t-绘圈时长)*36)*(1-(t-绘圈时长)/.22f)*.65f:0);
+        circle.localEulerAngles=Vector3.zero;
         center.alpha=Mathf.Clamp01((t-绘圈时长)/.2f);
         var gi=gongfa.GetComponent<UIEntryInfo>(); if(gi!=null && gi.tierText!=null) gi.tierText.color=Light;
         bottomReveal.进度=Mathf.Clamp01((t-.14f)/.26f);

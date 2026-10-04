@@ -38,9 +38,10 @@ public static class InkRealmQa
         }
         var log=new StringBuilder(); int passed=0,failed=0;
         System.Action<bool,string> check=(ok,name)=>{log.AppendLine((ok?"PASS ":"FAIL ")+name);if(ok)passed++;else failed++;};
-        check(Mathf.Approximately(UIInkRealmPage.绘圈时长,1.56f),"brush duration doubled");
-        check(Mathf.Approximately(UIInkRealmPage.绘圈进度(.20f),UIInkRealmPage.绘圈进度(.45f)),"brush pauses after initial stroke");
-        check(UIInkRealmPage.绘圈进度(1.5f)-UIInkRealmPage.绘圈进度(1.3f)>UIInkRealmPage.绘圈进度(.9f)-UIInkRealmPage.绘圈进度(.7f),"brush accelerates into finish");
+        check(UIInkRealmPage.绘圈时长<=.5f && Mathf.Approximately(UIInkRealmPage.绘圈进度(.5f),1),"brush finishes within half a second");
+        bool continuous=true;for(int i=1;i<=50;i++)continuous&=UIInkRealmPage.绘圈进度(i*.01f)>UIInkRealmPage.绘圈进度((i-1)*.01f);
+        check(continuous,"brush keeps moving without a held pause");
+        check(UIInkRealmPage.绘圈进度(.5f)-UIInkRealmPage.绘圈进度(.4f)>UIInkRealmPage.绘圈进度(.2f)-UIInkRealmPage.绘圈进度(.1f),"slow start accelerates into finish");
         check(page.属性.transform.localPosition.x>page.墨圈.transform.parent.localPosition.x,"attributes on right");
         check(page.属性滚动!=null && page.属性滚动.verticalScrollbar!=null,"scroll and visible thumb retained");
         check(page.属性滚动.verticalScrollbar.handleRect.GetComponent<Image>().sprite==InkUITheme.Load("Dynamic/nav-ink-blot-4"),"shared backpack scrollbar");

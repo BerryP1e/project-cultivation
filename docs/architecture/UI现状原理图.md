@@ -9,7 +9,7 @@
 
 ## 0. 2026-10-03 运行时接入后的现状
 
-2026-10-04 最新修订：UIInkSkillVolume在隔离舞台以单个正交相机、透明RGBA RenderTexture、三维环面及SpriteRenderer图标平面替代UI假倾斜，30Hz且隐藏页停止渲染。UIInkDragSpark光核/粒子在拖影外跟随，UIDragContext.End统一清理；旧墨漂移只动拖影子图层。被动星位空白区随机分配、避开六槽/文字/其他启用星点。CharacterPanelUI通过缓存CanvasGroup三项状态隐藏HudCanvas、QuestGuideCanvas、ChronicleCanvas，关闭/禁用恢复，不禁用HUD业务更新。境界绘圈1.56秒，8%起笔停顿后加速。其余数据关系不变。
+2026-10-04 最新修订：UIInkSkillVolume在隔离舞台以单个正交相机、透明RGBA RenderTexture、三维环面及SpriteRenderer图标平面替代UI假倾斜，30Hz且隐藏页停止渲染。UIInkDragSpark光核/粒子在拖影外跟随，UIDragContext.End统一清理；旧墨漂移只动拖影子图层。被动星位空白区随机分配、避开六槽/文字/其他启用星点。CharacterPanelUI通过缓存CanvasGroup三项状态隐藏HudCanvas、QuestGuideCanvas、ChronicleCanvas，关闭/禁用恢复，不禁用HUD业务更新。境界绘圈按最新澄清改为0.5秒，慢起笔、连续加速，无停笔段及收笔抖动。其余数据关系不变。
 
 2026-10-04 神通最新结构：`UIInkSkillsPage` 接原六槽和已悟列表，实时曲线连接视觉中心，悬浮图标与固定命中分离；库→槽用原EquipToSlot，槽→槽用UIPanelData.交换主动槽（一次Changed、保留双方），槽→库ClearSlot、保留已学神通。原独立PassiveList隐藏；仅启用被动生成青色卫星，悬停说明、点击Select、右侧原启用/停用回调，卫星不占快捷键。所有神通仍在可滚动虚拟瀑布流内；纯墨详情、无父底板。详见 [神通施工记录](../../ui-rework-2026-10-03/skills-dynamic-v1/施工记录.md)。
 
