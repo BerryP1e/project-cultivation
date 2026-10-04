@@ -83,7 +83,37 @@ public static class InkSkillsQa
         check(page.详情.actionButton.GetComponent<UIInkActionButton>()!=null,"shared ink operation button");
         bool attraction=true;foreach(var particle in page.星图.GetComponentsInChildren<UIInkStarParticle>())attraction&=particle.牵引位移.magnitude<=5.01f;
         check(attraction,"star attraction bounded to five pixels");
+        CheckUniqueActive(page.星图.data,check);
         log.AppendLine("TOTAL "+passed+" passed / "+failed+" failed; Screen="+Screen.width+"x"+Screen.height+"; Pool="+page.瀑布流.PoolCount);return log.ToString();
+    }
+    static void CheckUniqueActive(UIPanelData data,System.Action<bool,string> check){
+        var saved=data.主动技能.ToArray();var pending=data.待装备神通;
+        var first=ScriptableObject.CreateInstance<ActiveDivineAbility>();first.神通id="inkqa_unique";first.神通名称="唯一性验收";
+        var alias=ScriptableObject.CreateInstance<ActiveDivineAbility>();alias.神通id=first.神通id;alias.神通名称=first.神通名称;
+        var other=ScriptableObject.CreateInstance<ActiveDivineAbility>();other.神通id="inkqa_other";
+        int changes=0;System.Action changed=()=>changes++;
+        try{
+            for(int i=0;i<saved.Length;i++)data.ClearSlot(i);
+            data.EquipToSlot(0,first);data.Changed+=changed;
+            data.EquipToSlot(2,first);
+            check(data.主动技能[0]==null && data.主动技能[2]==first && changes==1,"same active ability moves between slots with one notification");
+            changes=0;data.EquipToSlot(3,alias);
+            check(data.主动技能[2]==null && data.主动技能[3]==alias && changes==1,"different asset with same skill id cannot duplicate equipment");
+            data.BeginPendingEquip(first);changes=0;
+            check(data.HandleSlotClicked(4) && data.主动技能[3]==null && data.主动技能[4]==first && data.待装备神通==null && changes==1,"pending click equipment also moves existing ability");
+            data.EquipToSlot(1,other);data.BeginPendingEquip(first);
+            check(!data.HandleSlotClicked(1) && data.主动技能[1]==other && data.主动技能[4]==first,"pending equipment preserves occupied-slot rejection");
+            data.CancelPendingEquip();changes=0;
+            check(data.交换主动槽(4,1,first) && data.主动技能[1]==first && data.主动技能[4]==other && changes==1,"unique equipment retains atomic occupied-slot swap");
+            data.主动技能[0]=alias;data.HasEmptySlot();
+            check(data.主动技能[0]==alias && data.主动技能[1]==null,"legacy duplicate state keeps first occurrence and clears later slots");
+            data.ClearSlot(0);data.EquipToSlot(2,first);data.EquipToSlot(-1,first);
+            check(data.主动技能[2]==first,"invalid target never clears existing equipment");
+        }finally{
+            data.Changed-=changed;data.CancelPendingEquip();for(int i=0;i<saved.Length;i++)data.ClearSlot(i);
+            for(int i=0;i<saved.Length;i++)if(saved[i]!=null)data.EquipToSlot(i,saved[i]);
+            if(pending!=null)data.BeginPendingEquip(pending);Object.Destroy(first);Object.Destroy(alias);Object.Destroy(other);
+        }
     }
     static IEnumerator Record(CharacterPanelUI panel,UIInkSkillsPage page){
         string suffix=Screen.width+"x"+Screen.height;string dir=Path.Combine(Application.dataPath,"../screenshots");Directory.CreateDirectory(dir);

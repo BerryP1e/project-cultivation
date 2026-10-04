@@ -227,6 +227,27 @@ public class UIPanelData : MonoBehaviour
         if (主动技能 == null) 主动技能 = new List<UnityEngine.Object>();
         while (主动技能.Count < 技能槽位数) 主动技能.Add(null);
         while (主动技能.Count > 技能槽位数) 主动技能.RemoveAt(主动技能.Count - 1);
+        // 兼容旧状态：同一神通只保留最前面的槽位，法宝/灵阵不受此规则影响。
+        for (int i = 0; i < 主动技能.Count; i++)
+            for (int j = 0; j < i; j++)
+                if (同一主动神通(主动技能[i], 主动技能[j]))
+                {
+                    主动技能[i] = null;
+                    break;
+                }
+    }
+    static bool 同一主动神通(UnityEngine.Object a, UnityEngine.Object b)
+    {
+        var x = a as ActiveDivineAbility;
+        var y = b as ActiveDivineAbility;
+        return x != null && y != null && (x == y ||
+            !string.IsNullOrEmpty(x.神通id) && x.神通id == y.神通id);
+    }
+
+    void 清除其他主动神通槽(int target, UnityEngine.Object content)
+    {
+        for (int i = 0; i < 主动技能.Count; i++)
+            if (i != target && 同一主动神通(主动技能[i], content)) 主动技能[i] = null;
     }
 
     /// <summary>
@@ -510,6 +531,7 @@ public class UIPanelData : MonoBehaviour
         EnsureLists();
         if (content is PassiveDivineAbility) { ShowHint("被动神通不能装备到主动技能栏"); return; }
         if (index < 0 || index >= 主动技能.Count) return;
+        清除其他主动神通槽(index, content);
         主动技能[index] = content;
         RaiseChanged();
     }
@@ -589,6 +611,7 @@ public class UIPanelData : MonoBehaviour
         }
 
         var ability = 待装备神通;
+        清除其他主动神通槽(index, ability);
         主动技能[index] = ability;
         待装备神通 = null;
 
