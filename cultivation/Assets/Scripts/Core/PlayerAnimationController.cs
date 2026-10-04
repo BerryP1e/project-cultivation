@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 角色动画控制。
@@ -228,11 +228,12 @@ public class PlayerAnimationController : MonoBehaviour
             return false;
         }
 
-        if (覆盖控制器 == null || 覆盖控制器.runtimeAnimatorController != 基)
+        if (覆盖控制器 == null || (基 != 覆盖控制器 && 覆盖控制器.runtimeAnimatorController != 基))
             覆盖控制器 = new AnimatorOverrideController(基);
 
         覆盖控制器[占位动作片段] = 片段;
-        animator.runtimeAnimatorController = 覆盖控制器;
+        if (animator.runtimeAnimatorController != 覆盖控制器)
+            animator.runtimeAnimatorController = 覆盖控制器;
 
         当前动作 = 片段;
         动作速度倍率 = Mathf.Max(0.05f, 速度倍率);
@@ -324,6 +325,8 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     float 取参照Y()
     {
+        if (!网格已收集 && animator != null && animator.isInitialized && animator.isHuman)
+            初始化贴地采样();
         if (取样网格 != null && 取样网格.Length > 0)
         {
             if (烘焙网格 == null) 烘焙网格 = new Mesh { name = "动作贴地采样" };
@@ -335,11 +338,16 @@ public class PlayerAnimationController : MonoBehaviour
                 var s = 取样网格[i];
                 if (s == null || !s.enabled || !s.gameObject.activeInHierarchy) continue;
 
+                // A hand-held weapon has no foot-weighted vertices. An empty selection means
+                // exclude this renderer, never use its entire mesh (otherwise sword tips move
+                // the whole character up/down as the weapon swings).
+                var 索引 = 候选索引 != null && i < 候选索引.Length ? 候选索引[i] : 收集脚部顶点(s);
+                if (索引 == null || 索引.Count == 0) continue;
+
                 s.BakeMesh(烘焙网格);
                 烘焙网格.GetVertices(顶点缓存);          // 用 List 重载，避免每帧 GC
                 var 矩阵 = s.transform.localToWorldMatrix;
 
-                var 索引 = 候选索引 != null && i < 候选索引.Length ? 候选索引[i] : null;
                 if (索引 != null && 索引.Count > 0)
                 {
                     for (int k = 0; k < 索引.Count; k++)
@@ -350,20 +358,17 @@ public class PlayerAnimationController : MonoBehaviour
                         if (y < 最低) 最低 = y;
                     }
                 }
-                else
-                {
-                    for (int v = 0; v < 顶点缓存.Count; v++)
-                    {
-                        float y = 矩阵.MultiplyPoint3x4(顶点缓存[v]).y;
-                        if (y < 最低) 最低 = y;
-                    }
-                }
                 有 = true;
             }
             if (有 && 最低 < float.MaxValue) return 最低;
         }
 
-        // 退路：一个蒙皮网格都没有，只能拿脚骨凑合
+        // 无脚部蒙皮时退回脚骨；武器/披风不能作为地面判据。
+        if (animator != null && animator.isHuman)
+        {
+            if (左脚节点 == null) 左脚节点 = animator.GetBoneTransform(左脚);
+            if (右脚节点 == null) 右脚节点 = animator.GetBoneTransform(右脚);
+        }
         if (左脚节点 != null && 右脚节点 != null)
             return Mathf.Min(左脚节点.position.y, 右脚节点.position.y);
         if (左脚节点 != null) return 左脚节点.position.y;
@@ -382,7 +387,7 @@ public class PlayerAnimationController : MonoBehaviour
         if (mesh == null || 骨 == null || 骨.Length == 0) return 结果;
 
         var 权重 = mesh.boneWeights;
-        if (权重 == null || 权重.Length == 0) return 结果;      // 空 = 退化成"全部顶点"
+        if (权重 == null || 权重.Length == 0) return 结果;
 
         var 判据 = new System.Collections.Generic.HashSet<int>();
         var 表 = (判据骨骼 != null && 判据骨骼.Length > 0) ? 判据骨骼 : null;
@@ -414,11 +419,8 @@ public class PlayerAnimationController : MonoBehaviour
         return 结果;
     }
 
-    /// <summary>动作开始前记下髋骨的世界 Y、整个人最低点的世界 Y，以及"补偿根"的基准位置</summary>
-    void 记录髋骨高度()
+    void 初始化贴地采样()
     {
-        if (!动作锁髋骨高度 || animator == null) return;
-
         // 【坑·已修】以前只在"两只脚都拿不到"时才会给 髋骨节点 赋值，
         // 于是正常情况（脚拿得到）髋骨节点恒为 null → LateUpdate 开头就 return，
         // 补偿**一次都没跑过**（实测 已施加偏移Y 全程恒为 0）。三个引用都要各自独立兜底。
@@ -437,14 +439,20 @@ public class PlayerAnimationController : MonoBehaviour
             网格已收集 = true;
 
             if (合计 == 0 && 取样网格 != null && 取样网格.Length > 0)
-                Debug.LogWarning("[动画] 没能按骨骼权重筛出「脚部顶点」，贴地判据会退化成整网格最低点 ——" +
-                                 "身上披风 / 佩剑垂到脚边时人会悬空。检查 判据骨骼 配置。", this);
+                Debug.LogWarning("[动画] 没能按骨骼权重筛出「脚部顶点」，贴地判据退回脚骨。检查 判据骨骼 配置。", this);
             else if (取样网格 != null && 取样网格.Length > 0)
                 Debug.Log("[动画] 贴地判据 = " + 合计 + " 个脚部顶点 / " + 取样网格.Length + " 个蒙皮网格", this);
         }
         if (左脚节点 == null) 左脚节点 = animator.GetBoneTransform(左脚);
         if (右脚节点 == null) 右脚节点 = animator.GetBoneTransform(右脚);
         if (髋骨节点 == null) 髋骨节点 = animator.GetBoneTransform(髋骨);
+    }
+
+    /// <summary>动作开始前记录已经排除武器的脚底基准。</summary>
+    void 记录髋骨高度()
+    {
+        if (!动作锁髋骨高度 || animator == null) return;
+        初始化贴地采样();
 
         bool 有网格 = 取样网格 != null && 取样网格.Length > 0;
         if (!有网格 && 髋骨节点 == null && 左脚节点 == null && 右脚节点 == null) return;
@@ -494,6 +502,7 @@ public class PlayerAnimationController : MonoBehaviour
     void 记录空闲基准()
     {
         if (动作播放中) return;
+        if (Mathf.Abs(已施加偏移Y) > 1e-5f) return;
         if (御风 != null && 御风.御风流程中) return;
 
         待用基准参照Y = 取参照Y();
@@ -521,10 +530,12 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (!动作播放中)
         {
-            髋骨已记录 = false;
-            // 动作结束：只把**我加过的那部分**减掉，不覆盖别人的位置
-            if (Mathf.Abs(已施加偏移Y) > 1e-5f) 补偿根.position -= Vector3.up * 已施加偏移Y;
-            已施加偏移Y = 0f;
+            // Return a residual correction gradually, instead of dropping the model in one
+            // frame while the Animator is blending back to locomotion.
+            float 剩余 = Mathf.MoveTowards(已施加偏移Y, 0f, Time.deltaTime);
+            补偿根.position += Vector3.up * (剩余 - 已施加偏移Y);
+            已施加偏移Y = 剩余;
+            if (Mathf.Abs(剩余) < 1e-5f) 髋骨已记录 = false;
             return;
         }
 

@@ -1,0 +1,25 @@
+var player=GameObject.Find("Player");var pd=GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+var gf=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+var fly=player.GetComponent<YufengFlight>();var driver=player.GetComponent<PlayerAnimationController>();
+var sb=new System.Text.StringBuilder();
+System.Collections.IEnumerator Run(){
+pd.学会(gf);pd.当前功法=gf;pd.RaiseChanged();yield return new WaitForSecondsRealtime(.4f);
+var attack=player.GetComponent<BasicJiuba01>();attack.自动出手=false;attack.需要锁定目标=false;
+var passive=Resources.FindObjectsOfTypeAll<PassiveDivineAbility>().FirstOrDefault(x=>x.神通id==fly.神通id);
+if(passive==null){Debug.LogError("Missing flight ability");yield break;}
+pd.获得被动(passive);pd.SetPassiveEnabled(passive,true);yield return new WaitForSecondsRealtime(.4f);
+fly.切换();yield return new WaitForSecondsRealtime(1.5f);
+sb.AppendLine("Flight state="+fly.状态+" active="+fly.御风流程中);
+for(int i=0;i<4;i++){
+player.GetComponent<PlayerVitals>().回复灵气(10000);
+if(!fly.御风流程中){fly.切换();yield return new WaitForSecondsRealtime(1.5f);}
+while(attack.冷却剩余>0||driver.IsActionPlaying)yield return null;
+bool started=attack.出手();yield return new WaitForSecondsRealtime(.3f);
+sb.AppendLine("attack="+started+" flightVariant="+attack.当前是御风版+" path="+attack.当前动作路径);
+while(driver.IsActionPlaying)yield return null;
+}
+fly.强制落地();yield return new WaitForSecondsRealtime(1.5f);
+sb.AppendLine("landed="+!fly.御风流程中);
+System.IO.File.WriteAllText("screenshots/jiuba-flight-check.txt",sb.ToString());Debug.Log(sb.ToString());
+}
+return Run();

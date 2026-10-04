@@ -1,0 +1,14 @@
+var original=GameObject.Find("Player").GetComponentInChildren<Animator>(true);
+var source=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/NPC/Human/YangJian/YangJian_03.prefab").GetComponentInChildren<Animator>(true);
+var targetCopy=UnityEngine.Object.Instantiate(original.gameObject);var sourceCopy=UnityEngine.Object.Instantiate(source.gameObject);
+try{
+ var t=targetCopy.GetComponent<Animator>();var s=sourceCopy.GetComponent<Animator>();
+ t.runtimeAnimatorController=null;s.runtimeAnimatorController=null;
+ t.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);s.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);
+ var hp=new HumanPose{bodyPosition=Vector3.up,bodyRotation=Quaternion.identity,muscles=new float[HumanTrait.MuscleCount]};
+ using(var h=new HumanPoseHandler(t.avatar,t.transform))h.SetHumanPose(ref hp);
+ using(var h=new HumanPoseHandler(s.avatar,s.transform))h.SetHumanPose(ref hp);
+ Transform Hand(Animator a){var name=a.avatar.humanDescription.human.First(x=>x.humanName=="RightHand").boneName;return a.GetComponentsInChildren<Transform>(true).First(x=>x.name==name);}
+ var q=Quaternion.Inverse(Hand(t).rotation)*Hand(s).rotation;
+ return "target hand="+Hand(t).rotation.eulerAngles+" source hand="+Hand(s).rotation.eulerAngles+" corrected grip Euler="+q.eulerAngles.ToString("F3")+" Q="+q.ToString("F5");
+}finally{UnityEngine.Object.DestroyImmediate(targetCopy);UnityEngine.Object.DestroyImmediate(sourceCopy);}

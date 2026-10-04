@@ -5,7 +5,7 @@ using UnityEngine;
 /// 装备某门功法时，把玩家控制器里的几个**通用移动 / 御风片段**换成"带这门功法持械上半身"的版本。
 ///
 /// 为什么需要它：`持刀_站 / 持刀_走 / 持刀_跑 / 持刀_御风Idle / 持刀_御风前进` 这五个片段是
-/// 拿**杨戬 Run 的上半身**重定向出来的（用户 2026-10-04：「那个动作非常帅气」），
+/// 站立和御风保留杨戬 Run 的持械上半身，地面移动直接使用杨戬 Run 全身动作。
 /// 但控制器 `PlayerLocomotion` 是**全局资产**，不能为了这门功法把别人的动作也改掉，
 /// 所以改成运行时用 <see cref="AnimatorOverrideController"/> **只覆盖这几个片段**：
 /// 装备八九玄功 ⇒ 换成持械版；换别的功法 / 组件被停用 ⇒ 立刻还原。
@@ -121,6 +121,14 @@ public class WeaponCarryAnim : MonoBehaviour
             }
             if (打印日志)
                 Debug.Log("[WeaponCarryAnim] 已把 " + 换了 + " 条片段换成持械版（基=" + 原始控制器.name + "）", this);
+        }
+        // The action controller may wrap this carry override. Preserve that owner instead
+        // of resetting a running attack every time unrelated panel data raises Changed.
+        var current = 动画器.runtimeAnimatorController;
+        while (current is AnimatorOverrideController nested)
+        {
+            if (current == 覆盖) return;
+            current = nested.runtimeAnimatorController;
         }
         if (动画器.runtimeAnimatorController != 覆盖) 动画器.runtimeAnimatorController = 覆盖;
     }
