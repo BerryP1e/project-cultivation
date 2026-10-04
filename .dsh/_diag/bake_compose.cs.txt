@@ -1,0 +1,245 @@
+// 通用合成烘焙器：把"上半身取 A、髋/腿取 B"合成后的姿态，烘成【玩家骨架上的 Generic 片段】
+//
+// 为什么不用人形肌肉曲线合成（上一版的做法）：
+//   · 人形求解会把脊椎/手臂的旋转分一部分到 Hips 上 ⇒ 下半身锁不死（实测髋差 24.5°、踝差 0.27 米）；
+//   · 攻击片段自带的 ±100° 髋部旋转与 3.6 米腾空会被一起保留 ⇒ 地面播就是"原地翻跟头"。
+//   按骨骼路径烘（Generic）可以逐根指定"这根骨取谁的"，髋就是髋、腿就是腿。
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+const string 输出目录 = "Assets/resources/技能动作/八九玄功";
+const string UAL = "Assets/resources/Animation Library/1/UAL1_Standard.fbx";
+const string 御风Idle = "Assets/Animations/凭虚御风/御风_Idle.anim";
+const string 御风前进 = "Assets/Animations/凭虚御风/御风_前进.anim";
+const string 攻击目录 = "Assets/resources/NPC/Human/";
+const int Fps = 30;
+
+AnimationClip 取片段(string 路径, string 片段名 = null)
+{
+    if (路径.EndsWith(".anim")) return UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(路径);
+    foreach (var o in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(路径))
+    {
+        var c = o as AnimationClip;
+        if (c == null || c.name.StartsWith("__preview__")) continue;
+        if (片段名 == null || c.name == 片段名) return c;
+    }
+    return null;
+}
+string 攻(string 角色, string 名) => 攻击目录 + (角色 == "长刀女" ? "ChangDaoNv_Animation/ChangDaoNv@" : "YangJian_Animation/YangJian@") + 名 + ".FBX";
+
+var 真玩家 = GameObject.Find("Player");
+var 甲 = UnityEngine.Object.Instantiate(真玩家);   // 上半身采样台
+var 乙 = UnityEngine.Object.Instantiate(真玩家);   // 髋/腿采样台
+甲.name = "烘焙_上"; 乙.name = "烘焙_下";
+foreach (var c in 甲.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+foreach (var c in 乙.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+甲.transform.position = new Vector3(0f, -600f, 0f);
+乙.transform.position = new Vector3(0f, -700f, 0f);
+var a甲 = 甲.GetComponentInChildren<Animator>(true); a甲.runtimeAnimatorController = null;
+var a乙 = 乙.GetComponentInChildren<Animator>(true); a乙.runtimeAnimatorController = null;
+foreach (var s in 甲.GetComponentsInChildren<SkinnedMeshRenderer>(true)) s.forceMatrixRecalculationPerRender = true;
+foreach (var s in 乙.GetComponentsInChildren<SkinnedMeshRenderer>(true)) s.forceMatrixRecalculationPerRender = true;
+
+// ---- 骨骼分类：用玩家自己的 Avatar 映射拿"髋"和两根腿根，腿根的后代都算腿 ----
+var av = a甲.avatar;
+Transform 髋 = null; var 腿根 = new System.Collections.Generic.List<Transform>();
+foreach (var h in av.humanDescription.human)
+{
+    if (h.humanName == "Hips") 髋 = 找(甲, h.boneName);
+    if (h.humanName == "LeftUpperLeg" || h.humanName == "RightUpperLeg") 腿根.Add(找(甲, h.boneName));
+}
+L("Avatar=" + av.name + " 髋=" + (髋 == null ? "❌" : 髋.name) + " 腿根=" + 腿根.Count + " 根");
+Transform 找(GameObject 根, string 名)
+{
+    foreach (var t in 根.GetComponentsInChildren<Transform>(true)) if (t.name == 名) return t;
+    return null;
+}
+bool 是腿或其子(Transform t)
+{
+    foreach (var r in 腿根) { var x = t; while (x != null) { if (x == r) return true; x = x.parent; } }
+    return false;
+}
+// ⚠️ 曲线路径必须相对【Animator 所在的那个对象】（= Player_Visual），不是副本根！
+//    工程里现成的 Generic 片段（UAL1 的 Armature|Idle_Loop 等）就是 `Armature/...` 这种口径；
+//    写成 `Player_Visual/Armature/...` 的话，播放时相对 Player_Visual 解析 ⇒ 多一层、一条都对不上 ⇒ 动作完全不动。
+string 路径(Transform t)
+{
+    if (t == null) return "";
+    string p = t.name; var x = t.parent;
+    while (x != null && x != a甲.transform) { p = x.name + "/" + p; x = x.parent; }
+    return p;
+}
+
+// 骨骼清单（甲、乙 两份**按同一遍历顺序对位** —— 两份是同一个 Player 的副本，层级完全一致，比按名字 Find 可靠）
+var 甲全部 = 甲.GetComponentsInChildren<Transform>(true);
+var 乙全部 = 乙.GetComponentsInChildren<Transform>(true);
+if (甲全部.Length != 乙全部.Length) { L("❌ 两份副本的 Transform 数不同：" + 甲全部.Length + " vs " + 乙全部.Length); return sb.ToString(); }
+var 骨 = new System.Collections.Generic.List<Transform>();
+var 骨乙 = new System.Collections.Generic.List<Transform>();
+for (int i = 1; i < 甲全部.Length; i++) { 骨.Add(甲全部[i]); 骨乙.Add(乙全部[i]); }
+L("配对骨骼 = " + 骨.Count + " 根（其中腿/髋 " + 骨.FindAll(t => t == 髋 || 是腿或其子(t)).Count + " 根）");
+// 路径口径对照：工程现成的 Generic 片段是怎么写路径的
+var 参照 = 取片段(UAL, "Armature|Idle_Loop");
+if (参照 != null)
+{
+    var 示 = new System.Collections.Generic.List<string>();
+    foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(参照)) { 示.Add(b.path); if (示.Count >= 4) break; }
+    L("参照（Armature|Idle_Loop）曲线路径示例：" + string.Join(" | ", 示.ToArray()));
+}
+var 示我 = new System.Collections.Generic.List<string>();
+for (int i = 0; i < 骨.Count && 示我.Count < 4; i++) { var p = 路径(骨[i]); if (p.Length > 0) 示我.Add(p); }
+L("我烘的路径示例：" + string.Join(" | ", 示我.ToArray()));
+L("");
+
+// ---- 任务表 ----
+// 出 / 上半身来源 / 上半身循环?(0=冻结) / 冻结比例 / 髋腿来源 / 腿跟髋源? / 时长取谁(U=上,L=下) / loop
+string[][] 任务 = new string[][] {
+  new string[]{"长刀女_Attack1_御风", 攻("长刀女","Attack1"), "1", "0", 御风Idle, "1", "U", "0"},
+  new string[]{"长刀女_Attack2_御风", 攻("长刀女","Attack2"), "1", "0", 御风Idle, "1", "U", "0"},
+  new string[]{"杨戬_Attack1_御风",   攻("杨戬","Attack1"), "1", "0", 御风Idle, "1", "U", "0"},
+  new string[]{"杨戬_Attack2_御风",   攻("杨戬","Attack2"), "1", "0", 御风Idle, "1", "U", "0"},
+  new string[]{"长刀女_Attack1",      攻("长刀女","Attack1"), "1", "0", UAL,      "0", "U", "0"},
+  new string[]{"长刀女_Attack2",      攻("长刀女","Attack2"), "1", "0", UAL,      "0", "U", "0"},
+  new string[]{"杨戬_Attack1",        攻("杨戬","Attack1"), "1", "0", UAL,      "0", "U", "0"},
+  new string[]{"杨戬_Attack2",        攻("杨戬","Attack2"), "1", "0", UAL,      "0", "U", "0"},
+  new string[]{"持刀_站",             "YangJian@Run", "0", "0.5", UAL,   "1", "L", "1"},
+  new string[]{"持刀_走",             "YangJian@Run", "1", "0", UAL,     "1", "L", "1"},
+  new string[]{"持刀_跑",             "YangJian@Run", "1", "0", UAL,     "1", "L", "1"},
+  new string[]{"持刀_御风Idle",        "YangJian@Run", "1", "0", 御风Idle, "1", "L", "1"},
+  new string[]{"持刀_御风前进",        "YangJian@Run", "1", "0", 御风前进, "1", "L", "1"},
+};
+// UAL 里按片段名取：站=Armature|Idle_Loop、走=Armature|Walk_Loop、跑=Armature|Sprint_Loop
+System.Func<string, string, AnimationClip> 解析 = (来源, 上半名) =>
+{
+    if (来源 == UAL)
+    {
+        string 名 = 上半名.Contains("_跑") ? "Armature|Sprint_Loop" : (上半名.Contains("_走") ? "Armature|Walk_Loop" : "Armature|Idle_Loop");
+        return 取片段(UAL, 名);
+    }
+    if (来源 == "YangJian@Run") return 取片段(攻("杨戬", "Run"));
+    return 取片段(来源);
+};
+
+foreach (var t in 任务)
+{
+    string 出 = t[0], 上源 = t[1];
+    bool 上循环 = t[2] == "1";
+    float 冻结比 = float.Parse(t[3], System.Globalization.CultureInfo.InvariantCulture);
+    var 下源 = 解析(t[4], 出);
+    bool 腿跟下 = t[5] == "1";
+    bool 时长取上 = t[6] == "U";
+    bool 循环 = t[7] == "1";
+
+    var 上 = 解析(上源, 出);
+    if (上 == null || 下源 == null) { L("❌ " + 出 + "：上=" + (上 == null ? "null" : 上.name) + " 下=" + (下源 == null ? "null" : 下源.name)); continue; }
+
+    float 时长 = 时长取上 ? 上.length : 下源.length;
+    int 帧数 = Mathf.Max(2, Mathf.RoundToInt(时长 * Fps));
+
+    // 采样
+    var 位甲 = new System.Collections.Generic.Dictionary<Transform, Vector3[]>();
+    var 转甲 = new System.Collections.Generic.Dictionary<Transform, Quaternion[]>();
+    var 甲世界 = new System.Collections.Generic.Dictionary<Transform, Quaternion[]>();
+    var 位乙 = new System.Collections.Generic.Dictionary<Transform, Vector3[]>();
+    var 转乙 = new System.Collections.Generic.Dictionary<Transform, Quaternion[]>();
+    for (int i = 0; i < 骨.Count; i++)
+    {
+        位甲[骨[i]] = new Vector3[帧数 + 1]; 转甲[骨[i]] = new Quaternion[帧数 + 1];
+        甲世界[骨[i]] = new Quaternion[帧数 + 1];
+        位乙[骨乙[i]] = new Vector3[帧数 + 1]; 转乙[骨乙[i]] = new Quaternion[帧数 + 1];
+    }
+    for (int f = 0; f <= 帧数; f++)
+    {
+        float tt = 时长 * f / 帧数;
+        float t甲 = 上循环 && 上.length > 0.01f ? Mathf.Repeat(tt, 上.length) : (上.length * 冻结比);
+        float t乙 = 下源.length > 0.01f ? Mathf.Repeat(tt, 下源.length) : 0f;
+        上.SampleAnimation(a甲.gameObject, t甲);
+        下源.SampleAnimation(a乙.gameObject, t乙);
+        for (int i = 0; i < 骨.Count; i++)
+        {
+            位甲[骨[i]][f] = 骨[i].localPosition; 转甲[骨[i]][f] = 骨[i].localRotation;
+            甲世界[骨[i]][f] = 骨[i].rotation;
+            位乙[骨乙[i]][f] = 骨乙[i].localPosition; 转乙[骨乙[i]][f] = 骨乙[i].localRotation;
+        }
+    }
+
+    // ★ 上半身必须保【世界朝向】不变，不能照抄"局部"旋转：
+    //   髋已经换成了下源的朝向，若上半身还用上源的局部旋转，整条上半身会跟着髋被一起转走
+    //   —— 实测后果：刀挥向别的方向，站在靶子正前方 2 米连打 4 次**全部打空**。
+    //   做法：按层级顺序算"合成后的世界旋转"，上半身的局部 = 上源的世界旋转 × (父的合成世界旋转)⁻¹。
+    var 合成转 = new System.Collections.Generic.Dictionary<Transform, Quaternion[]>();
+    var 乙转对应 = new System.Collections.Generic.Dictionary<Transform, Transform>();
+    for (int i = 0; i < 骨.Count; i++) { 合成转[骨[i]] = new Quaternion[帧数 + 1]; 乙转对应[骨[i]] = 骨乙[i]; }
+    for (int f = 0; f <= 帧数; f++)
+    {
+        var 世界 = new System.Collections.Generic.Dictionary<Transform, Quaternion>();
+        foreach (var b in 骨)
+        {
+            var 父世界 = (b.parent != null && 世界.ContainsKey(b.parent)) ? 世界[b.parent] : a甲.transform.rotation;
+            bool 用下2 = (b == 髋) || (腿跟下 && 是腿或其子(b));
+            var 局部 = 用下2 ? 乙转对应[b].localRotation : (Quaternion.Inverse(父世界) * 甲世界[b][f]);
+            世界[b] = 父世界 * 局部;
+            合成转[b][f] = 局部;
+        }
+    }
+
+    // 写曲线：髋永远取下源；腿看 腿跟下；其余取上源
+    // —— 先自检：采样到底生效了没有
+    var 手甲 = 找(甲, "R_Hand");
+    上.SampleAnimation(a甲.gameObject, 0f);
+    var 手0 = 手甲.position;
+    上.SampleAnimation(a甲.gameObject, 上循环 ? 上.length * 0.5f : 上.length * 冻结比);
+    L("  自检 " + 出 + "：手 t0=" + 手0.ToString("F3") + " → " + 手甲.position.ToString("F3")
+      + " 位移=" + Vector3.Distance(手0, 手甲.position).ToString("F3")
+      + (Vector3.Distance(手0, 手甲.position) > 0.01f ? " ✅ 采样生效" : " ❌ 采样没生效"));
+    var clip = new AnimationClip { name = 出, frameRate = Fps };
+    int 写了 = 0;
+    for (int i = 0; i < 骨.Count; i++)
+    {
+        var tr = 骨[i];
+        bool 用下 = (tr == 髋) || (腿跟下 && 是腿或其子(tr));
+        var p = 路径(tr);
+        var 位 = 用下 ? 位乙[骨乙[i]] : 位甲[tr];
+        var 转 = 合成转[tr];   // ★ 上半身用的是"保世界朝向"算出来的局部旋转
+        // ⚠️ **全部骨骼都写**：不能只写"相对首帧动过"的骨骼 ——
+        // 摆好但整段静止的骨骼（比如冻结的持械上半身、御风 Idle 里弯着的腿）会被整段丢掉，
+        // 播放时那些骨就停在别的动作留下的姿势上（第一版就是这么错的：`持刀_站` 只剩 7 根骨）。
+        写了++;
+        for (int k = 0; k < 4; k++)
+        {
+            var cu = new AnimationCurve();
+            for (int f = 0; f <= 帧数; f++)
+            {
+                float tt = 时长 * f / 帧数;
+                var q = 转[f];
+                cu.AddKey(new Keyframe(tt, k == 0 ? q.x : k == 1 ? q.y : k == 2 ? q.z : q.w));
+            }
+            UnityEditor.AnimationUtility.SetEditorCurve(clip, UnityEditor.EditorCurveBinding.FloatCurve(p, typeof(Transform), "localRotation." + "xyzw"[k]), cu);
+        }
+        for (int k = 0; k < 3; k++)
+        {
+            var cu = new AnimationCurve();
+            for (int f = 0; f <= 帧数; f++)
+            {
+                float tt = 时长 * f / 帧数;
+                var v = 位[f];
+                cu.AddKey(new Keyframe(tt, k == 0 ? v.x : k == 1 ? v.y : v.z));
+            }
+            UnityEditor.AnimationUtility.SetEditorCurve(clip, UnityEditor.EditorCurveBinding.FloatCurve(p, typeof(Transform), "localPosition." + "xyz"[k]), cu);
+        }
+    }
+    var 设置 = UnityEditor.AnimationUtility.GetAnimationClipSettings(clip);
+    设置.loopTime = 循环;
+    UnityEditor.AnimationUtility.SetAnimationClipSettings(clip, 设置);
+
+    string 出路径 = 输出目录 + "/" + 出 + ".anim";
+    var 旧 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(出路径);
+    if (旧 != null) UnityEditor.AssetDatabase.DeleteAsset(出路径);
+    UnityEditor.AssetDatabase.CreateAsset(clip, 出路径);
+    L("✔ " + 出 + "：" + 时长.ToString("F2") + "s/" + 帧数 + "帧 动过的骨骼 " + 写了 + "/" + 骨.Count
+      + " 上=" + 上.name + (上循环 ? "(循环)" : "(冻结 " + 冻结比 + ")") + " 髋腿=" + 下源.name + (腿跟下 ? "" : "+腿取攻击") + " loop=" + 循环);
+}
+UnityEditor.AssetDatabase.SaveAssets();
+UnityEditor.AssetDatabase.Refresh();
+UnityEngine.Object.DestroyImmediate(甲);
+UnityEngine.Object.DestroyImmediate(乙);
+return sb.ToString();

@@ -1,0 +1,40 @@
+// 挖 Locomotion 这个 BlendTree 的子片段（walk/run/idle 各是哪个资产），并打它们的根值
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+var ac = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller") as UnityEditor.Animations.AnimatorController;
+if (ac == null) { L("❌ 拿不到控制器"); return sb.ToString(); }
+
+void 打(AnimationClip c, string 前缀)
+{
+    if (c == null) { L(前缀 + " null"); return; }
+    var 根 = new System.Collections.Generic.List<string>();
+    foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(c))
+    {
+        if (b.path != "" || !b.propertyName.StartsWith("Root")) continue;
+        var cu = UnityEditor.AnimationUtility.GetEditorCurve(c, b);
+        if (cu != null) 根.Add(b.propertyName + "=" + cu.Evaluate(0f).ToString("F3"));
+    }
+    L(前缀 + c.name + "：len=" + c.length.ToString("F2") + " 曲线=" + UnityEditor.AnimationUtility.GetCurveBindings(c).Length
+      + " 资产=" + UnityEditor.AssetDatabase.GetAssetPath(c));
+    L("      t=0 根：" + string.Join(" ", 根.ToArray()));
+}
+
+void 走树(UnityEditor.Animations.BlendTree 树, string 层)
+{
+    L(层 + "BlendTree「" + 树.name + "」类型=" + 树.blendType + " 参数=" + (树.blendParameter == "" ? "-" : 树.blendParameter)
+      + "/" + (树.blendParameterY == "" ? "-" : 树.blendParameterY) + " 子项=" + 树.children.Length);
+    foreach (var ch in 树.children)
+    {
+        if (ch.motion is UnityEditor.Animations.BlendTree 子) { L(层 + "  └─ 子BlendTree pos=" + ch.position.ToString("F1")); 走树(子, 层 + "     "); }
+        else 打(ch.motion as AnimationClip, 层 + "  └─ 位置 " + ch.position.ToString("F1") + " 阈值 " + ch.threshold.ToString("F2") + " → ");
+    }
+}
+
+foreach (var 层 in ac.layers)
+    if (层.stateMachine != null)
+        foreach (var st in 层.stateMachine.states)
+        {
+            if (st.state.motion is UnityEditor.Animations.BlendTree 树) { L("状态 " + st.state.name + "："); 走树(树, "  "); }
+            else 打(st.state.motion as AnimationClip, "状态 " + st.state.name + " → ");
+        }
+return sb.ToString();

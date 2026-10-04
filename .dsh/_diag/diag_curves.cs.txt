@@ -1,0 +1,34 @@
+// 查深层骨骼的曲线到底有没有变化（前 8 条是 Player_Visual/Armature 这类本来不动的骨，不能代表整条片段）
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+var clip = Resources.Load<AnimationClip>("技能动作/八九玄功/长刀女_Attack1");
+if (clip == null) { L("❌ 取不到"); return sb.ToString(); }
+
+int 有变化的 = 0, 总数 = 0;
+string 最动的一条 = "";
+float 最大幅度 = 0f;
+foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(clip))
+{
+    var c = UnityEditor.AnimationUtility.GetEditorCurve(clip, b);
+    if (c == null) continue;
+    总数++;
+    float mn = float.MaxValue, mx = float.MinValue;
+    foreach (var k in c.keys) { mn = Mathf.Min(mn, k.value); mx = Mathf.Max(mx, k.value); }
+    if (mx - mn > 1e-4f) 有变化的++;
+    if (mx - mn > 最大幅度) { 最大幅度 = mx - mn; 最动的一条 = b.path + " " + b.propertyName; }
+}
+L("片段 " + clip.name + "：曲线 " + 总数 + " 条，其中**有变化**的 " + 有变化的 + " 条；幅度最大的一条 = " + 最动的一条 + "（幅度 " + 最大幅度.ToString("F4") + "）");
+
+L("");
+L("抽 4 条深层骨骼曲线看值：");
+int 打 = 0;
+foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(clip))
+{
+    if (!b.path.Contains("Spine01") && !b.path.Contains("R_Upperarm") && !b.path.Contains("Hip")) continue;
+    var c = UnityEditor.AnimationUtility.GetEditorCurve(clip, b);
+    if (c == null || c.keys.Length < 2) continue;
+    L("   " + b.path + " " + b.propertyName + "：" + c.Evaluate(0f).ToString("F4") + " → " + c.Evaluate(clip.length * 0.5f).ToString("F4")
+      + " → " + c.Evaluate(clip.length * 0.95f).ToString("F4") + "（键 " + c.keys.Length + " 个）");
+    if (++打 >= 6) break;
+}
+return sb.ToString();

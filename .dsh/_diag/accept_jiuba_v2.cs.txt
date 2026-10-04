@@ -1,0 +1,90 @@
+// 验收（v2）：等冷却归零后再测 ① 持械覆盖 ② 距离门槛 ③ 连打掉血
+System.Func<string, Type> 找类型 = (名) =>
+{
+    foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+    {
+        var t = a.GetType(名);
+        if (t != null) return t;
+        foreach (var t2 in a.GetTypes()) if (t2.Name == 名) return t2;
+    }
+    return null;
+};
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var pd = GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+    var 索敌 = 玩家.GetComponent<NpcTargeting>();
+    var 功法 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    pd.学会(功法); pd.当前功法 = 功法; pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.8f);
+
+    // ① 持械覆盖
+    var an = 玩家.GetComponentInChildren<Animator>();
+    L("① 控制器 = " + (an.runtimeAnimatorController == null ? "null" : an.runtimeAnimatorController.name + "（" + an.runtimeAnimatorController.GetType().Name + "）"));
+    var 覆盖 = an.runtimeAnimatorController as AnimatorOverrideController;
+    if (覆盖 != null)
+    {
+        var 对 = new System.Collections.Generic.List<KeyValuePair<AnimationClip, AnimationClip>>();
+        覆盖.GetOverrides(对);
+        int 换了几条 = 0;
+        foreach (var kv in 对)
+            if (kv.Key != null && kv.Value != null && kv.Key != kv.Value) { L("     " + kv.Key.name + " → " + kv.Value.name); 换了几条++; }
+        L("   共换 " + 换了几条 + " 条");
+    }
+    else L("   ❌ 没盖 AnimatorOverrideController");
+
+    var t普攻 = 找类型("BasicJiuba01");
+    var 普攻 = t普攻 == null ? null : 玩家.GetComponent(t普攻);
+    var p可以 = t普攻.GetProperty("可以出手");
+    var p距离 = t普攻.GetProperty("到目标距离");
+    var p冷却 = t普攻.GetProperty("冷却剩余");
+    var 出手 = t普攻.GetMethod("出手");
+    if (普攻 == null) { L("❌ BasicJiuba01 没装上"); Debug.Log("【验收v2】\n" + sb.ToString()); yield break; }
+    System.Func<float> 读冷却 = () => { try { return (float)p冷却.GetValue(普攻); } catch { return -1f; } };
+
+    var 靶子 = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),
+        玩家.transform.position + 玩家.transform.forward * 2.0f, Quaternion.identity);
+    var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
+    索敌.Lock(靶Npc);
+
+    // 先等冷却归零（自动出手会自己打）
+    float t0 = Time.time;
+    while (读冷却() > 0.001f && Time.time - t0 < 6f) yield return null;
+    yield return new WaitForSecondsRealtime(0.3f);
+
+    L("");
+    L("② 近距离：" + ((float)p距离.GetValue(普攻)).ToString("F2") + " 米，可以出手 = " + p可以.GetValue(普攻) + "（期望 True）");
+
+    // 挪远：先等冷却归零再测，避免误判
+    靶子.transform.position = 玩家.transform.position + 玩家.transform.forward * 9f;
+    t0 = Time.time;
+    while (读冷却() > 0.001f && Time.time - t0 < 6f) yield return null;
+    yield return new WaitForSecondsRealtime(0.5f);
+    float 冷却前 = 读冷却();
+    L("   挪到 " + ((float)p距离.GetValue(普攻)).ToString("F2") + " 米：可以出手 = " + p可以.GetValue(普攻) + "（期望 False）"
+      + "，出手() = " + 出手.Invoke(普攻, null) + "（期望 False）");
+    yield return new WaitForSecondsRealtime(1.5f);
+    L("   远距离 1.5 秒后冷却剩余 = " + 读冷却().ToString("F3") + "（期望一直 0 ⇒ 没白扣冷却）");
+
+    // 拉回来连打
+    靶子.transform.position = 玩家.transform.position + 玩家.transform.forward * 2.0f;
+    yield return new WaitForSecondsRealtime(0.6f);
+    L("");
+    L("③ 近距离连打 4 次（判定窗口 0.40~0.95）：");
+    for (int i = 1; i <= 4; i++)
+    {
+        t0 = Time.time;
+        while (读冷却() > 0.001f && Time.time - t0 < 6f) yield return null;
+        出手.Invoke(普攻, null);
+        yield return new WaitForSecondsRealtime(2.0f);
+        L("   第 " + i + " 次后靶子血量 = " + 靶Npc.CurrentHealth.ToString("F1"));
+    }
+    ScreenCapture.CaptureScreenshot("screenshots/验收_持械待机.png");
+    yield return new WaitForEndOfFrame();
+    UnityEngine.Object.DestroyImmediate(靶子);
+    Debug.Log("【验收v2】\n" + sb.ToString());
+}
+return 主();

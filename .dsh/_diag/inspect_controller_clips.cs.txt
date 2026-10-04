@@ -1,0 +1,50 @@
+// 通过控制器反查每个状态用的片段来自哪个资产，并打印 Locomotion 的细节（它是站姿/走路循环的根来源）
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+var 控 = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");
+var ac = 控 as UnityEditor.Animations.AnimatorController;
+if (ac == null) { L("❌ 拿不到 AnimatorController"); return sb.ToString(); }
+
+foreach (var 层 in ac.layers)
+{
+    L("层 " + 层.name + " 权重=" + 层.defaultWeight + " 遮罩=" + (层.avatarMask == null ? "null" : 层.avatarMask.name));
+    if (层.stateMachine == null) continue;
+    foreach (var st in 层.stateMachine.states)
+    {
+        var m = st.state.motion;
+        L("  状态 " + st.state.name + " → 动作=" + (m == null ? "null" : m.name) + "（" + m.GetType().Name + "）资产=" + UnityEditor.AssetDatabase.GetAssetPath(m));
+        var clip = m as AnimationClip;
+        if (clip == null) continue;
+        var 根 = new System.Collections.Generic.List<string>();
+        foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(clip))
+        {
+            if (b.path != "" || !b.propertyName.StartsWith("Root")) continue;
+            var c = UnityEditor.AnimationUtility.GetEditorCurve(clip, b);
+            if (c == null) continue;
+            float mn = float.MaxValue, mx = float.MinValue;
+            foreach (var k in c.keys) { mn = Mathf.Min(mn, k.value); mx = Mathf.Max(mx, k.value); }
+            根.Add(b.propertyName + "[" + mn.ToString("F2") + "~" + mx.ToString("F2") + "]");
+        }
+        L("      len=" + clip.length.ToString("F2") + " humanMotion=" + clip.humanMotion + " 曲线=" + UnityEditor.AnimationUtility.GetCurveBindings(clip).Length
+          + " loop=" + UnityEditor.AnimationUtility.GetAnimationClipSettings(clip).loopTime);
+        L("      根：" + string.Join(" ", 根.ToArray()));
+        // 站姿参考：把 t=0 的根值打出来（地面攻击版要把根换成它）
+        if (clip.humanMotion)
+        {
+            float[] ts = { 0f, clip.length * 0.5f };
+            foreach (var t in ts)
+            {
+                var 值 = new System.Collections.Generic.List<string>();
+                foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(clip))
+                {
+                    if (b.path != "" || !b.propertyName.StartsWith("Root")) continue;
+                    var c = UnityEditor.AnimationUtility.GetEditorCurve(clip, b);
+                    if (c != null) 值.Add(b.propertyName + "=" + c.Evaluate(t).ToString("F3"));
+                }
+                L("      t=" + t.ToString("F2") + "：" + string.Join(" ", 值.ToArray()));
+            }
+        }
+    }
+}
+return sb.ToString();

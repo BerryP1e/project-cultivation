@@ -1,0 +1,63 @@
+// 盘点：杨戬 Run 片段 + 玩家自己的 Locomotion/御风片段（长度/曲线数/根位移与根旋转范围）
+// 用途：给"上半身换杨戬 Run"和"地面版攻击把根换成站姿"两个烘焙定源
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+void 打片段(AnimationClip c, string 标签)
+{
+    if (c == null) { L("❌ " + 标签 + " 取不到"); return; }
+    var 根位 = new System.Collections.Generic.List<string>();
+    foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(c))
+    {
+        if (b.path != "" || !b.propertyName.StartsWith("Root")) continue;
+        var cur = UnityEditor.AnimationUtility.GetEditorCurve(c, b);
+        if (cur == null) continue;
+        float mn = float.MaxValue, mx = float.MinValue;
+        foreach (var k in cur.keys) { mn = Mathf.Min(mn, k.value); mx = Mathf.Max(mx, k.value); }
+        根位.Add(b.propertyName + "[" + mn.ToString("F2") + "~" + mx.ToString("F2") + "]");
+    }
+    L("  " + 标签 + "：len=" + c.length.ToString("F2") + " humanMotion=" + c.humanMotion
+      + " 曲线=" + UnityEditor.AnimationUtility.GetCurveBindings(c).Length
+      + " loop=" + UnityEditor.AnimationUtility.GetAnimationClipSettings(c).loopTime);
+    L("      根曲线（挑关键几条）：" + string.Join(" ", 根位.GetRange(0, Mathf.Min(5, 根位.Count)).ToArray()));
+}
+
+L("=== 玩家控制器里的片段（从 FBX/anim 资产找）===");
+foreach (var 名 in new string[] { "Locomotion", "御风_Idle", "御风_前进", "御风_升空", "御风_落地" })
+{
+    AnimationClip 找到 = null; string 来自 = "";
+    foreach (var g in UnityEditor.AssetDatabase.FindAssets(名 + " t:AnimationClip"))
+    {
+        var p = UnityEditor.AssetDatabase.GUIDToAssetPath(g);
+        var c = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(p);
+        if (c != null && c.name == 名) { 找到 = c; 来自 = p; break; }
+    }
+    L(名 + " → " + (找到 == null ? "❌ 没找到同名资产" : 来自));
+    if (找到 != null) 打片段(找到, 名);
+}
+
+L("");
+L("=== 杨戬 Run ===");
+var run路径 = "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Run.FBX";
+foreach (var o in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(run路径))
+{
+    var c = o as AnimationClip;
+    if (c == null || c.name.StartsWith("__preview__")) continue;
+    打片段(c, c.name + "（" + run路径 + "）");
+}
+L("");
+L("=== 杨戬 四个攻击片段的根旋转范围（地面版为什么会翻跟头）===");
+foreach (var p in new string[] {
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack1.FBX",
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack2.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack1.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack2.FBX" })
+{
+    foreach (var o in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(p))
+    {
+        var c = o as AnimationClip;
+        if (c == null || c.name.StartsWith("__preview__")) continue;
+        打片段(c, System.IO.Path.GetFileNameWithoutExtension(p));
+    }
+}
+return sb.ToString();

@@ -1,0 +1,108 @@
+// 八九玄功 近战普攻 · Play 实测（协程版：包成局部方法返回 IEnumerator，结果用 Debug.Log 回传）
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+System.Func<string, Type> 找类型 = (名) =>
+{
+    foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+    {
+        var t = a.GetType(名);
+        if (t != null) return t;
+        foreach (var t2 in a.GetTypes()) if (t2.Name == 名) return t2;
+    }
+    return null;
+};
+System.Func<GameObject, string, Component> 取组件 = (go, 名) => { var t = 找类型(名); return t == null ? null : go.GetComponent(t); };
+System.Func<Transform, string, Transform> 找子 = (根, 名) =>
+{
+    foreach (var t in 根.GetComponentsInChildren<Transform>(true)) if (t.name == 名) return t;
+    return null;
+};
+System.Func<GameObject, string> 当前片段 = (go) =>
+{
+    var an = go.GetComponentInChildren<Animator>();
+    if (an == null) return "无Animator";
+    var infos = an.GetCurrentAnimatorClipInfo(0);
+    return (infos == null || infos.Length == 0 || infos[0].clip == null) ? "(没有正在播的片段)" : infos[0].clip.name;
+};
+
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var ui = GameObject.Find("CharacterUI");
+    var pd = ui == null ? null : ui.GetComponent<UIPanelData>();
+    L("玩家 = " + (玩家 == null ? "❌" : "✅") + "，UIPanelData = " + (pd == null ? "❌" : "✅"));
+    var 功法资产 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    L("功法资产 = " + (功法资产 == null ? "❌" : 功法资产.功法名称 + " / 普攻方法id = " + 功法资产.普攻方法id));
+
+    var 靶子资产 = Resources.Load<GameObject>("摆设/练功木桩");
+    var 前 = 玩家.transform.position + 玩家.transform.forward * 2.2f;
+    前.y = 玩家.transform.position.y;
+    var 靶子 = UnityEngine.Object.Instantiate(靶子资产, 前, Quaternion.LookRotation(玩家.transform.position - 前));
+    var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
+    L("靶子 = " + (靶Npc == null ? "❌ 没有 NpcInstance" : "✅ " + 靶Npc.定义.DisplayName + " @" + 靶子.transform.position.ToString("F2")));
+
+    pd.学会(功法资产);
+    pd.当前功法 = 功法资产;
+    pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.4f);
+
+    var 普攻 = 取组件(玩家, "BasicJiuba01");
+    var 挂载 = 取组件(玩家, "武器挂载");
+    L("");
+    L("切功法后：BasicJiuba01 = " + (普攻 == null ? "❌ 没装上" : "✅ enabled=" + ((Behaviour)普攻).enabled)
+      + "，武器挂载 = " + (挂载 == null ? "❌ 没装上" : "✅ enabled=" + ((Behaviour)挂载).enabled));
+    var 刀 = 找子(玩家.transform, "八九玄功_三尖两刃刀");
+    L("手上的刀 = " + (刀 == null ? "❌ 没挂上" : "✅ 父=" + 刀.parent.name + " 世界缩放=" + 刀.lossyScale.ToString("F4")));
+
+    var 索敌 = 玩家.GetComponent<NpcTargeting>();
+    if (索敌 != null && 靶Npc != null) 索敌.Lock(靶Npc);
+    L("锁定 = " + (索敌 == null ? "没找到 NpcTargeting" : (索敌.Locked == null ? "❌ null" : "✅ " + 索敌.Locked.定义.DisplayName)));
+
+    System.Reflection.MethodInfo 触发 = null;
+    if (普攻 != null)
+    {
+        var t = 普攻.GetType();
+        var 公开 = new System.Collections.Generic.List<string>();
+        foreach (var m in t.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            if (m.DeclaringType == t && m.GetParameters().Length == 0) 公开.Add(m.Name);
+        L("BasicJiuba01 公开无参方法：" + string.Join(", ", 公开.ToArray()));
+        foreach (var 名 in new string[] { "试着出手", "尝试出手", "出手", "攻击", "普攻", "打一下" })
+        {
+            触发 = t.GetMethod(名, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, null, Type.EmptyTypes, null);
+            if (触发 != null) break;
+        }
+        L("触发入口 = " + (触发 == null ? "⚠️ 没找到无参公开方法" : 触发.Name + "()"));
+    }
+
+    L("");
+    L("开打前靶子血量 = " + (靶Npc == null ? "-" : 靶Npc.CurrentHealth.ToString("F1") + " / " + 靶Npc.MaxHealth.ToString("F1")));
+    var 动画 = 玩家.GetComponent<PlayerAnimationController>();
+
+    for (int i = 1; i <= 4; i++)
+    {
+        if (触发 != null) 触发.Invoke(普攻, null);
+        yield return new WaitForSecondsRealtime(0.35f);
+        L("第 " + i + " 次出手：片段=" + 当前片段(玩家) + " 动作进度=" + (动画 == null ? "-" : 动画.动作进度.ToString("F2"))
+          + " 靶子血量=" + (靶Npc == null ? "-" : 靶Npc.CurrentHealth.ToString("F1")));
+        yield return new WaitForSecondsRealtime(1.7f);
+    }
+
+    var 御风 = 玩家.GetComponent<YufengFlight>();
+    L("");
+    L("=== 御风 ===");
+    if (御风 == null) L("❌ 玩家身上没有 YufengFlight");
+    else
+    {
+        御风.enabled = true;
+        yield return new WaitForSecondsRealtime(1.5f);
+        L("御风流程中 = " + 御风.御风流程中 + "，玩家 y=" + 玩家.transform.position.y.ToString("F2"));
+        if (触发 != null) 触发.Invoke(普攻, null);
+        yield return new WaitForSecondsRealtime(0.4f);
+        L("御风时出手：片段=" + 当前片段(玩家) + "（期望带 _御风）");
+        御风.enabled = false;
+    }
+    UnityEngine.Object.DestroyImmediate(靶子);
+    Debug.Log("【八九玄功实测】\n" + sb.ToString());
+}
+
+return 主();

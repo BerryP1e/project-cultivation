@@ -1,0 +1,58 @@
+// 诊断打空：出手后逐帧打「武器判定盒」与「靶子盒」，看到底是盒子不对还是位置不对
+System.Func<string, Type> 找类型 = (名) =>
+{
+    foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+    {
+        var t = a.GetType(名);
+        if (t != null) return t;
+        foreach (var t2 in a.GetTypes()) if (t2.Name == 名) return t2;
+    }
+    return null;
+};
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var pd = GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+    var 功法 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    pd.学会(功法); pd.当前功法 = 功法; pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.6f);
+
+    var 靶子 = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),
+        玩家.transform.position + 玩家.transform.forward * 2.0f, Quaternion.identity);
+    var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
+    玩家.GetComponent<NpcTargeting>().Lock(靶Npc);
+    yield return new WaitForSecondsRealtime(1.4f);
+
+    // 找武器
+    Transform 武器根 = null;
+    foreach (var t in 玩家.GetComponentsInChildren<Transform>(true)) if (t.name == "八九玄功_三尖两刃刀") 武器根 = t;
+    L("武器根 = " + (武器根 == null ? "❌ 没找到" : "✅ " + 武器根.name + " 父=" + 武器根.parent.name + " 世界缩放=" + 武器根.lossyScale.ToString("F3")));
+    if (武器根 == null) { Debug.Log("【打空诊断】\n" + sb.ToString()); yield break; }
+    var smrs = 武器根.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+    L("武器蒙皮数 = " + smrs.Length);
+    foreach (var s in smrs) L("   " + s.name + " updateWhenOffscreen=" + s.updateWhenOffscreen + " 本地边界=" + s.localBounds.center.ToString("F2") + "/" + s.localBounds.size.ToString("F2"));
+    var 靶体贴 = 靶子.GetComponentInChildren<Collider>();
+    L("靶子碰撞体 = " + (靶体贴 == null ? "❌ 没有" : "✅ " + 靶体贴.GetType().Name + " 盒=" + 靶体贴.bounds.center.ToString("F2") + " 尺寸=" + 靶体贴.bounds.size.ToString("F2")));
+
+    var t普攻 = 找类型("BasicJiuba01");
+    var 普攻 = 玩家.GetComponent(t普攻);
+    t普攻.GetMethod("出手").Invoke(普攻, null);
+
+    L("");
+    for (int i = 0; i < 16; i++)
+    {
+        yield return new WaitForSecondsRealtime(0.1f);
+        var 盒 = smrs[0].bounds;
+        foreach (var s in smrs) 盒.Encapsulate(s.bounds);
+        bool 相交 = 靶体贴 != null && 盒.Intersects(靶体贴.bounds);
+        L("   t+" + ((i + 1) * 0.1f).ToString("F1") + "s：武器盒 中心=" + 盒.center.ToString("F2") + " 尺寸=" + 盒.size.ToString("F2")
+          + " ｜ 与靶子中心距=" + Vector3.Distance(盒.center, 靶体贴.bounds.center).ToString("F2")
+          + " ｜ 相交=" + 相交 + (相交 ? " ← 应该结算" : ""));
+    }
+    UnityEngine.Object.DestroyImmediate(靶子);
+    Debug.Log("【打空诊断】\n" + sb.ToString());
+}
+return 主();

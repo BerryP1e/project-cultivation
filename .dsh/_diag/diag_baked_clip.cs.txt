@@ -1,0 +1,36 @@
+// 诊断：新烘的片段里到底有没有变化的数据？采样到玩家身上手会不会动？
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+var clip = Resources.Load<AnimationClip>("技能动作/八九玄功/长刀女_Attack1");
+if (clip == null) { L("❌ 取不到片段"); return sb.ToString(); }
+var 绑定 = UnityEditor.AnimationUtility.GetCurveBindings(clip);
+L("片段 " + clip.name + "：len=" + clip.length.ToString("F2") + " 曲线=" + 绑定.Length + " legacy=" + clip.legacy + " humanMotion=" + clip.humanMotion);
+int 示 = 0;
+foreach (var b in 绑定)
+{
+    var c = UnityEditor.AnimationUtility.GetEditorCurve(clip, b);
+    if (c == null) continue;
+    float v0 = c.Evaluate(0f), vm = c.Evaluate(clip.length * 0.5f), v1 = c.Evaluate(clip.length * 0.98f);
+    L("   " + b.path + "  " + b.propertyName + "  t0=" + v0.ToString("F4") + " t50%=" + vm.ToString("F4") + " t98%=" + v1.ToString("F4")
+      + (Mathf.Abs(v0 - vm) > 1e-4f || Mathf.Abs(vm - v1) > 1e-4f ? "  ← 有变化" : ""));
+    if (++示 >= 8) break;
+}
+
+// 采样到玩家副本上，看手/武器动不动
+var 副本 = UnityEngine.Object.Instantiate(GameObject.Find("Player"));
+副本.transform.position = new Vector3(0f, -500f, 0f);
+foreach (var c in 副本.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+var an = 副本.GetComponentInChildren<Animator>(true);
+an.runtimeAnimatorController = null;
+foreach (var s in 副本.GetComponentsInChildren<SkinnedMeshRenderer>(true)) s.forceMatrixRecalculationPerRender = true;
+Transform 手 = null, 头 = null;
+foreach (var t in 副本.GetComponentsInChildren<Transform>(true)) { if (t.name == "R_Hand") 手 = t; if (t.name == "Head") 头 = t; }
+L("");
+foreach (var 比例 in new float[] { 0f, 0.25f, 0.5f, 0.75f })
+{
+    clip.SampleAnimation(an.gameObject, clip.length * 比例);
+    L("  " + (比例 * 100f).ToString("F0") + "%：手=" + 手.position.ToString("F3") + " 头=" + 头.position.ToString("F3"));
+}
+UnityEngine.Object.DestroyImmediate(副本);
+return sb.ToString();

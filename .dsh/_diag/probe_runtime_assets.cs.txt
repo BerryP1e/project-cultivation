@@ -1,0 +1,33 @@
+// 运行时探针：Play 下确认八九玄功要用的资源都取得到 + 玩家身上有哪些现成组件
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+L("场景 = " + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+foreach (var n in new string[] { "Weapons/八九玄功_三尖两刃刀" })
+{
+    var go = Resources.Load<GameObject>(n);
+    L("Resources.Load<GameObject>(\"" + n + "\") → " + (go == null ? "❌ null" : "✅ " + go.name + " 子节点 "
+        + go.GetComponentsInChildren<Transform>(true).Length + " 蒙皮 " + go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length));
+}
+foreach (var n in new string[] { "技能动作/八九玄功/长刀女_Attack1", "技能动作/八九玄功/长刀女_Attack2", "技能动作/八九玄功/杨戬_Attack1", "技能动作/八九玄功/杨戬_Attack2",
+                                 "技能动作/八九玄功/长刀女_Attack1_御风", "技能动作/八九玄功/长刀女_Attack2_御风", "技能动作/八九玄功/杨戬_Attack1_御风", "技能动作/八九玄功/杨戬_Attack2_御风" })
+{
+    var c = Resources.Load<AnimationClip>("技能动作/" + n.Replace("技能动作/", ""));
+    L("  片段 " + n.PadRight(34) + " → " + (c == null ? "❌ null" : "✅ " + c.length.ToString("F2") + "s"));
+}
+var dummy = Resources.Load<GameObject>("摆设/练功木桩");
+L("Resources.Load<GameObject>(\"摆设/练功木桩\") → " + (dummy == null ? "❌ null" : "✅ " + dummy.name));
+
+var player = GameObject.Find("Player");
+L("");
+L("玩家 = " + (player == null ? "❌ 找不到" : player.name));
+if (player != null)
+{
+    foreach (var t in player.GetComponents<MonoBehaviour>())
+        if (t != null) L("   组件：" + t.GetType().Name + (t.enabled ? "" : "（停用）"));
+    var ui = GameObject.Find("CharacterUI");
+    var pd = ui == null ? null : ui.GetComponent<UIPanelData>();
+    string 功法名 = (pd == null || pd.当前功法 == null) ? "null" : pd.当前功法.功法名称;
+    L("   UIPanelData = " + (pd == null ? "❌ 没有（CharacterUI 上）" : "✅ 当前功法 = " + 功法名 + "，已学 " + (pd.已学功法 == null ? 0 : pd.已学功法.Count) + " 门"));
+}
+return sb.ToString();

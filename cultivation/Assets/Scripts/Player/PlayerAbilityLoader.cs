@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -41,6 +41,22 @@ public class PlayerAbilityLoader : MonoBehaviour
     public List<普攻方法绑定> 普攻方法表 = new List<普攻方法绑定>();
     public List<被动神通绑定> 被动神通表 = new List<被动神通绑定>();
 
+    /// <summary>
+    /// 【内置登记】表里没写、但代码知道的能力组件：`{ 普攻方法id / 神通id, 组件类名 }`。
+    ///
+    /// 为什么要有它：上面那两张表是**逐场景序列化**的（Player 在 5 个游玩场景里各一份），
+    /// 加一个新普攻就得动 5 个场景文件，而**存场景会把场景里那份运行时 UI 列表一起重排**
+    /// （踩坑 A8 / B94：一次保存带出上千行无关改动）。所以新加的能力走这里**在运行时补进内存**，
+    /// 一个场景文件都不用碰。表里**手工登记过的照样生效**（这里只在缺的时候补）。
+    /// </summary>
+    public static readonly string[][] 内置登记 = new string[][]
+    {
+        // { 功法表里的 普攻方法id, 组件类名 }
+        new string[] { "basic_jiuba_01", "BasicJiuba01" },   // 八九玄功：近战普攻
+        new string[] { "basic_jiuba_01", "武器挂载" },         // 八九玄功：把三尖两刃刀挂到右手
+        new string[] { "basic_jiuba_01", "WeaponCarryAnim" }, // 八九玄功：移动/御风片段换成持械上半身版
+    };
+
     [Header("调试")]
     [Tooltip("装卸组件时打日志")]
     public bool 打印装卸日志 = true;
@@ -56,6 +72,23 @@ public class PlayerAbilityLoader : MonoBehaviour
             if (ui != null) 面板数据 = ui.GetComponent<UIPanelData>();
         }
         if (面板数据 == null) 面板数据 = FindObjectOfType<UIPanelData>();
+
+        补齐内置登记();
+    }
+
+    /// <summary>把 <see cref="内置登记"/> 里缺的条目补进 <see cref="普攻方法表"/>（**只改内存，不写场景**）</summary>
+    void 补齐内置登记()
+    {
+        if (普攻方法表 == null) 普攻方法表 = new List<普攻方法绑定>();
+        foreach (var 条 in 内置登记)
+        {
+            if (条 == null || 条.Length < 2) continue;
+            string id = 条[0], 类 = 条[1];
+            if (普攻方法表.Exists(b => b != null && b.方法id == id && b.组件类名 == 类)) continue;
+            普攻方法表.Add(new 普攻方法绑定 { 方法id = id, 组件类名 = 类 });
+            if (打印装卸日志)
+                Debug.Log("[PlayerAbilityLoader] 内置登记补进内存：" + id + " → " + 类 + "（没写进场景）", this);
+        }
     }
 
     void OnEnable()

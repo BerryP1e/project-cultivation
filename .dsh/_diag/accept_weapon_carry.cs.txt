@@ -1,0 +1,59 @@
+// 真机位验收：在 Play 里直接播三个新片段并截图（Edit Mode 的 SampleAnimation 对纯路径片段不生效，只能这么验）
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var pd = GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+    var 功法 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    pd.学会(功法); pd.当前功法 = 功法; pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.5f);
+
+    var 动画 = 玩家.GetComponent<PlayerAnimationController>();
+    var an = 玩家.GetComponentInChildren<Animator>();
+    Transform 手 = null;
+    foreach (var t in 玩家.GetComponentsInChildren<Transform>(true)) if (t.name == "R_Hand") 手 = t;
+
+    // 先把镜头拉近玩家一点（游戏相机跟玩家，直接拍就行）
+    System.Action<string, string> 播并拍 = (片段路径, 文件名) =>
+    {
+        var clip = Resources.Load<AnimationClip>(片段路径);
+        if (clip == null) { L("❌ 取不到 " + 片段路径); return; }
+        动画.PlayAction(clip);
+    };
+
+    foreach (var 组 in new string[][] {
+        new string[]{"技能动作/八九玄功/持刀_站", "持刀_站"},
+        new string[]{"技能动作/八九玄功/持刀_走", "持刀_走"} })
+    {
+        var clip = Resources.Load<AnimationClip>(组[0]);
+        动画.PlayAction(clip);
+        L(组[1] + " → 播 " + clip.name + "（" + clip.length.ToString("F2") + "s）");
+        yield return new WaitForSecondsRealtime(0.6f);
+        ScreenCapture.CaptureScreenshot("screenshots/验收_" + 组[1] + ".png");
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    // 御风
+    var 御风 = 玩家.GetComponent<YufengFlight>();
+    var 神 = 御风.御风神通;
+    if (神 == null && pd.神通 != null)
+        foreach (var a in pd.神通) { var p = a as PassiveDivineAbility; if (p != null && p.神通id == 御风.神通id) { 神 = p; break; } }
+    if (神 != null) { pd.获得被动(神); pd.SetPassiveEnabled(神, true); }
+    yield return new WaitForSecondsRealtime(0.4f);
+    if (!御风.御风流程中) 御风.切换();
+    float t0 = Time.time;
+    while (!御风.御风流程中 && Time.time - t0 < 5f) yield return null;
+    yield return new WaitForSecondsRealtime(1.4f);
+    var 御风Idle片段 = Resources.Load<AnimationClip>("技能动作/八九玄功/持刀_御风Idle");
+    动画.PlayAction(御风Idle片段);
+    L("御风：状态=" + 御风.状态 + " y=" + 玩家.transform.position.y.ToString("F2") + " → 播 " + 御风Idle片段.name);
+    yield return new WaitForSecondsRealtime(0.7f);
+    ScreenCapture.CaptureScreenshot("screenshots/验收_持刀_御风Idle.png");
+    yield return new WaitForEndOfFrame();
+    御风.强制落地();
+    L("已出图：验收_持刀_站.png / 验收_持刀_走.png / 验收_持刀_御风Idle.png");
+    Debug.Log("【持刀片段验收】\n" + sb.ToString());
+}
+return 主();

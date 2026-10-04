@@ -1,0 +1,100 @@
+// 聚焦测试：御风时普攻是否切到 _御风 片段（读组件自己的公开属性，不猜）
+// 顺带截一张图看"上半身挥砍 + 下半身悬浮"的实际观感
+System.Func<string, Type> 找类型 = (名) =>
+{
+    foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+    {
+        var t = a.GetType(名);
+        if (t != null) return t;
+        foreach (var t2 in a.GetTypes()) if (t2.Name == 名) return t2;
+    }
+    return null;
+};
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var pd = GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+    var 功法 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    pd.学会(功法); pd.当前功法 = 功法; pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.4f);
+
+    var t普攻 = 找类型("BasicJiuba01");
+    var 普攻 = 玩家.GetComponent(t普攻);
+    var 出手 = t普攻.GetMethod("出手");
+    var p御风版 = t普攻.GetProperty("当前是御风版");
+    var p动作 = t普攻.GetProperty("当前动作路径");
+    var p冷却 = t普攻.GetProperty("冷却剩余");
+    L("组件 = " + (普攻 == null ? "❌" : "✅") + "，出手() = " + (出手 == null ? "❌" : "✅")
+      + "，当前是御风版 = " + (p御风版 == null ? "❌" : "✅"));
+
+    // 靶子（近一点，御风在天上也够得着）
+    var 靶子 = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),
+        玩家.transform.position + 玩家.transform.forward * 1.6f, Quaternion.identity);
+    var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
+    var 索敌 = 玩家.GetComponent<NpcTargeting>();
+    索敌.Lock(靶Npc);
+
+    // ---- 地面 ----
+    出击(出手, 普攻);
+    yield return new WaitForSecondsRealtime(0.3f);
+    L("");
+    L("【地面】当前是御风版 = " + p御风版.GetValue(普攻) + "，动作 = " + p动作.GetValue(普攻));
+    L("        Animator 片段 = " + 当前片段(玩家) + "，靶子血量 = " + 靶Npc.CurrentHealth.ToString("F1"));
+    yield return new WaitForSecondsRealtime(1.8f);
+
+    // ---- 进御风：先给玩家「凭虚御风」并启用，再切换 ----
+    var 御风 = 玩家.GetComponent<YufengFlight>();
+    var 神 = 御风.御风神通;
+    if (神 == null && pd.神通 != null)
+        foreach (var a in pd.神通)
+        {
+            var p = a as PassiveDivineAbility;
+            if (p != null && p.神通id == 御风.神通id) { 神 = p; break; }
+        }
+    L("");
+    L("御风神通 = " + (神 == null ? "❌ 找不到（面板数据里也没有 " + 御风.神通id + "）" : "✅ " + 神.DisplayName));
+    if (神 != null) { pd.获得被动(神); pd.SetPassiveEnabled(神, true); }
+    yield return new WaitForSecondsRealtime(0.4f);
+    L("神通已启用 = " + 御风.神通已启用 + "，想飞 = " + 御风.想飞);
+    if (!御风.御风流程中) 御风.切换();
+    float t0 = Time.time;
+    while (!御风.御风流程中 && Time.time - t0 < 5f) yield return null;
+    yield return new WaitForSecondsRealtime(1.2f);
+    L("");
+    L("【御风】状态 = " + 御风.状态 + "，流程中 = " + 御风.御风流程中 + "，玩家 y = " + 玩家.transform.position.y.ToString("F2"));
+
+    // 等冷却清掉再出手
+    t0 = Time.time;
+    while (Time.time - t0 < 1.6f) yield return null;
+    出击(出手, 普攻);
+    yield return new WaitForSecondsRealtime(0.45f);
+    L("        当前是御风版 = " + p御风版.GetValue(普攻) + "，动作 = " + p动作.GetValue(普攻));
+    L("        Animator 片段 = " + 当前片段(玩家) + "，靶子血量 = " + 靶Npc.CurrentHealth.ToString("F1"));
+    ScreenCapture.CaptureScreenshot("screenshots/八九_御风普攻.png");
+    yield return new WaitForEndOfFrame();
+    yield return new WaitForSecondsRealtime(0.6f);
+
+    // ---- 落地 ----
+    御风.强制落地();
+    yield return new WaitForSecondsRealtime(1.2f);
+    L("");
+    L("【落地】流程中 = " + 御风.御风流程中 + "，玩家 y = " + 玩家.transform.position.y.ToString("F2"));
+    UnityEngine.Object.DestroyImmediate(靶子);
+    Debug.Log("【御风分支实测】\n" + sb.ToString());
+}
+
+string 当前片段(GameObject go)
+{
+    var an = go.GetComponentInChildren<Animator>();
+    if (an == null) return "无";
+    var infos = an.GetCurrentAnimatorClipInfo(0);
+    return (infos == null || infos.Length == 0 || infos[0].clip == null) ? "(无)" : infos[0].clip.name;
+}
+void 出击(System.Reflection.MethodInfo 出手, Component 普攻)
+{
+    if (出手 != null) 出手.Invoke(普攻, null);
+}
+return 主();
