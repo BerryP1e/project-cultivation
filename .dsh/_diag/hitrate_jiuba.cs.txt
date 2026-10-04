@@ -29,7 +29,7 @@ System.Collections.IEnumerator 主()
     System.Func<float> 读冷却 = () => { try { return (float)p冷却.GetValue(普攻); } catch { return -1f; } };
 
     var 靶子 = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),
-        玩家.transform.position - 玩家.transform.forward * 2.0f, Quaternion.identity);
+        玩家.transform.position + 玩家.transform.forward * 1.2f, Quaternion.identity);
     var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
     玩家.GetComponent<NpcTargeting>().Lock(靶Npc);
     yield return new WaitForSecondsRealtime(1.5f);

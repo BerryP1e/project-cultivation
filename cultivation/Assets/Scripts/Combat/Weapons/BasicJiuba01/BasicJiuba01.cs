@@ -100,7 +100,7 @@ public class BasicJiuba01 : MonoBehaviour
     [Range(0.01f, 0.9f)] public float 判定窗口 = 0.55f;
 
     [Tooltip("把武器判定的包围盒往外扩多少米（判定宽容度）")]
-    public float 判定外扩 = 0.15f;
+    public float 判定外扩 = 0.45f;
 
     [Tooltip("刀的横截面半径（米）。留 0 = 自动取蒙皮网格的次小半轴")]
     public float 武器半径 = 0f;
@@ -117,7 +117,7 @@ public class BasicJiuba01 : MonoBehaviour
              "为什么必须有：右键锁定可以锁到 **40 米**（神识范围封顶），而刀只有 **4.1 米** 长，\n" +
              "玩家身上又没有任何自动贴近 —— 不设门槛就会**站在远处无限空砍、0 伤害、冷却照扣**。\n" +
              "留 0 或负数 = 不限制（退回旧行为）")]
-    public float 出手最大距离 = 4f;
+    public float 出手最大距离 = 1.7f;
 
     // ============================================================ 伤害
 
