@@ -408,7 +408,7 @@ public class BasicJiuba01 : MonoBehaviour
         return 判定体缓存;
     }
 
-    /// <summary>这一帧武器网格有没有碰到锁定目标。碰到就给出**接触点**（在目标表面上）</summary>
+    /// <summary>这一帧武器有没有碰到锁定目标。碰到就给出**接触点**（在目标表面/最近点）</summary>
     bool 武器扫到目标(out Vector3 接触点)
     {
         接触点 = Vector3.zero;
@@ -418,6 +418,37 @@ public class BasicJiuba01 : MonoBehaviour
         var 体 = 取武器判定体();
         if (体 == null || 体.Length == 0) return false;
 
+        // ★ 优先走「武器线段 × 目标胶囊」。
+        //   为什么不用两个 AABB 相交：这把刀 **4.9 米长、还在转**，`Renderer.bounds` 的 AABB
+        //   中心在挥砍中会跑到目标 3~6 米外（实测），"盒相交"时中时不中。
+        //   单骨刚性蒙皮的武器可以精确算端点：world = bone.localToWorldMatrix × bindpose。
+        Vector3 端A, 端B; float 武器半径;
+        bool 有线段 = 取武器线段(体, out 端A, out 端B, out 武器半径);
+
+        if (有线段)
+        {
+            var 胶囊 = 目标.根 != null ? 目标.根.GetComponentInChildren<CapsuleCollider>() : null;
+            if (胶囊 != null)
+            {
+                var 缩 = 胶囊.transform.lossyScale;
+                float 世界半径 = 胶囊.radius * Mathf.Max(Mathf.Abs(缩.x), Mathf.Max(Mathf.Abs(缩.y), Mathf.Abs(缩.z)));
+                var 轴 = 胶囊.transform.up;
+                float 半 = Mathf.Max(0f, 胶囊.height * 0.5f - 胶囊.radius) * Mathf.Max(Mathf.Abs(缩.y), Mathf.Max(Mathf.Abs(缩.x), Mathf.Abs(缩.z)));
+                var q1 = 胶囊.transform.TransformPoint(胶囊.center) + 轴 * 半;
+                var q2 = 胶囊.transform.TransformPoint(胶囊.center) - 轴 * 半;
+
+                Vector3 cp, cq;
+                float 距 = 线段距离(端A, 端B, q1, q2, out cp, out cq);
+                if (距 <= 世界半径 + 武器半径 + 判定外扩)
+                {
+                    接触点 = cq;
+                    return true;
+                }
+                return false;      // 有胶囊就按线段判，不再退回盒（免得又时中时不中）
+            }
+        }
+
+        // 兜底：没有线段（非单骨蒙皮）或目标没有胶囊 ⇒ 退回原来的盒相交
         bool 有 = false;
         var 武器体 = new Bounds();
         foreach (var r in 体)
@@ -431,10 +462,78 @@ public class BasicJiuba01 : MonoBehaviour
 
         var 目标体 = 取目标体积(目标);
         if (!武器体.Intersects(目标体)) return false;
-
-        // 接触点：目标体上离「武器中心」最近的那一点 —— 贴着目标的表面，日志/特效都好看
         接触点 = 目标体.ClosestPoint(武器体.center);
         return true;
+    }
+
+    /// <summary>
+    /// 取武器的「长轴线段」（世界坐标）+ 横截面半径。
+    /// 单骨刚性蒙皮：世界点 = bone.localToWorldMatrix × bindpose × 网格本地点（这才是刀真正所在的位置，
+    /// 不受 `Renderer.bounds` 那个乱跳的 AABB 影响）。
+    /// </summary>
+    bool 取武器线段(Renderer[] 体, out Vector3 端A, out Vector3 端B, out float 半径)
+    {
+        端A = 端B = Vector3.zero; 半径 = 0.15f;
+        foreach (var r in 体)
+        {
+            if (r == null || !r.enabled || !r.gameObject.activeInHierarchy) continue;
+            if (r is ParticleSystemRenderer) continue;
+
+            var smr = r as SkinnedMeshRenderer;
+            if (smr != null && smr.sharedMesh != null && smr.bones != null && smr.bones.Length == 1 && smr.bones[0] != null)
+            {
+                var m = smr.bones[0].localToWorldMatrix * smr.sharedMesh.bindposes[0];
+                var b = smr.sharedMesh.bounds;
+                var 半 = b.size * 0.5f;
+                int 轴 = (半.x >= 半.y && 半.x >= 半.z) ? 0 : (半.y >= 半.z ? 1 : 2);
+                var d = 轴 == 0 ? new Vector3(半.x, 0f, 0f) : (轴 == 1 ? new Vector3(0f, 半.y, 0f) : new Vector3(0f, 0f, 半.z));
+                端A = m.MultiplyPoint3x4(b.center - d);
+                端B = m.MultiplyPoint3x4(b.center + d);
+                半径 = Mathf.Max(0.05f, Mathf.Min(半.x, Mathf.Min(半.y, 半.z)));
+                return true;
+            }
+
+            // 普通渲染体（不是蒙皮）：用它的包围盒最长轴凑一条线段
+            var bb = r.bounds;
+            var h = bb.size * 0.5f;
+            int a = (h.x >= h.y && h.x >= h.z) ? 0 : (h.y >= h.z ? 1 : 2);
+            var dd = a == 0 ? new Vector3(h.x, 0f, 0f) : (a == 1 ? new Vector3(0f, h.y, 0f) : new Vector3(0f, 0f, h.z));
+            端A = bb.center - dd; 端B = bb.center + dd;
+            半径 = Mathf.Max(0.05f, Mathf.Min(h.x, Mathf.Min(h.y, h.z)));
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>两条线段之间的最近距离（Ericson, Real-Time Collision Detection 的 ClosestPtSegmentSegment）</summary>
+    static float 线段距离(Vector3 p1, Vector3 p2, Vector3 q1, Vector3 q2, out Vector3 最近p, out Vector3 最近q)
+    {
+        var d1 = p2 - p1;
+        var d2 = q2 - q1;
+        var r = p1 - q1;
+        float a = Vector3.Dot(d1, d1), e = Vector3.Dot(d2, d2), f = Vector3.Dot(d2, r);
+        float s, t;
+        const float 极小 = 1e-8f;
+
+        if (a <= 极小 && e <= 极小) { s = t = 0f; }
+        else if (a <= 极小) { s = 0f; t = Mathf.Clamp01(f / e); }
+        else
+        {
+            float c = Vector3.Dot(d1, r);
+            if (e <= 极小) { t = 0f; s = Mathf.Clamp01(-c / a); }
+            else
+            {
+                float b = Vector3.Dot(d1, d2);
+                float 分母 = a * e - b * b;
+                s = 分母 != 0f ? Mathf.Clamp01((b * f - c * e) / 分母) : 0f;
+                t = (b * s + f) / e;
+                if (t < 0f) { t = 0f; s = Mathf.Clamp01(-c / a); }
+                else if (t > 1f) { t = 1f; s = Mathf.Clamp01((b - c) / a); }
+            }
+        }
+        最近p = p1 + d1 * s;
+        最近q = q1 + d2 * t;
+        return Vector3.Distance(最近p, 最近q);
     }
 
     /// <summary>

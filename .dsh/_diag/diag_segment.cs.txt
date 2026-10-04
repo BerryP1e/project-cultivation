@@ -1,0 +1,85 @@
+// 量"武器线段 vs 目标胶囊"：出手后逐帧打出端点与最近距离（看是差多少、还是算错了）
+System.Func<string, Type> 找类型 = (名) =>
+{
+    foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+    {
+        var t = a.GetType(名);
+        if (t != null) return t;
+        foreach (var t2 in a.GetTypes()) if (t2.Name == 名) return t2;
+    }
+    return null;
+};
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var pd = GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+    var 功法 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    pd.学会(功法); pd.当前功法 = 功法; pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.8f);
+
+    var 靶子 = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),
+        玩家.transform.position + 玩家.transform.forward * 2.0f, Quaternion.identity);
+    var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
+    玩家.GetComponent<NpcTargeting>().Lock(靶Npc);
+    yield return new WaitForSecondsRealtime(1.4f);
+
+    Transform 武器根 = null;
+    foreach (var t in 玩家.GetComponentsInChildren<Transform>(true)) if (t.name == "八九玄功_三尖两刃刀") 武器根 = t;
+    var smr = 武器根.GetComponentInChildren<SkinnedMeshRenderer>();
+    var bp = smr.sharedMesh.bindposes[0];
+    var mb = smr.sharedMesh.bounds;
+    L("网格 bounds 中心=" + mb.center.ToString("F3") + " 尺寸=" + mb.size.ToString("F3") + " ｜ bindpose.rotation=" + QuaternionFrom(bp).eulerAngles.ToString("F1")
+      + " bindpose 缩放=" + bp.lossyScale.ToString("F3") + " ｜ 骨=" + smr.bones[0].name);
+    var 胶囊 = 靶Npc.GetComponentInChildren<CapsuleCollider>();
+    var 缩 = 胶囊.transform.lossyScale;
+    float 半 = Mathf.Max(0f, 胶囊.height * 0.5f - 胶囊.radius) * Mathf.Max(Mathf.Abs(缩.y), Mathf.Max(Mathf.Abs(缩.x), Mathf.Abs(缩.z)));
+    float 世界半径 = 胶囊.radius * Mathf.Max(Mathf.Abs(缩.x), Mathf.Max(Mathf.Abs(缩.y), Mathf.Abs(缩.z)));
+    var 轴 = 胶囊.transform.up;
+    var q1 = 胶囊.transform.TransformPoint(胶囊.center) + 轴 * 半;
+    var q2 = 胶囊.transform.TransformPoint(胶囊.center) - 轴 * 半;
+    L("靶子胶囊：世界半径=" + 世界半径.ToString("F3") + " 端点A=" + q1.ToString("F2") + " 端点B=" + q2.ToString("F2"));
+
+    var t普攻 = 找类型("BasicJiuba01");
+    var 普攻 = 玩家.GetComponent(t普攻);
+    t普攻.GetMethod("出手").Invoke(普攻, null);
+
+    float 最小 = 999f;
+    for (int i = 0; i < 18; i++)
+    {
+        yield return new WaitForSecondsRealtime(0.1f);
+        var m = smr.bones[0].localToWorldMatrix * smr.sharedMesh.bindposes[0];
+        var 半v = mb.size * 0.5f;
+        int a = (半v.x >= 半v.y && 半v.x >= 半v.z) ? 0 : (半v.y >= 半v.z ? 1 : 2);
+        var d = a == 0 ? new Vector3(半v.x, 0, 0) : (a == 1 ? new Vector3(0, 半v.y, 0) : new Vector3(0, 0, 半v.z));
+        var p1 = m.MultiplyPoint3x4(mb.center - d);
+        var p2 = m.MultiplyPoint3x4(mb.center + d);
+        float 距 = 线段距离(p1, p2, q1, q2);
+        最小 = Mathf.Min(最小, 距);
+        if (i % 3 == 0)
+            L("   t+" + ((i + 1) * 0.1f).ToString("F1") + "s：刀 " + p1.ToString("F2") + " → " + p2.ToString("F2")
+              + " ｜ 与靶子最近=" + 距.ToString("F2") + "（阈值 " + (世界半径 + 0.15f).ToString("F2") + "）");
+    }
+    L("⇒ 整段最小距离 = " + 最小.ToString("F2") + " 米");
+    UnityEngine.Object.DestroyImmediate(靶子);
+    Debug.Log("【线段判定诊断】\n" + sb.ToString());
+}
+
+Quaternion QuaternionFrom(Matrix4x4 m) => m.rotation;
+float 线段距离(Vector3 p1, Vector3 p2, Vector3 q1, Vector3 q2)
+{
+    var d1 = p2 - p1; var d2 = q2 - q1; var r = p1 - q1;
+    float a = Vector3.Dot(d1, d1), e = Vector3.Dot(d2, d2), f = Vector3.Dot(d2, r), s, t;
+    const float 极小 = 1e-8f;
+    if (a <= 极小 && e <= 极小) { s = t = 0f; }
+    else if (a <= 极小) { s = 0f; t = Mathf.Clamp01(f / e); }
+    else { float c = Vector3.Dot(d1, r);
+        if (e <= 极小) { t = 0f; s = Mathf.Clamp01(-c / a); }
+        else { float b = Vector3.Dot(d1, d2); float 分母 = a * e - b * b;
+            s = 分母 != 0f ? Mathf.Clamp01((b * f - c * e) / 分母) : 0f; t = (b * s + f) / e;
+            if (t < 0f) { t = 0f; s = Mathf.Clamp01(-c / a); } else if (t > 1f) { t = 1f; s = Mathf.Clamp01((b - c) / a); } } }
+    return Vector3.Distance(p1 + d1 * s, q1 + d2 * t);
+}
+return 主();

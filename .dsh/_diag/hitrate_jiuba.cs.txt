@@ -1,0 +1,53 @@
+// 命中率测试：站靶子正前方 2 米，连打 8 次，看累计伤害（每次命中约 45~68）
+System.Func<string, Type> 找类型 = (名) =>
+{
+    foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+    {
+        var t = a.GetType(名);
+        if (t != null) return t;
+        foreach (var t2 in a.GetTypes()) if (t2.Name == 名) return t2;
+    }
+    return null;
+};
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+System.Collections.IEnumerator 主()
+{
+    var 玩家 = GameObject.Find("Player");
+    var pd = GameObject.Find("CharacterUI").GetComponent<UIPanelData>();
+    var 功法 = UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_jiuba_xuangong.asset");
+    pd.学会(功法); pd.当前功法 = 功法; pd.RaiseChanged();
+    yield return new WaitForSecondsRealtime(0.8f);
+
+    var t普攻 = 找类型("BasicJiuba01");
+    var 普攻 = 玩家.GetComponent(t普攻);
+    if (普攻 == null) { L("❌ 组件没装上"); Debug.Log("【命中率】\n" + sb.ToString()); yield break; }
+    var p冷却 = t普攻.GetProperty("冷却剩余");
+    var p距离 = t普攻.GetProperty("到目标距离");
+    var 出手 = t普攻.GetMethod("出手");
+    System.Func<float> 读冷却 = () => { try { return (float)p冷却.GetValue(普攻); } catch { return -1f; } };
+
+    var 靶子 = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("摆设/练功木桩"),
+        玩家.transform.position + 玩家.transform.forward * 2.0f, Quaternion.identity);
+    var 靶Npc = 靶子.GetComponentInChildren<NpcInstance>();
+    玩家.GetComponent<NpcTargeting>().Lock(靶Npc);
+    yield return new WaitForSecondsRealtime(1.5f);
+
+    float 起始 = 靶Npc.MaxHealth;
+    L("靶子满血 = " + 起始.ToString("F1") + "，距离 = " + ((float)p距离.GetValue(普攻)).ToString("F2") + " 米");
+    for (int i = 1; i <= 8; i++)
+    {
+        float t0 = Time.time;
+        while (读冷却() > 0.001f && Time.time - t0 < 6f) yield return null;
+        出手.Invoke(普攻, null);
+        yield return new WaitForSecondsRealtime(2.0f);
+        L("   第 " + i + " 次后：靶子血量 = " + 靶Npc.CurrentHealth.ToString("F1") + "（累计伤害 " + (起始 - 靶Npc.CurrentHealth).ToString("F1") + "）");
+    }
+    float 总伤害 = 起始 - 靶Npc.CurrentHealth;
+    L("⇒ 8 次累计伤害 " + 总伤害.ToString("F1") + "，平均每次 " + (总伤害 / 8f).ToString("F1")
+      + (总伤害 > 300f ? "  ✅ 判定稳定" : "  ❌ 还在大量打空"));
+    UnityEngine.Object.DestroyImmediate(靶子);
+    Debug.Log("【命中率】\n" + sb.ToString());
+}
+return 主();
