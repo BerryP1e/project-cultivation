@@ -53,6 +53,8 @@ cultivation/.codely-cli/
 
 # 验证用的截图 / 录屏（我每次验证都会生成，几十上百 MB，且不是项目资产）
 cultivation/screenshots/
+# 同类验收截图被旧工具写入嵌套工程路径时，也不入库。
+cultivation/cultivation/screenshots/
 
 # 原始下载素材：里面有一个 118 MB 的 .c4d，
 # **超过 GitHub 单文件 100 MB 的硬上限**，push 会直接被拒。
@@ -71,6 +73,8 @@ somenews/
 # —— 当前数据的唯一真相源永远是 cultivation/Assets/Data/Tables/*.csv
 .dsh/_*备份*/
 .dsh/_backup*/
+# 旧工具在 Unity 工程根创建的同类快照备份。
+cultivation/.dsh/_*备份*/
 # 编辑器 / IDE 本机配置（Unity 的 VS Editor 包生成，各人机器不同）
 cultivation/.vsconfig
 

@@ -11,6 +11,8 @@ public class UIInkFormationPage : MonoBehaviour
     public UIInkWaterfall 瀑布流 {get;private set;}
     public UIEntryInfo 详情 {get;private set;}
     public Camera 透视相机=>camera3d;
+    public Image 墨底 {get;private set;}
+    public UIInkFormationOrbit 查看控制 {get;private set;}
     public int 模型数 {get;private set;}
     Transform stage;Camera camera3d;RenderTexture target;RawImage preview;Mesh grid;Material ink;
     Transform[] models=new Transform[9];NpcDefinition[] previous=new NpcDefinition[9];float[] birth=new float[9];
@@ -43,6 +45,8 @@ public class UIInkFormationPage : MonoBehaviour
         camera3d=cam.GetComponent<Camera>();camera3d.enabled=false;camera3d.orthographic=false;camera3d.fieldOfView=32;camera3d.cullingMask=1<<31;camera3d.clearFlags=CameraClearFlags.SolidColor;camera3d.backgroundColor=Color.clear;camera3d.nearClipPlane=.1f;camera3d.farClipPlane=50;
         var lightObject=new GameObject("PreviewLight",typeof(Light));lightObject.transform.SetParent(stage,false);lightObject.transform.localRotation=Quaternion.Euler(45,-35,0);var light=lightObject.GetComponent<Light>();light.type=LightType.Directional;light.intensity=1.3f;light.cullingMask=1<<31;
         var surface=UIBuildUtils.CreateRect("PerspectiveModels",board);surface.SetAsFirstSibling();UIBuildUtils.Stretch(surface);preview=surface.gameObject.AddComponent<RawImage>();preview.raycastTarget=false;
+        墨底=UIBuildUtils.CreateImage("FormationInkBackdrop",board,Color.white);墨底.sprite=InkUITheme.Load("Bag/bag-info-ink");墨底.raycastTarget=true;墨底.transform.SetAsFirstSibling();UIBuildUtils.Stretch(墨底.rectTransform);
+        查看控制=board.gameObject.AddComponent<UIInkFormationOrbit>();查看控制.Initialize(camera3d,stage);
         grid=new Mesh{name="FormationInkLines"};ink=new Material(Shader.Find("UI/InkStarVolume"));var floor=new GameObject("NineCellLines",typeof(MeshFilter),typeof(MeshRenderer));floor.layer=31;floor.transform.SetParent(stage,false);floor.GetComponent<MeshFilter>().sharedMesh=grid;floor.GetComponent<MeshRenderer>().sharedMaterial=ink;
         var player=Player();if(player!=null)models[4]=CopyVisual(player,4);
         UIBuildUtils.Place(真灵.transform as RectTransform,new Vector2(.735f,.035f),new Vector2(.995f,.96f),Vector2.zero,Vector2.zero);
@@ -123,7 +127,7 @@ public class UIInkFormationPage : MonoBehaviour
         grid.Clear();grid.SetVertices(vertices);grid.SetColors(colors);grid.SetTriangles(triangles,0);grid.RecalculateNormals();grid.RecalculateBounds();
     }
     static void Line(Vector3 a,Vector3 b,Color tint,List<Vector3> v,List<Color> c,List<int> indices){var side=Vector3.Cross(b-a,Vector3.up).normalized*.018f;int i=v.Count;v.Add(a-side);v.Add(a+side);v.Add(b+side);v.Add(b-side);for(int j=0;j<4;j++)c.Add(tint);indices.AddRange(new[]{i,i+1,i+2,i,i+2,i+3});}
-    void OnEnable(){age=0;if(stage!=null)stage.gameObject.SetActive(true);if(ready){birth[4]=Time.unscaledTime;瀑布流.Open();}}
+    void OnEnable(){age=0;if(stage!=null)stage.gameObject.SetActive(true);if(ready){birth[4]=Time.unscaledTime;瀑布流.Open();查看控制.复位();}}
     void HideWorld(GameObject obj){foreach(var renderer in obj.GetComponentsInChildren<Renderer>(true)){if(!hiddenWorld.ContainsKey(renderer))hiddenWorld.Add(renderer,renderer.enabled);renderer.enabled=false;}}
     void RestoreWorld(){foreach(var pair in hiddenWorld)if(pair.Key!=null)pair.Key.enabled=pair.Value;hiddenWorld.Clear();}
     void OnDisable(){RestoreWorld();if(stage!=null)stage.gameObject.SetActive(false);}
