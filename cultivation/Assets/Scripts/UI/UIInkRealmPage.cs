@@ -44,7 +44,7 @@ public class UIInkRealmPage : MonoBehaviour
         foreach(var title in new[]{transform.Find("AttrList/Title"),gongfa.Find("Title"),境界条.transform.Find("Title")}) if(title!=null) title.gameObject.SetActive(false);
 
         circle=UIBuildUtils.CreateRect("RealmCircle",transform);
-        circle.anchorMin=circle.anchorMax=new Vector2(.28f,.64f);
+        circle.anchorMin=circle.anchorMax=new Vector2(.18f,.64f);
         circle.sizeDelta=new Vector2(400,400);
         墨圈=UIBuildUtils.CreateImage("BrushRing",circle, new Color(.71f,.76f,.69f));
         UIBuildUtils.Stretch(墨圈.rectTransform); 墨圈.sprite=sprite; 墨圈.raycastTarget=false;
@@ -60,7 +60,7 @@ public class UIInkRealmPage : MonoBehaviour
         境界条.realmNameText.transform.SetParent(gongfa,false);
         Place(境界条.realmNameText,0,.81f,1,1,33,TextAnchor.MiddleCenter);
 
-        UIBuildUtils.Place(属性.transform as RectTransform,new Vector2(.40f,.38f),new Vector2(.87f,.94f),Vector2.zero,Vector2.zero);
+        UIBuildUtils.Place(属性.transform as RectTransform,new Vector2(.30f,.38f),new Vector2(.77f,.94f),Vector2.zero,Vector2.zero);
         属性滚动=属性.GetComponent<ScrollRect>();
         属性.rowHeight=36; 属性.fontSize=20;
         var layout=属性.container.GetComponent<VerticalLayoutGroup>(); if(layout!=null) layout.padding=new RectOffset(6,90,6,6);
