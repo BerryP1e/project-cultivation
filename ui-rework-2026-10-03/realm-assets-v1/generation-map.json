@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Game UI standalone ink brush ring texture, one single complete circular enso stroke starting at left moving clockwise, handmade Chinese cultivation ink wash aesthetic, organic varying thickness, strongest ink at left, dry brush white gaps near closing stroke, hollow interior completely transparent, outside completely transparent, only black ink stroke with naturally feathered alpha fringes. Centered square canvas, ring occupies 86 percent canvas diameter, thickness about 6 percent diameter, no paper, no scene, no text, no gold, no icons. Production PNG RGBA genuine alpha. This will be revealed clockwise by a shader, so create only the finished full circle.",
+  "source": "C:/Users/Rihyo/.codex/generated_images/01a100c9-a72a-7181-bb8d-2e11705180ee/exec-3f395b8a-a0d5-4529-9ebd-1dabad6d4088.png",
+  "asset": "source/fx-ink-circle.png",
+  "transparent_background": true,
+  "animation": "Full ring alpha image + native uGUI clockwise Radial360 reveal, .78 seconds. Continuous geometry replaces the suggested 12 raster frames."
+}

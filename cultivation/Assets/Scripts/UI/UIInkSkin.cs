@@ -223,6 +223,8 @@ public class UIInkSkin : MonoBehaviour
         刷新页签(r);
         UIInkNavigation.应用(r);
         UIInkBagPage.应用(r);
+        UIInkRealmPage.应用(r);
+        foreach(var scroll in r.GetComponentsInChildren<Scrollbar>(true)) InkUITheme.ScrollbarStyle(scroll);
     }
 
     /// <summary>内板（内容分区底板）—— 名字来自 `CharacterPanelBuilder` 的分区命名</summary>

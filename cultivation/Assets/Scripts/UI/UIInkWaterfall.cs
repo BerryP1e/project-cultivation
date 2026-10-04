@@ -39,12 +39,9 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         var area=viewport.GetComponent<Image>(); if(area==null) area=viewport.gameObject.AddComponent<Image>(); area.color=Color.clear; area.raycastTarget=true;
         if(scroll.verticalScrollbar==null) UIBuildUtils.AddVerticalScrollbar(scroll);
         scrollbar=scroll.verticalScrollbar; scroll.enabled=false;
+        InkUITheme.ScrollbarStyle(scrollbar);
         if(scrollbar!=null) {
             scrollbar.onValueChanged.RemoveListener(BarChanged); scrollbar.onValueChanged.AddListener(BarChanged);
-            var track=scrollbar.GetComponent<Image>();
-            if(track!=null) { track.sprite=InkUITheme.Load("Dynamic/fx-ink-blot"); track.type=Image.Type.Simple; track.color=new Color(.22f,.28f,.25f,.55f); }
-            var handle=scrollbar.handleRect.GetComponent<Image>();
-            if(handle!=null) { handle.sprite=InkUITheme.Load("Dynamic/nav-ink-blot-4"); handle.type=Image.Type.Simple; handle.color=new Color(.75f,.82f,.74f,.9f); }
         }
         foreach(var layout in content.GetComponents<Behaviour>())
             if(layout is LayoutGroup || layout is ContentSizeFitter) layout.enabled=false;

@@ -29,6 +29,8 @@ public class UIAttributeList : MonoBehaviour
 
     readonly List<GameObject> spawned = new List<GameObject>();
     bool clearedSerializedRows;
+    int nextRow;
+    bool reuseRows;
 
     void Start()
     {
@@ -45,12 +47,22 @@ public class UIAttributeList : MonoBehaviour
             clearedSerializedRows = true;
             foreach (Transform child in container)
             {
-                if (child.name != "Row") continue;
+                if (child.name != "Row" && !(GetComponentInParent<UIInkRealmPage>(true)!=null && child.name.StartsWith("Row_"))) continue;
                 child.gameObject.SetActive(false);
                 if (Application.isPlaying) Destroy(child.gameObject); else DestroyImmediate(child.gameObject);
             }
         }
 
+        bool inkReuse = GetComponentInParent<UIInkRealmPage>(true) != null;
+        if(inkReuse && !reuseRows) foreach(Transform child in container) {
+            if(spawned.Contains(child.gameObject))continue;
+            child.gameObject.SetActive(false);
+            if(Application.isPlaying)Destroy(child.gameObject);else DestroyImmediate(child.gameObject);
+        }
+        reuseRows = inkReuse;
+        nextRow = 0;
+        // 墨圈页保留行对象，数字插值不因数据刷新而中断。
+        if (!reuseRows) {
         // 编辑态必须用 DestroyImmediate，否则会报 "Destroy may not be called from edit mode"
         foreach (var go in spawned)
         {
@@ -58,6 +70,7 @@ public class UIAttributeList : MonoBehaviour
             if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
         }
         spawned.Clear();
+        }
 
         // 境界 / 神识 / 灵根 / 吐纳速度 是 lore 里独立于 26 项战斗属性的字段，先列出来
         if (source != null)
@@ -77,10 +90,19 @@ public class UIAttributeList : MonoBehaviour
             if (hideZero && Mathf.Approximately(value, 0f)) continue;
             AddRow(AttributeUtil.GetDisplayName(type), AttributeUtil.Format(type, value));
         }
+        if(reuseRows) for(int i=nextRow;i<spawned.Count;i++) if(spawned[i]!=null) spawned[i].SetActive(false);
     }
 
     void AddRow(string label, string value)
     {
+        if(reuseRows && nextRow<spawned.Count && spawned[nextRow]!=null) {
+            var existing=spawned[nextRow++]; existing.SetActive(true); existing.name="Row_"+label;
+            existing.transform.Find("Name").GetComponent<Text>().text=label;
+            existing.transform.Find("Value").GetComponent<Text>().text=value;
+            foreach(var text in existing.GetComponentsInChildren<Text>()) text.fontSize=fontSize;
+            var element=existing.GetComponent<LayoutElement>(); element.minHeight=element.preferredHeight=rowHeight;
+            return;
+        }
         var row = UIBuildUtils.CreateRect("Row_" + label, container);
         var le = row.gameObject.AddComponent<LayoutElement>();
         le.minHeight = rowHeight;
@@ -99,6 +121,7 @@ public class UIAttributeList : MonoBehaviour
         valueText.rectTransform.offsetMax = new Vector2(-4f, 0f);
 
         spawned.Add(row.gameObject);
+        nextRow++;
     }
 
     static string FormatRoot(SpiritualRoot root)

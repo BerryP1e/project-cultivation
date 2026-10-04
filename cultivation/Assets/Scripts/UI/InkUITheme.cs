@@ -127,8 +127,7 @@ public static class InkUITheme
         scroll.scrollSensitivity = 42;
         scroll.inertia = true;
         scroll.decelerationRate = .135f;
-        Image(bar.GetComponent<Image>(), "SkillsPage/status/scroll-track");
-        Image(bar.handleRect.GetComponent<Image>(), "SkillsPage/status/scroll-thumb");
+        ScrollbarStyle(bar);
         if (scroll.viewport != null)
         {
             var hit = scroll.viewport.GetComponent<Image>();
@@ -138,5 +137,14 @@ public static class InkUITheme
         if (scroll.content != null)
             foreach (var graphic in scroll.content.GetComponentsInChildren<Graphic>(true))
                 if (graphic.GetComponent<UIInkScrollFade>() == null) graphic.gameObject.AddComponent<UIInkScrollFade>();
+    }
+    public static void ScrollbarStyle(Scrollbar bar)
+    {
+        if(bar==null)return;
+        var track=bar.GetComponent<Image>();
+        if(track!=null) {track.sprite=Load("Dynamic/fx-ink-blot");track.type=UnityEngine.UI.Image.Type.Simple;track.color=new Color(.22f,.28f,.25f,.55f);}
+        var thumb=bar.handleRect!=null ? bar.handleRect.GetComponent<Image>() : null;
+        if(thumb!=null) {thumb.sprite=Load("Dynamic/nav-ink-blot-4");thumb.type=UnityEngine.UI.Image.Type.Simple;thumb.color=new Color(.75f,.82f,.74f,.9f);}
+        bar.transition=Selectable.Transition.None;
     }
 }
