@@ -1,0 +1,105 @@
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+L("===== 1) 玩家 =====");
+var player = GameObject.Find("Player");
+if (player == null) L("找不到名为 Player 的对象");
+else
+{
+    var anims = player.GetComponentsInChildren<Animator>(true);
+    L("Player 上的 Animator 数 = " + anims.Length);
+    foreach (var a in anims)
+    {
+        string av = a.avatar == null ? "null" : (a.avatar.name + " human=" + a.avatar.isHuman + " valid=" + a.avatar.isValid);
+        string ct = a.runtimeAnimatorController == null ? "null" : a.runtimeAnimatorController.name;
+        L("  [" + a.gameObject.name + "] avatar=" + av + " controller=" + ct);
+    }
+    var all = player.GetComponentsInChildren<Transform>(true);
+    L("Player 子节点总数 = " + all.Length);
+    var nm = new System.Collections.Generic.List<string>();
+    foreach (var t in all) nm.Add(t.name);
+    L("节点名: " + string.Join(",", nm.ToArray()));
+    foreach (var smr in player.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+    {
+        L("蒙皮 " + smr.name + " mesh=" + (smr.sharedMesh == null ? "null" : smr.sharedMesh.name)
+          + " rootBone=" + (smr.rootBone == null ? "null" : smr.rootBone.name) + " bones=" + smr.bones.Length);
+    }
+}
+
+L("");
+L("===== 2) 四个攻击 FBX + 两个模型 FBX =====");
+string[] fbx = new string[] {
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack1.FBX",
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack2.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack1.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack2.FBX",
+    "Assets/resources/NPC/Human/ChangDaoNv/ChangDaoNv.FBX",
+    "Assets/resources/NPC/Human/YangJian/YangJian.FBX",
+};
+foreach (var p in fbx)
+{
+    var imp = UnityEditor.AssetImporter.GetAtPath(p) as UnityEditor.ModelImporter;
+    L("--- " + p);
+    L("    type=" + (imp == null ? "拿不到 importer" : imp.animationType.ToString())
+      + " avatarSetup=" + (imp == null ? "-" : imp.avatarSetup.ToString())
+      + " 根节点=" + (imp == null ? "-" : imp.transformPaths.Length.ToString()));
+    foreach (var o in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(p))
+    {
+        var av = o as Avatar;
+        if (av != null) L("    Avatar: " + av.name + " human=" + av.isHuman + " valid=" + av.isValid
+                          + " 人骨=" + (av.humanDescription.human == null ? 0 : av.humanDescription.human.Length));
+        var c = o as AnimationClip;
+        if (c != null)
+            L("    Clip: " + c.name + " len=" + c.length.ToString("F2")
+              + " humanMotion=" + c.humanMotion + " legacy=" + c.legacy
+              + " loop=" + UnityEditor.AnimationUtility.GetAnimationClipSettings(c).loopTime
+              + " 曲线=" + UnityEditor.AnimationUtility.GetCurveBindings(c).Length);
+    }
+}
+
+L("");
+L("===== 3) YangJian_03.prefab 的渲染体（找武器） =====");
+var yj = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/NPC/Human/YangJian/YangJian_03.prefab");
+if (yj == null) L("prefab 加载失败");
+else
+{
+    L("prefab 子节点总数 = " + yj.GetComponentsInChildren<Transform>(true).Length);
+    foreach (var smr in yj.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        L("  蒙皮 " + smr.name + " mesh=" + (smr.sharedMesh == null ? "null" : smr.sharedMesh.name)
+          + " rootBone=" + (smr.rootBone == null ? "null" : smr.rootBone.name)
+          + " 父=" + smr.transform.parent.name);
+    foreach (var mf in yj.GetComponentsInChildren<MeshFilter>(true))
+        L("  静态网格 " + mf.name + " mesh=" + (mf.sharedMesh == null ? "null" : mf.sharedMesh.name)
+          + " 父=" + mf.transform.parent.name
+          + " 材质=" + (mf.GetComponent<MeshRenderer>() == null || mf.GetComponent<MeshRenderer>().sharedMaterial == null ? "null" : mf.GetComponent<MeshRenderer>().sharedMaterial.name));
+}
+
+L("");
+L("===== 4) 凭虚御风片段 =====");
+foreach (var g in UnityEditor.AssetDatabase.FindAssets("t:AnimationClip", new string[] { "Assets/Animations/凭虚御风" }))
+{
+    var p = UnityEditor.AssetDatabase.GUIDToAssetPath(g);
+    var c = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(p);
+    if (c == null) continue;
+    L("  " + p + " len=" + c.length.ToString("F2") + " humanMotion=" + c.humanMotion
+      + " 曲线=" + UnityEditor.AnimationUtility.GetCurveBindings(c).Length);
+}
+
+L("");
+L("===== 5) PlayerLocomotion.controller =====");
+var rc = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");
+var ac = rc as UnityEditor.Animations.AnimatorController;
+if (ac == null) L("拿不到 AnimatorController");
+else
+{
+    L("层: ");
+    foreach (var ly in ac.layers)
+        L("  " + ly.name + " 权重=" + ly.defaultWeight
+          + " 遮罩=" + (ly.avatarMask == null ? "null" : ly.avatarMask.name)
+          + " IKPass=" + ly.iKPass + " blending=" + ly.blendingMode);
+    if (ac.layers.Length > 0 && ac.layers[0].stateMachine != null)
+        foreach (var st in ac.layers[0].stateMachine.states)
+            L("  状态 " + st.state.name + " clip=" + (st.state.motion == null ? "null" : st.state.motion.name)
+              + " speed=" + st.state.speed);
+}
+return sb.ToString();

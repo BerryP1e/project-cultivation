@@ -27,15 +27,51 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const DEFAULT_ASAR = 'C:\\Users\\Rihyo\\AppData\\Local\\Programs\\DSH Desktop\\resources\\app.asar';
 const TARGET = '/node_modules/@deepseek-ai/dsh-tools/lib/types/json-schema.js';
 
 const toolsFile = process.argv[2];
-const asarPath = process.argv[3] || DEFAULT_ASAR;
+const 指定应用根 = process.argv[3] || process.env.DSH_APP_PATH || '';
 
 if (!toolsFile) {
-    console.error('用法: node validate.mjs <toolslist.json> [app.asar 路径]');
+    console.error('用法: node validate.mjs <toolslist.json> [DSH 应用根]');
+    console.error('  DSH 应用根 = app.asar 文件，或解包安装的 resources/app 目录');
+    console.error('  不传则自动找；也可用环境变量 DSH_APP_PATH 指定');
     process.exit(2);
+}
+
+// ⚠️ 别再写死安装路径（第一台机器的 `%LOCALAPPDATA%\Programs\DSH Desktop\resources\app.asar`
+// 在这台机器上不存在 —— 本机 DSH 是**解包版** `D:\dsh\DSH NEXT\resources\app\`，没有 asar）。
+// 所以：显式参数 > DSH_APP_PATH > 自动探测；两种形态（asar 文件 / 解包目录）都认。
+const 应用根候选 = (() => {
+    const 出 = [];
+    const 加 = (p) => { if (p && !出.includes(p)) 出.push(p); };
+    if (指定应用根) 加(指定应用根);
+
+    const 资源根 = [];
+    const localPrograms = path.join(process.env.LOCALAPPDATA || '', 'Programs');
+    try {
+        for (const d of fs.readdirSync(localPrograms)) {
+            if (/^dsh/i.test(d)) 资源根.push(path.join(localPrograms, d, 'resources'));
+        }
+    } catch { /* 没有这个目录就跳过 */ }
+    for (const d of ['DSH Desktop', 'DSH NEXT', 'DSH Next']) 资源根.push(path.join(localPrograms, d, 'resources'));
+    资源根.push('C:\\Program Files\\DSH Desktop\\resources');
+    资源根.push('D:\\dsh\\DSH NEXT\\resources');
+
+    for (const r of 资源根) { 加(path.join(r, 'app.asar')); 加(path.join(r, 'app')); }
+    return 出;
+})();
+
+function 定位应用() {
+    for (const p of 应用根候选) {
+        try {
+            if (!fs.existsSync(p)) continue;
+            if (fs.statSync(p).isFile()) return { 形态: 'asar', 路径: p };
+            const 内部 = path.join(p, ...TARGET.split('/').filter(Boolean));
+            if (fs.existsSync(内部)) return { 形态: '目录', 路径: p, 内部 };
+        } catch { /* 没权限/坏路径，继续找下一个 */ }
+    }
+    return null;
 }
 
 // ---------------------------------------------------------- 从 asar 现取校验器
@@ -88,9 +124,11 @@ export function isJsonValue(value, seen = new Set()) {
 }
 `;
 
-async function loadValidator(asar) {
-    const source = readFromAsar(asar, TARGET);
-    if (!source) throw new Error(`asar 里找不到 ${TARGET}（DSH 版本变了？）`);
+async function loadValidator(应用) {
+    const source = 应用.形态 === 'asar'
+        ? readFromAsar(应用.路径, TARGET)
+        : fs.readFileSync(应用.内部, 'utf8');
+    if (!source) throw new Error(`${应用.路径} 里找不到 ${TARGET}（DSH 版本变了？）`);
 
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-jsonschema-'));
     const patched = source
@@ -105,9 +143,18 @@ async function loadValidator(asar) {
 
 // ------------------------------------------------------------------ 跑校验
 
+const 应用 = 定位应用();
+if (!应用) {
+    console.error('找不到 DSH 应用（校验器要从它里面现取）。找过这些位置：');
+    for (const p of 应用根候选) console.error('  ' + p);
+    console.error('请显式指定：node validate.mjs <toolslist.json> <app.asar 或 resources/app 目录>');
+    process.exit(3);
+}
+console.log(`校验器来源：${应用.形态} —— ${应用.路径}`);
+
 let mod;
 try {
-    mod = await loadValidator(asarPath);
+    mod = await loadValidator(应用);
 } catch (e) {
     console.error(`无法加载校验器: ${e.message}`);
     process.exit(3);

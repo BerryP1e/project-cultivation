@@ -1,0 +1,97 @@
+// 验收烘焙结果：在玩家骨架上采样，脚应≈御风 Idle、手/武器≈纯攻击片段；并出图
+const string 武器Prefab路径 = "Assets/resources/Weapons/八九玄功_三尖两刃刀.prefab";
+const string 御风Idle路径 = "Assets/Animations/凭虚御风/御风_Idle.anim";
+const string 烘焙目录 = "Assets/Animations/八九玄功";
+const float 缩放 = 0.4911f;
+string[] 名表 = new string[] { "长刀女_Attack1", "长刀女_Attack2", "杨戬_Attack1", "杨戬_Attack2" };
+string[] 源路径 = new string[] {
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack1.FBX",
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack2.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack1.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack2.FBX" };
+
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+Transform 找(GameObject 根, string 名)
+{
+    foreach (var t in 根.GetComponentsInChildren<Transform>(true)) if (t.name == 名) return t;
+    return null;
+}
+string 截图目录 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "screenshots");
+System.Action<GameObject, Vector3, string> 拍 = (目标, 偏移, 文件名) =>
+{
+    var camGo = new GameObject("临时相机");
+    var cam = camGo.AddComponent<Camera>();
+    cam.fieldOfView = 46f; cam.nearClipPlane = 0.05f; cam.farClipPlane = 200f;
+    cam.clearFlags = CameraClearFlags.SolidColor;
+    cam.backgroundColor = new Color(0.13f, 0.14f, 0.16f, 1f);
+    camGo.transform.position = 目标.transform.position + 偏移;
+    camGo.transform.LookAt(目标.transform.position + new Vector3(0f, 1.7f, 0f));
+    var 灯Go = new GameObject("临时灯");
+    var 灯 = 灯Go.AddComponent<Light>();
+    灯.type = LightType.Directional; 灯.intensity = 1.45f;
+    灯Go.transform.rotation = Quaternion.Euler(45f, 40f, 0f);
+    var rt = new RenderTexture(720, 940, 24);
+    cam.targetTexture = rt; cam.Render();
+    RenderTexture.active = rt;
+    var tex = new Texture2D(720, 940, TextureFormat.RGB24, false);
+    tex.ReadPixels(new Rect(0f, 0f, 720f, 940f), 0, 0); tex.Apply();
+    RenderTexture.active = null; cam.targetTexture = null;
+    System.IO.File.WriteAllBytes(System.IO.Path.Combine(截图目录, 文件名), tex.EncodeToPNG());
+    UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex);
+    UnityEngine.Object.DestroyImmediate(camGo); UnityEngine.Object.DestroyImmediate(灯Go);
+};
+
+var 副本 = UnityEngine.Object.Instantiate(GameObject.Find("Player"));
+副本.name = "临时验证_玩家";
+副本.transform.position = new Vector3(0f, -500f, 0f);
+副本.transform.rotation = Quaternion.identity;
+foreach (var c in 副本.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+var an = 副本.GetComponentInChildren<Animator>(true);
+an.runtimeAnimatorController = null;
+foreach (var s in 副本.GetComponentsInChildren<SkinnedMeshRenderer>(true)) s.forceMatrixRecalculationPerRender = true;
+var 手 = 找(副本, "R_Hand");
+var 左踝 = 找(副本, "L_Foot"); var 右踝 = 找(副本, "R_Foot");
+var 头 = 找(副本, "Head");
+var 武器 = UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(武器Prefab路径));
+武器.transform.SetParent(手, false);
+武器.transform.localPosition = Vector3.zero;
+武器.transform.localRotation = Quaternion.identity;
+武器.transform.localScale = Vector3.one * 缩放;
+var 武器骨 = 找(武器, "Bone01");
+武器.GetComponentInChildren<SkinnedMeshRenderer>().forceMatrixRecalculationPerRender = true;
+
+var 御风 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(御风Idle路径);
+L("验收口径：脚（L_Foot/R_Foot）应≈御风 Idle 同刻；手与武器骨应≈纯攻击片段同刻");
+L("");
+for (int i = 0; i < 名表.Length; i++)
+{
+    var 新 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(烘焙目录 + "/" + 名表[i] + "_御风.anim");
+    var 攻 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(源路径[i]);
+    float t = 新.length * 0.5f;
+
+    新.SampleAnimation(an.gameObject, t);
+    var 新左 = 左踝.position; var 新右 = 右踝.position; var 新手 = 手.position; var 新骨 = 武器骨.position; var 新头 = 头.position;
+
+    御风.SampleAnimation(an.gameObject, Mathf.Repeat(t, 御风.length));
+    var 御左 = 左踝.position; var 御右 = 右踝.position; var 御头 = 头.position;
+
+    攻.SampleAnimation(an.gameObject, t);
+    var 攻手 = 手.position; var 攻骨 = 武器骨.position; var 攻头 = 头.position;
+
+    L("--- " + 名表[i] + "_御风 @" + t.ToString("F2") + "s");
+    L("   脚对齐御风：左踝差=" + Vector3.Distance(新左, 御左).ToString("F3") + " 米，右踝差=" + Vector3.Distance(新右, 御右).ToString("F3") + " 米"
+      + (Vector3.Distance(新左, 御左) < 0.02f && Vector3.Distance(新右, 御右) < 0.02f ? " ✅" : " ⚠️"));
+    L("   上半身对攻击：手差=" + Vector3.Distance(新手, 攻手).ToString("F3") + " 米，武器骨差=" + Vector3.Distance(新骨, 攻骨).ToString("F3") + " 米"
+      + "（头位置：新=" + 新头.y.ToString("F2") + " 攻击=" + 攻头.y.ToString("F2") + " 御风=" + 御头.y.ToString("F2") + "）");
+
+    新.SampleAnimation(an.gameObject, t);
+    拍(副本, new Vector3(-5.6f, 2.9f, -6.9f), "八九_" + 名表[i] + "_御风.png");
+}
+御风.SampleAnimation(an.gameObject, 0.6f);
+拍(副本, new Vector3(-5.6f, 2.9f, -6.9f), "八九_参照_纯御风Idle.png");
+UnityEngine.Object.DestroyImmediate(武器);
+UnityEngine.Object.DestroyImmediate(副本);
+L("");
+L("已出图：八九_长刀女_Attack1/2_御风.png、八九_杨戬_Attack1/2_御风.png、八九_参照_纯御风Idle.png");
+return sb.ToString();

@@ -1,0 +1,68 @@
+// 从 YangJian_03.prefab 里抽出「三尖两刃刀」为可复用的独立 prefab
+// 抽出内容 = Bone01（武器骨骼，带握持偏移）+ YangJian_03_Weapon（蒙皮网格）
+// 只读源 prefab，不碰场景；产出一个新 prefab 资产。
+const string 源Prefab = "Assets/resources/NPC/Human/YangJian/YangJian_03.prefab";
+const string 出战 = "Assets/resources/Weapons/八九玄功_三尖两刃刀.prefab";
+
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+var 源 = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(源Prefab);
+if (源 == null) { L("找不到源 prefab"); return sb.ToString(); }
+
+var 实例 = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(源);
+Transform bone01 = null, 蒙皮 = null;
+foreach (var t in 实例.GetComponentsInChildren<Transform>(true))
+    if (t.name == "Bone01" && bone01 == null) bone01 = t;
+foreach (var s in 实例.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+    if (s.name == "YangJian_03_Weapon") 蒙皮 = s.transform;
+if (bone01 == null || 蒙皮 == null) { L("源里找不到 Bone01 或武器蒙皮"); Object.DestroyImmediate(实例); return sb.ToString(); }
+
+var 骨本地位 = bone01.localPosition; var 骨本地转 = bone01.localRotation; var 骨本地缩 = bone01.localScale;
+L("源 Bone01 相对父[" + bone01.parent.name + "] 本地: pos=" + 骨本地位.ToString("F4") + " rot=" + 骨本地转.eulerAngles.ToString("F1") + " scale=" + 骨本地缩.ToString("F4"));
+
+// 新建独立 prefab 的层级
+var 新根 = new GameObject("八九玄功_三尖两刃刀");
+var 新骨 = UnityEngine.Object.Instantiate(bone01.gameObject);
+新骨.name = "Bone01";
+新骨.transform.SetParent(新根.transform, false);
+新骨.transform.localPosition = 骨本地位;
+新骨.transform.localRotation = 骨本地转;
+新骨.transform.localScale = 骨本地缩;
+
+var 新蒙皮 = UnityEngine.Object.Instantiate(蒙皮.gameObject);
+新蒙皮.name = "YangJian_03_Weapon";
+新蒙皮.transform.SetParent(新根.transform, false);
+新蒙皮.transform.localPosition = Vector3.zero;
+新蒙皮.transform.localRotation = Quaternion.identity;
+新蒙皮.transform.localScale = Vector3.one;
+
+var smr = 新蒙皮.GetComponent<SkinnedMeshRenderer>();
+smr.bones = new Transform[] { 新骨.transform };
+smr.rootBone = 新骨.transform;
+L("新 prefab：骨骼=" + 新骨.name + " 蒙皮=" + 新蒙皮.name + " 网格=" + (smr.sharedMesh == null ? "null" : smr.sharedMesh.name)
+  + " 材质=" + (smr.sharedMaterial == null ? "null" : smr.sharedMaterial.name)
+  + " 蒙皮本地尺寸=" + smr.localBounds.size.ToString("F4"));
+
+UnityEditor.PrefabUtility.SaveAsPrefabAsset(新根, 出战);
+UnityEditor.AssetDatabase.SaveAssets();
+UnityEditor.AssetDatabase.Refresh();
+UnityEngine.Object.DestroyImmediate(新根);
+UnityEngine.Object.DestroyImmediate(实例);
+
+var 复查 = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(出战);
+L("产出复查：" + (复查 == null ? "写入失败" : 出战 + " 子节点=" + 复查.GetComponentsInChildren<Transform>(true).Length
+  + " 蒙皮=" + 复查.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length));
+
+// 玩家的尺度与根位移开关（决定武器挂上去有多大、会不会被 root motion 带走）
+var player = GameObject.Find("Player");
+if (player == null) L("场景里没有 Player");
+else
+{
+    foreach (var t in player.GetComponentsInChildren<Transform>(true))
+        if (t.name == "Player_Visual" || t.name == "Armature" || t.name == "BoneRoot" || t.name == "R_Hand")
+            L("玩家 " + t.name + " lossyScale=" + t.lossyScale.ToString("F5") + " 世界pos=" + t.position.ToString("F3"));
+    var an = player.GetComponentInChildren<Animator>(true);
+    if (an != null) L("玩家 Animator：applyRootMotion=" + an.applyRootMotion + " updateMode=" + an.updateMode + " cullingMode=" + an.cullingMode);
+}
+return sb.ToString();

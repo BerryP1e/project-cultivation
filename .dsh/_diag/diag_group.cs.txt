@@ -1,0 +1,88 @@
+// 逐组把上半身肌肉从"御风 Idle"换成"攻击"，看哪一组会带动 Hip（Hips 骨）的本地旋转
+const string 御风Idle路径 = "Assets/Animations/凭虚御风/御风_Idle.anim";
+const string 攻路径 = "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack1.FBX";
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+System.Collections.Generic.Dictionary<string, AnimationCurve> 读(AnimationClip c)
+{
+    var d = new System.Collections.Generic.Dictionary<string, AnimationCurve>();
+    foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(c))
+        if (b.path == "") { var cu = UnityEditor.AnimationUtility.GetEditorCurve(c, b); if (cu != null) d[b.propertyName] = cu; }
+    return d;
+}
+var 御 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(御风Idle路径);
+var 攻 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(攻路径);
+var 御曲 = 读(御); var 攻曲 = 读(攻);
+
+L("=== ① 根曲线的绑定类型 ===");
+foreach (var clip in new AnimationClip[] { 御, 攻 })
+{
+    var 行 = new System.Collections.Generic.List<string>();
+    foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(clip))
+        if (b.path == "" && (b.propertyName == "RootQ.x" || b.propertyName == "RootT.y" || b.propertyName == "Spine Front-Back"))
+            行.Add(b.propertyName + "→" + b.type.Name);
+    L("   " + clip.name + "：" + string.Join("；", 行.ToArray()));
+}
+
+var 副本 = UnityEngine.Object.Instantiate(GameObject.Find("Player"));
+副本.transform.position = new Vector3(0f, -500f, 0f);
+foreach (var c in 副本.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+var an = 副本.GetComponentInChildren<Animator>(true);
+an.runtimeAnimatorController = null;
+Transform 髋 = null;
+foreach (var t in 副本.GetComponentsInChildren<Transform>(true)) if (t.name == "Hip") 髋 = t;
+float t = 0.833f;
+
+System.Func<string, string, bool> 属于组 = (mn, 组) =>
+{
+    if (组 == "脊椎组(Spine/Chest/UpperChest)") return mn.StartsWith("Spine") || mn.StartsWith("Chest") || mn.StartsWith("UpperChest");
+    if (组 == "颈头组(Neck/Head)") return mn.StartsWith("Neck") || mn.StartsWith("Head") || mn.Contains("Jaw") || mn.Contains("Eye");
+    if (组 == "左臂组") return mn.StartsWith("Left Shoulder") || mn.StartsWith("Left Arm") || mn.StartsWith("Left Forearm") || mn.StartsWith("Left Hand");
+    if (组 == "右臂组") return mn.StartsWith("Right Shoulder") || mn.StartsWith("Right Arm") || mn.StartsWith("Right Forearm") || mn.StartsWith("Right Hand");
+    if (组 == "手指组") return mn.StartsWith("Left Thumb") || mn.StartsWith("Left Index") || mn.StartsWith("Left Middle") || mn.StartsWith("Left Ring") || mn.StartsWith("Left Little")
+                                || mn.StartsWith("Right Thumb") || mn.StartsWith("Right Index") || mn.StartsWith("Right Middle") || mn.StartsWith("Right Ring") || mn.StartsWith("Right Little");
+    return false;
+};
+
+System.Func<string, AnimationClip> 造 = (组) =>
+{
+    var clip = new AnimationClip { name = "测试_" + 组, frameRate = 30 };
+    for (int m = 0; m < HumanTrait.MuscleCount; m++)
+    {
+        string mn = HumanTrait.MuscleName[m];
+        bool 取攻 = 属于组(mn, 组);
+        if (!御曲.ContainsKey(mn) && !攻曲.ContainsKey(mn)) continue;
+        var 曲线 = new AnimationCurve();
+        for (int f = 0; f <= 30; f++)
+        {
+            float tt = 1.67f * f / 30f;
+            float v = 取攻 && 攻曲.ContainsKey(mn) ? 攻曲[mn].Evaluate(tt)
+                    : (御曲.ContainsKey(mn) ? 御曲[mn].Evaluate(Mathf.Repeat(tt, 御.length)) : 0f);
+            曲线.AddKey(new Keyframe(tt, v));
+        }
+        UnityEditor.AnimationUtility.SetEditorCurve(clip, UnityEditor.EditorCurveBinding.FloatCurve("", typeof(Animator), mn), 曲线);
+    }
+    foreach (var p in new string[] { "RootT.x", "RootT.y", "RootT.z", "RootQ.x", "RootQ.y", "RootQ.z", "RootQ.w" })
+    {
+        if (!御曲.ContainsKey(p)) continue;
+        var 曲线 = new AnimationCurve();
+        for (int f = 0; f <= 30; f++) { float tt = 1.67f * f / 30f; 曲线.AddKey(new Keyframe(tt, 御曲[p].Evaluate(Mathf.Repeat(tt, 御.length)))); }
+        UnityEditor.AnimationUtility.SetEditorCurve(clip, UnityEditor.EditorCurveBinding.FloatCurve("", typeof(Animator), p), 曲线);
+    }
+    return clip;
+};
+
+御.SampleAnimation(an.gameObject, Mathf.Repeat(t, 御.length));
+L("");
+L("=== ② 逐组替换后的 Hip 本地旋转（基准=纯御风 Idle：" + 髋.localRotation.eulerAngles.ToString("F2") + "）===");
+string[] 组 = new string[] { "脊椎组(Spine/Chest/UpperChest)", "颈头组(Neck/Head)", "左臂组", "右臂组", "手指组" };
+foreach (var g in 组)
+{
+    var clip = 造(g);
+    clip.SampleAnimation(an.gameObject, t);
+    L("   " + g.PadRight(28) + " Hip=" + 髋.localRotation.eulerAngles.ToString("F2"));
+    UnityEngine.Object.DestroyImmediate(clip);
+}
+UnityEngine.Object.DestroyImmediate(副本);
+return sb.ToString();

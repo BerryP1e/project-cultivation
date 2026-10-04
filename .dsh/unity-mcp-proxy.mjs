@@ -327,39 +327,94 @@ if (argv[0] === '--transform' || argv[0] === '--selftest') {
 
 // ---------------------------------------------------------------- 进程接线
 
+// ⚠️ 启动竞态（2026-10-04 实测）：
+//   DSH Desktop 比编辑器先起来时，codely 找不到 <工程>/Temp/.com-unity-codely.json，
+//   打印一句 `error: Unity config file .com-unity-codely.json not found from project path`
+//   就退出；harness 重试几次后把 mcp-unity 永久标成 disconnected，本会话再也拿不到
+//   mcp__unity__* 工具，只能重启 DSH Desktop。日志实证见 docs/ai/踩坑总库 F9。
+//
+//   所以这里分「启动阶段 / 服务中」两种退出：
+//     - 启动阶段（还没向上产出过任何一行）退出 ⇒ 记为"编辑器还没起来"，等待后重试，
+//       harness 那条 initialize 先缓存下来，重试成功后原样补发（不会丢握手）。
+//     - 已经开始服务后退出 ⇒ 照旧原样退出（如实上报，不掩盖真故障）。
 const CODELY = argv[0] || DEFAULT_CODELY;
 const PROJECT = argv[1] || DEFAULT_PROJECT;
 
-log(`spawning: ${CODELY} serve unity-mcp --stdio --unity-project-path ${PROJECT}`);
+const PORT_FILE = pathJoin(PROJECT, 'Temp', '.com-unity-codely.json');
+const RETRY_MS = Number(process.env.UNITY_MCP_RETRY_MS || 3000);
+const WAIT_MS = Number(process.env.UNITY_MCP_WAIT_MS || 10 * 60 * 1000); // 启动阶段最多等这么久
+const WAIT_UNTIL = Date.now() + WAIT_MS;
 
-const child = spawn(
-    CODELY,
-    ['serve', 'unity-mcp', '--stdio', '--unity-project-path', PROJECT],
-    { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true },
-);
+let child = null;
+let 启动阶段 = true;   // 还没向上产出过任何一行 = 还在启动
+let 收尾中 = false;    // 'error' 与 'exit' 可能都触发，防重复重试
+let 待发 = [];         // 启动阶段 harness 发来的消息，重试成功后补发
 
-child.on('error', (e) => { log(`failed to spawn codely: ${e.message}`); process.exit(3); });
-child.on('exit', (code, sig) => { log(`codely exited (code=${code} signal=${sig})`); process.exit(code === null ? 0 : code); });
+function 起上游() {
+    log(`spawning: ${CODELY} serve unity-mcp --stdio --unity-project-path ${PROJECT}`);
+    if (!fs.existsSync(PORT_FILE)) log(`端口文件还没出现：${PORT_FILE}（编辑器没开？边等边重试）`);
 
-// 上游 → harness（唯一改写点）
-readline.createInterface({ input: child.stdout }).on('line', (line) => {
-    const t = line.trim();
-    if (!t) return;
-    let msg;
-    try { msg = JSON.parse(t); } catch { process.stdout.write(line + '\n'); return; }
-    process.stdout.write(JSON.stringify(rewrite(msg)) + '\n');
-});
+    收尾中 = false;
+    const 新child = spawn(
+        CODELY,
+        ['serve', 'unity-mcp', '--stdio', '--unity-project-path', PROJECT],
+        { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true },
+    );
+    child = 新child;
+
+    // 把启动阶段攒下的握手补发过去
+    for (const line of 待发) { try { 新child.stdin.write(line + '\n'); } catch { /* 又挂了，下一轮再说 */ } }
+    待发 = [];
+
+    // 上游 → harness（唯一改写点）
+    readline.createInterface({ input: 新child.stdout }).on('line', (line) => {
+        const t = line.trim();
+        if (!t) return;
+        启动阶段 = false; // 上游开始说话了 = 启动成功，此后退出就是真故障
+        let msg;
+        try { msg = JSON.parse(t); } catch { process.stdout.write(line + '\n'); return; }
+        process.stdout.write(JSON.stringify(rewrite(msg)) + '\n');
+    });
+
+    新child.on('error', (e) => { log(`failed to spawn codely: ${e.message}`); 收尾(3); });
+    新child.on('exit', (code, sig) => {
+        log(`codely exited (code=${code} signal=${sig})`);
+        收尾(code);
+    });
+}
+
+function 收尾(code) {
+    if (收尾中) return;
+    收尾中 = true;
+    try { if (child) child.stdin.end(); } catch { /* 已经没了 */ }
+
+    if (启动阶段 && Date.now() < WAIT_UNTIL) {
+        log(`上游没起来，${RETRY_MS}ms 后重试（等编辑器写出 ${PORT_FILE}）`);
+        child = null;
+        收尾中 = false;
+        setTimeout(起上游, RETRY_MS);
+        return;
+    }
+
+    process.exit(code === null || code === undefined ? 0 : code);
+}
+
+起上游();
 
 // harness → 上游
 const rl = readline.createInterface({ input: process.stdin });
 rl.on('line', (line) => {
     const t = line.trim();
     if (!t) return;
-    if (!child.stdin.writable) { log('upstream stdin closed, dropping message'); return; }
-    child.stdin.write(t + '\n');
+    if (child && child.stdin.writable) child.stdin.write(t + '\n');
+    else if (启动阶段) 待发.push(t); // 上游还没起来，先存着，重试成功后补发
+    else log('upstream stdin closed, dropping message');
 });
-rl.on('close', () => { try { child.stdin.end(); } catch { /* already gone */ } });
+rl.on('close', () => {
+    if (child) { try { child.stdin.end(); } catch { /* already gone */ } }
+    else process.exit(0); // 一直在等编辑器而 harness 收手了：跟着撤，不留孤儿进程
+});
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
-    process.on(sig, () => { try { child.kill(); } catch { /* already gone */ } process.exit(0); });
+    process.on(sig, () => { try { if (child) child.kill(); } catch { /* already gone */ } process.exit(0); });
 }

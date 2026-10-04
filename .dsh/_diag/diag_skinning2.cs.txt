@@ -1,0 +1,73 @@
+// 查证：Edit Mode 里手动 SampleAnimation 后，SkinnedMeshRenderer 的蒙皮矩阵要不要强制重算
+// 判据：同一机位、t=0 与 t=55% 两张图如果身体一模一样 ⇒ 渲染用的是旧矩阵
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+Transform 找(GameObject 根, string 名)
+{
+    foreach (var t in 根.GetComponentsInChildren<Transform>(true)) if (t.name == 名) return t;
+    return null;
+}
+string 截图目录 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "screenshots");
+
+System.Action<GameObject, Vector3, string> 拍 = (目标, 偏移, 文件名) =>
+{
+    var camGo = new GameObject("临时相机");
+    var cam = camGo.AddComponent<Camera>();
+    cam.fieldOfView = 50f; cam.nearClipPlane = 0.05f; cam.farClipPlane = 200f;
+    cam.clearFlags = CameraClearFlags.SolidColor;
+    cam.backgroundColor = new Color(0.13f, 0.14f, 0.16f, 1f);
+    camGo.transform.position = 目标.transform.position + 偏移;
+    camGo.transform.LookAt(目标.transform.position + new Vector3(0f, 1.6f, 0f));
+    var 灯Go = new GameObject("临时灯");
+    var 灯 = 灯Go.AddComponent<Light>();
+    灯.type = LightType.Directional; 灯.intensity = 1.45f;
+    灯Go.transform.rotation = Quaternion.Euler(45f, 40f, 0f);
+    var rt = new RenderTexture(680, 900, 24);
+    cam.targetTexture = rt; cam.Render();
+    RenderTexture.active = rt;
+    var tex = new Texture2D(680, 900, TextureFormat.RGB24, false);
+    tex.ReadPixels(new Rect(0f, 0f, 680f, 900f), 0, 0); tex.Apply();
+    RenderTexture.active = null; cam.targetTexture = null;
+    System.IO.File.WriteAllBytes(System.IO.Path.Combine(截图目录, 文件名), tex.EncodeToPNG());
+    UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex);
+    UnityEngine.Object.DestroyImmediate(camGo); UnityEngine.Object.DestroyImmediate(灯Go);
+};
+
+var 副本 = UnityEngine.Object.Instantiate(GameObject.Find("Player"));
+副本.transform.position = new Vector3(0f, -500f, 0f);
+副本.transform.rotation = Quaternion.identity;
+foreach (var c in 副本.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+var an = 副本.GetComponentInChildren<Animator>(true);
+an.runtimeAnimatorController = null;
+var 头 = 找(副本, "Head"); var 髋 = 找(副本, "Hip");
+
+var clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack2.FBX");
+
+// ---- 第一轮：不开强制重算 ----
+clip.SampleAnimation(an.gameObject, 0f);
+L("A轮(不强制重算) t=0：头=" + 头.position.ToString("F3") + " 髋=" + 髋.position.ToString("F3"));
+拍(副本, new Vector3(-5.2f, 2.6f, -6.4f), "查证_不强制_0.png");
+clip.SampleAnimation(an.gameObject, clip.length * 0.55f);
+L("A轮(不强制重算) t=55%：头=" + 头.position.ToString("F3") + " 髋=" + 髋.position.ToString("F3"));
+拍(副本, new Vector3(-5.2f, 2.6f, -6.4f), "查证_不强制_55.png");
+
+// ---- 第二轮：开强制重算 ----
+foreach (var s in 副本.GetComponentsInChildren<SkinnedMeshRenderer>(true)) s.forceMatrixRecalculationPerRender = true;
+clip.SampleAnimation(an.gameObject, 0f);
+L("B轮(强制重算) t=0：头=" + 头.position.ToString("F3") + " 髋=" + 髋.position.ToString("F3"));
+拍(副本, new Vector3(-5.2f, 2.6f, -6.4f), "查证_强制_0.png");
+clip.SampleAnimation(an.gameObject, clip.length * 0.55f);
+L("B轮(强制重算) t=55%：头=" + 头.position.ToString("F3") + " 髋=" + 髋.position.ToString("F3"));
+拍(副本, new Vector3(-5.2f, 2.6f, -6.4f), "查证_强制_55.png");
+
+// ---- 顺便看：这个片段的根位移到底有多大（是不是跳跃攻击） ----
+foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(clip))
+{
+    if (b.path != "" || !b.propertyName.StartsWith("RootT")) continue;
+    var c = UnityEditor.AnimationUtility.GetEditorCurve(clip, b);
+    float mn = float.MaxValue, mx = float.MinValue;
+    foreach (var k in c.keys) { mn = Mathf.Min(mn, k.value); mx = Mathf.Max(mx, k.value); }
+    L("根位移 " + b.propertyName + " 范围 " + mn.ToString("F3") + " ~ " + mx.ToString("F3"));
+}
+UnityEngine.Object.DestroyImmediate(副本);
+return sb.ToString();

@@ -1,0 +1,79 @@
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+
+var yj = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/NPC/Human/YangJian/YangJian_03.prefab");
+if (yj == null) { L("prefab 加载失败"); return sb.ToString(); }
+
+Transform bone01 = null; Transform weaponNode = null;
+foreach (var t in yj.GetComponentsInChildren<Transform>(true))
+    if (t.name == "Bone01" && bone01 == null) bone01 = t;
+foreach (var s in yj.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+    if (s.name == "YangJian_03_Weapon") weaponNode = s.transform;
+
+L("Bone01 找到 = " + (bone01 != null));
+L("武器网格节点 = " + (weaponNode == null ? "无" : weaponNode.name) + "，父 = " + (weaponNode == null ? "-" : weaponNode.parent.name));
+
+if (bone01 != null)
+{
+    var chain = new System.Collections.Generic.List<string>();
+    var t = bone01;
+    while (t != null)
+    {
+        chain.Add(t.name + "  localPos=" + t.localPosition.ToString("F4") + " localRot=" + t.localRotation.eulerAngles.ToString("F1") + " scale=" + t.localScale.ToString("F4"));
+        t = t.parent;
+    }
+    chain.Reverse();
+    L("Bone01 祖先链（根 → 自身）：");
+    foreach (var c in chain) L("    " + c);
+    var kids = new System.Collections.Generic.List<string>();
+    foreach (var k in bone01.GetComponentsInChildren<Transform>(true)) kids.Add(k.name);
+    L("Bone01 子树 " + kids.Count + " 个节点: " + string.Join(",", kids.ToArray()));
+}
+
+if (weaponNode != null)
+{
+    var smr = weaponNode.GetComponent<SkinnedMeshRenderer>();
+    var bn = new System.Collections.Generic.List<string>();
+    foreach (var b in smr.bones) bn.Add(b == null ? "null" : b.name);
+    L("武器蒙皮 bones(" + smr.bones.Length + ") = " + string.Join(",", bn.ToArray()));
+    L("武器蒙皮 网格=" + (smr.sharedMesh == null ? "null" : smr.sharedMesh.name)
+      + " 材质=" + (smr.sharedMaterial == null ? "null" : smr.sharedMaterial.name)
+      + " 顶点=" + (smr.sharedMesh == null ? 0 : smr.sharedMesh.vertexCount)
+      + " 本地包围盒中心=" + (smr.sharedMesh == null ? "-" : smr.sharedMesh.bounds.center.ToString("F3"))
+      + " 尺寸=" + (smr.sharedMesh == null ? "-" : smr.sharedMesh.bounds.size.ToString("F3")));
+}
+
+var player = GameObject.Find("Player");
+if (player == null) L("场景里没有 Player");
+else
+{
+    foreach (var t in player.GetComponentsInChildren<Transform>(true))
+        if (t.name == "R_Hand" || t.name == "L_Hand")
+            L("玩家 " + t.name + "：世界=" + t.position.ToString("F3") + " 世界旋转=" + t.rotation.eulerAngles.ToString("F1")
+              + " 本地=" + t.localPosition.ToString("F4") + " 本地旋转=" + t.localRotation.eulerAngles.ToString("F1"));
+}
+
+string[] clips = new string[] {
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack1.FBX",
+    "Assets/resources/NPC/Human/ChangDaoNv_Animation/ChangDaoNv@Attack2.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack1.FBX",
+    "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack2.FBX" };
+foreach (var p in clips)
+    foreach (var o in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(p))
+    {
+        var c = o as AnimationClip;
+        if (c == null || c.name.StartsWith("__preview__")) continue;
+        var parts = new System.Collections.Generic.List<string>();
+        foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(c))
+        {
+            if (b.path != "") continue;
+            if (!b.propertyName.StartsWith("RootT") && !b.propertyName.StartsWith("RootQ")) continue;
+            var cur = UnityEditor.AnimationUtility.GetEditorCurve(c, b);
+            if (cur == null) continue;
+            float mn = float.MaxValue, mx = float.MinValue;
+            foreach (var k in cur.keys) { mn = Mathf.Min(mn, k.value); mx = Mathf.Max(mx, k.value); }
+            parts.Add(b.propertyName + "[" + mn.ToString("F3") + "~" + mx.ToString("F3") + "]");
+        }
+        L("根曲线 " + c.name + "：" + string.Join(" ", parts.ToArray()));
+    }
+return sb.ToString();

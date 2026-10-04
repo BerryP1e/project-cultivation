@@ -1,0 +1,88 @@
+// 对照验证：同一个动作、同一个机位，A=杨戬本体（自带这把刀） B=玩家副本+挂上的刀
+// 目的：确认"武器相对手/身体的位置与朝向"和对位参照一致，而不是只在数值上一致
+const string 武器Prefab路径 = "Assets/resources/Weapons/八九玄功_三尖两刃刀.prefab";
+const string 杨戬Prefab = "Assets/resources/NPC/Human/YangJian/YangJian_03.prefab";
+const string 片段路径 = "Assets/resources/NPC/Human/YangJian_Animation/YangJian@Attack1.FBX";
+const float 采样比例 = 0.55f;
+
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+Transform 找(GameObject 根, string 名)
+{
+    foreach (var t in 根.GetComponentsInChildren<Transform>(true)) if (t.name == 名) return t;
+    return null;
+}
+string 截图目录 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "screenshots");
+
+System.Action<GameObject, Vector3, string> 拍 = (目标, 偏移, 文件名) =>
+{
+    var camGo = new GameObject("临时相机");
+    var cam = camGo.AddComponent<Camera>();
+    cam.fieldOfView = 40f; cam.nearClipPlane = 0.05f; cam.farClipPlane = 200f;
+    cam.clearFlags = CameraClearFlags.SolidColor;
+    cam.backgroundColor = new Color(0.13f, 0.14f, 0.16f, 1f);
+    camGo.transform.position = 目标.transform.position + 偏移;
+    camGo.transform.LookAt(目标.transform.position + new Vector3(0f, 1.0f, 0f));
+    var 灯Go = new GameObject("临时灯");
+    var 灯 = 灯Go.AddComponent<Light>();
+    灯.type = LightType.Directional; 灯.intensity = 1.4f; 灯.color = Color.white;
+    灯Go.transform.rotation = Quaternion.Euler(45f, 40f, 0f);
+    var rt = new RenderTexture(700, 900, 24);
+    cam.targetTexture = rt; cam.Render();
+    RenderTexture.active = rt;
+    var tex = new Texture2D(700, 900, TextureFormat.RGB24, false);
+    tex.ReadPixels(new Rect(0f, 0f, 700f, 900f), 0, 0); tex.Apply();
+    RenderTexture.active = null; cam.targetTexture = null;
+    System.IO.File.WriteAllBytes(System.IO.Path.Combine(截图目录, 文件名), tex.EncodeToPNG());
+    UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(tex);
+    UnityEngine.Object.DestroyImmediate(camGo); UnityEngine.Object.DestroyImmediate(灯Go);
+};
+
+var clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(片段路径);
+float t = clip.length * 采样比例;
+
+// ---------- A：杨戬本体 ----------
+var 杨戬 = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(杨戬Prefab));
+杨戬.transform.position = new Vector3(0f, -500f, 0f);
+杨戬.transform.rotation = Quaternion.identity;
+foreach (var c in 杨戬.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+var 杨戬Anim = 杨戬.GetComponentInChildren<Animator>(true);
+L("杨戬 Animator：avatar=" + (杨戬Anim == null || 杨戬Anim.avatar == null ? "null" : 杨戬Anim.avatar.name));
+if (杨戬Anim != null) 杨戬Anim.runtimeAnimatorController = null;
+var 杨戬目标 = 杨戬Anim == null ? 杨戬 : 杨戬Anim.gameObject;
+clip.SampleAnimation(杨戬目标, t);
+var 杨戬手 = 找(杨戬, "Bip01 R Hand");
+var 杨戬武器 = 找(杨戬, "YangJian_03_Weapon").GetComponent<SkinnedMeshRenderer>();
+L("A 杨戬本体 @" + (采样比例 * 100f) + "%：手=" + 杨戬手.position.ToString("F3")
+  + " 武器中心=" + 杨戬武器.bounds.center.ToString("F3") + " 最长=" + Mathf.Max(杨戬武器.bounds.size.x, Mathf.Max(杨戬武器.bounds.size.y, 杨戬武器.bounds.size.z)).ToString("F2"));
+拍(杨戬, new Vector3(0f, 1.5f, 4.6f), "对照_A杨戬_正面.png");
+拍(杨戬, new Vector3(4.6f, 1.5f, 0f), "对照_A杨戬_侧面.png");
+UnityEngine.Object.DestroyImmediate(杨戬);
+
+// ---------- B：玩家副本 + 挂上的刀 ----------
+var 真玩家 = GameObject.Find("Player");
+var 副本 = UnityEngine.Object.Instantiate(真玩家);
+副本.name = "临时验证_玩家";
+副本.transform.position = new Vector3(0f, -500f, 0f);
+副本.transform.rotation = Quaternion.identity;
+foreach (var c in 副本.GetComponentsInChildren<MonoBehaviour>(true)) c.enabled = false;
+var an = 副本.GetComponentInChildren<Animator>(true);
+an.runtimeAnimatorController = null;
+var 手 = 找(副本, "R_Hand");
+var 武器 = UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(武器Prefab路径));
+武器.transform.SetParent(手, false);
+武器.transform.localPosition = Vector3.zero;
+武器.transform.localRotation = Quaternion.identity;
+武器.transform.localScale = Vector3.one * 0.3846f;   // 第一版实测出来的"和杨戬手上一样长"的倍率
+clip.SampleAnimation(an.gameObject, t);
+var 武器Smr = 武器.GetComponentInChildren<SkinnedMeshRenderer>();
+L("B 玩家+刀 @" + (采样比例 * 100f) + "%：手=" + 手.position.ToString("F3")
+  + " 武器中心=" + 武器Smr.bounds.center.ToString("F3") + " 最长=" + Mathf.Max(武器Smr.bounds.size.x, Mathf.Max(武器Smr.bounds.size.y, 武器Smr.bounds.size.z)).ToString("F2"));
+L("B 武器中心相对手：世界=" + (武器Smr.bounds.center - 手.position).ToString("F3"));
+拍(副本, new Vector3(0f, 1.5f, 4.6f), "对照_B玩家_正面.png");
+拍(副本, new Vector3(4.6f, 1.5f, 0f), "对照_B玩家_侧面.png");
+拍(副本, new Vector3(3.2f, 1.6f, -3.2f), "对照_B玩家_斜后.png");
+UnityEngine.Object.DestroyImmediate(武器);
+UnityEngine.Object.DestroyImmediate(副本);
+L("已出图：对照_A杨戬_正面/侧面.png、对照_B玩家_正面/侧面/斜后.png");
+return sb.ToString();

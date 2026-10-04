@@ -1,0 +1,32 @@
+// 把根曲线逐条打出来：新片段与御风 Idle 在同刻的 RootT/RootQ 值到底一样不一样
+const string 御风Idle路径 = "Assets/Animations/凭虚御风/御风_Idle.anim";
+const string 新路径 = "Assets/Animations/八九玄功/长刀女_Attack1_御风.anim";
+var sb = new System.Text.StringBuilder();
+System.Action<string> L = (s) => sb.Append(s + "\n");
+System.Collections.Generic.Dictionary<string, AnimationCurve> 读曲线(AnimationClip c)
+{
+    var d = new System.Collections.Generic.Dictionary<string, AnimationCurve>();
+    foreach (var b in UnityEditor.AnimationUtility.GetCurveBindings(c))
+        if (b.path == "") { var cur = UnityEditor.AnimationUtility.GetEditorCurve(c, b); if (cur != null) d[b.propertyName] = cur; }
+    return d;
+}
+var 新 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(新路径);
+var 御 = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(御风Idle路径);
+var a = 读曲线(新); var b = 读曲线(御);
+int 肌肉数a = 0, 根数a = 0, 其他a = 0;
+foreach (var k in a.Keys) { if (k.StartsWith("RootT") || k.StartsWith("RootQ")) 根数a++; else if (k.Contains(" ") || k.Contains("-")) 肌肉数a++; else 其他a++; }
+L("新片段：曲线 " + a.Count + " = 根 " + 根数a + " + 疑似肌肉 " + 肌肉数a + " + 其他 " + 其他a);
+L("其他类的名字：");
+foreach (var k in a.Keys) if (!k.StartsWith("RootT") && !k.StartsWith("RootQ") && !(k.Contains(" ") || k.Contains("-"))) L("   " + k);
+L("");
+foreach (var t in new float[] { 0.833f, 1.167f })
+{
+    L("t=" + t.ToString("F3") + "s：");
+    foreach (var p in new string[] { "RootT.x", "RootT.y", "RootT.z", "RootQ.x", "RootQ.y", "RootQ.z", "RootQ.w" })
+    {
+        float va = a.ContainsKey(p) ? a[p].Evaluate(t) : float.NaN;
+        float vb = b.ContainsKey(p) ? b[p].Evaluate(Mathf.Repeat(t, 御.length)) : float.NaN;
+        L("   " + p + "：新=" + va.ToString("F4") + " 御风=" + vb.ToString("F4") + (Mathf.Abs(va - vb) < 1e-4f ? " ✅" : " ❌ 差 " + (va - vb).ToString("F4")));
+    }
+}
+return sb.ToString();
