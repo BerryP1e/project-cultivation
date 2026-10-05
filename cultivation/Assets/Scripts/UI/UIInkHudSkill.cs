@@ -8,6 +8,9 @@ public class UIInkHudSkill : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     PlayerHud hud; int index; Image orbit, depth, blot; UIInkStarParticle star;
     Material iconMaterial; RectTransform surface; bool hovered;
     UIInkHudOrbit backOrbit, frontOrbit;
+    public bool 使用三维;
+    public Vector3 视觉位置=>surface!=null?surface.position:transform.position;
+    public Vector2 视差位移 {get;private set;}
     public float 墨晕比例 { get; private set; }
     public void Initialize(PlayerHud source, int slot)
     {
@@ -44,9 +47,13 @@ public class UIInkHudSkill : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         blot.color=new Color(.10f,.17f,.15f,墨晕比例*.68f);
         blot.rectTransform.localScale=Vector3.one*(1+墨晕比例*.28f);
         star.gameObject.SetActive(entry!=null);star.transform.localScale=Vector3.one*(1-墨晕比例*.35f);
+        backOrbit.gameObject.SetActive(!使用三维);frontOrbit.gameObject.SetActive(!使用三维);
         backOrbit.装备=frontOrbit.装备=entry!=null;
         float phase=index*1.37f;float breathe=UIInkMotion.减少动效?0:Mathf.Sin(Time.unscaledTime*.8f+phase)*2;
-        surface.anchoredPosition=Vector2.up*breathe;surface.localScale=Vector3.one*(hovered?1.08f:1);
+        var canvas=GetComponentInParent<Canvas>();RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform,Input.mousePosition,canvas.renderMode==RenderMode.ScreenSpaceOverlay?null:canvas.worldCamera,out var point);
+        视差位移=UIInkMotion.减少动效?Vector2.zero:Vector2.ClampMagnitude(point,10)*Mathf.Clamp01(1-point.magnitude/150);
+        surface.anchoredPosition=Vector2.up*breathe+视差位移*.5f;surface.localScale=Vector3.one*(hovered?1.08f:1);
+        if(使用三维&&g.图标!=null)g.图标.enabled=false;
         orbit.rectTransform.localRotation=Quaternion.Euler(58,0,UIInkMotion.减少动效?phase*30:Time.unscaledTime*9+phase*30);
         orbit.color=Color.Lerp(new Color(.62f,.75f,.64f,.6f),new Color(.18f,.25f,.22f,.38f),墨晕比例);
     }
@@ -104,7 +111,7 @@ public class UIInkHudOrbit : MaskableGraphic
 [RequireComponent(typeof(CanvasRenderer))]
 public class UIInkHudChain : MaskableGraphic
 {
-    public static readonly Vector2[] Positions={new Vector2(36,190),new Vector2(43,136),new Vector2(87,83),new Vector2(162,95),new Vector2(237,84),new Vector2(313,86)};
+    public static readonly Vector2[] Positions={new Vector2(40,240),new Vector2(48,162),new Vector2(110,72),new Vector2(207,91),new Vector2(305,76),new Vector2(403,87)};
     protected override void OnPopulateMesh(VertexHelper vh)
     {
         vh.Clear();var c=new Color(.48f,.49f,.49f,.9f);

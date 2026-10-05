@@ -7,11 +7,16 @@ public class UIInkHudSkin : MonoBehaviour
 {
     public bool 启用 = true;
     bool built;
+    Text realmLabel;PlayerHud owner;
+    Material realmMaterial;
+    void OnDestroy(){if(realmMaterial!=null)Destroy(realmMaterial);}
+    void LateUpdate(){if(realmLabel!=null)realmLabel.text=owner.面板数据!=null?owner.面板数据.GetRealmName():"";}
     void Start() => 刷新();
     public void 刷新()
     {
         if (!启用 || !InkUITheme.Enabled || built) return;
-        var hud = GetComponent<PlayerHud>(); if (hud == null) return; built = true;
+        var hud = GetComponent<PlayerHud>(); if (hud == null) return; built = true;owner=hud;
+        var skillVisuals=new UIInkHudSkill[6];
         foreach (Transform child in transform)
         {
             var rt = child as RectTransform; if (rt == null) continue;
@@ -19,21 +24,24 @@ public class UIInkHudSkin : MonoBehaviour
             if (child.name == "功法")
             {
                 rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
-                rt.anchoredPosition = new Vector2(62,116); rt.sizeDelta = new Vector2(110,110);
+                rt.anchoredPosition = new Vector2(78,128); rt.sizeDelta = new Vector2(160,160);
                 var bg = child.Find("底")?.GetComponent<Image>();
-                if (bg != null) { bg.enabled=false; var disk=UIBuildUtils.CreateRect("CultivationDisc",child);UIBuildUtils.Stretch(disk);disk.SetAsFirstSibling();var graphic=disk.gameObject.AddComponent<UIInkHudOrbit>();graphic.主体=true;graphic.raycastTarget=false; }
+                if (bg != null) { bg.sprite=InkUITheme.Load("Realm/fx-ink-circle");bg.color=new Color(.81f,.84f,.75f,.95f);bg.preserveAspect=true;var shader=Shader.Find("UI/InkCircle");if(shader!=null){realmMaterial=new Material(shader);bg.material=realmMaterial;} }
+                if(hud.功法图标!=null)hud.功法图标.enabled=false;
+                var shade=UIBuildUtils.CreateImage("RealmInkDepth",child,new Color(.04f,.07f,.06f,.88f));shade.sprite=InkUITheme.Load("Dynamic/nav-ink-blot-4");shade.raycastTarget=false;UIBuildUtils.Stretch(shade.rectTransform,12);shade.transform.SetAsFirstSibling();
+                var label=UIBuildUtils.CreateRect("HudRealmName",child);UIBuildUtils.Stretch(label,20);realmLabel=label.gameObject.AddComponent<Text>();realmLabel.font=hud.气血文字.font;realmLabel.fontSize=28;realmLabel.resizeTextForBestFit=true;realmLabel.resizeTextMinSize=20;realmLabel.resizeTextMaxSize=28;realmLabel.alignment=TextAnchor.MiddleCenter;realmLabel.color=new Color(.94f,.93f,.83f);realmLabel.raycastTarget=false;realmLabel.gameObject.AddComponent<Shadow>().effectColor=Color.black;
             }
             if (child.name.StartsWith("Skill") && int.TryParse(child.name.Substring(5), out int slot))
             {
                 rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = new Vector2(.5f,.5f);
-                rt.anchoredPosition = UIInkHudChain.Positions[slot-1]; rt.sizeDelta = Vector2.one * (slot<=2?38:54);
-                child.gameObject.AddComponent<UIInkHudSkill>().Initialize(hud, slot-1);
+                rt.anchoredPosition = UIInkHudChain.Positions[slot-1]; rt.sizeDelta = Vector2.one*72;
+                var visual=child.gameObject.AddComponent<UIInkHudSkill>();visual.Initialize(hud,slot-1);skillVisuals[slot-1]=visual;
             }
             if (child.name == "气血" || child.name == "灵力")
             {
                 bool mana = child.name == "灵力";
                 rt.anchorMin = rt.anchorMax = Vector2.zero;rt.pivot=Vector2.zero;
-                rt.anchoredPosition=new Vector2(156,mana?136:154);rt.sizeDelta=new Vector2(340,10);
+                rt.anchoredPosition=new Vector2(206,mana?154:201);rt.sizeDelta=new Vector2(380,mana?40:24);
                 foreach(var img in child.GetComponentsInChildren<Image>(true))img.enabled=false;
                 var brush=UIBuildUtils.CreateRect("ContinuousBranch",child);UIBuildUtils.Stretch(brush);brush.SetAsFirstSibling();
                 var branch=brush.gameObject.AddComponent<UIInkVitalBranch>();branch.raycastTarget=false;branch.Mana=mana;branch.Source=mana?hud.灵力填充:hud.气血填充;
@@ -41,7 +49,8 @@ public class UIInkHudSkin : MonoBehaviour
                 if(text!=null){text.fontSize=14;text.alignment=TextAnchor.MiddleRight;text.color=new Color(.92f,.93f,.86f,.85f);text.rectTransform.anchoredPosition=new Vector2(0,mana?-13:13);text.gameObject.AddComponent<Shadow>().effectColor=new Color(0,0,0,.85f);}
             }
         }
-        var links=UIBuildUtils.CreateRect("HudCurvedLinks",transform);links.anchorMin=links.anchorMax=Vector2.zero;links.pivot=Vector2.zero;links.sizeDelta=new Vector2(530,240);links.SetAsFirstSibling();links.gameObject.AddComponent<UIInkHudChain>().raycastTarget=false;
+        var links=UIBuildUtils.CreateRect("HudCurvedLinks",transform);links.anchorMin=links.anchorMax=Vector2.zero;links.pivot=Vector2.zero;links.sizeDelta=new Vector2(610,310);links.SetAsFirstSibling();var chain=links.gameObject.AddComponent<UIInkConstellation>();chain.HudNodes=skillVisuals;chain.raycastTarget=false;
+        links.gameObject.AddComponent<UIInkSkillVolume>().InitializeHud(hud,skillVisuals);
         if(hud.信息幕布!=null)
         {
             var detail = (RectTransform)hud.信息幕布.transform;

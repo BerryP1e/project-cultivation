@@ -2,6 +2,7 @@ using UnityEngine.UI;
 // Fixture data only: never edits the real player's loadout, cooldown or cultivation art.
 var hud=Object.FindObjectOfType<PlayerHud>();var originalData=hud.面板数据;var originalCaster=hud.施放器;
 var fixture=new GameObject("HudInkQAData");fixture.SetActive(false);var data=fixture.AddComponent<UIPanelData>();
+data.玩家属性=originalData.玩家属性;
 var db=Resources.Load<PanelDatabase>("面板/面板库");data.主动技能=db.神通.OfType<ActiveDivineAbility>().Take(6).Cast<UnityEngine.Object>().ToList();
 while(data.主动技能.Count<6)data.主动技能.Add(null);
 var caster=fixture.AddComponent<ActiveSkillCaster>();caster.enabled=false;caster.面板数据=data;
@@ -13,7 +14,8 @@ System.Collections.IEnumerator Run(){try{
  for(int i=0;i<6;i++)cooldown[i]=caster.冷却总秒(i)*(i%3==0?1:i%3==1?.5f:0);
  yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
  foreach(var g in hud.GetComponentsInChildren<UIInkHudSkill>()){sb.AppendLine(g.name+" k="+g.墨晕比例+" pos="+((RectTransform)g.transform).anchoredPosition);}
- foreach(var g in hud.GetComponentsInChildren<UIInkVitalBranch>()){var mesh=g.canvasRenderer.GetMesh();if(mesh==null||mesh.vertexCount!=8)throw new System.Exception("Missing continuous bar mesh");sb.AppendLine("bar verts="+mesh.vertexCount+" fill="+g.Source.fillAmount);}
+ foreach(var g in hud.GetComponentsInChildren<UIInkVitalBranch>()){var mesh=g.canvasRenderer.GetMesh();if(mesh==null||mesh.vertexCount<100)throw new System.Exception("Missing organic bar mesh");sb.AppendLine("bar verts="+mesh.vertexCount+" fill="+g.Source.fillAmount);}
+ var volume=hud.GetComponentInChildren<UIInkSkillVolume>();if(volume==null||!volume.三维就绪||volume.三维星位数!=6)throw new System.Exception("HUD 3D orbit stage missing");sb.AppendLine("Shared skill volume ready: 6 nodes");
  sb.AppendLine("P="+Object.FindObjectOfType<PlayerStatsDebugPanel>().开关按键+" cultivationHud="+hud.transform.Find("修炼").gameObject.activeSelf);
  sb.AppendLine("cooldown shader="+hud.技能格们[0].图标.material.shader.name+" supported="+hud.技能格们[0].图标.material.shader.isSupported);
  ScreenCapture.CaptureScreenshot("screenshots/hud-ink-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();

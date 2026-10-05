@@ -1,8 +1,8 @@
 Shader "UI/InkCooldown" {
- Properties { [PerRendererData] _MainTex("Icon",2D)="white"{} _Color("Color",Color)=(1,1,1,1) _Cooldown("Ink diffusion",Range(0,1))=0 }
+ Properties { [PerRendererData] _MainTex("Icon",2D)="white"{} _Color("Color",Color)=(1,1,1,1) _Cooldown("Ink diffusion",Range(0,1))=0 _ZWrite("Depth write",Float)=0 _ZTest("Depth test",Float)=8 }
  SubShader {
  Tags { "Queue"="Transparent" "RenderType"="Transparent" "IgnoreProjector"="True" "CanUseSpriteAtlas"="False" }
- Cull Off ZWrite Off ZTest [unity_GUIZTestMode] Blend SrcAlpha OneMinusSrcAlpha
+ Cull Off ZWrite [_ZWrite] ZTest [_ZTest] Blend SrcAlpha OneMinusSrcAlpha
  Pass {
  CGPROGRAM
  #pragma vertex vert
@@ -21,7 +21,7 @@ Shader "UI/InkCooldown" {
  c+=tex2D(_MainTex,uv+float2(radius,radius))*.07;c+=tex2D(_MainTex,uv-float2(radius,radius))*.07;
  c+=tex2D(_MainTex,uv+float2(radius,-radius))*.07;c+=tex2D(_MainTex,uv-float2(radius,-radius))*.07;
  c.rgb=lerp(c.rgb,float3(.18,.24,.22),k*.78);c.a*=lerp(1,.62,k);
- return c*x.color;
+ clip(c.a-.015);return c*x.color;
  }
  ENDCG
  }

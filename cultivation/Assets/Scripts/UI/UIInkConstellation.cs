@@ -6,16 +6,17 @@ using UnityEngine.UI;
 public class UIInkConstellation : MaskableGraphic
 {
     public UIInkSkillStar[] Nodes;
+    public UIInkHudSkill[] HudNodes;
     public float Progress=1;
     public int SegmentCount {get;private set;}
     protected override void OnPopulateMesh(VertexHelper vh){
-        vh.Clear();SegmentCount=0;if(Nodes==null)return;
-        for(int n=0;n+1<Nodes.Length;n++){
-            Vector2 a=rectTransform.InverseTransformPoint(Nodes[n].视觉位置),b=rectTransform.InverseTransformPoint(Nodes[n+1].视觉位置);
-            Vector2 bend=(a+b)*.5f+new Vector2((n%2==0?1:-1)*55,0);
+        vh.Clear();SegmentCount=0;int count=HudNodes!=null?HudNodes.Length:Nodes!=null?Nodes.Length:0;
+        for(int n=0;n+1<count;n++){
+            Vector2 a=rectTransform.InverseTransformPoint(HudNodes!=null?HudNodes[n].视觉位置:Nodes[n].视觉位置),b=rectTransform.InverseTransformPoint(HudNodes!=null?HudNodes[n+1].视觉位置:Nodes[n+1].视觉位置);
+            Vector2 bend=(a+b)*.5f+(HudNodes!=null?new Vector2(0,n%2==0?-16:16):new Vector2((n%2==0?1:-1)*55,0));
             Vector2 last=a;
             for(int i=1;i<=28;i++){
-                float t=i/28f;if((n+t)/(Nodes.Length-1)>Progress)break;
+                float t=i/28f;if((n+t)/(count-1)>Progress)break;
                 Vector2 p=(1-t)*(1-t)*a+2*(1-t)*t*bend+t*t*b;
                 float flicker=UIInkMotion.减少动效?1:.8f+.2f*Mathf.Sin(Time.unscaledTime*1.1f+n+t*5);
                 Add(vh,last,p,4,new Color(.55f,.77f,.70f,.18f*flicker));
