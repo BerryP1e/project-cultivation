@@ -138,6 +138,7 @@ public class StationInteractor : MonoBehaviour
 
         if (界面已打开)
         {
+            隐藏提示();
             // ★ 面板被**它自己**（或别处）收掉了 → 把"界面开着"的标记一起收回来。
             //
             //   踩过的坑（2026-10-02，镇妖塔清完怪的那个传送圈）：
@@ -337,6 +338,12 @@ public class StationInteractor : MonoBehaviour
         if (名字文字 != null) 名字文字.color = new Color(名字色.r, 名字色.g, 名字色.b, Mathf.Clamp01(a + 0.35f));
     }
 
+    void LateUpdate()
+    {
+        // 对话、传送或其他界面也可能在本帧由外部脚本打开。
+        if(UiEscRegistry.SceneInputBlocked)隐藏提示();
+    }
+
     void 隐藏提示()
     {
         if (提示根 != null && 提示根.activeSelf) 提示根.SetActive(false);
@@ -509,6 +516,7 @@ public class StationInteractor : MonoBehaviour
     public void 打开界面(StationInteractable 设施)
     {
         if (设施 == null || 界面已打开) return;
+        隐藏提示();
 
         // ★ 对话类设施**不走幕布、也不走界面预制体**，交给 NPC 自己的对话模块。
         //   原来这里会给对话类也造一块占位幕布（sortingOrder=2500），而对话框只有 900，

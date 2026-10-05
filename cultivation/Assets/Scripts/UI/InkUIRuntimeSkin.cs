@@ -76,6 +76,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         string canvas = name;
         foreach (var image in GetComponentsInChildren<Image>(true))
         {
+            if (IsSaveWindow(image)) continue;
             if (!handled.Add(image.GetInstanceID())) continue;
             string n = image.name;
             string path = Map(canvas, image);
@@ -85,6 +86,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         }
         foreach (var button in GetComponentsInChildren<Button>(true))
         {
+            if (IsSaveWindow(button)) continue;
             if (!handled.Add(button.GetInstanceID())) continue;
             if (button.name.StartsWith("页签_") || button.name.StartsWith("功法行") || button.name.Contains("材格") || button.name == "预览方块") continue;
             if (button.name.StartsWith("回答")) InkUITheme.Choice(button, "CommonPanels/dialog-choice", false);
@@ -96,6 +98,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         bool paper = canvas != "DeathScreenCanvas" && canvas != "PauseMenuCanvas" && canvas != "起名界面" && canvas != "MenuCanvas" && canvas != "TowerCanvas";
         foreach (var text in GetComponentsInChildren<Text>(true))
         {
+            if (IsSaveWindow(text)) continue;
             if (!handled.Add(text.GetInstanceID())) continue;
             if (text.name.Contains("余额") || text.name.Contains("贡献") || text.name == "灵气数值" || text.name == "进度文字") UIInkNumber.Attach(text);
             if (text.name == "塔层HUD") { Backdrop(text, "CommonPanels/tower-floor-bar"); text.color = new Color(.98f, .95f, .85f); }
@@ -107,6 +110,12 @@ public class InkUIRuntimeSkin : MonoBehaviour
             if (text.color.maxColorComponent > .55f) text.color = InkUITheme.Ink;
             var outline = text.GetComponent<Outline>(); if (outline != null) outline.enabled = false;
         }
+    }
+    static bool IsSaveWindow(Component node)
+    {
+        var menu = node.GetComponentInParent<MainMenuUI>(true);
+        return menu != null && menu.存档面板 != null
+            && node.transform.IsChildOf(menu.存档面板.transform);
     }
     static void Backdrop(Text text, string path)
     {
@@ -149,8 +158,6 @@ public class InkUIRuntimeSkin : MonoBehaviour
         }
         if (canvas == "传送面板" && n == "底板") return "CommonPanels/teleport-plate";
         if (canvas == "ToastCanvas" && n == "底") return "CommonPanels/toast";
-        if (canvas == "MenuCanvas" && n == "SavePanel") return "SkillsPage/common/panel-sheet";
-        if (canvas == "MenuCanvas" && n.StartsWith("Slot")) return "SkillsPage/skills/row-normal";
         if (canvas == "QuestGuideCanvas" && n == "主线追踪") return "CommonPanels/dialog-scroll";
         if (canvas == "StationHint" && n == "底") return "CommonPanels/toast";
         return null;

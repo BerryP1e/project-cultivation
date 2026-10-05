@@ -14,16 +14,42 @@ Call(guide,"刷新面板文字");Call(guide,"刷新标记");((RectTransform)Get(
 var host=new GameObject("InteractionHintQA");host.transform.position=player.transform.position;var interactor=host.AddComponent<StationInteractor>();interactor.enabled=false;
 var stationRoot=new GameObject("StationQA");stationRoot.SetActive(false);stationRoot.transform.position=player.transform.position+Camera.main.transform.right*.5f;var station=stationRoot.AddComponent<StationInteractable>();station.类型=StationInteractable.StationKind.炼丹;station.显示名="炼丹";Set(interactor,"最近设施",station);Call(interactor,"更新头顶提示");
 var sb=new System.Text.StringBuilder();void Check(bool ok,string text){if(!ok)throw new System.Exception(text);sb.AppendLine(text+" OK");}
+var oldStationOpen=StationInteractor.有界面打开;
+Teleporter portal=null;GameObject dialogueRoot=null;bool dialogueWasOpen=false;
+// 新游戏演出可能晚创建画布。仅在截图时隐藏其他绘制层，不关闭其业务状态。
+void PrepareCapture(){foreach(var c in Object.FindObjectsOfType<Canvas>(true)){
+if(c.name=="HudCanvas"||c.name=="ChronicleCanvas"||c.transform.IsChildOf(fixture.transform)||c.gameObject==(GameObject)Get(interactor,"提示根")||portal!=null&&c.gameObject==portal.面板根)continue;
+if(!saved.ContainsKey(c))saved[c]=c.enabled;c.enabled=false;}}
 try{
 yield return new WaitForSecondsRealtime(1);Canvas.ForceUpdateCanvases();foreach(var skin in Object.FindObjectsOfType<InkUIRuntimeSkin>())skin.Refresh();yield return new WaitForSecondsRealtime(.4f);
+foreach(var zone in Object.FindObjectsOfType<任务触发区>()){
+float radius=zone.有效半径();Call(zone,"OnDrawGizmos");
+Check(!zone.游戏里隐藏范围圈||zone.GetComponentsInChildren<Renderer>(true).All(r=>!r.enabled),"任务触发区范围模型在游戏里隐藏");
+Check(Mathf.Approximately(zone.有效半径(),radius),"隐藏调试轮廓不改变检测半径");}
 var date=chronicle.GetComponentsInChildren<Text>().Single(t=>t.name=="日期");var dateCanvas=date.GetComponentInParent<Canvas>();Check(dateCanvas.renderMode==RenderMode.ScreenSpaceOverlay && dateCanvas.GetComponentsInChildren<Image>().Length==0,"纪年仅一行文字，无幕布与修炼机会");Check(date.transform.parent.GetComponent<RectTransform>().anchorMin==new Vector2(1,0) && date.color.maxColorComponent>.9f && date.GetComponent<Outline>().enabled,"纪年右下锚点，亮字描边保留");
-var panel=(RectTransform)Get(guide,"面板");Check(panel.GetComponent<Image>().material.shader.name=="UI/InkDialogue","任务追踪采用对话同源墨底");
+var panel=(RectTransform)Get(guide,"面板");Check(panel.anchorMin==new Vector2(0,.5f) && panel.GetComponent<Image>().color.a<.6f,"任务移动到左侧黄框并减淡墨底");Check(panel.GetComponent<Image>().material.shader.name=="UI/InkDialogue","任务追踪采用对话同源墨底");
 var marker=((RectTransform)Get(guide,"叹号")).GetComponent<Text>();Check(marker.gameObject.activeSelf && marker.color.r>.9f && marker.color.g>.7f && marker.color.a==1 && marker.GetComponent<Outline>().enabled,"感叹号金色与描边不再被通用换皮冲掉");
 var hint=(GameObject)Get(interactor,"提示根");Check(hint.GetComponent<Canvas>().renderMode==RenderMode.ScreenSpaceOverlay,"F提示在屏幕层，避开场景后处理");Check(hint.GetComponentInChildren<UIInkDialogueBackdrop>()!=null && ((Text)Get(interactor,"提示文字")).color.r>.9f,"F提示深墨底亮文字，与对话一致");Check(hint.transform.Find("提示框/键").GetComponent<Image>()==null,"取消亮底键帽");
 Vector3[] corners=new Vector3[4];panel.GetWorldCorners(corners);Check(corners.All(v=>v.x>=0 && v.x<=Screen.width && v.y>=0 && v.y<=Screen.height),"任务幕布在屏幕内");
 var hf=(RectTransform)Get(interactor,"提示框");hf.GetWorldCorners(corners);Check(corners.All(v=>v.x>=0 && v.x<=Screen.width && v.y>=0 && v.y<=Screen.height),"互动提示完整收进屏幕");
-ScreenCapture.CaptureScreenshot("screenshots/hud-guidance-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForSecondsRealtime(.5f);
+PrepareCapture();ScreenCapture.CaptureScreenshot("screenshots/hud-guidance-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForSecondsRealtime(.5f);
+station.界面预制体=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");
+interactor.打开界面(station);Check(!hint.activeSelf,"打开真实丹房立即隐藏F提示");
+Call(interactor,"更新头顶提示");Call(interactor,"Update");Check(!hint.activeSelf,"设施界面打开期间不再显示互动提示");
+interactor.关闭界面();yield return null;
+UiEscRegistry.SetSceneInputBlocked(fixture,true);Call(interactor,"更新头顶提示");Call(interactor,"LateUpdate");Check(!hint.activeSelf,"任意界面输入锁同帧隐藏互动提示");UiEscRegistry.SetSceneInputBlocked(fixture,false);
+var dialogue=DialogueUI.确保();dialogueRoot=(GameObject)Get(dialogue,"根");dialogueWasOpen=dialogueRoot.activeSelf;
+dialogueRoot.SetActive(true);Call(interactor,"更新头顶提示");Call(interactor,"LateUpdate");Check(!hint.activeSelf,"对话显示时隐藏F提示");dialogueRoot.SetActive(dialogueWasOpen);
+portal=stationRoot.AddComponent<Teleporter>();portal.选项=new[]{new Teleporter.传送选项{名称="前往镇妖塔"},new Teleporter.传送选项{名称="未开放地点",暂未开放=true}};portal.需要等级=0;
+station.类型=StationInteractable.StationKind.传送;station.显示名="传送";
+Call(interactor,"更新头顶提示");interactor.打开界面(station);Check(!hint.activeSelf,"传送选择打开立即隐藏F提示");yield return new WaitForSecondsRealtime(.7f);
+var row=portal.面板根.GetComponentsInChildren<Button>().First(b=>b.name=="Destination_0");
+Check(!row.transform.Find("State").gameObject.activeSelf,"可用目的地不显示点击前往小字");
+Check(!portal.面板根.GetComponentsInChildren<Text>(true).Any(t=>t.text=="点击前往"||t.text=="ESC / F 关闭"),"删除传送冗余操作小字");
+var disabled=portal.面板根.GetComponentsInChildren<Button>().First(b=>b.name=="Destination_1");Check(!disabled.interactable&&disabled.transform.Find("State").GetComponent<Text>().text=="尚未开放","未开放原因与禁止传送保留");
+PrepareCapture();ScreenCapture.CaptureScreenshot("screenshots/teleport-clean-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForSecondsRealtime(.4f);
+interactor.关闭界面();yield return new WaitForSecondsRealtime(.3f);Call(interactor,"更新头顶提示");Check(hint.activeSelf,"界面关闭后范围内提示可以恢复");
 System.IO.File.WriteAllText("screenshots/hud-guidance-check-"+Screen.width+"x"+Screen.height+".txt",sb.ToString());Debug.Log(sb.ToString());
-}finally{var hint=(GameObject)Get(interactor,"提示根");if(hint!=null)Object.Destroy(hint);Object.Destroy(host);Object.Destroy(stationRoot);Object.Destroy(fixture);Object.Destroy(q);foreach(var pair in saved)if(pair.Key!=null)pair.Key.enabled=pair.Value;}
+}finally{if(interactor.界面已打开)interactor.关闭界面();UiEscRegistry.SetSceneInputBlocked(fixture,false);if(dialogueRoot!=null)dialogueRoot.SetActive(dialogueWasOpen);if(portal!=null)portal.关面板();typeof(StationInteractor).GetProperty("有界面打开").GetSetMethod(true).Invoke(null,new object[]{oldStationOpen});var hint=(GameObject)Get(interactor,"提示根");if(hint!=null)Object.Destroy(hint);Object.Destroy(host);Object.Destroy(stationRoot);Object.Destroy(fixture);Object.Destroy(q);foreach(var pair in saved)if(pair.Key!=null)pair.Key.enabled=pair.Value;}
 }
 return Run();

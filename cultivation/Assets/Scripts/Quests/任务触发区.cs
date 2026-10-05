@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **范围型任务触发区** —— 摆在场景里，主角走进半径就触发任务。
@@ -101,6 +101,7 @@ public class 任务触发区 : MonoBehaviour
     void Awake()
     {
         取范围圈();
+        刷新范围圈();
     }
 
     /// <summary>拿「范围圈」（编辑器里也拿得到，Gizmo 要用）</summary>
@@ -262,6 +263,10 @@ public class 任务触发区 : MonoBehaviour
     void OnDrawGizmos()
     {
         if (!显示范围) return;
+#if UNITY_EDITOR
+        // Game 视图开启 Gizmos 也不应露出任务调试圈；Scene 视图仍可调范围。
+        if (Application.isPlaying && UnityEditor.SceneView.currentDrawingSceneView == null) return;
+#endif
         Gizmos.color = 范围颜色;
         float R = 有效半径();
         var 中心 = transform.position;

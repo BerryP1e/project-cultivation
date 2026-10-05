@@ -8,7 +8,7 @@ using UnityEngine.UI;
 ///
 /// | 部分 | 长什么样 | 什么时候出现 |
 /// |---|---|---|
-/// | **追踪面板** | 屏幕**右上角**一块水墨小牌：`主线 · 任务名` / 当前目标 / 一句话说明 / 目标与距离 | 只要有一条**主线**阶段在进行中 |
+/// | **追踪面板** | 屏幕**左侧血量 HUD 上方**一块水墨小牌：`主线 · 任务名` / 当前目标 / 一句话说明 / 目标与距离 | 只要有一条**主线**阶段在进行中 |
 /// | **头顶感叹号** | 目标（NPC 或地点）**上方**一个金色「！」，**屏幕空间**画的 | 目标在**镜头里**时 |
 /// | **边缘箭头** | 屏幕边缘一个金色三角，**朝着目标的方向** | 目标在**镜头外**（含身后）时 |
 ///
@@ -54,18 +54,18 @@ public class 任务引导 : MonoBehaviour
     [Tooltip("中文字体。留空自动找 SimHei")]
     public Font 字体;
 
-    [Header("追踪面板（屏幕右上角，避开顶部 Toast）")]
+    [Header("追踪面板（屏幕左侧，血量 HUD 上方）")]
     [Tooltip("面板离屏幕**右边**的距离（像素，1080p 参考分辨率下）")]
     public float 右边缘 = 18f;
     [Tooltip("面板离屏幕**顶边**的距离（像素）。默认 150 = 让开 Toast 提示（纪年已移到右下），" +
              "不然冒出来的提示会盖住面板标题")]
     public float 上边缘 = 150f;
-    [Tooltip("（旧值，留着只为兼容场景里可能序列化过的配置）面板离屏幕左边的距离")]
-    public float 左边缘 = 26f;
-    [Tooltip("（旧值）面板离屏幕**中心**的竖直偏移")]
-    public float 竖直偏移 = 0f;
+    [Tooltip("面板离屏幕左边的距离（1080p 参考像素）")]
+    public float 左边缘 = 12f;
+    [Tooltip("面板顶边相对屏幕中心的竖直偏移（向上为正）")]
+    public float 竖直偏移 = -16f;
     [Tooltip("面板宽度")]
-    public float 面板宽度 = 400f;
+    public float 面板宽度 = 470f;
     public Color 底板色 = new Color(0.05f, 0.06f, 0.08f, 0.74f);
     public Color 标题色 = new Color(1f, 0.84f, 0.42f, 1f);     // 金：任务名
     public Color 目标色 = new Color(0.97f, 0.96f, 0.92f, 1f);   // 白：当前目标
@@ -543,21 +543,17 @@ public class 任务引导 : MonoBehaviour
 
     void 搭面板(Transform 父)
     {
-        var 板 = UIBuildUtils.CreateImage("主线追踪", 父, new Color(.025f,.035f,.035f,.95f));
+        var 板 = UIBuildUtils.CreateImage("主线追踪", 父, new Color(.025f,.035f,.035f,.55f));
         板.gameObject.AddComponent<UIInkDialogueBackdrop>();
         面板 = 板.rectTransform;
-        // ★ 2026-10-02 用户要求：从**屏幕左侧**挪到**右上角**（压在纪年 HUD 下面那一片）。
-        //   锚点/轴心都取右上角 ⇒ 面板往**左**长、往下排；文字也改成右对齐（和纪年那两行一条线）。
-        //   Y 用 上边缘（默认 150）：让开纪年 HUD（约 74）与 Toast 那一条（约 144），
-        //   否则"新的一天"之类的提示会盖住面板标题。
-        面板.anchorMin = new Vector2(1f, 1f);
-        面板.anchorMax = new Vector2(1f, 1f);
-        面板.pivot = new Vector2(1f, 1f);
+        // 按用户黄框：左侧中部偏下，留出下方气血、境界与技能 HUD。
+        面板.anchorMin = 面板.anchorMax = new Vector2(0f,.5f);
+        面板.pivot = new Vector2(0f,1f);
         面板.sizeDelta = new Vector2(面板宽度, 0f);
-        面板.anchoredPosition = new Vector2(-右边缘, -上边缘);
+        面板.anchoredPosition = new Vector2(左边缘, 竖直偏移);
 
         var 竖 = UIBuildUtils.AddVerticalLayout(面板, 8f, new RectOffset(40, 40, 28, 28));
-        竖.childAlignment = TextAnchor.UpperRight;
+        竖.childAlignment = TextAnchor.UpperLeft;
         竖.childControlWidth = true;
         // 高度跟着内容走（说明有几行就多高）
         var 自适应 = 板.gameObject.AddComponent<ContentSizeFitter>();
@@ -571,8 +567,8 @@ public class 任务引导 : MonoBehaviour
 
     Text 加一行(RectTransform 父, string 名, int 号, Color 色)
     {
-        // 右对齐：面板挪到右上角之后，四行内容沿同一条右边界排列（用户要求挪的位置）
-        var t = UIBuildUtils.CreateText(名, 父, 字体, "", 号, TextAnchor.UpperRight, 色);
+        // 左对齐，四行内容沿同一条左边界排列。
+        var t = UIBuildUtils.CreateText(名, 父, 字体, "", 号, TextAnchor.UpperLeft, 色);
         // 黑描边：底板是半透明的，压在亮场景上也要看得清（和灵田信息牌同一个理由）
         UIBuildUtils.AddOutline(t.rectTransform, 描边色);
         return t;

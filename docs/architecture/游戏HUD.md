@@ -24,9 +24,11 @@ I父页面打开时，CharacterPanelUI隐藏HudCanvas、QuestGuideCanvas、Chron
 
 `ChronicleCanvas` 在右下角无底显示一行日期与时辰（右 20、下 18、字号 22），保留黑描边；修炼机会只在境界页显示。跨天高亮、实时刷新与成对订阅沿用原逻辑，见 [时间系统 §4](../guides/时间系统.md)。
 
-`QuestGuideCanvas` 的右上追踪采用 `UIInkDialogueBackdrop` 深墨底，暖金标题、米白目标、灰绿说明及淡绿距离；左右 40、上下 28 留白，幕布跟随说明高度。感叹号与箭头继续屏幕投影；感叹号变淡的根因是通用换皮重染深色并关掉描边，已让该画布保留专属样式，详见 [任务引导 §4](../guides/任务引导.md)。
+`QuestGuideCanvas` 的左侧追踪位于血量 HUD 上方，1080p 左缘 12、顶边相对屏幕中心 -16、宽 470；四行左对齐，采用 `UIInkDialogueBackdrop` 淡墨底（alpha .55），暖金标题、米白目标、灰绿说明及淡绿距离；左右 40、上下 28 留白，幕布跟随说明高度。感叹号与箭头继续屏幕投影；感叹号变淡的根因是通用换皮重染深色并关掉描边，已让该画布保留专属样式，详见 [任务引导 §4](../guides/任务引导.md)。
 
 `StationInteractor` 统一负责 NPC、建筑、传送、灵田等 F 互动提示：取消白底键帽，使用对话同源墨底、暖亮按键与米白动作文字。`StationHint` 改为 ScreenSpaceOverlay，层级 1550，按原世界锚点投影；高度 72，宽度按文案在 180–420 之间自适应，考虑完整框体收进屏幕，目标在相机背后时隐藏。正常范围内文字 alpha 不低于 .85，场景后处理不会冲淡它；NPC 头顶名字保持原世界显示。提示不接收射线，F 的交互业务与输入锁沿用原入口。
+
+打开任意设施界面时立即隐藏 F 提示和重复的 NPC 名字；界面打开分支每帧继续隐藏。`LateUpdate` 再检查 `UiEscRegistry.SceneInputBlocked`，处理同帧由其他脚本打开的对话、角色页或传送面板，避免脚本执行顺序造成提示残留。关闭界面后按原距离和关闭冷却恢复，不能只针对丹房硬编码隐藏。
 
 `InkUIRuntimeSkin` 跳过以上三种专属画布，防止再次套回纸底、重染文字或禁用描边。新增相似提示应复用统一入口，不另画亮底键帽。
 
@@ -77,4 +79,4 @@ P 面板整页可滚动；“添加丹方”区位于无敌开关之后，支持
 
 维护脚本在`Assets/Scripts/UI/`：PlayerHud、UIInkHudSkin、UIInkHudSkill、UIInkVitalBranch。Shader在`Assets/resources/UI/InkUI/Dynamic/InkCooldown.shader`。不能为换皮重跑生成器或保存场景，不能把Filled改Simple。
 
-`.dsh/_diag/hud-guidance-ink-check.cs.txt` 在 1920×1080 与 1280×720 检查纪年单行/无幕布、任务同源墨底、感叹号颜色与描边、F 提示屏幕层/取消键帽及框体边界。用独立任务与设施展示样本，结束恢复原画布；不改真实任务进度、背包或存档。截图为 `cultivation/screenshots/hud-guidance-{分辨率}.png`，报告为 `hud-guidance-check-{分辨率}.txt`，截图不入库。
+`.dsh/_diag/hud-guidance-ink-check.cs.txt` 在 1920×1080 与 1280×720 检查纪年单行、任务左侧位置与淡墨底、感叹号颜色与描边、F 提示屏幕层与边界；打开真实丹房、显示对话、打开传送与任意界面输入锁，验证提示立即隐藏且关闭后能恢复。另查任务范围模型隐藏及半径不变、传送无冗余小字且未开放原因保留。用独立任务与设施展示样本，结束恢复原画布；不投料、不改真实任务进度、背包或存档。截图为 `cultivation/screenshots/hud-guidance-{分辨率}.png`、`teleport-clean-{分辨率}.png`，报告为 `hud-guidance-check-{分辨率}.txt`，截图不入库。

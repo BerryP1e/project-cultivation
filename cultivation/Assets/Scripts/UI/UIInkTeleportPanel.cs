@@ -80,8 +80,6 @@ public class UIInkTeleportPanel : MonoBehaviour
         var closeText=Label("Label",close.transform,"暂不前往",22,TextAnchor.MiddleCenter);
         UIBuildUtils.Stretch(closeText.rectTransform); Style(closeButton);
         closeButton.onClick.AddListener(关闭);
-        var hint=Label("CloseHint",rt,"ESC / F 关闭",15,TextAnchor.MiddleCenter);
-        Place(hint.rectTransform,.32f,.09f,.68f,.14f);
         刷新();
     }
 
@@ -101,7 +99,9 @@ public class UIInkTeleportPanel : MonoBehaviour
             var name=button.transform.Find("Name").GetComponent<Text>();
             var state=button.transform.Find("State").GetComponent<Text>();
             name.text=option==null ? "暂无地点" : option.名称;
-            state.text=option==null || option.暂未开放 ? "尚未开放" : !allowed ? "境界不足" : "点击前往";
+            state.text=option==null || option.暂未开放 ? "尚未开放" : !allowed ? "境界不足" : "";
+            state.gameObject.SetActive(!enabled);
+            Place(name.rectTransform,.14f,enabled?.10f:.30f,.86f,.97f);
             name.color=enabled ? Light : new Color(.62f,.66f,.62f);
             state.color=enabled ? new Color(.73f,.82f,.75f) : new Color(.62f,.66f,.62f);
         }
