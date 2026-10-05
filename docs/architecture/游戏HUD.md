@@ -1,6 +1,6 @@
 # 游戏HUD
 
-> **管什么**：气血/灵力、左下弧链主动技能、墨晕冷却、悬停提示与验证。
+> **管什么**：气血/灵力、左下弧链主动技能、纪年/任务 HUD、统一互动提示、墨晕冷却与验证。
 > **不管什么**：修炼次数来源见 [时间系统](../guides/时间系统.md)；境界页见 [UI接入与维护](../guides/UI换皮.md)；施放与伤害见 [主动技能与神通](主动技能与神通.md)。
 > **本文件怎么查**：§1 接入与布局｜§2 数值与冷却｜§3 悬停与输入｜§4 验证。
 > **来源**：当前HUD脚本与Play实测；用户的新布局取代旧方格HUD和修炼次数条。
@@ -19,6 +19,16 @@ PlayerHud管原节点的数据；UIInkHudSkin在Play中重排现有HudCanvas。�
 CanvasScaler按1920×1080缩放；1280×720采用相同相对布局。按键数字独立于图标，保留暗描边。
 
 I父页面打开时，CharacterPanelUI隐藏HudCanvas、QuestGuideCanvas、ChronicleCanvas并关闭交互/射线；关闭后恢复此前状态。HUD数据继续更新，每0.5秒补扫晚创建画布。
+
+### 1.1 纪年、任务与互动提示
+
+`ChronicleCanvas` 在右下角无底显示一行日期与时辰（右 20、下 18、字号 22），保留黑描边；修炼机会只在境界页显示。跨天高亮、实时刷新与成对订阅沿用原逻辑，见 [时间系统 §4](../guides/时间系统.md)。
+
+`QuestGuideCanvas` 的右上追踪采用 `UIInkDialogueBackdrop` 深墨底，暖金标题、米白目标、灰绿说明及淡绿距离；左右 40、上下 28 留白，幕布跟随说明高度。感叹号与箭头继续屏幕投影；感叹号变淡的根因是通用换皮重染深色并关掉描边，已让该画布保留专属样式，详见 [任务引导 §4](../guides/任务引导.md)。
+
+`StationInteractor` 统一负责 NPC、建筑、传送、灵田等 F 互动提示：取消白底键帽，使用对话同源墨底、暖亮按键与米白动作文字。`StationHint` 改为 ScreenSpaceOverlay，层级 1550，按原世界锚点投影；高度 72，宽度按文案在 180–420 之间自适应，考虑完整框体收进屏幕，目标在相机背后时隐藏。正常范围内文字 alpha 不低于 .85，场景后处理不会冲淡它；NPC 头顶名字保持原世界显示。提示不接收射线，F 的交互业务与输入锁沿用原入口。
+
+`InkUIRuntimeSkin` 跳过以上三种专属画布，防止再次套回纸底、重染文字或禁用描边。新增相似提示应复用统一入口，不另画亮底键帽。
 
 ## 2. 数值与冷却
 
@@ -66,3 +76,5 @@ P 面板整页可滚动；“添加丹方”区位于无敌开关之后，支持
 截图在`cultivation/screenshots/hud-ink-1920x1080.png`与`hud-ink-1280x720.png`，不入库。截图技能和冷却为测试数据，不代表存档装备。
 
 维护脚本在`Assets/Scripts/UI/`：PlayerHud、UIInkHudSkin、UIInkHudSkill、UIInkVitalBranch。Shader在`Assets/resources/UI/InkUI/Dynamic/InkCooldown.shader`。不能为换皮重跑生成器或保存场景，不能把Filled改Simple。
+
+`.dsh/_diag/hud-guidance-ink-check.cs.txt` 在 1920×1080 与 1280×720 检查纪年单行/无幕布、任务同源墨底、感叹号颜色与描边、F 提示屏幕层/取消键帽及框体边界。用独立任务与设施展示样本，结束恢复原画布；不改真实任务进度、背包或存档。截图为 `cultivation/screenshots/hud-guidance-{分辨率}.png`，报告为 `hud-guidance-check-{分辨率}.txt`，截图不入库。

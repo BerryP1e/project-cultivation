@@ -108,6 +108,7 @@ public class StationInteractor : MonoBehaviour
     Text 提示文字;
     Text 提示键字;            // ★ 键帽上的字（F / 右键）—— 2026-09-26 合并建筑与 NPC 交互时加的
     GameObject 提示根;
+    RectTransform 提示框;
 
     // ★ 2026-09-26 用户要求：NPC 的**名字单独放头顶**，而「F 对话」小框挪到 **NPC 身侧**（建筑保持原样）
     Text 名字文字;
@@ -256,6 +257,7 @@ public class StationInteractor : MonoBehaviour
         if (提示根 == null) return;
 
         提示根.SetActive(true);
+        Vector3 提示世界点;
         if (提示键字 != null) 提示键字.text = StationInteractable.按键名(最近设施.取按键(交互键));
 
         var 位 = 最近设施.transform.position;
@@ -290,7 +292,7 @@ public class StationInteractor : MonoBehaviour
             if (侧.sqrMagnitude < 0.0001f) 侧 = Vector3.right;
             侧.Normalize();
             float 肩高 = Mathf.Clamp(顶 * 0.62f, 1.2f, 2.2f);
-            提示根.transform.position = 位 + 侧 * 身侧距离 + Vector3.up * 肩高;
+            提示世界点 = 位 + 侧 * 身侧距离 + Vector3.up * 肩高;
         }
         else
         {
@@ -305,29 +307,33 @@ public class StationInteractor : MonoBehaviour
                 var 朝 = 位 - transform.position;
                 朝.y = 0f;
                 if (朝.sqrMagnitude > 0.0001f) 朝.Normalize(); else 朝 = Vector3.zero;
-                提示根.transform.position = transform.position
+                提示世界点 = transform.position
                                           + 朝 * Mathf.Max(0f, 提示朝设施偏移)
                                           + Vector3.up * 提示玩家抬高;
             }
             else
             {
-                提示根.transform.position = 位 + Vector3.up * 顶;
+                提示世界点 = 位 + Vector3.up * 顶;
             }
         }
 
-        if (主相机 != null)
-            提示根.transform.rotation = Quaternion.LookRotation(
-                提示根.transform.position - 主相机.transform.position, 主相机.transform.up);
-
-        // ★ 屏幕内收：万一把提示摆到了画面外（相机贴太近 / 建筑太高 / 视角很偏），
-        //   把它拉回安全边距里面。世界高度已经封了顶（见 算提示高度），这里是第二道保险。
-        夹进屏幕(提示根.transform);
+        提示框.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Clamp(提示文字.preferredWidth + 112f, 180f, 420f));
+        // 仍跟随原世界锚点，但在屏幕叠加层绘制，避免场景后处理冲淡字色。
+        if (主相机 == null) { 隐藏提示(); return; }
+        var screen = 主相机.WorldToScreenPoint(提示世界点);
+        if (screen.z <= .05f) { 隐藏提示(); return; }
+        float margin = Screen.height * 屏幕边距比例;
+        float scale = 提示根.GetComponent<Canvas>().scaleFactor;
+        screen.x = Mathf.Clamp(screen.x, margin, Mathf.Max(margin, Screen.width - margin - 提示框.rect.width * scale));
+        screen.y = Mathf.Clamp(screen.y, margin + 提示框.rect.height * scale * .5f, Screen.height - margin - 提示框.rect.height * scale * .5f);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)提示根.transform,screen,null,out var point);
+        提示框.anchoredPosition = point;
         if (名字根 != null && 名字根.activeSelf) 夹进屏幕(名字根.transform);
 
         // 根据距离淡一点，远了不明显
         float 近 = Vector2.Distance(new Vector2(位.x, 位.z), new Vector2(transform.position.x, transform.position.z));
         float a = Mathf.Clamp01(1.4f - 近 / Mathf.Max(0.1f, 最近设施.交互距离));
-        提示文字.color = new Color(提示色.r, 提示色.g, 提示色.b, Mathf.Clamp01(a + 0.25f));
+        提示文字.color = new Color(.98f, .96f, .90f, Mathf.Clamp(a + .25f,.85f,1f));
         if (名字文字 != null) 名字文字.color = new Color(名字色.r, 名字色.g, 名字色.b, Mathf.Clamp01(a + 0.35f));
     }
 
@@ -420,72 +426,53 @@ public class StationInteractor : MonoBehaviour
         描.effectDistance = new Vector2(2f, -2f);
     }
 
-    // 提示配色（对齐用户给的示意图：深色圆角底 + 亮键帽 + 浅色字）
-    static readonly Color 提示底色 = new Color(0.06f, 0.07f, 0.10f, 0.92f);
-    static readonly Color 键底色 = new Color(0.93f, 0.89f, 0.73f, 0.96f);
-    static readonly Color 键字色 = new Color(0.10f, 0.10f, 0.12f, 1f);
-
     void 确保提示存在()
     {
         if (提示根 != null) return;
 
         提示根 = new GameObject("StationHint", typeof(Canvas));
-        // 【不挂成玩家的子物件】
-        // 挂玩家下面的话，玩家的缩放/旋转会一起作用到它；而且 WorldSpace Canvas
-        // 默认 scale=1 —— 150×40 的 canvas 在世界空间就是 150 米宽，字大得没边。
-        // 改成独立场景物件 + 自己设缩放。
         var canvas = 提示根.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        canvas.sortingOrder = 200;
-        var rt = 提示根.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(230f, 56f);
-        rt.localScale = Vector3.one * 0.011f;     // 230 × 0.011 ≈ 世界 2.5 米宽
-        // 轴心放**左边缘**：挪到 NPC 身侧时以左边缘对齐，小框就不会压住人（用户要的"身侧"）
-        rt.pivot = new Vector2(0f, 0.5f);
-
-        // ---- 底板：圆角深色（就是示意图里「F 对话」那个小框）----
-        var 底 = new GameObject("底", typeof(RectTransform));
-        底.transform.SetParent(提示根.transform, false);
-        var 底图 = 底.AddComponent<Image>();
-        底图.sprite = 取圆角(); 底图.type = Image.Type.Sliced;
-        底图.color = 提示底色; 底图.raycastTarget = false;
-        拉伸(底.GetComponent<RectTransform>());
-
-        // ---- 键帽：左边一个圆角亮块，里面写按键 ----
-        var 帽 = new GameObject("键", typeof(RectTransform));
-        帽.transform.SetParent(提示根.transform, false);
-        var 帽图 = 帽.AddComponent<Image>();
-        帽图.sprite = 取圆角(); 帽图.type = Image.Type.Sliced;
-        帽图.color = 键底色; 帽图.raycastTarget = false;
-        var 帽rt = 帽.GetComponent<RectTransform>();
-        帽rt.anchorMin = new Vector2(0f, 0.5f); 帽rt.anchorMax = new Vector2(0f, 0.5f);
-        帽rt.pivot = new Vector2(0f, 0.5f);
-        帽rt.anchoredPosition = new Vector2(7f, 0f);
-        帽rt.sizeDelta = new Vector2(42f, 42f);
-
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 1550;
+        var scaler = 提示根.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920,1080);
+        scaler.matchWidthOrHeight = .5f;
+        提示框 = UIBuildUtils.CreateRect("提示框",提示根.transform);
+        提示框.anchorMin = 提示框.anchorMax = new Vector2(.5f,.5f);
+        提示框.pivot = new Vector2(0,.5f);
+        提示框.sizeDelta = new Vector2(310,72);
+        var 底图 = UIBuildUtils.CreateImage("底",提示框,new Color(.025f,.035f,.035f,.96f));
+        拉伸(底图.rectTransform);
+        底图.gameObject.AddComponent<UIInkDialogueBackdrop>();
+        var 帽 = UIBuildUtils.CreateRect("键",提示框);
+        帽.anchorMin = 帽.anchorMax = new Vector2(0,.5f);
+        帽.pivot = new Vector2(0,.5f);
+        帽.anchoredPosition = new Vector2(28,0);
+        帽.sizeDelta = new Vector2(40,40);
         var k = new GameObject("键字", typeof(RectTransform));
-        k.transform.SetParent(帽.transform, false);
+        k.transform.SetParent(帽, false);
         提示键字 = k.AddComponent<Text>();
         提示键字.font = 取字体();
         提示键字.fontSize = 26;
         提示键字.fontStyle = FontStyle.Bold;
         提示键字.alignment = TextAnchor.MiddleCenter;
-        提示键字.color = 键字色;
+        提示键字.color = new Color(.96f,.88f,.68f);
         提示键字.raycastTarget = false;
         拉伸(k.GetComponent<RectTransform>());
 
         // ---- 动作文字：键帽右边 ----
         var t = new GameObject("Text", typeof(RectTransform));
-        t.transform.SetParent(提示根.transform, false);
+        t.transform.SetParent(提示框, false);
         提示文字 = t.AddComponent<Text>();
         提示文字.font = 取字体();
-        提示文字.fontSize = 28;
+        提示文字.fontSize = 24;
         提示文字.alignment = TextAnchor.MiddleLeft;
-        提示文字.color = 提示色;
+        提示文字.color = new Color(.98f,.96f,.90f);
         提示文字.raycastTarget = false;
         var trt = t.GetComponent<RectTransform>();
         trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
-        trt.offsetMin = new Vector2(58f, 0f); trt.offsetMax = new Vector2(-8f, 0f);
+        trt.offsetMin = new Vector2(80f, 0f); trt.offsetMax = new Vector2(-28f, 0f);
     }
 
     static void 拉伸(RectTransform rt)

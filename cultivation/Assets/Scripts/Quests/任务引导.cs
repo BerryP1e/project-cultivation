@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,7 +8,7 @@ using UnityEngine.UI;
 ///
 /// | 部分 | 长什么样 | 什么时候出现 |
 /// |---|---|---|
-/// | **追踪面板** | 屏幕**左侧**一块深色小牌：`主线 · 任务名` / 当前目标 / 一句话说明 / 目标与距离 | 只要有一条**主线**阶段在进行中 |
+/// | **追踪面板** | 屏幕**右上角**一块水墨小牌：`主线 · 任务名` / 当前目标 / 一句话说明 / 目标与距离 | 只要有一条**主线**阶段在进行中 |
 /// | **头顶感叹号** | 目标（NPC 或地点）**上方**一个金色「！」，**屏幕空间**画的 | 目标在**镜头里**时 |
 /// | **边缘箭头** | 屏幕边缘一个金色三角，**朝着目标的方向** | 目标在**镜头外**（含身后）时 |
 ///
@@ -54,10 +54,10 @@ public class 任务引导 : MonoBehaviour
     [Tooltip("中文字体。留空自动找 SimHei")]
     public Font 字体;
 
-    [Header("追踪面板（★ 屏幕**右上角**，压在纪年 HUD 下面）")]
+    [Header("追踪面板（屏幕右上角，避开顶部 Toast）")]
     [Tooltip("面板离屏幕**右边**的距离（像素，1080p 参考分辨率下）")]
     public float 右边缘 = 18f;
-    [Tooltip("面板离屏幕**顶边**的距离（像素）。默认 150 = 让开纪年 HUD(≈74) 和 Toast 那一条(≈144)，" +
+    [Tooltip("面板离屏幕**顶边**的距离（像素）。默认 150 = 让开 Toast 提示（纪年已移到右下），" +
              "不然冒出来的提示会盖住面板标题")]
     public float 上边缘 = 150f;
     [Tooltip("（旧值，留着只为兼容场景里可能序列化过的配置）面板离屏幕左边的距离")]
@@ -543,7 +543,8 @@ public class 任务引导 : MonoBehaviour
 
     void 搭面板(Transform 父)
     {
-        var 板 = UIBuildUtils.CreateImage("主线追踪", 父, 底板色);
+        var 板 = UIBuildUtils.CreateImage("主线追踪", 父, new Color(.025f,.035f,.035f,.95f));
+        板.gameObject.AddComponent<UIInkDialogueBackdrop>();
         面板 = 板.rectTransform;
         // ★ 2026-10-02 用户要求：从**屏幕左侧**挪到**右上角**（压在纪年 HUD 下面那一片）。
         //   锚点/轴心都取右上角 ⇒ 面板往**左**长、往下排；文字也改成右对齐（和纪年那两行一条线）。
@@ -555,22 +556,22 @@ public class 任务引导 : MonoBehaviour
         面板.sizeDelta = new Vector2(面板宽度, 0f);
         面板.anchoredPosition = new Vector2(-右边缘, -上边缘);
 
-        var 竖 = UIBuildUtils.AddVerticalLayout(面板, 8f, new RectOffset(16, 16, 14, 14));
+        var 竖 = UIBuildUtils.AddVerticalLayout(面板, 8f, new RectOffset(40, 40, 28, 28));
         竖.childAlignment = TextAnchor.UpperRight;
         竖.childControlWidth = true;
         // 高度跟着内容走（说明有几行就多高）
         var 自适应 = 板.gameObject.AddComponent<ContentSizeFitter>();
         自适应.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        标题文本 = 加一行(面板, "标题", 标题字号, 标题色);
-        目标文本 = 加一行(面板, "目标", 目标字号, 目标色);
-        说明文本 = 加一行(面板, "说明", 说明字号, 说明色);
-        距离文本 = 加一行(面板, "距离", 距离字号, 距离色);
+        标题文本 = 加一行(面板, "标题", 标题字号, new Color(.96f,.87f,.66f));
+        目标文本 = 加一行(面板, "目标", 目标字号, new Color(.98f,.96f,.90f));
+        说明文本 = 加一行(面板, "说明", 说明字号, new Color(.78f,.82f,.78f));
+        距离文本 = 加一行(面板, "距离", 距离字号, new Color(.84f,.87f,.79f));
     }
 
     Text 加一行(RectTransform 父, string 名, int 号, Color 色)
     {
-        // 右对齐：面板挪到右上角之后，和纪年 HUD 那两行排在同一条右边界上（用户要求挪的位置）
+        // 右对齐：面板挪到右上角之后，四行内容沿同一条右边界排列（用户要求挪的位置）
         var t = UIBuildUtils.CreateText(名, 父, 字体, "", 号, TextAnchor.UpperRight, 色);
         // 黑描边：底板是半透明的，压在亮场景上也要看得清（和灵田信息牌同一个理由）
         UIBuildUtils.AddOutline(t.rectTransform, 描边色);

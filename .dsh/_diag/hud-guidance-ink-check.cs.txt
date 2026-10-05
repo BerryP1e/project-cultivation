@@ -1,0 +1,29 @@
+﻿using UnityEngine.UI;
+System.Collections.IEnumerator Run(){
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+object Get(object obj,string name)=>obj.GetType().GetField(name,flags).GetValue(obj);
+void Set(object obj,string name,object value)=>obj.GetType().GetField(name,flags).SetValue(obj,value);
+void Call(object obj,string name)=>obj.GetType().GetMethod(name,flags).Invoke(obj,null);
+var saved=new System.Collections.Generic.Dictionary<Canvas,bool>();foreach(var c in Object.FindObjectsOfType<Canvas>(true))if(c.name=="QuestGuideCanvas" || c.name=="StationHint"){saved[c]=c.enabled;c.enabled=false;}
+var player=Object.FindObjectOfType<PlayerController>();var chronicle=Object.FindObjectOfType<纪年HUD>();
+var fixture=new GameObject("HudGuidanceVisualQA");var guide=fixture.AddComponent<任务引导>();guide.enabled=false;
+var q=ScriptableObject.CreateInstance<QuestDefinition>();q.任务名="太虚宗授业";q.阶段名="前往宗门炼丹阁";q.说明="靠近炼丹阁，按 F 打开丹房，依照丹方投入主材与辅材。";
+Set(guide,"当前阶段",q);Set(guide,"玩家",player.transform);
+var target=Get(guide,"当前目标");var targetType=target.GetType();targetType.GetField("有").SetValue(target,true);targetType.GetField("名字").SetValue(target,"宗门炼丹阁");targetType.GetField("有名字").SetValue(target,true);targetType.GetField("世界点").SetValue(target,Camera.main.ScreenToWorldPoint(new Vector3(Screen.width*.46f,Screen.height*.64f,12)));Set(guide,"当前目标",target);
+Call(guide,"刷新面板文字");Call(guide,"刷新标记");((RectTransform)Get(guide,"面板")).gameObject.SetActive(true);
+var host=new GameObject("InteractionHintQA");host.transform.position=player.transform.position;var interactor=host.AddComponent<StationInteractor>();interactor.enabled=false;
+var stationRoot=new GameObject("StationQA");stationRoot.SetActive(false);stationRoot.transform.position=player.transform.position+Camera.main.transform.right*.5f;var station=stationRoot.AddComponent<StationInteractable>();station.类型=StationInteractable.StationKind.炼丹;station.显示名="炼丹";Set(interactor,"最近设施",station);Call(interactor,"更新头顶提示");
+var sb=new System.Text.StringBuilder();void Check(bool ok,string text){if(!ok)throw new System.Exception(text);sb.AppendLine(text+" OK");}
+try{
+yield return new WaitForSecondsRealtime(1);Canvas.ForceUpdateCanvases();foreach(var skin in Object.FindObjectsOfType<InkUIRuntimeSkin>())skin.Refresh();yield return new WaitForSecondsRealtime(.4f);
+var date=chronicle.GetComponentsInChildren<Text>().Single(t=>t.name=="日期");var dateCanvas=date.GetComponentInParent<Canvas>();Check(dateCanvas.renderMode==RenderMode.ScreenSpaceOverlay && dateCanvas.GetComponentsInChildren<Image>().Length==0,"纪年仅一行文字，无幕布与修炼机会");Check(date.transform.parent.GetComponent<RectTransform>().anchorMin==new Vector2(1,0) && date.color.maxColorComponent>.9f && date.GetComponent<Outline>().enabled,"纪年右下锚点，亮字描边保留");
+var panel=(RectTransform)Get(guide,"面板");Check(panel.GetComponent<Image>().material.shader.name=="UI/InkDialogue","任务追踪采用对话同源墨底");
+var marker=((RectTransform)Get(guide,"叹号")).GetComponent<Text>();Check(marker.gameObject.activeSelf && marker.color.r>.9f && marker.color.g>.7f && marker.color.a==1 && marker.GetComponent<Outline>().enabled,"感叹号金色与描边不再被通用换皮冲掉");
+var hint=(GameObject)Get(interactor,"提示根");Check(hint.GetComponent<Canvas>().renderMode==RenderMode.ScreenSpaceOverlay,"F提示在屏幕层，避开场景后处理");Check(hint.GetComponentInChildren<UIInkDialogueBackdrop>()!=null && ((Text)Get(interactor,"提示文字")).color.r>.9f,"F提示深墨底亮文字，与对话一致");Check(hint.transform.Find("提示框/键").GetComponent<Image>()==null,"取消亮底键帽");
+Vector3[] corners=new Vector3[4];panel.GetWorldCorners(corners);Check(corners.All(v=>v.x>=0 && v.x<=Screen.width && v.y>=0 && v.y<=Screen.height),"任务幕布在屏幕内");
+var hf=(RectTransform)Get(interactor,"提示框");hf.GetWorldCorners(corners);Check(corners.All(v=>v.x>=0 && v.x<=Screen.width && v.y>=0 && v.y<=Screen.height),"互动提示完整收进屏幕");
+ScreenCapture.CaptureScreenshot("screenshots/hud-guidance-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForSecondsRealtime(.5f);
+System.IO.File.WriteAllText("screenshots/hud-guidance-check-"+Screen.width+"x"+Screen.height+".txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{var hint=(GameObject)Get(interactor,"提示根");if(hint!=null)Object.Destroy(hint);Object.Destroy(host);Object.Destroy(stationRoot);Object.Destroy(fixture);Object.Destroy(q);foreach(var pair in saved)if(pair.Key!=null)pair.Key.enabled=pair.Value;}
+}
+return Run();

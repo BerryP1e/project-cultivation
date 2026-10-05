@@ -2,14 +2,8 @@
 using UnityEngine.UI;
 
 /// <summary>
-/// **右上角纪年 HUD** —— 显示「太虚历 X 年 Y 月 Z 日 · 时辰」，
-/// 顺带一行修炼机会（每天白送的那次、以及总共还能修炼几次）。
-///
-/// ## 为什么放右上角
-///
-/// 用户 2026-10-01 要求"右上角 hud 设计一个纪年系统，同时可以显示时间"。
-/// 塔层显示在**顶部居中**（<see cref="TowerUI"/>），暂停/死亡面板在屏幕中央，
-/// 右上角是空的，正好。
+/// **右下角纪年 HUD** —— 显示「太虚历 X 年 Y 月 Z 日 · 时辰」，
+/// 无幕布，仅一行日期与时辰；修炼机会在境界页显示。
 ///
 /// ## 和塔层 HUD 的分工
 ///
@@ -32,13 +26,13 @@ public class 纪年HUD : MonoBehaviour
     [Tooltip("字号")]
     public int 字号 = 22;
 
-    [Tooltip("距离屏幕右上角的边距")]
+    [Tooltip("距离屏幕右下角的边距")]
     public Vector2 边距 = new Vector2(20f, 18f);
 
     [Tooltip("主行文字颜色（日期）")]
     public Color 日期色 = new Color(0.96f, 0.94f, 0.86f, 1f);
 
-    [Tooltip("副行文字颜色（修炼机会）")]
+    [Tooltip("旧配置兼容颜色，HUD 不再显示修炼机会")]
     public Color 机会色 = new Color(0.72f, 0.90f, 0.98f, 1f);
 
     [Tooltip("刚跨天时的高亮色")]
@@ -50,7 +44,6 @@ public class 纪年HUD : MonoBehaviour
 
     Canvas 画布;
     Text 日期文本;
-    Text 机会文本;
     float 高亮到期时刻 = -1f;
 
     void Awake()
@@ -119,20 +112,6 @@ public class 纪年HUD : MonoBehaviour
         if (t == null) return;
 
         if (日期文本 != null) 日期文本.text = t.纪年文本;
-
-        if (机会文本 != null)
-        {
-            int 还能 = t.还能修炼几次;
-            int 日常 = t.日常机会剩余;
-            int 打怪 = Mathf.FloorToInt(t.打怪机会);
-            int 上限 = t.每日修炼上限;
-            int 今日 = t.今日次数;
-
-            string s = $"修炼机会 {还能}/{上限}　今日已用 {今日}";
-            if (日常 > 0 || 打怪 > 0)
-                s += $"（日常 {日常}·打怪 {打怪}）";
-            机会文本.text = s;
-        }
     }
 
     void 取默认字体()
@@ -168,30 +147,18 @@ public class 纪年HUD : MonoBehaviour
         缩放.referenceResolution = new Vector2(1920f, 1080f);
         缩放.matchWidthOrHeight = 0.5f;
 
-        // 一个右上角对齐的竖直容器，日期在上、机会在下
-        var 排 = UIBuildUtils.CreateRect("右上行", 根.transform);
-        排.anchorMin = new Vector2(1f, 1f);
-        排.anchorMax = new Vector2(1f, 1f);
-        排.pivot = new Vector2(1f, 1f);
-        排.sizeDelta = new Vector2(460f, 70f);
-        排.anchoredPosition = new Vector2(-边距.x, -边距.y);
-
-        var 竖 = UIBuildUtils.AddVerticalLayout(排, 4f, new RectOffset(0, 0, 0, 0));
-        竖.childAlignment = TextAnchor.UpperRight;
-        竖.childControlWidth = true;
-        竖.childControlHeight = false;
-        竖.childForceExpandWidth = true;
-        竖.childForceExpandHeight = false;
-
+        // 仅显示日期与时辰，无底板；修炼机会只在境界页展示。
+        var 排 = UIBuildUtils.CreateRect("右下行", 根.transform);
+        排.anchorMin = 排.anchorMax = new Vector2(1f, 0f);
+        排.pivot = new Vector2(1f, 0f);
+        排.sizeDelta = new Vector2(640f, 32f);
+        排.anchoredPosition = new Vector2(-边距.x, 边距.y);
         日期文本 = UIBuildUtils.CreateText("日期", 排, 字体, "", 字号,
-            TextAnchor.UpperRight, 日期色);
-        日期文本.rectTransform.sizeDelta = new Vector2(460f, 30f);
-        UIBuildUtils.AddOutline(日期文本.rectTransform, new Color(0f, 0f, 0f, 0.75f));
-
-        机会文本 = UIBuildUtils.CreateText("机会", 排, 字体, "", Mathf.Max(12, 字号 - 4),
-            TextAnchor.UpperRight, 机会色);
-        机会文本.rectTransform.sizeDelta = new Vector2(460f, 26f);
-        UIBuildUtils.AddOutline(机会文本.rectTransform, new Color(0f, 0f, 0f, 0.75f));
+            TextAnchor.MiddleRight, 日期色);
+        UIBuildUtils.Stretch(日期文本.rectTransform);
+        日期文本.horizontalOverflow = HorizontalWrapMode.Overflow;
+        日期文本.verticalOverflow = VerticalWrapMode.Truncate;
+        UIBuildUtils.AddOutline(日期文本.rectTransform, new Color(0f, 0f, 0f, .85f));
     }
 
     // ---- ASCII 别名 ----

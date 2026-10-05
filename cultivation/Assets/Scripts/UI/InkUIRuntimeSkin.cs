@@ -56,13 +56,6 @@ public class InkUIRuntimeSkin : MonoBehaviour
                 foreach (var child in children) child.SetParent(content, false);
             }
         }
-        if (name == "ChronicleCanvas")
-        {
-            var chronicle = GetComponentInParent<纪年HUD>();
-            if (chronicle != null) { chronicle.日期色 = InkUITheme.Ink; chronicle.机会色 = new Color(.19f, .38f, .38f); chronicle.跨天色 = new Color(.65f, .33f, .13f); }
-            var row = transform.Find("右上行") as RectTransform;
-            if (row != null) InkUITheme.Image(row.gameObject.AddComponent<Image>(), "CommonPanels/toast");
-        }
         Refresh();
         if (name == "PauseMenuCanvas" || name == "DeathScreenCanvas" || name == "MenuCanvas" || name == "起名界面")
             UIInkMotion.Attach(gameObject, UIInkMotion.Kind.Panel);
@@ -78,7 +71,8 @@ public class InkUIRuntimeSkin : MonoBehaviour
         if (!InkUITheme.Enabled) return;
         // 对话、传送和丹房已使用独立布局，避免登记器重新套回旧纸卷/金框。
         if (GetComponent<DialogueUI>() != null || GetComponent<UIInkTeleportPanel>() != null
-            || GetComponentInParent<UIInkAlchemyPage>(true) != null) return;
+            || GetComponentInParent<UIInkAlchemyPage>(true) != null
+            || name == "ChronicleCanvas" || name == "QuestGuideCanvas" || name == "StationHint") return;
         string canvas = name;
         foreach (var image in GetComponentsInChildren<Image>(true))
         {
