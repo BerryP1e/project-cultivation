@@ -470,7 +470,7 @@ public class UIInkAlchemyPage : MonoBehaviour
         }
         else resultText.text=result.受理?"炉火熄散":"材料不足";
         yield return new WaitForSecondsRealtime(.65f);
-        lidTarget=0;正在炼制=false;刷新内容();
+        lidTarget=pendingPillCount>0?1:0;正在炼制=false;刷新内容();
     }
     public void 收取()
     {
@@ -481,7 +481,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     {
         if(pendingPill==null || pendingPillCount<=0)return;
         var data=FindObjectOfType<UIPanelData>();if(data==null)return;
-        var item=pendingPill;int count=pendingPillCount;pendingPillCount=0;pendingPill=null;
+        var item=pendingPill;int count=pendingPillCount;pendingPillCount=0;pendingPill=null;lidTarget=0;
         data.给物品(item,count);
         resultIcon.enabled=false;resultText.text="";hint.text="已取回 "+item.DisplayName+" ×"+count;
         if(已打开)刷新内容();

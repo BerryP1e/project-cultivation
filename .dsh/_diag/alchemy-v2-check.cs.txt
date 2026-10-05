@@ -45,11 +45,11 @@ var fx=view.GetComponentInChildren<UIInkAlchemyFX>();Check(fx.canvasRenderer.Get
 Check(broadcasts==0 && data.物品数量(grass)==grassBefore,"未完成炼制不提前扣材料");yield return Pause(3.7f);
 Check(broadcasts==1 && data.物品数量(grass)==grassBefore-2 && data.物品数量(dew)==dewBefore-1 && Mathf.Approximately(vitals.当前灵气,manaBefore-furnace.实际耗气(recipe)),"炼制成功只结算一次，扣材料和灵气");
 var collect=view.GetComponentsInChildren<Button>().First(b=>b.name=="Clear");
-Check(view.待取丹药数量==1 && data.物品数量(pill)==pillBefore && collect.GetComponentInChildren<Text>().text=="取回丹药","成丹待取，按钮变成取回丹药，尚未入包");Shot("pending-pill");yield return Pause(.3f);
+Check(view.待取丹药数量==1 && data.物品数量(pill)==pillBefore && collect.GetComponentInChildren<Text>().text=="取回丹药","成丹待取，按钮变成取回丹药，尚未入包");yield return Finish();yield return Pause(.4f);Check(view.炉盖开度>.99f,"成丹演出结束后未领取保持开盖");Shot("pending-pill");yield return Pause(.3f);
 yield return Finish();collect.onClick.Invoke();collect.onClick.Invoke();Check(view.待取丹药数量==0 && data.物品数量(pill)==pillBefore+1 && collect.GetComponentInChildren<Text>().text=="取回药材","点击收取一次入包，重复点击不重复给丹");
-view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(dew,(RectTransform)dewAux.transform,false);yield return Pause(.6f);
+yield return Pause(.3f);Check(view.炉盖开度<.01f,"领取丹药后合盖");view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(dew,(RectTransform)dewAux.transform,false);yield return Pause(.6f);
 recipe.成功率=0;view.开炼();yield return Finish();Check(broadcasts==2 && view.待取丹药数量==0 && data.物品数量(pill)==pillBefore+1 && data.物品数量(grass)==grassBefore-4,"失败扣料无待取丹药，按钮仍是取回药材");
-view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(dew,(RectTransform)dewAux.transform,false);yield return Pause(.6f);
+yield return Pause(.3f);Check(view.炉盖开度<.01f,"炼制失败后合盖");view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(dew,(RectTransform)dewAux.transform,false);yield return Pause(.6f);
 recipe.成功率=1;view.开炼();yield return Finish();view.关闭();Check(view.待取丹药数量==0 && data.物品数量(pill)==pillBefore+2,"关闭自动收回已炼成丹药，不丢失");
 view.打开();yield return Pause(.3f);view.选择丹方("item_dan_qingzhang");yield return Pause(.12f);Check(mask.rect.width<815 && view.选中丹方==recipe.id,"换丹方先收合旧竹简");yield return Pause(.9f);
 Check(view.选中丹方=="item_dan_qingzhang","收合后展示新丹方");
