@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 2.5D 俯视角角色移动控制。
@@ -130,6 +130,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>读输入并换算成相对摄像机的世界方向</summary>
     Vector3 ReadMoveDirection(out bool running)
     {
+        if(UiEscRegistry.SceneInputBlocked){horizontalVelocity=Vector3.zero;running=false;return Vector3.zero;}
         running = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
         Vector2 raw = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));

@@ -26,6 +26,29 @@
 /// </summary>
 public static class UiEscRegistry
 {
+    static readonly System.Collections.Generic.HashSet<Object> InputOwners = new System.Collections.Generic.HashSet<Object>();
+    static int inputReleaseFrame=-1;
+
+    /// <summary>界面开关登记场景输入锁；多个界面同时存在时，关闭一个不会提前解锁。</summary>
+    public static void SetSceneInputBlocked(Object owner,bool blocked)
+    {
+        if(owner==null)return;
+        if(blocked)InputOwners.Add(owner);
+        else if(InputOwners.Remove(owner))inputReleaseFrame=Time.frameCount;
+    }
+    static void PruneInputOwners()
+    {
+        InputOwners.RemoveWhere(o=>o==null || (o is Behaviour b && !b.isActiveAndEnabled));
+    }
+    public static bool SceneInputBlocked
+    {
+        get
+        {
+            PruneInputOwners();
+            return InputOwners.Count>0 || StationInteractor.有界面打开 || DialogueUI.正在显示
+                || inputReleaseFrame==Time.frameCount || Time.timeScale<=0;
+        }
+    }
     /// <summary>最近一次【任何全屏界面】关闭的时刻</summary>
     public static float LastCloseTime { get; private set; } = -99f;
 
@@ -36,6 +59,7 @@ public static class UiEscRegistry
     public static void NotifyClosed()
     {
         LastCloseTime = Time.unscaledTime;
+        inputReleaseFrame=Time.frameCount;
     }
 
     /// <summary>是不是刚刚才关过界面（刚关过的话，这一下 ESC 不该再被别处消费）</summary>
@@ -49,10 +73,14 @@ public static class UiEscRegistry
     {
         // 设施界面：静态标记最快
         if (StationInteractor.有界面打开) return true;
+        if (DialogueUI.正在显示) return true;
+        PruneInputOwners();
+        foreach(var owner in InputOwners)
+            if(!(owner is PauseMenuUI) && !(owner is PlayerStatsDebugPanel))return true;
 
         // 角色面板：查一下实例
         foreach (var p in Object.FindObjectsOfType<CharacterPanelUI>())
-            if (p != null && p.IsOpen) return true;
+            if (p != null && p.isActiveAndEnabled && p.IsOpen) return true;
 
         return false;
     }

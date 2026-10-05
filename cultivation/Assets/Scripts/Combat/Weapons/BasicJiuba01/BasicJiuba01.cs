@@ -165,7 +165,7 @@ public class BasicJiuba01 : MonoBehaviour
     public float 冷却 => 实际冷却;
 
     /// <summary>现在能不能出手：锁定了目标（如果要求锁定）+ **距离够得着** + 冷却好了 + 没在做动作 + 没有过场演出在锁</summary>
-    public bool 可以出手 => (!需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && (!需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
 
     /// <summary>锁定目标离玩家多远（没锁定返回 0）</summary>
     public float 到目标距离

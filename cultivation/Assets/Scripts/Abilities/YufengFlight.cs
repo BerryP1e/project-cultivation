@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -251,6 +251,7 @@ public class YufengFlight : MonoBehaviour
     void 读取切换输入()
     {
         if (强制御风) { 想飞 = true; return; }
+        if (UiEscRegistry.SceneInputBlocked) return;
         if (禁止切换) return;      // 骑乘坐骑期间不许起飞
         if (按键归坐骑()) return;   // 装了坐骑 → Shift 是坐骑的
 

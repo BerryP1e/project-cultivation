@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -183,6 +183,7 @@ public class StationInteractor : MonoBehaviour
         }
         // 对话框关掉了：把标记收回来（建筑界面还开着的话不动它）
         if (有界面打开 && 当前界面 == null) 有界面打开 = false;
+        if(UiEscRegistry.SceneInputBlocked){隐藏提示();return;}
 
         // 刚关掉界面的一小段时间内不再响应，否则"关掉的那一下"会顺手又开一个
         if (关闭冷却 > 0f) { 隐藏提示(); return; }

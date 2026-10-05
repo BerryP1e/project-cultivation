@@ -43,13 +43,13 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         if (开关按键 == KeyCode.F1) 开关按键 = KeyCode.P;
         if (玩家战斗属性 == null) 玩家战斗属性 = GetComponent<PlayerCombatStats>();
         if (玩家气血 == null) 玩家气血 = GetComponent<PlayerVitals>();
-        显示 = 启动时显示;
+        Visible = 启动时显示;
         编辑缓存 = new string[AttributeUtil.Count];
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(开关按键)) 显示 = !显示;
+        if (Input.GetKeyDown(开关按键)) Visible = !显示;
     }
 
     void EnsureStyles()
@@ -266,8 +266,10 @@ public class PlayerStatsDebugPanel : MonoBehaviour
     }
 
     // ---- ASCII 别名 ----
-    public bool Visible { get => 显示; set => 显示 = value; }
-    public void Toggle() => 显示 = !显示;
+    public bool Visible { get => 显示; set { 显示=value;UiEscRegistry.SetSceneInputBlocked(this,value); } }
+    public void Toggle() => Visible = !显示;
+    void OnDisable()=>UiEscRegistry.SetSceneInputBlocked(this,false);
+    void OnEnable()=>UiEscRegistry.SetSceneInputBlocked(this,显示);
     // ================================================================
     // NPC 召唤（调试用）
     //

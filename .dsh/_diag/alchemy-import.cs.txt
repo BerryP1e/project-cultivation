@@ -1,4 +1,4 @@
-var sb=new System.Text.StringBuilder();
+﻿var sb=new System.Text.StringBuilder();
 foreach(var path in UnityEditor.AssetDatabase.FindAssets("t:Texture2D",new[]{"Assets/resources/UI/InkUI/AlchemyInteractive"}).Select(UnityEditor.AssetDatabase.GUIDToAssetPath)){
  var importer=(UnityEditor.TextureImporter)UnityEditor.AssetImporter.GetAtPath(path);
  importer.textureType=UnityEditor.TextureImporterType.Sprite;importer.spriteImportMode=UnityEditor.SpriteImportMode.Single;
@@ -6,6 +6,13 @@ foreach(var path in UnityEditor.AssetDatabase.FindAssets("t:Texture2D",new[]{"As
  importer.maxTextureSize=path.EndsWith("cauldron-body.png") || path.EndsWith("recipe-bamboo.png") ? 2048 : path.EndsWith("cauldron-lid.png") ? 1024 : 512;
  importer.textureCompression=UnityEditor.TextureImporterCompression.Uncompressed;
  importer.filterMode=FilterMode.Bilinear;importer.spritePixelsPerUnit=100;importer.SaveAndReimport();
+ if(path.EndsWith("recipe-bamboo-slip.png")){
+  var tex=new Texture2D(2,2);tex.LoadImage(System.IO.File.ReadAllBytes(path));var pixels=tex.GetPixels32();int x0=tex.width,y0=tex.height,x1=-1,y1=-1;
+  for(int y=0;y<tex.height;y++)for(int x=0;x<tex.width;x++)if(pixels[y*tex.width+x].a>16){x0=Mathf.Min(x0,x);y0=Mathf.Min(y0,y);x1=Mathf.Max(x1,x);y1=Mathf.Max(y1,y);}
+  importer.spriteImportMode=UnityEditor.SpriteImportMode.Multiple;importer.maxTextureSize=1024;
+  importer.spritesheet=new[]{new UnityEditor.SpriteMetaData{name="recipe-bamboo-slip",rect=new Rect(x0,y0,x1-x0+1,y1-y0+1),pivot=new Vector2(.5f,.5f),alignment=0}};
+  importer.SaveAndReimport();Object.DestroyImmediate(tex);
+ }
  var sprite=UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);if(sprite==null)throw new System.Exception(path+"未导入Sprite");
  sb.AppendLine(path+" "+sprite.rect.size+" "+sprite.texture.format);
 }

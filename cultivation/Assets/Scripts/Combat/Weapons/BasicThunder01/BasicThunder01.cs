@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -242,7 +242,7 @@ public class BasicThunder01 : MonoBehaviour
     public float 索敌半径 => PlayerCombatStats.算神识范围(玩家战斗属性, 基础索敌范围, 每点神识范围, 索敌范围上限);
 
     /// <summary>现在能不能出手：**必须锁定了目标** + 冷却好了 + 没在做动作</summary>
-    public bool 可以出手 => 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
 
     public bool 出手动作中 { get; private set; }
 

@@ -53,6 +53,7 @@ public class PauseMenuUI : MonoBehaviour
 
     void OnDestroy()
     {
+        UiEscRegistry.SetSceneInputBlocked(this,false);
         // 组件被销毁时别把游戏卡在暂停状态
         if (已暂停 && !不改时间缩放) Time.timeScale = 原时间缩放;
     }
@@ -106,6 +107,7 @@ public class PauseMenuUI : MonoBehaviour
 
     void 设显示(bool 显示)
     {
+        UiEscRegistry.SetSceneInputBlocked(this,显示);
         if (!显示 && 菜单根 != null) UIInkMotion.提笔(菜单根.transform);
         if (菜单根 != null && 菜单根.activeSelf != 显示) 菜单根.SetActive(显示);
     }

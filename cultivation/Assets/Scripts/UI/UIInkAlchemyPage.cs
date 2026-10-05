@@ -13,24 +13,30 @@ public class UIInkAlchemyPage : MonoBehaviour
     public string 选中丹方 => selected!=null ? selected.id : "";
     public float 炉盖开度 {get;private set;}
     public Dictionary<string,int> 已投材料 => slots.Where(s=>s.item!=null && s.count>0).GroupBy(s=>s.item.物品id).ToDictionary(g=>g.Key,g=>g.Sum(s=>s.count));
+    public int 待取丹药数量 => pendingPillCount;
+    public string 已投主材 => slots.Count>0 && slots[0].item!=null?slots[0].item.物品id:"";
     class Slot {public ItemDefinition item;public int count;public Text label;public Image icon;}
     class Material {public ItemDefinition item;public RectTransform rect;public Text count;}
     Font font;
     RectTransform root,stage,lid,mouth,scrollReveal,scrollCanvas;
     Image dragIcon,resultIcon;
-    Image bambooTube,bambooCap;
-    Sprite closedTube,openTube;
-    Text recipeText,recipeTitle,hint,mana,startText,resultText;
+    Image bambooTube,recipeIcon;
+    Sprite closedTube;
+    Text recipeText,recipeTitle,hint,mana,startText,resultText,collectText;
     CanvasGroup scrollWords;
     UIInkAlchemyFX fx;
-    Button start;
-    ScrollRect leftMaterials,rightMaterials,recipes,description;
+    Button start,collect;
+    ScrollRect leftMaterials,rightMaterials,recipes,description,ingredientBook;
+    readonly List<RectTransform> recipeSlips=new List<RectTransform>();
     readonly List<Slot> slots=new List<Slot>();
     readonly List<Material> materials=new List<Material>();
     readonly Dictionary<string,Button> recipeButtons=new Dictionary<string,Button>();
     readonly Dictionary<Canvas,bool> hudStates=new Dictionary<Canvas,bool>();
     灵丹定义 selected;
     ItemDefinition dragging;
+    bool draggingMain;
+    ItemDefinition pendingPill;
+    int pendingPillCount;
     Vector2 dragOrigin,lidBase;
     float lidTarget,refreshAt,scrollAt=-100;
     string inventoryKey="",recipeKey="";
@@ -62,13 +68,20 @@ public class UIInkAlchemyPage : MonoBehaviour
         scrollCanvas=UIBuildUtils.CreateRect("RecipeScroll",scrollReveal);
         scrollCanvas.anchorMin=scrollCanvas.anchorMax=Vector2.zero;scrollCanvas.pivot=Vector2.zero;
         scrollCanvas.sizeDelta=new Vector2(815,310);
-        var paper=UIBuildUtils.CreateImage("ScrollArtwork",scrollCanvas,Color.white);UIBuildUtils.Stretch(paper.rectTransform);
-        paper.sprite=Asset("recipe-bamboo");paper.raycastTarget=false;
-        recipeTitle=Label("RecipeTitle",scrollCanvas,"丹方",28,TextAnchor.MiddleLeft,.10f,.70f,.87f,.85f);
-        recipeTitle.color=InkUITheme.Ink;
-        description=Scroll("RecipeDescription",scrollCanvas,.10f,.15f,.87f,.69f);
-        recipeText=Label("RecipeRequirements",description.content,"选中丹方，查看所需药材。",21,TextAnchor.UpperLeft,0,0,1,1);
-        recipeText.color=InkUITheme.Ink;
+        ingredientBook=Scroll("IngredientBook",scrollCanvas,.34f,.02f,1,.98f);
+        ingredientBook.horizontal=true;ingredientBook.vertical=false;
+        ingredientBook.content.anchorMin=Vector2.zero;ingredientBook.content.anchorMax=new Vector2(0,1);ingredientBook.content.pivot=new Vector2(0,.5f);
+        if(ingredientBook.verticalScrollbar!=null)ingredientBook.verticalScrollbar.gameObject.SetActive(false);
+        var bookRow=ingredientBook.content.gameObject.AddComponent<HorizontalLayoutGroup>();
+        bookRow.spacing=7;bookRow.padding=new RectOffset(5,5,0,0);bookRow.childControlHeight=true;bookRow.childControlWidth=false;bookRow.childForceExpandWidth=false;
+        ingredientBook.content.gameObject.AddComponent<ContentSizeFitter>().horizontalFit=ContentSizeFitter.FitMode.PreferredSize;
+        var info=UIBuildUtils.CreateImage("RecipeInfoInk",scrollCanvas,new Color(.055f,.10f,.075f,.95f));
+        info.sprite=InkUITheme.Load("Dynamic/fx-ink-blot");Place(info.rectTransform,0,0,.33f,1);info.raycastTarget=false;
+        recipeIcon=UIBuildUtils.CreateImage("SelectedRecipeIcon",scrollCanvas,Color.white);
+        recipeIcon.sprite=Asset("pill");recipeIcon.preserveAspect=true;Place(recipeIcon.rectTransform,.095f,.66f,.245f,.99f);
+        recipeTitle=Label("RecipeTitle",scrollCanvas,"丹方",25,TextAnchor.MiddleCenter,.015f,.53f,.325f,.67f);
+        description=Scroll("RecipeDescription",scrollCanvas,.015f,.045f,.325f,.51f);
+        recipeText=Label("RecipeIntroduction",description.content,"",19,TextAnchor.UpperCenter,0,0,1,1);
         var textLayout=description.content.gameObject.AddComponent<VerticalLayoutGroup>();
         textLayout.childControlHeight=true;textLayout.childControlWidth=true;textLayout.childForceExpandHeight=false;
         description.content.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
@@ -76,14 +89,10 @@ public class UIInkAlchemyPage : MonoBehaviour
         scrollReveal.gameObject.SetActive(false);
         scrollAt=Time.unscaledTime;
         bambooTube=UIBuildUtils.CreateImage("OpeningRecipeTube",root,Color.white);
-        closedTube=Asset("recipe-bamboo-tube");openTube=Asset("recipe-bamboo-tube-open");
+        closedTube=Asset("recipe-bamboo-roll");
         bambooTube.sprite=closedTube;bambooTube.preserveAspect=true;
         bambooTube.rectTransform.anchorMin=bambooTube.rectTransform.anchorMax=new Vector2(.07f,.75f);
         bambooTube.rectTransform.sizeDelta=new Vector2(180,225);bambooTube.enabled=true;
-        bambooCap=UIBuildUtils.CreateImage("OpeningRecipeCap",bambooTube.transform,Color.white);
-        bambooCap.sprite=Asset("recipe-bamboo-cap");bambooCap.preserveAspect=true;
-        bambooCap.rectTransform.anchorMin=bambooCap.rectTransform.anchorMax=new Vector2(.64f,.74f);
-        bambooCap.rectTransform.sizeDelta=new Vector2(75,62);bambooCap.enabled=false;
 
         Label("KnownRecipes",root,"已学丹方",27,TextAnchor.MiddleLeft,.55f,.85f,.88f,.9f);
         recipes=Scroll("Recipes",root,.55f,.60f,.91f,.85f);
@@ -123,19 +132,21 @@ public class UIInkAlchemyPage : MonoBehaviour
         resultIcon.preserveAspect=true;resultIcon.enabled=false;
         resultText=Label("ResultLabel",stage,"",24,TextAnchor.MiddleCenter,.12f,.91f,.88f,1.1f);
 
-        Label("MaterialHeading",root,"可用药材",24,TextAnchor.MiddleLeft,.065f,.535f,.25f,.59f);
-        Label("DragHint",root,"拖入炉口 · 点击也可投料",17,TextAnchor.MiddleRight,.73f,.535f,.93f,.59f);
+        Label("MaterialHeading",root,"主材 · 拖入炉口",24,TextAnchor.MiddleLeft,.065f,.535f,.275f,.59f);
+        Label("DragHint",root,"辅材 · 拖入炉口",24,TextAnchor.MiddleRight,.725f,.535f,.945f,.59f);
         leftMaterials=Scroll("LeftMaterials",root,.055f,.095f,.275f,.535f);
         rightMaterials=Scroll("RightMaterials",root,.725f,.095f,.945f,.535f);
         start=Action("Craft",root,"开炼",.435f,.055f,.565f,.115f);startText=start.GetComponentInChildren<Text>();start.onClick.AddListener(开炼);
-        var clear=Action("Clear",root,"取回药材",.32f,.055f,.415f,.11f);clear.onClick.AddListener(清空投料);
+        collect=Action("Clear",root,"取回药材",.32f,.055f,.415f,.11f);collectText=collect.GetComponentInChildren<Text>();collect.onClick.AddListener(收取);
         hint=Label("Status",root,"",20,TextAnchor.MiddleCenter,.285f,.005f,.715f,.055f);
-        隐藏HUD();刷新内容();
+        隐藏HUD();刷新内容();UiEscRegistry.SetSceneInputBlocked(this,true);
     }
 
-    public void 打开() { if(root!=null){root.gameObject.SetActive(true);隐藏HUD();刷新内容();} }
+    public void 打开() { if(root!=null){root.gameObject.SetActive(true);隐藏HUD();刷新内容();UiEscRegistry.SetSceneInputBlocked(this,true);} }
     public void 关闭()
     {
+        UiEscRegistry.SetSceneInputBlocked(this,false);
+        取回丹药();
         StopAllCoroutines();animatingDrop=false;dragging=null;正在炼制=false;heating=false;
         recipeTransition=null;switchingRecipe=false;recipeClosed=false;scrollAt=Time.unscaledTime-.65f;
         if(dragIcon!=null)Destroy(dragIcon.gameObject);
@@ -174,17 +185,22 @@ public class UIInkAlchemyPage : MonoBehaviour
         float bambooAge=Time.unscaledTime-scrollAt;
         bool closed=selected==null || recipeClosed;
         bool showingTube=closed || (!switchingRecipe && bambooAge<.65f);
-        bambooTube.sprite=closed?closedTube:openTube;
-        bambooTube.enabled=showingTube;bambooCap.enabled=!closed && showingTube;
+        bambooTube.enabled=showingTube;
         if(closed)bambooTube.color=Color.white;
         if(!closed && showingTube)
         {
-            float capLift=Mathf.SmoothStep(0,1,bambooAge/.32f);
-            bambooCap.rectTransform.anchoredPosition=new Vector2(14*capLift,44*capLift);
-            bambooCap.rectTransform.localRotation=Quaternion.Euler(0,0,-13*capLift);
+            bambooTube.rectTransform.localRotation=Quaternion.Euler(0,0,-12*Mathf.Sin(Mathf.Clamp01(bambooAge/.65f)*Mathf.PI));
             float alpha=1-Mathf.Clamp01((bambooAge-.35f)/.3f);
-            bambooTube.color=new Color(1,1,1,alpha);bambooCap.color=bambooTube.color;
+            bambooTube.color=new Color(1,1,1,alpha);
         }
+        if(closed)bambooTube.rectTransform.localRotation=Quaternion.identity;
+        if(!switchingRecipe)
+            for(int i=0;i<recipeSlips.Count;i++)
+            {
+                float p=Mathf.SmoothStep(0,1,Mathf.Clamp01((bambooAge-i*.065f)/.3f));
+                recipeSlips[i].localRotation=Quaternion.Euler(0,-65*(1-p),0);
+                recipeSlips[i].GetComponent<CanvasGroup>().alpha=p;
+            }
         炉盖开度=Mathf.MoveTowards(炉盖开度,lidTarget,dt*5);
         float lift=Mathf.SmoothStep(0,1,炉盖开度);
         lid.anchoredPosition=lidBase+new Vector2(35*lift,100*lift);
@@ -215,7 +231,7 @@ public class UIInkAlchemyPage : MonoBehaviour
                 button.gameObject.AddComponent<LayoutElement>();
                 var title=button.GetComponentInChildren<Text>();Place(title.rectTransform,.05f,.02f,.95f,.35f);title.fontSize=19;
                 var icon=UIBuildUtils.CreateImage("RecipeIcon",button.transform,Color.white);Place(icon.rectTransform,.29f,.36f,.71f,.98f);
-                icon.sprite=Asset("recipe-bamboo-tube");icon.preserveAspect=true;
+                icon.sprite=closedTube;icon.preserveAspect=true;
                 button.onClick.AddListener(()=>选择丹方(d.id));recipeButtons[d.id]=button;
                 foreach(var g in button.GetComponentsInChildren<Graphic>())g.gameObject.AddComponent<UIInkScrollFade>();
             }
@@ -227,26 +243,27 @@ public class UIInkAlchemyPage : MonoBehaviour
         {
             inventoryKey=itemKey;materials.Clear();
             foreach(var s in new[]{leftMaterials,rightMaterials})foreach(Transform child in s.content){child.gameObject.SetActive(false);Destroy(child.gameObject);}
-            for(int i=0;i<items.Count;i++)AddMaterial(items[i],i);
+            for(int i=0;i<items.Count;i++){AddMaterial(items[i],i,true);AddMaterial(items[i],i,false);}
             SizeMaterials(leftMaterials);SizeMaterials(rightMaterials);
         }
         foreach(var row in materials)
         {int count=data!=null?data.物品数量(row.item)-暂存数量(row.item.物品id):0;row.count.text="×"+Mathf.Max(0,count);row.rect.GetComponent<CanvasGroup>().alpha=count>0?1:.36f;}
-        foreach(var kv in recipeButtons){bool can=furnace.能炼(furnace.取丹方(kv.Key),out var unused);kv.Value.interactable=!正在炼制;kv.Value.GetComponent<UIInkFluid>().选中(selected!=null && kv.Key==selected.id);kv.Value.GetComponentInChildren<Text>().color=can?Light:Muted;}
+        foreach(var kv in recipeButtons){bool can=furnace.能炼(furnace.取丹方(kv.Key),out var unused);kv.Value.interactable=!正在炼制 && pendingPillCount==0;kv.Value.GetComponent<UIInkFluid>().选中(selected!=null && kv.Key==selected.id);kv.Value.GetComponentInChildren<Text>().color=can?Light:Muted;}
         for(int i=0;i<slots.Count;i++)
         {
             var slot=slots[i];slot.icon.enabled=slot.item!=null;slot.icon.sprite=slot.item!=null?Icon(slot.item):null;
-            slot.label.text=slot.item!=null ? slot.item.DisplayName+" ×"+slot.count : i==0?"主材":"辅材";
+            slot.label.text=slot.item!=null ? (i==0?"主 ":"辅 ")+slot.item.DisplayName+" ×"+slot.count : i==0?"主材":"辅材";
         }
         var vitals=FindObjectOfType<PlayerVitals>();mana.text=vitals!=null ? $"灵气 {vitals.当前灵气:F0} / {vitals.灵气上限:F0}" : "";
         var match=匹配丹方();bool ready=match!=null && furnace.能炼(match,out var reason);
-        start.interactable=!正在炼制 && !animatingDrop && !switchingRecipe && ready;startText.text=正在炼制?"炼制中…":"开炼";
+        start.interactable=!正在炼制 && !animatingDrop && !switchingRecipe && pendingPillCount==0 && ready;startText.text=正在炼制?"炼制中…":"开炼";
+        collectText.text=pendingPillCount>0?"取回丹药":"取回药材";collect.interactable=!正在炼制 && !animatingDrop && !switchingRecipe;
         if(!正在炼制 && string.IsNullOrEmpty(hint.text))hint.text=known.Count==0 ? "尚未学会丹方" : items.Count==0 ? "背包中暂无可炼丹的药材" : "";
     }
 
-    void AddMaterial(ItemDefinition item,int index)
+    void AddMaterial(ItemDefinition item,int index,bool main)
     {
-        var scroll=index%2==0?leftMaterials:rightMaterials;int n=index/2;
+        var scroll=main?leftMaterials:rightMaterials;int n=index;
         var rt=UIBuildUtils.CreateRect("Material_"+item.物品id,scroll.content);
         rt.anchorMin=rt.anchorMax=new Vector2(.5f,1);rt.sizeDelta=new Vector2(155,140);
         // 每两行偏移错落，列表仍留足图标与文字空间，更多材料自然向下延伸。
@@ -258,6 +275,7 @@ public class UIInkAlchemyPage : MonoBehaviour
         Label("Name",rt,item.DisplayName,20,TextAnchor.MiddleCenter,.02f,.07f,.98f,.31f);
         var count=Label("Count",rt,"",17,TextAnchor.MiddleRight,.61f,.73f,.95f,.97f);
         var drag=rt.gameObject.AddComponent<UIInkAlchemyDrag>();drag.视图=this;drag.材料=item;
+        drag.主材=main;
         materials.Add(new Material{item=item,rect=rt,count=count});
         foreach(var g in rt.GetComponentsInChildren<Graphic>())g.gameObject.AddComponent<UIInkScrollFade>();
     }
@@ -268,7 +286,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     }
     public void 选择丹方(string id)
     {
-        if(正在炼制 || animatingDrop || dragging!=null || !炼丹炉.已学会(id))return;
+        if(正在炼制 || animatingDrop || dragging!=null || pendingPillCount>0 || !炼丹炉.已学会(id))return;
         var next=炼丹炉.取().取丹方(id);if(next==null)return;
         if(recipeTransition!=null)StopCoroutine(recipeTransition);
         if(selected==null){应用丹方(next);return;}
@@ -292,32 +310,61 @@ public class UIInkAlchemyPage : MonoBehaviour
     {
         selected=next;
         清空投料();recipeTitle.text=selected.名+" · "+selected.品+"品";
-        var sb=new StringBuilder();var furnace=炼丹炉.取();int index=0;
+        foreach(Transform child in ingredientBook.content){child.gameObject.SetActive(false);Destroy(child.gameObject);}recipeSlips.Clear();
+        var furnace=炼丹炉.取();int index=0;
         foreach(var kv in furnace.全部材料(selected))
-        {var d=QuestDatabase.取().找物品(kv.Key);sb.AppendLine((index++==0?"主材  ":"辅材  ")+(d!=null?d.DisplayName:kv.Key)+" ×"+kv.Value);}
-        sb.AppendLine();sb.AppendLine($"成丹率 {furnace.实际成功率(selected):P0}   耗灵气 {furnace.实际耗气(selected)}");sb.AppendLine(selected.说明);
-        recipeText.text=sb.ToString();scrollAt=Time.unscaledTime;
+        {
+            var d=QuestDatabase.取().找物品(kv.Key);
+            var slip=UIBuildUtils.CreateImage("HerbSlip_"+index,ingredientBook.content,Color.white);slip.sprite=Asset("recipe-bamboo-slip");
+            slip.rectTransform.sizeDelta=new Vector2(111,296);slip.gameObject.AddComponent<LayoutElement>().preferredWidth=111;
+            slip.gameObject.AddComponent<CanvasGroup>();recipeSlips.Add(slip.rectTransform);
+            var label=Label("RoleQuantity",slip.transform,(index++==0?"主材":"辅材")+" ×"+kv.Value,17,TextAnchor.MiddleCenter,.06f,.88f,.94f,.99f);label.color=InkUITheme.Ink;
+            var icon=UIBuildUtils.CreateImage("HerbIcon",slip.transform,Color.white);if(d!=null)icon.sprite=Icon(d);icon.preserveAspect=true;Place(icon.rectTransform,.23f,.70f,.77f,.87f);
+            var name=Label("HerbName",slip.transform,string.Join("\n",(d!=null?d.DisplayName:kv.Key).Select(c=>c.ToString())),20,TextAnchor.UpperCenter,.70f,.18f,.95f,.69f);name.color=InkUITheme.Ink;
+            var info=Label("HerbIntroduction",slip.transform,竖排(d!=null?d.介绍:"",10,3),14,TextAnchor.UpperCenter,.07f,.17f,.68f,.68f);info.color=InkUITheme.Ink;
+            var quality=Label("HerbQuality",slip.transform,d!=null?d.品阶.ToString():"",16,TextAnchor.MiddleCenter,.08f,.03f,.92f,.13f);quality.color=InkUITheme.Ink;
+            foreach(var t in slip.GetComponentsInChildren<Text>())t.GetComponent<Shadow>().effectColor=Color.clear;
+        }
+        ingredientBook.horizontalNormalizedPosition=0;
+        var output=QuestDatabase.取().找物品(selected.id);recipeIcon.sprite=output!=null?Icon(output):Asset("pill");
+        recipeText.text=$"{selected.品阶}\n成丹率 {furnace.实际成功率(selected):P0}\n耗灵气 {furnace.实际耗气(selected)}\n\n{selected.说明}";scrollAt=Time.unscaledTime;
         LayoutRebuilder.ForceRebuildLayoutImmediate(description.content);description.verticalNormalizedPosition=1;刷新内容();
     }
+    static string 竖排(string text,int rows,int columns)
+    {
+        text=new string(text.Where(c=>!char.IsWhiteSpace(c)).ToArray());
+        if(text.Length>rows*columns)text=text.Substring(0,rows*columns-1)+"…";
+        var sb=new StringBuilder();
+        for(int row=0;row<Mathf.Min(rows,text.Length);row++)
+        {
+            for(int col=columns-1;col>=0;col--){int i=col*rows+row;sb.Append(i<text.Length?text[i]:'　');}
+            if(row<Mathf.Min(rows,text.Length)-1)sb.Append('\n');
+        }
+        return sb.ToString();
+    }
     int 暂存数量(string id)=>slots.Where(s=>s.item!=null && s.item.物品id==id).Sum(s=>s.count);
-    bool CanStage(ItemDefinition item,out int index)
+    bool CanStage(ItemDefinition item,bool main,out int index)
     {
         index=-1;if(item==null || 正在炼制 || animatingDrop || switchingRecipe)return false;
+        if(pendingPillCount>0){hint.text="请先取回炼成的丹药";return false;}
         var data=FindObjectOfType<UIPanelData>();if(data==null || data.物品数量(item)<=暂存数量(item.物品id)){hint.text="这味药材已经全部投入炉中";return false;}
         if(selected!=null)
         {
-            var requirements=炼丹炉.取().全部材料(selected);index=requirements.FindIndex(k=>k.Key==item.物品id);
-            if(index<0 || index>=5){hint.text="此丹方不需要这味药材";return false;}
-            if(暂存数量(item.物品id)>=requirements.Where(k=>k.Key==item.物品id).Sum(k=>k.Value)){hint.text="这味药材已足量";return false;}
+            int needed=main?(selected.主材id==item.物品id?selected.主材数量:0):炼丹炉.解析材料(selected.辅材).Where(k=>k.Key==item.物品id).Sum(k=>k.Value);
+            if(needed==0){hint.text=main?"此药材不是该丹方的主材，请核对或从右侧投辅材":"此药材不是该丹方的辅材，请核对或从左侧投主材";return false;}
+            int staged=main?slots[0].count:slots.Skip(1).Where(s=>s.item!=null && s.item.物品id==item.物品id).Sum(s=>s.count);
+            if(staged>=needed){hint.text="这味"+(main?"主材":"辅材")+"已足量";return false;}
         }
+        if(main)
+        {if(slots[0].item!=null && slots[0].item.物品id!=item.物品id){hint.text="主材位已有另一味药材，请先取回";return false;}index=0;}
         else
-        {index=slots.FindIndex(s=>s.item==item);if(index<0)index=slots.FindIndex(s=>s.item==null);}
+        {index=slots.FindIndex(1,s=>s.item!=null && s.item.物品id==item.物品id);if(index<0)index=slots.FindIndex(1,s=>s.item==null);}
         if(index<0){hint.text="炉中材料位置已满";return false;}return true;
     }
-    public bool 开始拖动(ItemDefinition item,RectTransform origin,Vector2 screen)
+    public bool 开始拖动(ItemDefinition item,RectTransform origin,Vector2 screen,bool main=true)
     {
-        if(dragging!=null || !CanStage(item,out var index))return false;
-        dragging=item;dragOrigin=root.InverseTransformPoint(origin.position);
+        if(dragging!=null || !CanStage(item,main,out var index))return false;
+        dragging=item;draggingMain=main;dragOrigin=root.InverseTransformPoint(origin.position);
         CreateGhost(item);拖动(screen);return true;
     }
     void CreateGhost(ItemDefinition item)
@@ -344,14 +391,14 @@ public class UIInkAlchemyPage : MonoBehaviour
         if(dragging==null)return;
         var item=dragging;dragging=null;
         int slotIndex=-1;
-        bool accepted=NearMouth(screen,0) && CanStage(item,out slotIndex);
+        bool accepted=NearMouth(screen,0) && CanStage(item,draggingMain,out slotIndex);
         if(accepted){slots[slotIndex].item=item;slots[slotIndex].count++;hint.text="已投入 "+item.DisplayName;}
         else if(!NearMouth(screen,0))hint.text="未放入炉口，药材已归位";
         StartCoroutine(投料演出(accepted));
     }
-    public void 点击投料(ItemDefinition item,RectTransform origin)
+    public void 点击投料(ItemDefinition item,RectTransform origin,bool main=true)
     {
-        if(!CanStage(item,out var index) || dragging!=null)return;
+        if(!CanStage(item,main,out var index) || dragging!=null)return;
         slots[index].item=item;slots[index].count++;CreateGhost(item);
         dragIcon.rectTransform.anchoredPosition=root.InverseTransformPoint(origin.position);dragOrigin=dragIcon.rectTransform.anchoredPosition;
         hint.text="已投入 "+item.DisplayName;StartCoroutine(投料演出(true));
@@ -376,7 +423,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     }
     public void 清空投料()
     {
-        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe)return;
+        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe || pendingPillCount>0)return;
         foreach(var s in slots){s.item=null;s.count=0;}hint.text="";resultIcon.enabled=false;resultText.text="";刷新内容();
     }
     void 取回(int index)
@@ -386,18 +433,19 @@ public class UIInkAlchemyPage : MonoBehaviour
     }
     灵丹定义 匹配丹方()
     {
-        var staged=已投材料;
+        var staged=slots.Skip(1).Where(s=>s.item!=null && s.count>0).GroupBy(s=>s.item.物品id).ToDictionary(g=>g.Key,g=>g.Sum(s=>s.count));
         foreach(var d in 炼丹炉.取().已学会的丹方())
         {
             if(selected!=null && selected.id!=d.id)continue;
-            var expected=炼丹炉.取().全部材料(d).GroupBy(k=>k.Key).ToDictionary(g=>g.Key,g=>g.Sum(k=>k.Value));
+            if(slots[0].item==null || slots[0].item.物品id!=d.主材id || slots[0].count!=d.主材数量)continue;
+            var expected=炼丹炉.解析材料(d.辅材).GroupBy(k=>k.Key).ToDictionary(g=>g.Key,g=>g.Sum(k=>k.Value));
             if(staged.Count==expected.Count && expected.All(k=>staged.TryGetValue(k.Key,out int n)&&n==k.Value))return d;
         }
         return null;
     }
     public void 开炼()
     {
-        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe)return;
+        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe || pendingPillCount>0)return;
         var recipe=匹配丹方();if(recipe==null){hint.text="投料还未与已学丹方相符";return;}
         if(!炼丹炉.取().能炼(recipe,out var reason)){hint.text=reason;return;}
         StartCoroutine(炼制演出(recipe));
@@ -409,13 +457,14 @@ public class UIInkAlchemyPage : MonoBehaviour
         while(age<3.2f){age+=Time.unscaledDeltaTime;hint.text="炉火温养  "+Mathf.Min(99,Mathf.FloorToInt(age/3.2f*100))+"%";yield return null;}
         // 整段演出只在这里调用一次业务结算；关闭/销毁会停止协程，未完成不扣材料。
         heating=false;
-        var result=炼丹炉.取().炼制(recipe.id);
+        var result=炼丹炉.取().炼制(recipe.id,false);
         fx.热度=0;fx.成功=result.成功;fx.爆发时刻=Time.unscaledTime;lidTarget=result.受理?1:0;
         if(result.受理)foreach(var s in slots){s.item=null;s.count=0;}
         hint.text=result.文本;
         if(result.成功)
         {
             var item=QuestDatabase.取().找物品(recipe.id);resultIcon.sprite=item!=null?Icon(item):null;
+            pendingPill=item;pendingPillCount=result.数量;collectText.text="取回丹药";
             resultIcon.enabled=resultIcon.sprite!=null;resultText.text=recipe.名+" ×"+result.数量;
             float t=0;while(t<.65f){t+=Time.unscaledDeltaTime;float p=Mathf.Clamp01(t/.65f);resultIcon.rectTransform.localScale=Vector3.one*Mathf.SmoothStep(.15f,1,p);resultIcon.rectTransform.anchoredPosition=new Vector2(0,45*Mathf.SmoothStep(0,1,p));yield return null;}
         }
@@ -423,9 +472,23 @@ public class UIInkAlchemyPage : MonoBehaviour
         yield return new WaitForSecondsRealtime(.65f);
         lidTarget=0;正在炼制=false;刷新内容();
     }
+    public void 收取()
+    {
+        if(正在炼制 || animatingDrop || switchingRecipe || dragging!=null)return;
+        if(pendingPillCount>0)取回丹药();else 清空投料();
+    }
+    public void 取回丹药()
+    {
+        if(pendingPill==null || pendingPillCount<=0)return;
+        var data=FindObjectOfType<UIPanelData>();if(data==null)return;
+        var item=pendingPill;int count=pendingPillCount;pendingPillCount=0;pendingPill=null;
+        data.给物品(item,count);
+        resultIcon.enabled=false;resultText.text="";hint.text="已取回 "+item.DisplayName+" ×"+count;
+        if(已打开)刷新内容();
+    }
     Sprite Icon(ItemDefinition item)
     { if(item.图标!=null)return item.图标;return Asset("material-"+item.物品id) ?? Asset("pill"); }
-    static Sprite Asset(string name)=>Resources.Load<Sprite>("UI/InkUI/AlchemyInteractive/"+name);
+    static Sprite Asset(string name)=>Resources.Load<Sprite>("UI/InkUI/AlchemyInteractive/"+name) ?? Resources.LoadAll<Sprite>("UI/InkUI/AlchemyInteractive/"+name).FirstOrDefault();
     Text Label(string name,Transform parent,string value,int size,TextAnchor align,float x0,float y0,float x1,float y1)
     {
         var text=UIBuildUtils.CreateText(name,parent,font,value,size,align,Light);Place(text.rectTransform,x0,y0,x1,y1);

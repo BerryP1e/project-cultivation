@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **临时调机位工具**：用 `【` / `】` 两个键让摄像机绕玩家在**水平面**旋转，
@@ -44,6 +44,7 @@ public class CameraYawRotator : MonoBehaviour
     void Update()
     {
         if (相机 == null) return;
+        if (UiEscRegistry.SceneInputBlocked) return;
 
         float 方向 = 0f;      // -1 = 往左转，+1 = 往右转
         int 点按 = 0;         // 本帧是否"刚按下"（配合 每步角度 用）

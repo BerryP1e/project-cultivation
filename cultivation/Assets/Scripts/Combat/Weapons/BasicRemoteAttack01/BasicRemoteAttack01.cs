@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -149,7 +149,7 @@ public class BasicRemoteAttack01 : MonoBehaviour
     public float 冷却剩余 => Mathf.Max(0f, 下次可出手时间 - Time.time);
 
     /// <summary>现在能不能出手</summary>
-    public bool 可以出手 => 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
 
     /// <summary>正在做攻击动作</summary>
     public bool 出手动作中 { get; private set; }

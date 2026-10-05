@@ -318,7 +318,7 @@ public class MountRider : MonoBehaviour
         //   （判断在 按了坐骑键 里，御风那边也用 按键归坐骑() 对称地让开）
         bool 按下 = Input.GetKeyDown(坐骑键)
                  || (坐骑键2 != KeyCode.None && Input.GetKeyDown(坐骑键2));
-        if (按下) 按了坐骑键();
+        if (按下 && !UiEscRegistry.SceneInputBlocked) 按了坐骑键();
 
         // ★ 面板里把坐骑卸了 / 换成另一只 → **立刻收掉正在骑的这只**。
         //   用户定的规则是「启用【凭虚御风】→ 自动取消装备坐骑」，

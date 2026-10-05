@@ -106,7 +106,7 @@ public class CharacterPanelUI : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(toggleKey))
+        if (Input.GetKeyDown(toggleKey) && (IsOpen || !UiEscRegistry.SceneInputBlocked))
             SetOpen(!IsOpen);
 
         if (IsOpen && Input.GetKeyDown(closeKey))
@@ -117,6 +117,7 @@ public class CharacterPanelUI : MonoBehaviour
     public void SetOpen(bool open, bool snap = false)
     {
         IsOpen = open;
+        UiEscRegistry.SetSceneInputBlocked(this,open);
         if(open)SuppressHud();else {RestoreHud();UIDragContext.End(true);}
 
         if (panelRoot != null)
@@ -157,12 +158,15 @@ public class CharacterPanelUI : MonoBehaviour
 
     void OnDisable()
     {
+        UiEscRegistry.SetSceneInputBlocked(this,false);
         RestoreHud();UIDragContext.End(true);
         RestoreTimeScale();
     }
+    void OnEnable()=>UiEscRegistry.SetSceneInputBlocked(this,IsOpen);
 
     void OnDestroy()
     {
+        UiEscRegistry.SetSceneInputBlocked(this,false);
         RestoreHud();
         RestoreTimeScale();
     }

@@ -1,0 +1,30 @@
+﻿using UnityEngine.UI;
+using UnityEngine.EventSystems;
+System.Collections.IEnumerator Run(){
+var character=Object.FindObjectOfType<CharacterPanelUI>();bool oldOpen=character.IsOpen,oldPause=character.pauseGameWhenOpen;var oldTab=character.CurrentTab;
+var debug=Object.FindObjectOfType<PlayerStatsDebugPanel>();bool oldDebug=debug.Visible;float oldTime=Time.timeScale;
+var owner=new GameObject("InputLockCameraProbe");var camera=owner.AddComponent<TopDownCamera>();camera.enabled=false;var zoom=owner.AddComponent<TopDownCameraZoom>();zoom.cameraRig=camera;
+var caster=Object.FindObjectOfType<ActiveSkillCaster>();var player=Object.FindObjectOfType<PlayerController>();
+var inventory=Object.FindObjectOfType<UIPanelData>();var oldItems=inventory.物品.ToList();
+var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");UIInkAlchemyPage view=null;
+var sb=new System.Text.StringBuilder();void Check(bool ok,string text){if(!ok)throw new System.Exception(text);sb.AppendLine(text+" OK");}
+void WheelBlocked(string text){float distance=camera.distance;zoom.ApplyScrollInput(.1f);Check(camera.distance==distance && UiEscRegistry.SceneInputBlocked,text);}
+try{
+Time.timeScale=1;character.SetOpen(false,true);debug.Visible=false;yield return null;yield return null;
+Check(!UiEscRegistry.SceneInputBlocked,"无界面时场景输入解锁");zoom.ApplyScrollInput(.1f);Check(camera.distance<zoom.BaseDistance,"正常滚轮能缩放摄像机");
+view=Object.Instantiate(prefab).GetComponent<UIInkAlchemyPage>();yield return null;WheelBlocked("炼丹界面打开后滚轮不能缩放摄像机");
+if(caster!=null)Check(!caster.接收输入() && !caster.尝试施放(0),"技能按键和直接施放均被拦截");
+if(player!=null){var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;var velocity=typeof(PlayerController).GetField("horizontalVelocity",flags);velocity.SetValue(player,Vector3.right*3);var args=new object[]{false};var move=(Vector3)typeof(PlayerController).GetMethod("ReadMoveDirection",flags).Invoke(player,args);Check(move==Vector3.zero && (Vector3)velocity.GetValue(player)==Vector3.zero,"移动输入与残留水平速度清零");}
+foreach(var id in 炼丹炉.取().全部丹方().SelectMany(d=>炼丹炉.取().全部材料(d)).Select(k=>k.Key).Distinct())inventory.给物品(QuestDatabase.取().找物品(id),1);
+yield return new WaitForSecondsRealtime(.5f);var scroll=view.GetComponentsInChildren<ScrollRect>().First(s=>s.name=="LeftMaterials");Canvas.ForceUpdateCanvases();float before=scroll.content.anchoredPosition.y;
+ExecuteEvents.Execute(scroll.gameObject,new PointerEventData(EventSystem.current){scrollDelta=new Vector2(0,-4)},ExecuteEvents.scrollHandler);yield return null;Check(scroll.content.anchoredPosition.y>before,"同一滚轮事件仍能滚动界面药材列表");WheelBlocked("界面滚动时场景摄像机保持原距离");
+character.pauseGameWhenOpen=false;character.SetOpen(true,true);view.关闭();yield return null;Check(UiEscRegistry.SceneInputBlocked,"两个界面重叠时关闭丹房不会解锁背包");WheelBlocked("背包打开且时间不暂停时也屏蔽摄像机滚轮");
+character.SetOpen(false,true);Check(UiEscRegistry.SceneInputBlocked,"关闭当帧不把点击穿透到场景");yield return null;yield return null;Check(!UiEscRegistry.SceneInputBlocked,"最后界面关闭后正常解锁");
+debug.Visible=true;WheelBlocked("P测试菜单同样锁定场景输入");debug.Visible=false;yield return null;yield return null;
+view.打开();Object.Destroy(view.gameObject);view=null;yield return null;yield return null;Check(!UiEscRegistry.SceneInputBlocked,"销毁界面释放输入锁，不留下卡死");
+System.IO.File.WriteAllText("screenshots/ui-scene-input-lock-check.txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{
+if(view!=null){view.关闭();Object.Destroy(view.gameObject);}Object.Destroy(owner);inventory.物品=oldItems;inventory.RaiseChanged();character.pauseGameWhenOpen=oldPause;character.SetOpen(oldOpen,true);character.ShowTab(oldTab);debug.Visible=oldDebug;Time.timeScale=oldTime;
+}
+}
+return Run();

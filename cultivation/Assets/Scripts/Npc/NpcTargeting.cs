@@ -99,7 +99,7 @@ public class NpcTargeting : MonoBehaviour
 
         // 有全屏界面（设施界面等）开着时，鼠标不该穿透到场景里。
         // 否则站在炼丹炉前开着界面，右键会连建筑一起点，又开一个新界面。
-        if (StationInteractor.有界面打开) return;
+        if (UiEscRegistry.SceneInputBlocked) return;
 
         if (Input.GetKeyDown(选中键))
         {

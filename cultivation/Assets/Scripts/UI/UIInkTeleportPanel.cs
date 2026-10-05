@@ -13,6 +13,8 @@ public class UIInkTeleportPanel : MonoBehaviour
     float openedAt;
     readonly List<Button> choices = new List<Button>();
     static readonly Color Light = new Color(.94f,.95f,.87f);
+    void OnEnable()=>UiEscRegistry.SetSceneInputBlocked(this,true);
+    void OnDisable()=>UiEscRegistry.SetSceneInputBlocked(this,false);
 
     public void 初始化(Teleporter source, Font textFont)
     {

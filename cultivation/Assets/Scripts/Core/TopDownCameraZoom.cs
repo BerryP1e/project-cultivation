@@ -73,15 +73,10 @@ public class TopDownCameraZoom : MonoBehaviour
     {
         if (!initialised) Initialise();
         if (cameraRig == null) return;
+        if (UiEscRegistry.SceneInputBlocked) return;
 
         // ---- 滚轮输入 ----
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (Mathf.Abs(scroll) > 0.00001f && scrollNotchValue > 0.00001f)
-        {
-            float notches = scroll / scrollNotchValue;
-            ratio -= notches * zoomPerNotch;          // 向上滚 = 拉近
-            ratio = Mathf.Clamp(ratio, hardMin, hardMax);
-        }
+        ApplyScrollInput(Input.GetAxis("Mouse ScrollWheel"));
 
         // ---- 超出软区间则平滑弹回 ----
         float target = Mathf.Clamp(ratio, softMin, softMax);
@@ -89,6 +84,21 @@ public class TopDownCameraZoom : MonoBehaviour
         {
             ratio = Mathf.Lerp(ratio, target, 1f - Mathf.Exp(-returnSharpness * Time.deltaTime));
             if (Mathf.Abs(ratio - target) < 0.0005f) ratio = target;
+        }
+
+        cameraRig.distance = baseDistance * ratio;
+    }
+
+    /// <summary>滚轮轴输入；界面拥有输入时不改变缩放，供输入后端接线。</summary>
+    public void ApplyScrollInput(float scroll)
+    {
+        if(!initialised)Initialise();
+        if(cameraRig==null || UiEscRegistry.SceneInputBlocked)return;
+        if (Mathf.Abs(scroll) > 0.00001f && scrollNotchValue > 0.00001f)
+        {
+            float notches = scroll / scrollNotchValue;
+            ratio -= notches * zoomPerNotch;          // 向上滚 = 拉近
+            ratio = Mathf.Clamp(ratio, hardMin, hardMax);
         }
 
         cameraRig.distance = baseDistance * ratio;

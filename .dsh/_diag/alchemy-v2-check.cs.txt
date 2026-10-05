@@ -1,0 +1,63 @@
+﻿using UnityEngine.UI;
+using UnityEngine.EventSystems;
+System.Collections.IEnumerator Run(){
+var data=Object.FindObjectOfType<UIPanelData>();var inventory=data.物品.ToList();var marks=对话标记.全部标记();var vitals=Object.FindObjectOfType<PlayerVitals>();float mana=vitals.当前灵气,scale=Time.timeScale;
+var quest=Object.FindObjectOfType<任务管理器>();bool questEnabled=quest!=null && quest.enabled;if(quest!=null)quest.enabled=false;
+var daily=Object.FindObjectOfType<日常循环>();int day=0,dailyMask=0;if(daily!=null)daily.导出(out day,out dailyMask);
+var random=UnityEngine.Random.state;var furnace=炼丹炉.取();var recipe=furnace.取丹方("item_dan_juqi");float chance=recipe.成功率;
+var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");var view=Object.Instantiate(prefab).GetComponent<UIInkAlchemyPage>();
+int broadcasts=0;System.Action<炼丹结果> callback=r=>broadcasts++;furnace.炼制完成+=callback;
+var sb=new System.Text.StringBuilder();void Check(bool ok,string text){if(!ok)throw new System.Exception(text);sb.AppendLine(text+" OK");}
+System.Collections.IEnumerator Pause(float s){yield return new WaitForSecondsRealtime(s);}
+System.Collections.IEnumerator Finish(){float deadline=Time.unscaledTime+7;while(view.正在炼制 && Time.unscaledTime<deadline)yield return null;if(view.正在炼制)throw new System.Exception("炼制未按时结束");}
+void Shot(string s){ScreenCapture.CaptureScreenshot("screenshots/alchemy-v2-"+Screen.width+"x"+Screen.height+"-"+s+".png");}
+try{
+Time.timeScale=0;
+foreach(var d in furnace.全部丹方())对话标记.添加(炼丹炉.丹方标记(d.id));
+foreach(var id in furnace.全部丹方().SelectMany(d=>furnace.全部材料(d)).Select(k=>k.Key).Distinct())data.给物品(QuestDatabase.取().找物品(id),10);
+vitals.当前灵气=vitals.灵气上限;yield return Pause(.5f);
+var mask=view.GetComponentsInChildren<RectTransform>(true).First(t=>t.name=="RecipeUnrollMask");
+Check(!mask.gameObject.activeSelf && view.GetComponentsInChildren<Image>(true).First(i=>i.name=="OpeningRecipeTube").sprite.name=="recipe-bamboo-roll","未选时是一卷收合竹简");Shot("closed");yield return null;
+var materials=view.GetComponentsInChildren<UIInkAlchemyDrag>();
+var main=materials.Where(d=>d.主材).OrderBy(d=>d.材料.物品id).ToArray();var aux=materials.Where(d=>!d.主材).OrderBy(d=>d.材料.物品id).ToArray();
+Check(main.Length==5 && main.Select(d=>d.材料.物品id).SequenceEqual(aux.Select(d=>d.材料.物品id)),"左右两侧各有完整相同药材列表");
+view.选择丹方(recipe.id);yield return Pause(.18f);Shot("opening");yield return null;yield return Pause(.8f);
+var slips=view.GetComponentsInChildren<Image>().Where(i=>i.name.StartsWith("HerbSlip_")).ToArray();
+Check(slips.Length==2 && slips.All(s=>s.GetComponentsInChildren<Text>().Any(t=>t.name=="HerbName") && s.GetComponentsInChildren<Text>().Any(t=>t.name=="HerbIntroduction")),"两味药材各占独立竹简片，名称和药材说明分件");
+var icon=view.GetComponentsInChildren<Image>().First(i=>i.name=="SelectedRecipeIcon");var title=view.GetComponentsInChildren<Text>().First(t=>t.name=="RecipeTitle");var text=view.GetComponentsInChildren<Text>().First(t=>t.name=="RecipeIntroduction");
+Check(icon.sprite.name=="pill" && icon.transform.position.y>title.transform.position.y && title.transform.position.y>text.transform.position.y,"成品丹药图标、名字、介绍在竹简左侧由上而下");
+Check(view.已投材料.Count==0,"选丹方不自动投料");Shot("layout");yield return null;
+var grass=QuestDatabase.取().找物品(recipe.主材id);var dew=QuestDatabase.取().找物品("item_ningluhua");var pill=QuestDatabase.取().找物品(recipe.id);
+var grassMain=main.First(d=>d.材料==grass);var grassAux=aux.First(d=>d.材料==grass);var dewMain=main.First(d=>d.材料==dew);var dewAux=aux.First(d=>d.材料==dew);
+var mouth=view.GetComponentsInChildren<RectTransform>().First(t=>t.name=="MouthDropTarget");Vector2 target=RectTransformUtility.WorldToScreenPoint(null,mouth.position);
+Check(!view.开始拖动(grass,(RectTransform)grassAux.transform,target,false) && !view.开始拖动(dew,(RectTransform)dewMain.transform,target,true),"选定丹方后错误主辅身份拒绝投料");
+int grassBefore=data.物品数量(grass),dewBefore=data.物品数量(dew),pillBefore=data.物品数量(pill);float manaBefore=vitals.当前灵气;
+var pointer=new PointerEventData(EventSystem.current){position=target,button=PointerEventData.InputButton.Left};grassMain.OnBeginDrag(pointer);grassMain.OnDrag(pointer);yield return Pause(.25f);
+Check(view.炉盖开度>.9f,"药材接近炉口时开盖");Shot("lid-open");yield return null;grassMain.OnEndDrag(pointer);yield return Pause(.65f);
+Check(view.已投主材==grass.物品id && view.已投材料[grass.物品id]==1 && data.物品数量(grass)==grassBefore,"左侧真实拖拽进入主材位，仅暂存");
+Check(grassMain.GetComponentsInChildren<Text>().First(t=>t.name=="Count").text==grassAux.GetComponentsInChildren<Text>().First(t=>t.name=="Count").text,"两边可用数量同步");
+dewAux.OnBeginDrag(pointer);dewAux.OnDrag(pointer);dewAux.OnEndDrag(pointer);yield return Pause(.65f);
+Check(view.已投主材==grass.物品id && view.已投材料[dew.物品id]==1,"右侧真实拖拽进入辅材位");
+view.开始拖动(grass,(RectTransform)grassMain.transform,target,true);view.结束拖动(Vector2.zero);yield return Pause(.5f);Check(view.已投材料[grass.物品id]==1,"拖出炉口取消不改变主材数量");
+view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.65f);
+recipe.成功率=1;view.开炼();view.开炼();yield return Pause(.9f);Shot("crafting");yield return null;
+var fx=view.GetComponentInChildren<UIInkAlchemyFX>();Check(fx.canvasRenderer.GetMesh().vertexCount>0 && !fx.canvasRenderer.cull,"持续烟气与灵光实际渲染");
+Check(broadcasts==0 && data.物品数量(grass)==grassBefore,"未完成炼制不提前扣材料");yield return Pause(3.7f);
+Check(broadcasts==1 && data.物品数量(grass)==grassBefore-2 && data.物品数量(dew)==dewBefore-1 && Mathf.Approximately(vitals.当前灵气,manaBefore-furnace.实际耗气(recipe)),"炼制成功只结算一次，扣材料和灵气");
+var collect=view.GetComponentsInChildren<Button>().First(b=>b.name=="Clear");
+Check(view.待取丹药数量==1 && data.物品数量(pill)==pillBefore && collect.GetComponentInChildren<Text>().text=="取回丹药","成丹待取，按钮变成取回丹药，尚未入包");Shot("pending-pill");yield return Pause(.3f);
+yield return Finish();collect.onClick.Invoke();collect.onClick.Invoke();Check(view.待取丹药数量==0 && data.物品数量(pill)==pillBefore+1 && collect.GetComponentInChildren<Text>().text=="取回药材","点击收取一次入包，重复点击不重复给丹");
+view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(dew,(RectTransform)dewAux.transform,false);yield return Pause(.6f);
+recipe.成功率=0;view.开炼();yield return Finish();Check(broadcasts==2 && view.待取丹药数量==0 && data.物品数量(pill)==pillBefore+1 && data.物品数量(grass)==grassBefore-4,"失败扣料无待取丹药，按钮仍是取回药材");
+view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(grass,(RectTransform)grassMain.transform,true);yield return Pause(.6f);view.点击投料(dew,(RectTransform)dewAux.transform,false);yield return Pause(.6f);
+recipe.成功率=1;view.开炼();yield return Finish();view.关闭();Check(view.待取丹药数量==0 && data.物品数量(pill)==pillBefore+2,"关闭自动收回已炼成丹药，不丢失");
+view.打开();yield return Pause(.3f);view.选择丹方("item_dan_qingzhang");yield return Pause(.12f);Check(mask.rect.width<815 && view.选中丹方==recipe.id,"换丹方先收合旧竹简");yield return Pause(.9f);
+Check(view.选中丹方=="item_dan_qingzhang","收合后展示新丹方");
+var desc=view.GetComponentsInChildren<ScrollRect>().First(s=>s.name=="RecipeDescription");string original=furnace.取丹方(view.选中丹方).说明;
+try{furnace.取丹方(view.选中丹方).说明=string.Join("\n",Enumerable.Repeat("长丹方介绍应在左侧墨幕中滚动，不越界。",20));view.选择丹方(view.选中丹方);yield return Pause(.9f);Canvas.ForceUpdateCanvases();Check(desc.content.rect.height>desc.viewport.rect.height,"长介绍仍能在左侧墨幕内滚动");}finally{furnace.取丹方(view.选中丹方).说明=original;}
+System.IO.File.WriteAllText("screenshots/alchemy-v2-check-"+Screen.width+"x"+Screen.height+".txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{
+furnace.炼制完成-=callback;view.关闭();Object.Destroy(view.gameObject);recipe.成功率=chance;data.物品=inventory;data.RaiseChanged();vitals.当前灵气=mana;对话标记.清空();foreach(var mark in marks)对话标记.添加(mark);if(daily!=null)daily.导入(day,dailyMask);if(quest!=null)quest.enabled=questEnabled;Time.timeScale=scale;UnityEngine.Random.state=random;
+}
+}
+return Run();

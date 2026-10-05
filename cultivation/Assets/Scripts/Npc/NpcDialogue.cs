@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -216,7 +216,7 @@ public class NpcDialogue : MonoBehaviour
     {
         if (设施 != null && 设施.界面预制体 != null) return;   // 设施自己配了界面，交给 StationInteractor
         if (DialogueUI.正在显示) return;                        // 已经开着对话框，别再抢 F
-        if (StationInteractor.有界面打开) return;               // 别的界面开着，别往上叠
+        if (UiEscRegistry.SceneInputBlocked) return;             // 别的界面开着，别往上叠
         if (当前对话中 != null && 当前对话中 != this) return;
 
         // ★ 玩家身上有 StationInteractor 时，**F 由它统一处理**（它是全项目唯一的交互入口：

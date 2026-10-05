@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 主动技能栏的快捷键施放器。挂在 Player 上。
@@ -13,7 +13,7 @@ using UnityEngine;
 /// 任何一步不过都只给玩家一句提示，**不会静默失败、也不会白扣灵力**。
 ///
 /// 界面开着时默认不接收快捷键（跟 NpcTargeting 的做法一致：
-/// 全屏界面开着时不该往场景里灌操作）。想改就把 <see cref="界面开着时禁止施放"/> 关掉。
+/// 全屏界面开着时不该往场景里灌操作）。场景输入统一由 UiEscRegistry 锁定。
 /// </summary>
 public class ActiveSkillCaster : MonoBehaviour
 {
@@ -169,13 +169,14 @@ public class ActiveSkillCaster : MonoBehaviour
     public bool 接收输入()
     {
         if (Time.timeScale <= 0f) return false;                          // 暂停菜单开着
-        if (界面开着时禁止施放 && UiEscRegistry.AnyOtherUiOpen()) return false;
+        if (UiEscRegistry.SceneInputBlocked) return false;
         return true;
     }
 
     /// <summary>按下技能栏第 N 格（0~5）。返回是否真的放出去了。</summary>
     public bool 尝试施放(int 槽位)
     {
+        if(UiEscRegistry.SceneInputBlocked)return false;
         if (面板数据 == null) 解析引用();
         if (面板数据 == null || 面板数据.主动技能 == null) return false;
         if (槽位 < 0 || 槽位 >= 面板数据.主动技能.Count) return false;

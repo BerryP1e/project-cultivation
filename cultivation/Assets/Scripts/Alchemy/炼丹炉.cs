@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>炼丹结果。给 UI 显示"为什么失败 / 炼出几品"。</summary>
@@ -247,7 +247,7 @@ public class 炼丹炉 : MonoBehaviour
     /// ⚠️ **不再有"选品"参数**：品是**丹药自己的属性**（1~9，对应境界），不是每炉选的档位。
     /// 见 <see cref="灵丹定义.品"/> 的说明。
     /// </summary>
-    public 炼丹结果 炼制(string 丹方id)
+    public 炼丹结果 炼制(string 丹方id, bool 自动入包 = true)
     {
         var 丹方 = 取丹方(丹方id);
         string 原因;
@@ -279,8 +279,11 @@ public class 炼丹炉 : MonoBehaviour
             if (产出定义 != null)
             {
                 var 板 = 取面板();
-                板.给物品(产出定义, 量);
-                板.RaiseChanged();
+                if (自动入包)
+                {
+                    板.给物品(产出定义, 量);
+                    板.RaiseChanged();
+                }
                 结果.数量 = 量;
                 结果.文本 = $"炼成「{丹方.名}」{品} 品 ×{量}（成功率 {概率:P0}）";
             }

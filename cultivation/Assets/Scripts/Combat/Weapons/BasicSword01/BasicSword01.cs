@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -387,6 +387,7 @@ public class BasicSword01 : MonoBehaviour
 
     void 进入飞行()
     {
+        if(UiEscRegistry.SceneInputBlocked)return;
         确保飞剑存在();
         if (攻击目标 == null) { 进入返航(); return; }
         状态 = SwordState.飞行;

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 功法「沧澜寒渊录」提供的普攻方法（功法表 `普攻方法id = basic_frostspike_01`）。
@@ -158,7 +158,7 @@ public class BasicFrostSpike01 : MonoBehaviour
     public float 冷却剩余 => Mathf.Max(0f, 下次可出手时间 - Time.time);
 
     /// <summary>现在能不能出手：**必须锁定了目标** + 冷却好了 + 没在做动作</summary>
-    public bool 可以出手 => 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
 
     public bool 出手动作中 { get; private set; }
 
