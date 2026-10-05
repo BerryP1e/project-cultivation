@@ -178,6 +178,7 @@ public static class SaveSystem
     /// </summary>
     static void 面板内容全清(SaveData 数据)
     {
+        数据.绝对护罩剩余次数 = 4;
         数据.背包物品.Clear();
         数据.法宝.Clear();
         数据.灵阵.Clear();
@@ -595,6 +596,7 @@ public static class SaveSystem
         数据.已停用被动.Clear();
         if (面板.已停用被动 != null)
             foreach (var p in 面板.已停用被动) if (p != null) 数据.已停用被动.Add(p.神通id);
+        数据.绝对护罩剩余次数 = Mathf.Clamp(面板.绝对护罩剩余次数, 0, 4);
 
         数据.已获得真灵.Clear();
         if (面板.已获得真灵 != null)
@@ -649,6 +651,7 @@ public static class SaveSystem
                 if (m != null && m.坐骑id == 数据.当前坐骑) { 面板.当前坐骑 = m; break; }
 
         // ---- 已停用被动 ----
+        面板.绝对护罩剩余次数 = Mathf.Clamp(数据.绝对护罩剩余次数, 0, 4);
         面板.已停用被动 = new System.Collections.Generic.List<PassiveDivineAbility>();
         if (数据.已停用被动 != null)
             foreach (var id in 数据.已停用被动)

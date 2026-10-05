@@ -132,6 +132,7 @@ docs/
 │   ├─ 镇妖塔.md · 村庄场景生成说明.md · 宗门野外生成说明.md
 │   ├─ 玄霄雷决与雷动千闪.md · 千劫雷狱.md · 瞬雷天闪.md · 雷云.md · 闪电链特效.md
 │   ├─ 沧澜寒渊录.md · 寒墟.md · 冰暴术.md
+│   ├─ 水龙炮.md · 禁锢锁链.md · 小剑阵.md · 斜眼.md · 防护罩.md
 │   ├─ 八九玄功.md         近战普攻 · 完整攻击与御风重定向 · 杨戬 Run 持械移动 · 手骨握持标定
 │   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md · 默认移动动画.md
 │   ├─ 御风前进动作.md      舒展滑行循环 · 骑乘共用 · 持械兼容 · 动图复验
@@ -139,7 +140,7 @@ docs/
 │   ├─ UI换皮.md          当前接入范围 · Assets目录 · 验证 · 后续入口
 │   └─ 备份与恢复说明.md
 │
-├─ reference/          UI素材/素材规格与提示词.md · 提示词-第二轮.md
+├─ reference/          UI素材/素材规格与提示词.md · 提示词-第二轮.md · 神通图标.md
 │                      配置表字段.md（每张 CSV 的列与生成目标）· 外部素材来源.md（外部素材的授权 / 出处 / sha256）
 │
 └─ ai/                 archive/UI重制/ 保存原始制作记录（只读）
@@ -175,6 +176,8 @@ docs/
 | **炼丹 / 拖拽丹房 / 竹筒丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | [炼丹交互素材与提示词](reference/UI素材/炼丹交互素材.md) · `Assets/Scripts/Alchemy/炼丹炉.cs` |
 | **伤害公式 / 属性 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) | `Assets/Scripts/Combat/CombatCalculator.cs` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
+| **水炮 / 持续锁链 / 主动键施放的被动伤害剑阵** | [水龙炮](guides/水龙炮.md) · [禁锢锁链](guides/禁锢锁链.md) · [小剑阵](guides/小剑阵.md) | [配置表字段](reference/配置表字段.md#31-神通运行效果字段) |
+| **背负斜眼 / 四种护罩 / 棱柱次数保存** | [斜眼](guides/斜眼.md) · [防护罩](guides/防护罩.md) | [神通图标](reference/UI素材/神通图标.md) |
 | **气血/灵力 HUD / 大境界墨圈 / 神通同款三维技能链 / 墨晕冷却** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
 | **加一个 NPC 的 AI** | [architecture/敌人AI](architecture/敌人AI.md) | [ai/踩坑总库 §专题：NPC/敌人 AI](ai/踩坑总库.md) |
 | **怪物近战 / 出手站位** | [guides/怪物近战判定](guides/怪物近战判定.md) | [architecture/敌人AI](architecture/敌人AI.md) |

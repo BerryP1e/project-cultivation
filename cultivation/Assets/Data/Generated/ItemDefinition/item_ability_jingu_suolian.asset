@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfe6fcb52b706541aad5cb735cea8bf, type: 3}
+  m_Name: item_ability_jingu_suolian
+  m_EditorClassIdentifier: 
+  "\u7269\u54C1\u540D": "\u7981\u9522\u9501\u94FE \u795E\u901A\u7389\u7B80"
+  "\u7269\u54C1id": item_ability_jingu_suolian
+  "\u6700\u5927\u5806\u53E0\u6570\u91CF": 1
+  "\u56FE\u6807": {fileID: 21300000, guid: 5bbe4691caa84a042ac0f215724fa8d2, type: 3}
+  "\u4ECB\u7ECD": "\u8BB0\u8F7D\u7981\u9522\u9501\u94FE\u7684\u7389\u7B80\uFF0C\u4F7F\u7528\u540E\u5B66\u4F1A\u5BF9\u5E94\u795E\u901A\u3002"
+  "\u54C1\u9636": 3
+  "\u53EF\u4F7F\u7528": 1
+  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: 5b2c3bc94bfcca0449dce97b4d841830, type: 2}
+  "\u5151\u6362\u6D88\u8017\u8D21\u732E": 0

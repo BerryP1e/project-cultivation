@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 玩家的「当前值」容器：气血与灵气。
@@ -255,9 +255,13 @@ public class PlayerVitals : MonoBehaviour
     /// 返回实际扣掉的气血 —— 伤害公式由调用方用 <see cref="CombatCalculator"/> 算完再传进来，
     /// 这里只管扣当前值。
     /// </summary>
-    public float 受到伤害(float 伤害)
+    public float 受到伤害(float 伤害, DamageNature 属性类型 = DamageNature.物理)
     {
         if (伤害 <= 0f || 已死亡 || 无敌) return 0f;   // 已倒下 / 无敌期 都不受伤。要恢复请调 复活() 或 回满()
+
+        var 护罩 = GetComponent<PassiveShieldAbilities>();
+        if (护罩 != null && 护罩.isActiveAndEnabled) 伤害 = 护罩.过滤伤害(伤害, 属性类型);
+        if (伤害 <= 0f) return 0f;
 
         float 实际 = Mathf.Min(伤害, 当前气血);
         当前气血 -= 实际;

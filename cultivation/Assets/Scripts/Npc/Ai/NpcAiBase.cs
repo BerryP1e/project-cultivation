@@ -907,6 +907,8 @@ public abstract class NpcAiBase : MonoBehaviour
     /// <summary>朝一个世界坐标点走（会贴地、会探前方障碍、被挡会绕）</summary>
     protected void 朝点走(Vector3 目标点, float 速度倍率)
     {
+        var 禁锢 = GetComponent<NpcMovementLock>();
+        if (禁锢 != null && 禁锢.已禁锢) { 停止移动动画(); return; }
         Vector3 差 = 目标点 - transform.position;
         差.y = 0f;
         if (差.sqrMagnitude < 0.0001f) { 停止移动动画(); return; }
@@ -1573,7 +1575,7 @@ public abstract class NpcAiBase : MonoBehaviour
         var 结果 = CombatCalculator.Resolve(自己, 玩家战斗属性, 规则);
         if (结果.命中 && 结果.伤害 > 0f)
         {
-            玩家生命.受到伤害(结果.伤害);
+            玩家生命.受到伤害(结果.伤害, 规则.伤害属性);
 
             // 【命中特效】以前这条路径**一个特效都不放**，打上去光秃秃的。
             // 现在统一走 生成命中特效 → 物理攻击自动兜上基础特效。

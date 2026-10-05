@@ -12,6 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
+    public int 绝对护罩剩余次数 = 4;
     public const int 当前版本 = 15;   // 14：今日清单；15：已获得外观列表（保留现有字段，兼容旧档）
 
     [Header("身份")]

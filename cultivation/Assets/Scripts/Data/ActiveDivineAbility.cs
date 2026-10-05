@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 主动神通的「结算方式」—— 决定按下快捷键之后干什么。
@@ -45,6 +45,9 @@ public enum ActiveSkillKind
     /// `伤害间隔` = 一段之后隔多久出二段、`命中特效路径` / `三段特效路径` = 二段 / 三段特效。
     /// </summary>
     向前冰柱 = 4,
+    定向水炮 = 5,
+    持续禁锢 = 6,
+    小剑阵 = 7,
 }
 
 /// <summary>
@@ -116,6 +119,10 @@ public class ActiveDivineAbility : DivineAbilityDefinition
 
     [Tooltip("【施法动作】施放时玩家播的角色动作，填 Assets/resources/技能动作/ 里的文件名（不带扩展名）。留空 = 不播动作。例：技能动作2")]
     public string 施法动作 = "";
+
+    public AttackKind 攻击类别 = AttackKind.主动神通;
+    [Tooltip("持续禁锢：每相差一个境界等级，增加的维持消耗比例")]
+    public float 每级差消耗倍率 = 0.12f;
 
     void OnValidate()
     {

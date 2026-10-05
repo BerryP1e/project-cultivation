@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -102,12 +102,19 @@ public static class DataTableImporter
     [MenuItem("Cultivation/Import Data Tables")]
     public static void ImportAll()
     {
+        ImportTables(true, null);
+    }
+
+    /// <summary>资产导入与场景回填分开；指定表时只生成选中的表，仍解析学习物品的引用。</summary>
+    public static void ImportTables(bool 更新场景, string[] 指定表)
+    {
         var report = new StringBuilder();
         var itemById = new Dictionary<string, ItemDefinition>();
 
         // ---- 第一遍：生成 / 更新资产（不含跨表引用）----
         foreach (var spec in Specs)
         {
+            if (指定表 != null && Array.IndexOf(指定表, spec.Csv) < 0) continue;
             string path = TableDir + "/" + spec.Csv + ".csv";
             if (!File.Exists(path)) { report.Append("跳过（文件不存在）: ").Append(path).Append("\n"); continue; }
 
@@ -173,6 +180,7 @@ public static class DataTableImporter
         // ---- 第二遍：解析跨表引用（背包物品 / 掉落物）----
         foreach (var spec in Specs)
         {
+            if (指定表 != null && Array.IndexOf(指定表, spec.Csv) < 0) continue;
             string path = TableDir + "/" + spec.Csv + ".csv";
             if (!File.Exists(path)) continue;
             var rows = ParseCsv(File.ReadAllText(path, Encoding.UTF8));
@@ -201,7 +209,7 @@ public static class DataTableImporter
         AssetDatabase.Refresh();
 
         // ---- 顺手把 UI 数据源指向生成的资产 ----
-        RewirePanelData();
+        if (更新场景) RewirePanelData();
 
         // ---- 顺手回填「学习类」物品的资产引用 ----
         // 为什么必须在这里做（2026-09-27 实锤的隐患）：
@@ -216,16 +224,16 @@ public static class DataTableImporter
         // ---- 塔相关的三张表（形状特殊，单独一个导入器）----
         // 它们不能走上面的 Specs：补正表是「10 行 = 一张表」、刷怪组和层表带变长/嵌套列表，
         // 而 Specs 是「一行一个资产 + 反射套列」。详见 TowerTablesImporter 的注释。
-        try { TowerTablesImporter.导入全部(); }
+        try { if (指定表 == null) TowerTablesImporter.导入全部(); }
         catch (System.Exception e) { report.Append("塔表导入失败: ").Append(e.Message).Append("\n"); }
 
         // ---- 收集运行时聚合库（塔库 / NPC库）----
         // 生成的资产在 Assets/Data/Generated 下，**不在 Resources 里**，运行时读不到，
         // 所以要收一份只装引用的聚合资产到 Assets/resources/ 下（同 任务库 / 对话库 / 面板库）
-        try { TowerDatabaseCollector.收集(); }
+        try { if (指定表 == null) TowerDatabaseCollector.收集(); }
         catch (System.Exception e) { report.Append("塔库收集失败: ").Append(e.Message).Append("\n"); }
 
-        EditorSceneManager_MarkAndSave();
+        if (更新场景) EditorSceneManager_MarkAndSave();
         Debug.Log("[DataTableImporter] 导入完成：\n" + report);
     }
 

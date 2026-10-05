@@ -1,6 +1,9 @@
-﻿神通id,神通名称,神通品阶,修炼门槛,消耗灵力,维持消耗灵力,介绍,结算方式,伤害属性,伤害倍率,范围,冷却时间,可积攒次数,需要锁定目标,持续时长,首次造成伤害时间,伤害间隔,特效资源路径,命中特效路径,命中特效贴地,三段特效路径,施法动作
-ability_fentian_yanshu,焚天炎术,天品,1,60,0,召出焚天之炎灼烧范围内的敌人。,范围伤害,特殊,2.5,12,8,,是,3,0.75,0.56,特效/法术/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_13_DangerClose/Effect_13_DangerClose,,,,技能动作2
-ability_leidong_qianshan,雷动千闪,地品,1,30,0,身化雷光，朝所指方向闪烁；起落两处各炸开一蓬雷。冷却虽长，却可积攒三次连续施展。,闪烁位移,特殊,2.2,6,10,3,否,0.6,0,1,特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-impact,,,,
-ability_shunlei_tianshan,瞬雷天闪,天品,1,55,0,引一道瞬雷凝为雷球，奔袭锁定之敌，中者雷爆。冷却虽长，却可积攒三次连续施展。,追踪弹,特殊,3,20,10,3,是,0,0,1,特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-sphere,,,,
-ability_hanxu,寒墟,天品,1,45,0,以指画墟，向前推出一道冰柱；沿途之敌脚下接连绽开冰环与冰刺，三段俱寒。,向前冰柱,特殊,1.8,14,12,1,否,0.9,0,0.6,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-wave,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-ring,是,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-spike,
-ability_bingbao_shu,冰暴术,天品,1,55,0,凝寒气为冰珠，奔袭锁定之敌；中者脚下冰冢拔地而起。冷却结束只能施展一次。,追踪弹,特殊,4,20,10,1,是,0,0,1,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-crystal,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-frozen-tomb,是,,
+﻿神通id,神通名称,神通品阶,修炼门槛,消耗灵力,维持消耗灵力,介绍,结算方式,伤害属性,伤害倍率,范围,冷却时间,可积攒次数,需要锁定目标,持续时长,首次造成伤害时间,伤害间隔,特效资源路径,命中特效路径,命中特效贴地,三段特效路径,施法动作,攻击类别,每级差消耗倍率
+ability_fentian_yanshu,焚天炎术,天品,1,60,0,召出焚天之炎灼烧范围内的敌人。,范围伤害,特殊,2.5,12,8,,是,3,0.75,0.56,特效/法术/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_13_DangerClose/Effect_13_DangerClose,,,,技能动作2,主动神通,0.12
+ability_leidong_qianshan,雷动千闪,地品,1,30,0,身化雷光，朝所指方向闪烁；起落两处各炸开一蓬雷。冷却虽长，却可积攒三次连续施展。,闪烁位移,特殊,2.2,6,10,3,否,0.6,0,1,特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-impact,,,,,主动神通,0.12
+ability_shunlei_tianshan,瞬雷天闪,天品,1,55,0,引一道瞬雷凝为雷球，奔袭锁定之敌，中者雷爆。冷却虽长，却可积攒三次连续施展。,追踪弹,特殊,3,20,10,3,是,0,0,1,特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-sphere,,,,,主动神通,0.12
+ability_hanxu,寒墟,天品,1,45,0,以指画墟，向前推出一道冰柱；沿途之敌脚下接连绽开冰环与冰刺，三段俱寒。,向前冰柱,特殊,1.8,14,12,1,否,0.9,0,0.6,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-wave,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-ring,是,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-spike,,主动神通,0.12
+ability_bingbao_shu,冰暴术,天品,1,55,0,凝寒气为冰珠，奔袭锁定之敌；中者脚下冰冢拔地而起。冷却结束只能施展一次。,追踪弹,特殊,4,20,10,1,是,0,0,1,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-crystal,特效/战斗法术/Combat Magic VFX Vol.1/resources/frost-fx/frost-frozen-tomb,是,,,主动神通,0.12
+ability_shuilong_pao,水龙炮,地品,1,24,0,凝水为龙炮，持续轰击锁定单位。特殊属性，主动神通伤害。,定向水炮,特殊,0.9,20,6,1,是,1.5,0.25,0.4,Abilities/WaterDragon,,,,,主动神通,0
+ability_jingu_suolian,禁锢锁链,地品,1,6,4,锁链束缚锁定单位，使其无法移动，不造成伤害。每相差一个境界等级，维持消耗增加12%。再次按技能键或灵力耗尽解除。,持续禁锢,特殊,1,20,2,1,是,0,0,1,Abilities/BindingChain,,,,,主动神通,0.12
+ability_xiao_jianzhen,小剑阵,地品,1,30,0,在锁定单位脚下布下小剑阵；无锁定时在身边布阵。需手动施放，造成特殊属性、被动神通伤害。,小剑阵,特殊,0.55,3.2,8,1,否,4,0.6,0.7,Abilities/SmallSwordArray,,,,,被动神通,0

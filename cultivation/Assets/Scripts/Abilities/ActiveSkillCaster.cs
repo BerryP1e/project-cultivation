@@ -78,6 +78,7 @@ public class ActiveSkillCaster : MonoBehaviour
     };
 
     readonly float[] 冷却剩余 = new float[6];
+    readonly BindingChainSkillRunner[] 持续锁链 = new BindingChainSkillRunner[6];
 
     /// <summary>每格当前**攒着几次**（充能式技能用；普通技能不走这里）</summary>
     readonly int[] 充能数 = new int[6];
@@ -113,6 +114,8 @@ public class ActiveSkillCaster : MonoBehaviour
         {
             var 现在 = 槽位内容(i);
             if (充能上次内容[i] == 现在) continue;
+
+            if (持续锁链[i] != null) 持续锁链[i].取消();
 
             充能上次内容[i] = 现在;
             冷却剩余[i] = 0f;
@@ -187,6 +190,13 @@ public class ActiveSkillCaster : MonoBehaviour
         // ---- 冷却 / 充能 ----
         // 充能式技能（可积攒次数 > 1）看"还剩几次"，普通技能退化成原来的"冷却好没好"。
         同步槽位内容();
+        // 关闭持续技能不能被它自己的冷却或灵力检查挡住。
+        if (槽位 < 持续锁链.Length && 持续锁链[槽位] != null)
+        {
+            持续锁链[槽位].取消();
+            持续锁链[槽位] = null;
+            return true;
+        }
         int 上限 = 充能上限(槽位);
         if (上限 > 1)
         {
@@ -225,6 +235,15 @@ public class ActiveSkillCaster : MonoBehaviour
         }
 
         // ---- 灵力 ----
+        if (神通.结算方式 >= ActiveSkillKind.定向水炮)
+        {
+            if (生命 == null || 生命.IsDead) return false;
+            if (锁定 != null && 神通.范围 > 0f && Vector3.Distance(transform.position, 锁定.transform.position) > 神通.范围
+                && 神通.结算方式 != ActiveSkillKind.小剑阵)
+            { 提示("目标超出施放距离"); return false; }
+            if (Resources.Load<GameObject>(神通.特效资源路径) == null)
+            { 提示("神通特效资源缺失，未消耗灵力"); return false; }
+        }
         if (神通.消耗灵力 > 0f)
         {
             if (生命 == null) 解析引用();
@@ -248,7 +267,13 @@ public class ActiveSkillCaster : MonoBehaviour
         }
         else if (槽位 < 冷却剩余.Length) 冷却剩余[槽位] = 神通.冷却时间;
 
-        施放(神通, 锁定);
+        if (神通.结算方式 == ActiveSkillKind.持续禁锢)
+        {
+            var 宿主 = new GameObject("BindingChain_" + 神通.神通id);
+            持续锁链[槽位] = 宿主.AddComponent<BindingChainSkillRunner>();
+            持续锁链[槽位].初始化(this, 神通, 锁定, 槽位);
+        }
+        else 施放(神通, 锁定);
         return true;
     }
 
@@ -260,6 +285,13 @@ public class ActiveSkillCaster : MonoBehaviour
         // 这样动画和伤害对齐是策划可调的，不会被动画长度绑架。
         播施法动作(神通);
         if (战斗属性 == null) 解析引用();
+
+        if (神通.结算方式 == ActiveSkillKind.定向水炮 || 神通.结算方式 == ActiveSkillKind.小剑阵)
+        {
+            var 宿主 = new GameObject("DirectedSkill_" + 神通.神通id);
+            宿主.AddComponent<DirectedAbilityRunner>().初始化(this, 神通, 锁定);
+            return;
+        }
 
         // ★ 闪烁位移（雷动千闪）：它自己管"位移 + 起落两处特效 + 两处结算"，
         //   和"原地放一蓬范围伤害"是两套节奏，所以单独分流，别塞进下面那套。
@@ -467,6 +499,11 @@ public class ActiveSkillCaster : MonoBehaviour
         var e = o as IPanelEntry;
         if (e != null && !string.IsNullOrEmpty(e.DisplayName)) return e.DisplayName;
         return o != null ? o.name : "?";
+    }
+
+    void OnDisable()
+    {
+        foreach (var 链 in 持续锁链) if (链 != null) 链.取消();
     }
 
     void 提示(string msg)

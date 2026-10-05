@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public class UIPanelData : MonoBehaviour
 {
+    [Tooltip("绝对护罩剩余棱柱。停用、切场景和读档均保留；新角色初始四枚。")]
+    public int 绝对护罩剩余次数 = 4;
     [Header("玩家")]
     [Tooltip("玩家基本属性定义（lore/玩家基本属性.txt）")]
     public PlayerStatsDefinition 玩家属性;

@@ -79,6 +79,12 @@ public class PlayerAbilityLoader : MonoBehaviour
     /// <summary>把 <see cref="内置登记"/> 里缺的条目补进 <see cref="普攻方法表"/>（**只改内存，不写场景**）</summary>
     void 补齐内置登记()
     {
+        if (被动神通表 == null) 被动神通表 = new List<被动神通绑定>();
+        string[] 新被动 = { "ability_xieyan", "ability_huzhao_wuli", "ability_huzhao_teshu", "ability_huzhao_shuangchong", "ability_huzhao_juedui" };
+        foreach (string id in 新被动)
+            if (!被动神通表.Exists(b => b != null && b.神通id == id))
+                被动神通表.Add(new 被动神通绑定 { 神通id = id,
+                    组件类名 = new[] { id == "ability_xieyan" ? "DevilEyeAbility" : "PassiveShieldAbilities" } });
         if (普攻方法表 == null) 普攻方法表 = new List<普攻方法绑定>();
         foreach (var 条 in 内置登记)
         {
@@ -124,7 +130,7 @@ public class PlayerAbilityLoader : MonoBehaviour
             foreach (var a in 面板数据.神通)
             {
                 var 被动 = a as PassiveDivineAbility;
-                if (被动 == null || !面板数据.IsPassiveEnabled(被动)) continue;
+                if (被动 == null || !面板数据.已获得被动(被动) || !面板数据.IsPassiveEnabled(被动)) continue;
 
                 foreach (var b in 被动神通表)
                 {

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -31,6 +31,12 @@ using UnityEngine;
 /// </summary>
 public static class 安全导入配置表
 {
+    /// <summary>只更新指定表的资产，不回填也不保存任何场景，保留内存中尚未保存的场景内容。</summary>
+    public static void ImportAssetsOnly(params string[] 表名)
+    {
+        DataTableImporter.ImportTables(false, 表名);
+        面板库收集器.收集();
+    }
     [MenuItem("修仙/工具/安全导入配置表（不动场景）", false, 950)]
     [MenuItem("Cultivation/Safe Import Data Tables", false, 950)]
     public static void 导入()

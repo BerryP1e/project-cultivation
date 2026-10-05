@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e328b361adf8bd3489c0c424c5a3979f, type: 3}
+  m_Name: "\u5B66\u4E3B\u52A8\u795E\u901A\u6548\u679C_item_ability_xiao_jianzhen"
+  m_EditorClassIdentifier: 
+  "\u8BF4\u660E": "\u4F7F\u7528\u540E\u5B66\u4F1A\u5C0F\u5251\u9635\u3002"
+  "\u795E\u901A": {fileID: 11400000, guid: 0fe917b05dff21a4fb92aeb0d236c649, type: 2}
+  "\u795E\u901Aid": ability_xiao_jianzhen

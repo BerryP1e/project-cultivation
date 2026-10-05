@@ -91,6 +91,7 @@ public class 跨场景数据 : MonoBehaviour
         public static List<ActiveDivineAbility> 已获得主动;
         public static List<PassiveDivineAbility> 已获得被动;
         public static List<PassiveDivineAbility> 已停用被动;
+        public static int 绝对护罩剩余次数;
         public static List<UnityEngine.Object> 主动技能;
         public static GongFaDefinition 当前功法;
         public static MountDefinition 当前坐骑;
@@ -104,6 +105,7 @@ public class 跨场景数据 : MonoBehaviour
             已获得主动 = new List<ActiveDivineAbility>(面板.已获得主动神通);
             已获得被动 = new List<PassiveDivineAbility>(面板.已获得被动神通);
             已停用被动 = new List<PassiveDivineAbility>(面板.已停用被动);
+            绝对护罩剩余次数 = 面板.绝对护罩剩余次数;
             主动技能 = new List<UnityEngine.Object>(面板.主动技能);
             当前功法 = 面板.当前功法;
             当前坐骑 = 面板.当前坐骑;
@@ -121,6 +123,7 @@ public class 跨场景数据 : MonoBehaviour
             面板.已获得主动神通 = new List<ActiveDivineAbility>(已获得主动);
             面板.已获得被动神通 = new List<PassiveDivineAbility>(已获得被动);
             面板.已停用被动 = new List<PassiveDivineAbility>(已停用被动);
+            面板.绝对护罩剩余次数 = Mathf.Clamp(绝对护罩剩余次数, 0, 4);
             面板.主动技能 = new List<UnityEngine.Object>(主动技能);
             面板.当前功法 = 当前功法;
             面板.当前坐骑 = 当前坐骑;

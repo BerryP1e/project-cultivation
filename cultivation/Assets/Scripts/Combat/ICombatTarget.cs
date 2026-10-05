@@ -98,7 +98,7 @@ public sealed class PlayerTarget : ICombatTarget
         if (气血 == null || 气血.属性 == null) return default;
 
         var 结果 = CombatCalculator.Resolve(攻击方属性, 气血.属性, 规则);
-        if (结果.命中 && 结果.伤害 > 0f) 气血.受到伤害(结果.伤害);
+        if (结果.命中 && 结果.伤害 > 0f) 气血.受到伤害(结果.伤害, 规则.伤害属性);
         return 结果;
     }
 }
