@@ -22,7 +22,8 @@ public class BindingChainSkillRunner : MonoBehaviour
         移动锁.加锁(this);
         var 边界 = AbilityVfxUtility.身体边界(目标.transform);
         transform.position = 边界.center;
-        AbilityVfxUtility.生成(神通.特效资源路径, transform, Mathf.Clamp(边界.size.y / 14f, .04f, .5f), true);
+        var 特效 = AbilityVfxUtility.生成(神通.特效资源路径, transform, Mathf.Clamp(边界.size.y / 14f, .04f, .5f));
+        if (特效 != null) 特效.AddComponent<AbilityBindingChainVfx>();
     }
 
     void Update()

@@ -50,4 +50,10 @@ public class DirectedAbilityRunner : MonoBehaviour
             }
         }
     }
+
+    void OnDestroy()
+    {
+        if (!Application.isPlaying) return;
+        foreach (var 剑 in GetComponentsInChildren<AbilityFallingSword>()) 剑.消散();
+    }
 }
