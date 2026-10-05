@@ -252,6 +252,8 @@ public class Teleporter : MonoBehaviour
 
     void 刷新文本()
     {
+        var ink = 面板 != null ? 面板.GetComponent<UIInkTeleportPanel>() : null;
+        if (ink != null) { ink.刷新(); return; }
         if (文本 == null) return;
         string s = 标题;
         for (int i = 0; i < 选项.Length; i++)
@@ -275,6 +277,13 @@ public class Teleporter : MonoBehaviour
         var scaler = canvasGo.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.matchWidthOrHeight = .5f;
+
+        if (InkUITheme.Enabled)
+        {
+            canvasGo.AddComponent<UIInkTeleportPanel>().初始化(this, 字);
+            return;
+        }
 
         var 底板 = new GameObject("底板", typeof(Image));
         底板.transform.SetParent(canvasGo.transform, false);
@@ -327,6 +336,12 @@ public class Teleporter : MonoBehaviour
     }
 
     // ---------------- 执行 ----------------
+
+    void OnDestroy()
+    {
+        // 面板是场景根节点，不是光圈的子物体；清理动态塔内光圈时一起清理它。
+        if (面板 != null) Destroy(面板);
+    }
 
     /// <summary>界面按钮调这个；也可以从别处（剧情/快捷键）直接调</summary>
     public void 执行(int 序号)

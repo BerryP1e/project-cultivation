@@ -76,8 +76,8 @@ public class InkUIRuntimeSkin : MonoBehaviour
     public void Refresh()
     {
         if (!InkUITheme.Enabled) return;
-        // 对话已使用独立墨边布局，避免登记器重新套回旧纸卷/金框。
-        if (GetComponent<DialogueUI>() != null) return;
+        // 对话和传送已使用独立墨边布局，避免登记器重新套回旧纸卷/金框。
+        if (GetComponent<DialogueUI>() != null || GetComponent<UIInkTeleportPanel>() != null) return;
         string canvas = name;
         foreach (var image in GetComponentsInChildren<Image>(true))
         {

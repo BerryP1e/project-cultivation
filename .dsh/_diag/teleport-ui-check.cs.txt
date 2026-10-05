@@ -1,0 +1,31 @@
+var portal=Object.FindObjectsOfType<Teleporter>().First(t=>t.选项!=null && t.选项.Length>0);
+var original=portal.选项; var gate=portal.需要等级; var reason=portal.未开放原因; var hook=portal.选项接管;
+var output=new System.Collections.Generic.List<string>();
+try {
+ portal.关面板();portal.重建面板();
+ portal.选项=Enumerable.Range(0,12).Select(i=>new Teleporter.传送选项 {名称="测试地点 "+(i+1),暂未开放=i==11}).ToArray();
+ portal.需要等级=0;portal.开面板();Canvas.ForceUpdateCanvases();
+ var view=portal.面板根.GetComponent<UIInkTeleportPanel>();
+ var scroll=view.GetComponentInChildren<UnityEngine.UI.ScrollRect>();
+ UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);Canvas.ForceUpdateCanvases();
+ if(scroll.content.rect.height<=scroll.viewport.rect.height)throw new System.Exception("多地点未产生滚动内容");
+ scroll.verticalNormalizedPosition=0;Canvas.ForceUpdateCanvases();
+ output.Add("12地点滚动到末尾="+scroll.content.anchoredPosition.y+"；滚动条="+scroll.verticalScrollbar.name);
+ var rows=view.GetComponentsInChildren<UnityEngine.UI.Button>().Where(b=>b.name.StartsWith("Destination_")).ToArray();
+ if(rows.Length!=12 || rows.Last().interactable)throw new System.Exception("未开放状态错误");
+ portal.关面板();portal.重建面板();portal.需要等级=999;portal.未开放原因="需要境界等级 {需要}，当前 {当前}";portal.开面板();
+ rows=portal.面板根.GetComponentsInChildren<UnityEngine.UI.Button>().Where(b=>b.name.StartsWith("Destination_")).ToArray();
+ if(rows.Any(b=>b.interactable))throw new System.Exception("准入限制失效");
+ output.Add("境界不足：全部12项禁止传送，原因="+portal.取未开放原因());
+ portal.关面板();portal.重建面板();portal.需要等级=0;portal.开面板();
+ int calls=0;portal.选项接管=i=>{calls++;return true;};
+ portal.面板根.GetComponentsInChildren<UnityEngine.UI.Button>().First(b=>b.name=="Destination_0").onClick.Invoke();
+ if(calls!=1 || portal.面板已开 || portal.面板根.activeSelf)throw new System.Exception("接管/执行关闭错误");
+ output.Add("塔内接管回调一次，执行后面板关闭");
+ portal.开面板();portal.面板根.GetComponentsInChildren<UnityEngine.UI.Button>().First(b=>b.name=="Cancel").onClick.Invoke();
+ if(portal.面板已开)throw new System.Exception("取消未关闭");
+ output.Add("取消关闭正常");
+} finally {
+ portal.关面板();portal.重建面板();portal.选项=original;portal.需要等级=gate;portal.未开放原因=reason;portal.选项接管=hook;portal.开面板();
+}
+return string.Join("\n",output);
