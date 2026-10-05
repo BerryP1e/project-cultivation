@@ -263,15 +263,15 @@ public class UIInkAlchemyPage : MonoBehaviour
 
     void AddMaterial(ItemDefinition item,int index,bool main)
     {
-        var scroll=main?leftMaterials:rightMaterials;int n=index;
+        var scroll=main?leftMaterials:rightMaterials;
         var rt=UIBuildUtils.CreateRect("Material_"+item.物品id,scroll.content);
-        rt.anchorMin=rt.anchorMax=new Vector2(.5f,1);rt.sizeDelta=new Vector2(155,140);
-        // 每两行偏移错落，列表仍留足图标与文字空间，更多材料自然向下延伸。
-        rt.anchoredPosition=new Vector2(Mathf.Sin(index*2.17f)*80,-85-n*145);
+        rt.anchorMin=rt.anchorMax=new Vector2(.5f,1);rt.sizeDelta=new Vector2(150,108);
+        // 两侧单列居中、等距对齐；图标与数量分开，材料增加时向下滚动。
+        rt.anchoredPosition=new Vector2(0,-62-index*116);
         var ink=UIBuildUtils.CreateImage("MaterialInk",rt,new Color(.13f,.20f,.16f,.9f));ink.sprite=InkUITheme.Load("Dynamic/nav-ink-blot-"+(index%4+1));UIBuildUtils.Stretch(ink.rectTransform);
         var hit=rt.gameObject.AddComponent<Image>();hit.color=Color.clear;hit.raycastTarget=true;
         rt.gameObject.AddComponent<CanvasGroup>();
-        var icon=UIBuildUtils.CreateImage("MaterialIcon",rt,Color.white);icon.sprite=Icon(item);icon.preserveAspect=true;Place(icon.rectTransform,.15f,.32f,.85f,.94f);
+        var icon=UIBuildUtils.CreateImage("MaterialIcon",rt,Color.white);icon.sprite=Icon(item);icon.preserveAspect=true;Place(icon.rectTransform,.30f,.34f,.70f,.90f);
         Label("Name",rt,item.DisplayName,20,TextAnchor.MiddleCenter,.02f,.07f,.98f,.31f);
         var count=Label("Count",rt,"",17,TextAnchor.MiddleRight,.61f,.73f,.95f,.97f);
         var drag=rt.gameObject.AddComponent<UIInkAlchemyDrag>();drag.视图=this;drag.材料=item;
@@ -282,7 +282,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     void SizeMaterials(ScrollRect scroll)
     {
         int count=materials.Count(m=>m.rect.parent==scroll.content);
-        scroll.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,Mathf.Max(scroll.viewport.rect.height,32+count*145));
+        scroll.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,Mathf.Max(scroll.viewport.rect.height,16+count*116));
     }
     public void 选择丹方(string id)
     {
