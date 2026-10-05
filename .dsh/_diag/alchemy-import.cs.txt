@@ -1,0 +1,12 @@
+var sb=new System.Text.StringBuilder();
+foreach(var path in UnityEditor.AssetDatabase.FindAssets("t:Texture2D",new[]{"Assets/resources/UI/InkUI/AlchemyInteractive"}).Select(UnityEditor.AssetDatabase.GUIDToAssetPath)){
+ var importer=(UnityEditor.TextureImporter)UnityEditor.AssetImporter.GetAtPath(path);
+ importer.textureType=UnityEditor.TextureImporterType.Sprite;importer.spriteImportMode=UnityEditor.SpriteImportMode.Single;
+ importer.alphaIsTransparency=true;importer.mipmapEnabled=false;importer.sRGBTexture=true;
+ importer.maxTextureSize=path.EndsWith("cauldron-body.png") || path.EndsWith("recipe-bamboo.png") ? 2048 : path.EndsWith("cauldron-lid.png") ? 1024 : 512;
+ importer.textureCompression=UnityEditor.TextureImporterCompression.Uncompressed;
+ importer.filterMode=FilterMode.Bilinear;importer.spritePixelsPerUnit=100;importer.SaveAndReimport();
+ var sprite=UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);if(sprite==null)throw new System.Exception(path+"未导入Sprite");
+ sb.AppendLine(path+" "+sprite.rect.size+" "+sprite.texture.format);
+}
+return sb.ToString();

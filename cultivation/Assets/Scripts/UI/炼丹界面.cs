@@ -92,12 +92,19 @@ public class 炼丹界面 : MonoBehaviour
 
     float 提示到期 = -1f;
     float 下次刷新;
+    UIInkAlchemyPage 水墨视图;
 
-    public bool 已打开 => 面板 != null && 面板.gameObject.activeSelf;
+    public bool 已打开 => 水墨视图 != null ? 水墨视图.已打开 : 面板 != null && 面板.gameObject.activeSelf;
 
     void Awake()
     {
         if (字体 == null) 取默认字体();
+        if (InkUITheme.Enabled)
+        {
+            水墨视图 = gameObject.AddComponent<UIInkAlchemyPage>();
+            水墨视图.初始化(字体);
+            return;
+        }
         搭界面();
         // ★【不要在这里 关闭()】StationInteractor 是 Instantiate 出来用的。
         打开();
@@ -105,6 +112,7 @@ public class 炼丹界面 : MonoBehaviour
 
     void Start()
     {
+        if (水墨视图 != null) return;
         var 炉 = 炼丹炉.取();
         if (炉 != null) 炉.炼制完成 += 处理炼制完成;
         刷新();
@@ -118,6 +126,7 @@ public class 炼丹界面 : MonoBehaviour
 
     void Update()
     {
+        if (水墨视图 != null) return;
         if (开关按键 != KeyCode.None && Input.GetKeyDown(开关按键)) 切换();
         if (提示到期 > 0f && Time.unscaledTime >= 提示到期)
         {
@@ -137,6 +146,7 @@ public class 炼丹界面 : MonoBehaviour
 
     public void 打开()
     {
+        if (水墨视图 != null) { 水墨视图.打开(); return; }
         if (面板 == null) return;
         面板.gameObject.SetActive(true);
         刷新();
@@ -145,6 +155,7 @@ public class 炼丹界面 : MonoBehaviour
 
     public void 关闭()
     {
+        if (水墨视图 != null) { 水墨视图.关闭(); return; }
         if (面板 != null) UIInkMotion.提笔(面板.transform);
         if (面板 == null) return;
         面板.gameObject.SetActive(false);

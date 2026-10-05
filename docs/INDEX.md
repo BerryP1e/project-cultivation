@@ -172,7 +172,7 @@ docs/
 | **外部素材（作物模型 / 土质贴图）怎么拉、怎么转** | [tools/参考素材/README.md](../tools/参考素材/README.md) | [reference/外部素材来源](reference/外部素材来源.md) |
 | **外部素材的授权 / 出处 / sha256（★ 必读授权状况）** | [reference/外部素材来源](reference/外部素材来源.md) | [guides/灵田 §7](guides/灵田.md) |
 | **时间 / 纪年 / 修炼机会** | [guides/时间系统](guides/时间系统.md) | [architecture/修炼与境界](architecture/修炼与境界.md) |
-| **炼丹 / 丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | `Assets/Scripts/Alchemy/炼丹炉.cs` |
+| **炼丹 / 拖拽丹房 / 竹筒丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | [炼丹交互素材与提示词](reference/UI素材/炼丹交互素材.md) · `Assets/Scripts/Alchemy/炼丹炉.cs` |
 | **伤害公式 / 属性 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) | `Assets/Scripts/Combat/CombatCalculator.cs` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
 | **气血/灵力 HUD / 大境界墨圈 / 神通同款三维技能链 / 墨晕冷却** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
