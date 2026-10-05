@@ -54,6 +54,8 @@ public class 外观预览 : MonoBehaviour, IDragHandler, IPointerDownHandler
     Mesh 原始网格;
     Material[] 原始材质;
     SkinnedMeshRenderer 预览网格;
+    readonly System.Collections.Generic.Dictionary<Mesh, Mesh> 兼容网格
+        = new System.Collections.Generic.Dictionary<Mesh, Mesh>();
     bool 已初始化;
     AppearanceDefinition 上次展示;      // 重新启用时用来恢复画面
 
@@ -85,6 +87,8 @@ public class 外观预览 : MonoBehaviour, IDragHandler, IPointerDownHandler
 
     void 拆掉()
     {
+        foreach (var mesh in 兼容网格.Values) if (mesh != null) Destroy(mesh);
+        兼容网格.Clear();
         // ★ 顺序很重要：先把相机的 targetTexture 摘掉，再 Release/Destroy 那张 RT。
         //   否则 Unity 报 “Releasing render texture that is set as Camera.targetTexture!”
         //   （上一轮 Play Mode 实测报出来的）
@@ -191,7 +195,17 @@ public class 外观预览 : MonoBehaviour, IDragHandler, IPointerDownHandler
         }
         else if (预览网格 != null)
         {
-            预览网格.sharedMesh = 源网格.sharedMesh;
+            if (!兼容网格.TryGetValue(源网格.sharedMesh, out var aligned))
+            {
+                try { aligned = AppearanceMeshBinding.创建兼容网格(源网格, 原始网格, 预览网格.bones); }
+                catch (System.InvalidOperationException e)
+                {
+                    Debug.LogWarning("[外观预览] 无法兼容「" + 外观.DisplayName + "」：" + e.Message, this);
+                    return;
+                }
+                兼容网格.Add(源网格.sharedMesh, aligned);
+            }
+            预览网格.sharedMesh = aligned;
             预览网格.sharedMaterials = 源网格.sharedMaterials;
         }
 

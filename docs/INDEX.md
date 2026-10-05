@@ -134,6 +134,7 @@ docs/
 │   ├─ 沧澜寒渊录.md · 寒墟.md · 冰暴术.md
 │   ├─ 八九玄功.md         近战普攻 · 完整攻击与御风重定向 · 杨戬 Run 持械移动 · 手骨握持标定
 │   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md · 默认移动动画.md
+│   ├─ 御风前进动作.md      舒展滑行循环 · 骑乘共用 · 持械兼容 · 动图复验
 │   ├─ UI换皮.md          当前接入范围 · Assets目录 · 验证 · 后续入口
 │   └─ 备份与恢复说明.md
 │
@@ -178,7 +179,7 @@ docs/
 | **怪物近战 / 出手站位** | [guides/怪物近战判定](guides/怪物近战判定.md) | [architecture/敌人AI](architecture/敌人AI.md) |
 | **飞弹 / 子弹 / 出生点** | [guides/飞弹与子弹](guides/飞弹与子弹.md) | [guides/特效资源清单](guides/特效资源清单.md) |
 | **战阵 / 真灵** | [architecture/战阵真灵](architecture/战阵真灵.md) | [ai/踩坑总库](ai/踩坑总库.md) |
-| **坐骑 / 御风 / 飞行高度** | [architecture/坐骑与御风](architecture/坐骑与御风.md) | [guides/动画竖直处理](guides/动画竖直处理.md) |
+| **坐骑 / 御风 / 飞行高度** | [architecture/坐骑与御风](architecture/坐骑与御风.md) | [guides/御风前进动作](guides/御风前进动作.md) · [guides/动画竖直处理](guides/动画竖直处理.md) |
 | **屏幕空间角色描边（Built-in）** | [guides/描边](guides/描边.md) | [guides/画面统一调色](guides/画面统一调色.md) · [architecture/游戏HUD](architecture/游戏HUD.md) |
 | **UI 接入、目录归属、验证与后续施工** | [guides/UI换皮](guides/UI换皮.md) | [architecture/UI现状原理图](architecture/UI现状原理图.md) · [战阵真灵](architecture/战阵真灵.md) |
 | **UI 重制用户要求与原话** | [八页重制总纲](design/UI重制/八页重制总纲.md) | [全套UI施工单](design/UI重制/全套UI施工单.md) |

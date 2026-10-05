@@ -1,0 +1,6 @@
+var a=GameObject.Find("Player").GetComponentInChildren<Animator>();var sb=new System.Text.StringBuilder();
+sb.AppendLine("Avatar "+UnityEditor.AssetDatabase.GetAssetPath(a.avatar)+" rig "+a.name);
+foreach(var side in new[]{"Left","Right"})foreach(var part in new[]{"Shoulder","UpperArm","LowerArm","Hand"}){var id=(HumanBodyBones)System.Enum.Parse(typeof(HumanBodyBones),side+part);var t=a.GetBoneTransform(id);sb.AppendLine(id+"="+t.name+" parent="+t.parent.name+" local="+t.localRotation.eulerAngles+" pos="+t.localPosition);}
+var importer=UnityEditor.AssetImporter.GetAtPath(UnityEditor.AssetDatabase.GetAssetPath(a.avatar)) as UnityEditor.ModelImporter;if(importer!=null){var d=importer.humanDescription;sb.AppendLine("twists upper="+d.upperArmTwist+" lower="+d.lowerArmTwist);foreach(var h in d.human)if(h.humanName.Contains("Arm")||h.humanName.Contains("Hand")||h.humanName.Contains("Shoulder"))sb.AppendLine(h.humanName+" -> "+h.boneName+" axis="+h.limit.axisLength+" default="+h.limit.useDefaultValues);}
+foreach(var r in a.GetComponentsInChildren<SkinnedMeshRenderer>(true))sb.AppendLine("mesh="+r.name+" asset="+UnityEditor.AssetDatabase.GetAssetPath(r.sharedMesh)+" bones="+r.bones.Length);
+return sb.ToString();

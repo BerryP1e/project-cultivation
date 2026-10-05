@@ -6,11 +6,11 @@
 /// 实测结论（2026-09-27，用户提醒后确认）：
 /// 「成男村民」和玩家两套模型的**骨骼完全一样** ——
 /// 节点数都是 81、路径除根名外逐段相同（`…/Armature/BoneRoot/Hip/Pelvis/L_Thigh/…`）、
-/// 两个 `SkinnedMeshRenderer` 的 **78 根骨骼同名同序**。所以：
+/// 两个 `SkinnedMeshRenderer` 的 **78 根骨骼同名同序**，但绑定矩阵不同。
 ///
 ///   · **不换 `Player_Visual`**、**不换 Animator**、**不动朝向补偿**、**不做动画状态同步**；
 ///   · 只把玩家自己那个 `SkinnedMeshRenderer` 的 `sharedMesh` 和 `sharedMaterials` 换成外观的
-///     —— 因为骨骼一模一样，新网格挂在同一套骨骼上，动画/朝向/物理全都天然正确 ✓
+///     —— 外观网格还必须使用原骨架的绑定矩阵，见 AppearanceMeshBinding。
 ///
 /// 之前那版"整套 Player_Visual 换掉"的复杂度（缓存引用、死亡流程指向、动画桥接）**全都不需要了**。
 ///
@@ -63,6 +63,8 @@ public class 玩家外观 : MonoBehaviour
     SkinnedMeshRenderer 网格;
     Mesh 原网格;
     Material[] 原材质;
+    readonly System.Collections.Generic.Dictionary<Mesh, Mesh> 兼容网格
+        = new System.Collections.Generic.Dictionary<Mesh, Mesh>();
 
     void Awake()
     {
@@ -169,7 +171,12 @@ public class 玩家外观 : MonoBehaviour
         Debug.LogWarning("[外观] 存档里的外观 id 找不到：" + 外观id);
     }
 
-    void OnDestroy() { 对话标记.变化 -= 处理标记变化; }
+    void OnDestroy()
+    {
+        对话标记.变化 -= 处理标记变化;
+        foreach (var mesh in 兼容网格.Values) if (mesh != null) Destroy(mesh);
+        兼容网格.Clear();
+    }
 
     void 处理标记变化(string 标记, bool 新增)
     {
@@ -210,7 +217,17 @@ public class 玩家外观 : MonoBehaviour
             return false;
         }
 
-        网格.sharedMesh = 源网格.sharedMesh;
+        if (!兼容网格.TryGetValue(源网格.sharedMesh, out var aligned))
+        {
+            try { aligned = AppearanceMeshBinding.创建兼容网格(源网格, 原网格, 网格.bones); }
+            catch (System.InvalidOperationException e)
+            {
+                Debug.LogWarning("[外观] 无法兼容「" + 外观.DisplayName + "」：" + e.Message, this);
+                return false;
+            }
+            兼容网格.Add(源网格.sharedMesh, aligned);
+        }
+        网格.sharedMesh = aligned;
         网格.sharedMaterials = 源网格.sharedMaterials;
 
         // 【加固，不是必须】换完网格把包围盒也一起搬过来，并让 Unity 按**蒙皮后的实际顶点**算包围盒。
