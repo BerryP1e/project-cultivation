@@ -41,7 +41,7 @@ public class UIInkHudSkin : MonoBehaviour
             {
                 bool mana = child.name == "灵力";
                 rt.anchorMin = rt.anchorMax = Vector2.zero;rt.pivot=Vector2.zero;
-                rt.anchoredPosition=new Vector2(282,mana?112:159);rt.sizeDelta=new Vector2(380,mana?40:24);
+                rt.anchoredPosition=new Vector2(246,mana?112:159);rt.sizeDelta=new Vector2(350,mana?40:24);
                 foreach(var img in child.GetComponentsInChildren<Image>(true))img.enabled=false;
                 var brush=UIBuildUtils.CreateRect("ContinuousBranch",child);UIBuildUtils.Stretch(brush);brush.SetAsFirstSibling();
                 var branch=brush.gameObject.AddComponent<UIInkVitalBranch>();branch.raycastTarget=false;branch.Mana=mana;branch.Source=mana?hud.灵力填充:hud.气血填充;
