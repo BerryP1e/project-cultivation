@@ -1,0 +1,19 @@
+using UnityEngine.UI;
+var hud=Object.FindObjectOfType<PlayerHud>();
+var fixture=new GameObject("VitalFlowQA",typeof(RectTransform));fixture.transform.SetParent(hud.transform,false);((RectTransform)fixture.transform).anchoredPosition=new Vector2(-5000,-5000);
+var source=fixture.AddComponent<Image>();source.enabled=false;source.type=Image.Type.Filled;source.fillAmount=.25f;
+var node=new GameObject("Probe",typeof(RectTransform));node.transform.SetParent(fixture.transform,false);((RectTransform)node.transform).sizeDelta=new Vector2(380,40);
+var probe=node.AddComponent<UIInkVitalBranch>();probe.Source=source;probe.Mana=true;probe.raycastTarget=false;
+System.Collections.IEnumerator Run(){try{
+yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
+var before=probe.canvasRenderer.GetMesh().vertices;
+yield return new WaitForSecondsRealtime(.35f);yield return new WaitForEndOfFrame();
+var after=probe.canvasRenderer.GetMesh().vertices;
+if(before.Length!=after.Length||!before.Where((p,i)=>(p-after[i]).sqrMagnitude>.0001f).Any())throw new System.Exception("Flow mesh remains static");
+source.fillAmount=0;yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
+int empty=probe.canvasRenderer.GetMesh().vertexCount;if(empty>=after.Length)throw new System.Exception("Empty bar still emits particles");
+foreach(var bar in hud.GetComponentsInChildren<UIInkVitalBranch>())Debug.Log(bar.Mana+" pos="+((RectTransform)bar.transform.parent).anchoredPosition+" vertices="+bar.canvasRenderer.GetMesh().vertexCount);
+ScreenCapture.CaptureScreenshot("screenshots/hud-vital-flow-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();
+Debug.Log("Flow mesh changes over 0.35s; quarter-fill probe="+after.Length+" empty="+empty+"; player values untouched");
+}finally{Object.Destroy(fixture);}}
+return Run();

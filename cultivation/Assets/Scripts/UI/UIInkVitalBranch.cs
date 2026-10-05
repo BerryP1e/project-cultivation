@@ -1,17 +1,20 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>连续细条，进度读取原 Filled Image。</summary>
+/// <summary>连续枝脉与沿填充游动的UI粒子，进度读取原Filled Image。</summary>
 [RequireComponent(typeof(CanvasRenderer))]
 public class UIInkVitalBranch : MaskableGraphic
 {
     public Image Source;
     public bool Mana;
     float previous = -1;
+    float nextRefresh;
+    float MotionTime=>UIInkMotion.减少动效?0:Time.unscaledTime;
     void Update()
     {
         float value = Source != null ? Source.fillAmount : 1;
-        if (Mathf.Abs(value - previous) > .0005f) { previous = value; SetVerticesDirty(); }
+        if (Mathf.Abs(value - previous) > .0005f || (!UIInkMotion.减少动效 && Time.unscaledTime>=nextRefresh))
+        { previous=value;nextRefresh=Time.unscaledTime+1f/30;SetVerticesDirty(); }
     }
     protected override void OnPopulateMesh(VertexHelper vh)
     {
@@ -36,13 +39,22 @@ public class UIInkVitalBranch : MaskableGraphic
             for(int j=1;j<=12;j++){float k=j/12f;var q=(1-k)*(1-k)*p+2*(1-k)*k*mid+k*k*tip;UIInkHudOrbit.Line(vh,last,q,Mathf.Lerp(Mana?2.8f:2.2f,.35f,k),i<2||!Mana?bone:new Color(.20f,.18f,.38f,.95f));last=q;}
             if(i%2==0){var fork=Vector2.Lerp(mid,tip,.35f);UIInkHudOrbit.Line(vh,fork,fork+new Vector2(-4,sign*8),.85f,bone);}
         }
+        // 粒子有独立生命周期、位置和拖尾。只在实际填充区流动，不表示额外血量。
+        if(!UIInkMotion.减少动效 && ratio>.001f)
+        for(int i=0;i<9;i++)
+        {
+            float life=Mathf.Repeat(MotionTime*(.17f+i*.007f)+i*.618034f+(Mana?.31f:0),1);
+            float t=life*ratio;var p=Path(r,start,length,t);
+            p.y+=Mathf.Sin(MotionTime*1.6f+i*2.4f)*(Mana?4.2f:2.6f);
+            float alpha=Mathf.Sin(life*Mathf.PI)*(.55f+.20f*Mathf.Sin(MotionTime*2+i));
+            var c=Mana?new Color(.42f,.60f,.89f,alpha):new Color(.98f,.55f,.49f,alpha);
+            float size=1.1f+(i%3)*.3f;
+            var tail=Path(r,start,length,Mathf.Max(0,t-.022f));tail.y=p.y;
+            UIInkHudOrbit.Line(vh,tail,p,.8f,new Color(c.r,c.g,c.b,alpha*.35f));
+            UIInkHudOrbit.Disc(vh,p,size*3.2f,new Color(c.r,c.g,c.b,alpha*.07f));
+            UIInkHudOrbit.Disc(vh,p,size*1.7f,new Color(c.r,c.g,c.b,alpha*.17f));
+            UIInkHudOrbit.Disc(vh,p,size,c);
+        }
     }
-    Vector2 Path(Rect r,float start,float length,float t)=>new Vector2(start+length*t,r.center.y+(Mana?Mathf.Sin(t*5.4f)*6+Mathf.Sin(t*18)*1.5f:Mathf.Sin(t*9)*.9f));
-    static void Quad(VertexHelper vh, Rect r, Color c)
-    {
-        int i=vh.currentVertCount;
-        vh.AddVert(new Vector2(r.xMin,r.yMin),c,Vector2.zero); vh.AddVert(new Vector2(r.xMin,r.yMax),c,Vector2.zero);
-        vh.AddVert(new Vector2(r.xMax,r.yMax),c,Vector2.zero); vh.AddVert(new Vector2(r.xMax,r.yMin),c,Vector2.zero);
-        vh.AddTriangle(i,i+1,i+2); vh.AddTriangle(i,i+2,i+3);
-    }
+    Vector2 Path(Rect r,float start,float length,float t)=>new Vector2(start+length*t,r.center.y+(Mana?Mathf.Sin(t*5.4f)*6+Mathf.Sin(t*18)*1.5f:Mathf.Sin(t*9)*.9f)+Mathf.Sin(t*13-MotionTime*1.7f)*(Mana?1.6f:.65f));
 }
