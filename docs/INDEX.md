@@ -111,7 +111,7 @@ docs/
 │   ├─ 战斗与伤害.md        伤害公式 · 受伤飘字
 │   ├─ 修炼与境界.md        修炼小屋 · 功法等级换算 · 破境
 │   ├─ 主动技能与神通.md     技能槽 · 施放流程 · 特效摆放
-│   ├─ 游戏HUD.md          枝形血灵条 · 右侧六技能 · 墨晕冷却 · 悬停墨幕
+│   ├─ 游戏HUD.md          连续细条 · 左下灰圆技能链 · 前后环绕 · 墨晕冷却
 │   ├─ 敌人AI.md           无寻路的接近模型 · 各只怪的实现
 │   ├─ 战阵真灵.md          站位 · 真灵列表
 │   ├─ 坐骑与御风.md        摆位 · 对地高度 · Shift 切换 · 互斥
@@ -173,7 +173,7 @@ docs/
 | **炼丹 / 丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | `Assets/Scripts/Alchemy/炼丹炉.cs` |
 | **伤害公式 / 属性 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) | `Assets/Scripts/Combat/CombatCalculator.cs` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
-| **气血/灵力 HUD / 右侧六技能 / 墨晕冷却 / 悬停提示** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
+| **气血/灵力 HUD / 左下灰圆技能链 / 环绕与墨晕冷却 / 悬停提示** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
 | **加一个 NPC 的 AI** | [architecture/敌人AI](architecture/敌人AI.md) | [ai/踩坑总库 §专题：NPC/敌人 AI](ai/踩坑总库.md) |
 | **怪物近战 / 出手站位** | [guides/怪物近战判定](guides/怪物近战判定.md) | [architecture/敌人AI](architecture/敌人AI.md) |
 | **飞弹 / 子弹 / 出生点** | [guides/飞弹与子弹](guides/飞弹与子弹.md) | [guides/特效资源清单](guides/特效资源清单.md) |

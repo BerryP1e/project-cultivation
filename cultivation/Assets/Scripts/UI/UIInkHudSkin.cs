@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>运行时 HUD：左下连续气血/灵力，右侧神通星位。业务仍由 PlayerHud 驱动。</summary>
+/// <summary>运行时 HUD：圆形功法、连续细条与左下弧链技能位。业务仍由 PlayerHud 驱动。</summary>
 [DisallowMultipleComponent]
 public class UIInkHudSkin : MonoBehaviour
 {
@@ -19,28 +19,29 @@ public class UIInkHudSkin : MonoBehaviour
             if (child.name == "功法")
             {
                 rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
-                rt.anchoredPosition = new Vector2(32, 25); rt.sizeDelta = new Vector2(78, 78);
+                rt.anchoredPosition = new Vector2(62,116); rt.sizeDelta = new Vector2(110,110);
                 var bg = child.Find("底")?.GetComponent<Image>();
-                if (bg != null) { bg.sprite = InkUITheme.Load("Realm/fx-ink-circle"); bg.color = new Color(.80f,.83f,.72f,.8f); }
+                if (bg != null) { bg.enabled=false; var disk=UIBuildUtils.CreateRect("CultivationDisc",child);UIBuildUtils.Stretch(disk);disk.SetAsFirstSibling();var graphic=disk.gameObject.AddComponent<UIInkHudOrbit>();graphic.主体=true;graphic.raycastTarget=false; }
             }
             if (child.name.StartsWith("Skill") && int.TryParse(child.name.Substring(5), out int slot))
             {
-                rt.anchorMin = rt.anchorMax = new Vector2(1,.5f); rt.pivot = new Vector2(.5f,.5f);
-                rt.anchoredPosition = new Vector2(-65, 230-(slot-1)*92); rt.sizeDelta = new Vector2(78,78);
+                rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = new Vector2(.5f,.5f);
+                rt.anchoredPosition = UIInkHudChain.Positions[slot-1]; rt.sizeDelta = Vector2.one * (slot<=2?38:54);
                 child.gameObject.AddComponent<UIInkHudSkill>().Initialize(hud, slot-1);
             }
             if (child.name == "气血" || child.name == "灵力")
             {
                 bool mana = child.name == "灵力";
                 rt.anchorMin = rt.anchorMax = Vector2.zero;rt.pivot=Vector2.zero;
-                rt.anchoredPosition=new Vector2(123,mana?27:68);rt.sizeDelta=new Vector2(500,32);
+                rt.anchoredPosition=new Vector2(156,mana?136:154);rt.sizeDelta=new Vector2(340,10);
                 foreach(var img in child.GetComponentsInChildren<Image>(true))img.enabled=false;
                 var brush=UIBuildUtils.CreateRect("ContinuousBranch",child);UIBuildUtils.Stretch(brush);brush.SetAsFirstSibling();
                 var branch=brush.gameObject.AddComponent<UIInkVitalBranch>();branch.raycastTarget=false;branch.Mana=mana;branch.Source=mana?hud.灵力填充:hud.气血填充;
                 var text=mana?hud.灵力文字:hud.气血文字;
-                if(text!=null){text.fontSize=16;text.alignment=TextAnchor.MiddleRight;text.color=new Color(.92f,.93f,.86f);text.rectTransform.anchoredPosition=new Vector2(0,mana?-19:20);text.gameObject.AddComponent<Shadow>().effectColor=new Color(0,0,0,.85f);}
+                if(text!=null){text.fontSize=14;text.alignment=TextAnchor.MiddleRight;text.color=new Color(.92f,.93f,.86f,.85f);text.rectTransform.anchoredPosition=new Vector2(0,mana?-13:13);text.gameObject.AddComponent<Shadow>().effectColor=new Color(0,0,0,.85f);}
             }
         }
+        var links=UIBuildUtils.CreateRect("HudCurvedLinks",transform);links.anchorMin=links.anchorMax=Vector2.zero;links.pivot=Vector2.zero;links.sizeDelta=new Vector2(530,240);links.SetAsFirstSibling();links.gameObject.AddComponent<UIInkHudChain>().raycastTarget=false;
         if(hud.信息幕布!=null)
         {
             var detail = (RectTransform)hud.信息幕布.transform;

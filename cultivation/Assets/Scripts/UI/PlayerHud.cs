@@ -385,8 +385,8 @@ public class PlayerHud : MonoBehaviour
             var bounds = ((RectTransform)transform).rect;
             rt.anchorMin = rt.anchorMax = Vector2.zero; rt.pivot = Vector2.zero;
             rt.anchoredPosition = 槽位 >= 0
-                ? new Vector2(bounds.width - rt.rect.width - 135, Mathf.Clamp(bounds.height*.5f+230-槽位*92-rt.rect.height*.5f,24,bounds.height-rt.rect.height-24))
-                : new Vector2(28,140);
+                  ? new Vector2(Mathf.Clamp(UIInkHudChain.Positions[槽位].x,24,bounds.width-rt.rect.width-24),240)
+                  : new Vector2(28,240);
         }
     }
 

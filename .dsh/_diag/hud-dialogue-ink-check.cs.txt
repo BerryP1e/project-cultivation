@@ -13,7 +13,7 @@ System.Collections.IEnumerator Run(){try{
  for(int i=0;i<6;i++)cooldown[i]=caster.冷却总秒(i)*(i%3==0?1:i%3==1?.5f:0);
  yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
  foreach(var g in hud.GetComponentsInChildren<UIInkHudSkill>()){sb.AppendLine(g.name+" k="+g.墨晕比例+" pos="+((RectTransform)g.transform).anchoredPosition);}
- foreach(var g in hud.GetComponentsInChildren<UIInkVitalBranch>()){var mesh=g.canvasRenderer.GetMesh();if(mesh==null||mesh.vertexCount<100)throw new System.Exception("Missing branch mesh");sb.AppendLine("branch verts="+mesh.vertexCount+" fill="+g.Source.fillAmount);}
+ foreach(var g in hud.GetComponentsInChildren<UIInkVitalBranch>()){var mesh=g.canvasRenderer.GetMesh();if(mesh==null||mesh.vertexCount!=8)throw new System.Exception("Missing continuous bar mesh");sb.AppendLine("bar verts="+mesh.vertexCount+" fill="+g.Source.fillAmount);}
  sb.AppendLine("P="+Object.FindObjectOfType<PlayerStatsDebugPanel>().开关按键+" cultivationHud="+hud.transform.Find("修炼").gameObject.activeSelf);
  sb.AppendLine("cooldown shader="+hud.技能格们[0].图标.material.shader.name+" supported="+hud.技能格们[0].图标.material.shader.isSupported);
  ScreenCapture.CaptureScreenshot("screenshots/hud-ink-"+Screen.width+"x"+Screen.height+".png");yield return new WaitForEndOfFrame();
