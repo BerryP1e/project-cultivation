@@ -16,6 +16,8 @@ public class UIInkFluid : MonoBehaviour, IPointerClickHandler
     bool selected,near;
     public bool 使用密度模拟=true;
     public float 基础浓度=1;
+    [Range(0,1)] public float 位移强度=1;
+    [Range(0,1)] public float 形变强度=1;
     public RectTransform 渐隐视口;
     public bool 渐隐启用;
     public Vector2 绘制偏移 => offset;
@@ -80,7 +82,7 @@ public class UIInkFluid : MonoBehaviour, IPointerClickHandler
         bool reduced=UIInkMotion.减少动效;
         if(!near) { releaseTime+=dt; attraction=releaseFrom*(1-UIInkMotion.Timing.Cubic(releaseTime/.22f)); }
         var drift=new Vector2(Mathf.PerlinNoise(seed,elapsed/(4+seed%3))-.5f,Mathf.PerlinNoise(seed+22,elapsed/(5+seed%2))-.5f)*6;
-        var goal=reduced ? Vector2.zero : Vector2.ClampMagnitude(drift,3)+attraction;
+        var goal=reduced ? Vector2.zero : (Vector2.ClampMagnitude(drift,3)+attraction)*位移强度;
         offset=reduced ? Vector2.zero : Vector2.SmoothDamp(offset,goal,ref velocity,.16f,100,dt);
         blot.rectTransform.anchoredPosition=offset;
         if(icon!=null) icon.rectTransform.anchoredPosition=offset;
@@ -89,8 +91,8 @@ public class UIInkFluid : MonoBehaviour, IPointerClickHandler
         if(!reduced && simulation!=null) simulation.推进(Time.unscaledDeltaTime,pointerUV,dragVelocity,pointerInside,clickUV,clickTime);
         if(material!=null) {
             material.SetFloat("_Clock",reduced ? 0 : elapsed);
-            material.SetFloat("_Deform",reduced ? 0 : .12f);
-            material.SetVector("_Pointer",new Vector4(pointerUV.x,pointerUV.y,hover,0));
+            material.SetFloat("_Deform",reduced ? 0 : .12f*形变强度);
+            material.SetVector("_Pointer",new Vector4(pointerUV.x,pointerUV.y,hover*形变强度,0));
             material.SetVector("_Drag",new Vector4(dragVelocity.x,dragVelocity.y,0,0));
             material.SetFloat("_Bleed",reduced ? 0 : Mathf.SmoothStep(0,1,clickTime/.12f)*(1-Mathf.SmoothStep(.25f,1.1f,clickTime)));
             material.SetTexture("_InkState",墨密度纹理);

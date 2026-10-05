@@ -8,6 +8,12 @@ public class UIInkActionButton : MonoBehaviour
     Image blot;
     UIInkFluid fluid;
     Vector2 size;
+    Vector2 drawingScale=new Vector2(1.45f,2.8f);
+    public void 设置绘制倍率(Vector2 value)
+    {
+        drawingScale=value;
+        if(blot!=null) blot.rectTransform.sizeDelta=Vector2.Scale(size,drawingScale)*1.4f;
+    }
     public static void Apply(Button target)
     {
         var effect=target.GetComponent<UIInkActionButton>();
@@ -47,7 +53,7 @@ public class UIInkActionButton : MonoBehaviour
     {
         if(button==null || blot==null) return;
         var current=((RectTransform)transform).rect.size;
-        if(current!=size) { size=current; blot.rectTransform.sizeDelta=new Vector2(size.x*1.45f,size.y*2.8f)*1.4f; }
+        if(current!=size) { size=current; blot.rectTransform.sizeDelta=Vector2.Scale(size,drawingScale)*1.4f; }
         bool enabledAction=button.IsInteractable();
         fluid.基础浓度=enabledAction ? 2.2f : .7f;
         blot.color=enabledAction ? InkUITheme.Ink : new Color(.43f,.46f,.43f);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +12,7 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public const int 当前版本 = 14;   // 2：修炼；3：战阵；4：已获得能力；5：背包/装备/任务/对话标记；6：镇妖塔层数；7：场景名/朝向/外观；8：纪年/灵田；9：破境加成；10：灵田改成每块地独立状态；11：灵田改成玩家自由摆放（每块地带位置与朝向）；12：新增「摆设」（练功木桩等可摆放物）；13：新增「宗门贡献」（兑换用货币）；14：新增「今日清单」（日常循环）
+    public const int 当前版本 = 15;   // 14：今日清单；15：已获得外观列表（保留现有字段，兼容旧档）
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -51,6 +51,7 @@ public class SaveData
     [Tooltip("玩家当前穿的外观 id（`AppearanceDefinition.id`）。\n" +
              "`玩家外观.已选外观` 是 static —— 活过切场景，但**活不过读档**，所以必须存。")]
     public string 外观id = "";
+    public List<string> 已获得外观 = new List<string>();
     public List<string> 已装备神通 = new List<string>();
     public List<string> 已启用被动 = new List<string>();
 

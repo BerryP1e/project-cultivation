@@ -1,0 +1,4 @@
+var panel=Object.FindObjectOfType<CharacterPanelUI>();panel.ShowTab(CharacterTab.外观);
+var view=panel.tabs[7].page.GetComponent<UIInkAppearancePage>();
+view.GetComponentsInChildren<UnityEngine.UI.Button>().First(b=>b.name=="AppearanceRow_app_player").onClick.Invoke();
+return view.Selected.id;

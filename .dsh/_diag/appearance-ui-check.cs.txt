@@ -1,0 +1,19 @@
+System.Collections.IEnumerator Run(){
+ var panel=Object.FindObjectOfType<CharacterPanelUI>();panel.SetOpen(true,true);panel.ShowTab(CharacterTab.外观);
+ var view=panel.tabs[7].page.GetComponent<UIInkAppearancePage>();var actor=Object.FindObjectOfType<玩家外观>();var before=actor.当前外观;
+ var villageButton=view.GetComponentsInChildren<UnityEngine.UI.Button>().First(b=>b.name=="AppearanceRow_app_cunmin");villageButton.onClick.Invoke();
+ if(view.Selected.id!="app_cunmin"||actor.当前外观!=before)throw new System.Exception("Preview selection changed worn appearance");
+ var equip=view.GetComponentsInChildren<UnityEngine.UI.Button>().First(b=>b.name=="EquipAppearance");equip.onClick.Invoke();
+ if(actor.当前外观.id!="app_cunmin")throw new System.Exception("Equip button failed");
+ var info=view.DescriptionScroll.content.GetComponentInChildren<UnityEngine.UI.Text>();
+ info.text=string.Concat(Enumerable.Repeat("长介绍边界检查：山风拂袖，衣袂舒展。文字应自动换行，并可滚动浏览。\n",40));
+ UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(view.DescriptionScroll.content);Canvas.ForceUpdateCanvases();yield return null;
+ float height=view.DescriptionScroll.content.rect.height,viewport=view.DescriptionScroll.viewport.rect.height;
+ if(height<=viewport || view.DescriptionScroll.viewport.GetComponent<UnityEngine.UI.RectMask2D>()==null)throw new System.Exception("Long introduction did not create clipped scroll content");
+ view.DescriptionScroll.verticalNormalizedPosition=0;yield return null;
+ if(view.DescriptionScroll.content.anchoredPosition.y<1)throw new System.Exception("Description cannot scroll");
+ foreach(var fluid in view.GetComponentsInChildren<UIInkFluid>())if(fluid.位移强度>.1f||fluid.形变强度>.15f)throw new System.Exception("Appearance button motion too strong");
+ Debug.Log("PASS: select does not equip; equip works; long introduction="+height+" viewport="+viewport+" scroll offset="+view.DescriptionScroll.content.anchoredPosition.y+"; all motions subdued");
+ actor.装备(before);view.Refresh();
+}
+return Run();

@@ -1,12 +1,12 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// **跨场景数据接力**（主线需求第 ⑤ 项）。
 ///
 /// 背景（查过项目现状）：切场景走 `Teleporter` → `LoadSceneMode.Single`，**旧场景里所有物体都被销毁** ✗，
-/// 只有玩家靠一个 `DontDestroyOnLoad` 宿主跨过去 ✓。于是：
-///   · 玩家身上的东西（`玩家外观` 的"已获得外观"、`演出锁`）**能活下来** ✓；
+/// 玩家也会在宗门/镇妖塔等场景重建。于是：
+///   · 外观由 `玩家外观` 自己按 id 保存会话与存档，新玩家恢复拥有及穿戴；
 ///   · **角色面板 `CharacterUI`（`UIPanelData`：背包 / 已学功法 / 已获得神通 / 主动技能槽 / 停用被动）会没** ✗
 ///     —— 新场景自带一份全新的、空的。
 ///

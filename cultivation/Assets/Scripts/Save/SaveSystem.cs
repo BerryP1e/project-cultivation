@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -135,6 +135,7 @@ public static class SaveSystem
     public static SaveData 建新档(string 角色名 = null)
     {
         本局是新开局 = true;                  // ★ 打上"这是新开局"的标志（供 主线开场 判断）
+        玩家外观.清空会话();
         var 数据 = new SaveData
         {
             角色名 = string.IsNullOrEmpty(角色名) ? "无名散修" : 角色名,
@@ -267,11 +268,11 @@ public static class SaveSystem
         }
         玩家.transform.rotation = Quaternion.Euler(0f, 数据.朝向Y, 0f);
 
-        // 外观：static 跨场景能活、跨读档活不了，所以读档要显式恢复
-        if (!string.IsNullOrEmpty(数据.外观id))
+        // 读档替换完整外观记录；场景接力保留会话，不能用上次磁盘快照覆盖新获得的衣服。
+        if (!跨场景数据.正在接力)
         {
             var 外观组件 = 玩家.GetComponent<玩家外观>();
-            玩家外观.从存档设置外观(数据.外观id, 外观组件);
+            玩家外观.从存档恢复(数据.外观id, 数据.已获得外观, 外观组件);
         }
         if (cc != null) cc.enabled = true;
 
@@ -441,7 +442,11 @@ public static class SaveSystem
         数据.朝向Y = 玩家.transform.eulerAngles.y;
 
         // 外观（static，读档会丢，必须存）
-        try { 数据.外观id = 玩家外观.当前外观id; }
+        try
+        {
+            数据.外观id = 玩家外观.当前外观id;
+            数据.已获得外观 = 玩家外观.导出已获得(玩家.GetComponent<玩家外观>());
+        }
         catch (System.Exception e) { Debug.LogWarning("[存档] 采集外观失败：" + e.Message); }
 
         var 生命 = 玩家.GetComponent<PlayerVitals>();

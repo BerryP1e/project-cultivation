@@ -204,6 +204,7 @@ public class UIInkSkin : MonoBehaviour
             foreach (var t in r.GetComponentsInChildren<Text>(true))
             {
                 if (t == null) continue;
+                if (t.GetComponentInParent<UIInkAppearancePage>(true) != null) continue;
                 // 只改"偏亮"的字（深色字本来就能读，别乱动）
                 if (t.GetComponentInParent<Button>(true) == null && t.color.maxColorComponent > 0.55f) { t.color = 墨色; 字++; }
                 var o = t.GetComponent<Outline>();
@@ -226,6 +227,7 @@ public class UIInkSkin : MonoBehaviour
         UIInkRealmPage.应用(r);
         UIInkSkillsPage.应用(r);
         UIInkFormationPage.应用(r);
+        UIInkAppearancePage.应用(r);
         foreach(var scroll in r.GetComponentsInChildren<Scrollbar>(true)) InkUITheme.ScrollbarStyle(scroll);
     }
 

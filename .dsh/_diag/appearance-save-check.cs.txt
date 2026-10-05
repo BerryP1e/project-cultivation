@@ -1,0 +1,22 @@
+var database=AppearanceDatabase.取();
+var sect=database.取("app_player");var village=database.取("app_cunmin");
+if(sect==null||village==null)throw new System.Exception("Missing appearance definitions");
+var originalId=玩家外观.当前外观id;var originalOwned=玩家外观.导出已获得();
+var roots=new System.Collections.Generic.List<GameObject>();
+var start=typeof(玩家外观).GetMethod("Start",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+玩家外观 Create(){var go=new GameObject("AppearanceSaveProbe");roots.Add(go);var visual=Object.Instantiate(sect.取模型(),go.transform);visual.name="Player_Visual";foreach(var behaviour in visual.GetComponentsInChildren<MonoBehaviour>(true))behaviour.enabled=false;var actor=go.AddComponent<玩家外观>();actor.enabled=false;typeof(玩家外观).GetMethod("Awake",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(actor,null);start.Invoke(actor,null);return actor;}
+void Require(bool ok,string message){if(!ok)throw new System.Exception(message);}
+try{
+ 玩家外观.清空会话();var first=Create();Require(first.获得(sect),"First unlock failed");Require(first.当前外观==sect,"Equip failed");
+ typeof(玩家外观).GetMethod("处理标记变化",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(first,new object[]{"unrelated_test_flag",true});
+ Require(first.当前外观==sect,"Unrelated flag overwrote equipment");
+ var data=new SaveData{外观id=玩家外观.当前外观id,已获得外观=玩家外观.导出已获得(first)};
+ var json=JsonUtility.ToJson(data);var loaded=JsonUtility.FromJson<SaveData>(json);
+ Require(loaded.已获得外观.Contains(sect.id),"Owned appearance absent from JSON");
+ Object.DestroyImmediate(first.gameObject);var second=Create();Require(second.当前外观==sect&&second.已拥有(sect)&&second.已获得.Contains(sect),"Recreated player lost appearance");
+ 玩家外观.从存档恢复(village.id,loaded.已获得外观,second);Require(second.当前外观==village&&second.已拥有(sect),"Unequipped owned appearance lost on load");
+ 玩家外观.从存档恢复(loaded.外观id,loaded.已获得外观,second);Require(second.当前外观==sect&&second.已拥有(sect),"Save restore failed");
+ 玩家外观.从存档恢复(sect.id,null,second);Require(second.已拥有(sect),"Legacy worn appearance migration failed");
+ 玩家外观.从存档恢复("",new System.Collections.Generic.List<string>(),second);Require(!second.已拥有(sect)&&second.当前外观==village,"New/other save inherited old unlock");
+ return "PASS: item unlock/equip; unrelated flag; JSON roundtrip; recreated player; unequipped ownership; legacy equipped migration; empty save clears state";
+}finally{foreach(var go in roots)if(go!=null)Object.DestroyImmediate(go);玩家外观.从存档恢复(originalId,originalOwned);}

@@ -28,7 +28,7 @@ public class 玩家外观 : MonoBehaviour
 
     [Header("已拥有（靠物品获得，比如「门派便服」）")]
     [Tooltip("已经拿到手的外观。**用户 2026-09-27**：不靠标记解锁，而是任务发道具、道具使用后获得。\n" +
-             "以后存进存档就按这个列表的 id 存")]
+             "按 id 写入存档，并在重建玩家时从会话记录恢复")]
     public System.Collections.Generic.List<AppearanceDefinition> 已获得
         = new System.Collections.Generic.List<AppearanceDefinition>();
 
@@ -37,7 +37,7 @@ public class 玩家外观 : MonoBehaviour
     {
         if (a == null) return false;
         if (a.默认拥有) return true;
-        return 已获得 != null && 已获得.Contains(a);
+        return 会话已获得.Contains(a.id) || (已获得 != null && 已获得.Exists(x => x != null && x.id == a.id));
     }
 
     /// <summary>
@@ -51,6 +51,7 @@ public class 玩家外观 : MonoBehaviour
 
         bool 新的 = !已拥有(外观);
         if (新的 && !外观.默认拥有) 已获得.Add(外观);
+        记住拥有记录();
         if (立刻装备) 装备(外观);
         Debug.Log("[外观] 获得「" + 外观.DisplayName + "」" + (新的 ? "" : "（早就有了，不重复给）"), 外观);
         return 新的;
@@ -109,6 +110,7 @@ public class 玩家外观 : MonoBehaviour
     void Start()
     {
         库 = AppearanceDatabase.取();
+        恢复会话拥有记录();
         对话标记.变化 += 处理标记变化;
 
         // ★ 先把上一次会话记下的外观装上（跨场景保持玩家自己换的那身）。
@@ -116,6 +118,7 @@ public class 玩家外观 : MonoBehaviour
         //   原来这里无条件调 按规则选一件()，而 按规则挑() 选的是"表里最靠后的解锁即装备外观"。
         //   一旦门派便服解锁了「修仙者」(app_player)，**每次进场景都会强制换成它**，
         //   把玩家手动选的村中少年覆盖掉。
+        var 已选外观 = 库 != null ? 库.取(会话外观id) : null;
         if (已选外观 != null)
         {
             装备(已选外观);
@@ -129,28 +132,79 @@ public class 玩家外观 : MonoBehaviour
     /// <summary>
     /// **跨场景保持的"玩家当前外观"**。
     /// 为什么用静态：`玩家外观` 挂在 Player 上，每次切场景都重新构造，
-    /// 实例字段活不过切场景；而"玩家选了什么外观"是这一局的会话状态。
+    /// 实例字段活不过切场景；会话只保存 id，避免依赖被卸载的资产实例。
     /// </summary>
-    static AppearanceDefinition 已选外观;
+    static string 会话外观id = "";
+    static bool 会话已初始化;
+    static readonly System.Collections.Generic.HashSet<string> 会话已获得
+        = new System.Collections.Generic.HashSet<string>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public static void 清空会话()
+    {
+        会话外观id = "";
+        会话已获得.Clear();
+        会话已初始化 = false;
+    }
+
+    void 记住拥有记录()
+    {
+        if (已获得 != null)
+            foreach (var a in 已获得)
+                if (a != null && !string.IsNullOrEmpty(a.id)) 会话已获得.Add(a.id);
+        会话已初始化 = true;
+    }
+
+    void 恢复会话拥有记录()
+    {
+        if (!会话已初始化) 记住拥有记录();
+        已获得 = new System.Collections.Generic.List<AppearanceDefinition>();
+        var database = AppearanceDatabase.取();
+        if (database == null) return;
+        foreach (var id in 会话已获得)
+        {
+            var a = database.取(id);
+            if (a != null && !a.默认拥有) 已获得.Add(a);
+        }
+    }
+
+    public static System.Collections.Generic.List<string> 导出已获得(玩家外观 组件 = null)
+    {
+        if (组件 != null) 组件.记住拥有记录();
+        var ids = new System.Collections.Generic.List<string>(会话已获得);
+        ids.Sort(System.StringComparer.Ordinal);
+        return ids;
+    }
+
+    /// <summary>读档替换完整会话；旧档只能恢复当时穿戴的外观，不能推断其他已消耗道具。</summary>
+    public static void 从存档恢复(string 外观id, System.Collections.Generic.List<string> 已获得id, 玩家外观 组件 = null)
+    {
+        清空会话();
+        会话已初始化 = true;
+        if (已获得id != null)
+            foreach (var id in 已获得id)
+                if (!string.IsNullOrEmpty(id)) 会话已获得.Add(id);
+        会话外观id = 外观id ?? "";
+        if (!string.IsNullOrEmpty(会话外观id)) 会话已获得.Add(会话外观id);
+        if (组件 == null) return;
+        组件.恢复会话拥有记录();
+        var database = AppearanceDatabase.取();
+        var appearance = database != null ? database.取(会话外观id) : null;
+        if (appearance != null) 组件.装备(appearance);
+        else 组件.按规则选一件();
+    }
 
     /// <summary>
     /// **当前外观的 id**（存档用）。没选过返回空串。
     ///
-    /// 【为什么需要单独给存档用】`已选外观` 是 **static** —— 它能活过**切场景**，
+    /// 【为什么需要单独给存档用】会话记录是 **static** —— 它能活过**切场景**，
     /// 但活不过**读档**（读档时进程里的静态可能还是上一次会话的，或者干脆是空的）。
     /// 所以"玩家自己换的那身"必须进存档，否则读档后会被 `按规则选一件()` 覆盖掉
     /// （用户在 2026-09-27 报过一个同源的 bug：进镇妖塔出来变回宗门便服）。
     /// </summary>
     public static string 当前外观id
     {
-        get
-        {
-            var 库 = AppearanceDatabase.取();
-            if (库 == null || 库.全部 == null) return 已选外观 != null ? 已选外观.id : "";
-            // 已选外观本身可能来自上一局的库实例，按 id 反查一次更稳
-            if (已选外观 == null) return "";
-            return 已选外观.id;
-        }
+        get => 会话外观id;
     }
 
     /// <summary>读档用：按 id 把外观记进静态，并立刻装上（读档时可能还没 Start）</summary>
@@ -163,7 +217,10 @@ public class 玩家外观 : MonoBehaviour
         foreach (var a in 库.全部)
             if (a != null && a.id == 外观id)
             {
-                已选外观 = a;
+                会话外观id = a.id;
+                会话已获得.Add(a.id);
+                会话已初始化 = true;
+                if (组件 != null) 组件.恢复会话拥有记录();
                 if (组件 != null) 组件.装备(a);
                 Debug.Log("[外观] 读档恢复外观：" + a.DisplayName);
                 return;
@@ -181,8 +238,13 @@ public class 玩家外观 : MonoBehaviour
     void 处理标记变化(string 标记, bool 新增)
     {
         if (!新增) return;
-        var 该穿 = 按规则挑();
-        if (该穿 != null && 该穿 != 当前外观) 装备(该穿);
+        if (库 == null) return;
+        foreach (var a in 库.全部)
+        {
+            if (a == null || a.默认拥有 || 已拥有(a) || !a.已解锁) continue;
+            if (System.Array.IndexOf(DialogueDefinition.拆标记(a.解锁标记), 标记) < 0) continue;
+            获得(a, a.解锁即装备);
+        }
     }
 
     /// <summary>按「默认拥有 + 解锁标记」挑一件：已解锁且“解锁即装备”的最后一件优先（表里越靠后越高级）</summary>
@@ -245,7 +307,10 @@ public class 玩家外观 : MonoBehaviour
         网格.localBounds = 源网格.localBounds;
         网格.updateWhenOffscreen = true;
         当前外观 = 外观;
-        已选外观 = 外观;          // ★ 记住，切场景时不再被规则覆盖
+        会话外观id = 外观.id;
+        if (已获得 == null) 已获得 = new System.Collections.Generic.List<AppearanceDefinition>();
+        if (!外观.默认拥有 && !已拥有(外观)) 已获得.Add(外观);
+        记住拥有记录();
         Debug.Log("[外观] 换上「" + 外观.DisplayName + "」（网格 " + 源网格.sharedMesh.name + "）", 外观);
         外观变化?.Invoke(外观);
         return true;
@@ -260,7 +325,7 @@ public class 玩家外观 : MonoBehaviour
             网格.sharedMaterials = 原材质;
         }
         当前外观 = null;
-        已选外观 = null;
+        会话外观id = "";
         外观变化?.Invoke(null);
     }
 
