@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 攻击的「伤害属性」轴 —— 决定第二步走哪一套加成判定。
@@ -13,7 +13,7 @@ using UnityEngine;
 /// </summary>
 public enum DamageNature
 {
-    /// <summary>物理：走暴击判定</summary>
+    /// <summary>物理：100%命中，走暴击判定。</summary>
     物理 = 0,
 
     /// <summary>特殊：走会心判定。不吃暴击属性与暴击伤害，也不经过暴击判定</summary>
@@ -63,7 +63,7 @@ public struct AttackSpec
     /// <summary>攻击类别（普通攻击 / 主动神通）—— 决定用哪套加成与减免</summary>
     public AttackKind 攻击类别;
 
-    /// <summary>true = 无视闪避，必定命中（部分技能用）</summary>
+    /// <summary>特殊攻击的额外必中开关；物理攻击无论此值均必中。</summary>
     public bool 必定命中;
 
     /// <summary>
@@ -115,7 +115,7 @@ public struct AttackSpec
     // ---- ASCII 别名 ----
     public DamageNature Nature => 伤害属性;
     public AttackKind Kind => 攻击类别;
-    public bool GuaranteedHit => 必定命中;
+    public bool GuaranteedHit => 伤害属性 == DamageNature.物理 || 必定命中;
     public bool UsesInsight => 走会心判定;
     public bool UsesActiveSpell => 用主动法术加成;
     public bool UsesPassiveSpell => 用被动法术加成;
@@ -125,6 +125,6 @@ public struct AttackSpec
         string 类别 = 攻击类别 == AttackKind.主动神通 ? "主动神通"
                     : 攻击类别 == AttackKind.被动神通 ? "被动神通"
                     : "普通攻击";
-        return (伤害属性 == DamageNature.特殊 ? "特殊" : "物理") + 类别 + (必定命中 ? "（必中）" : "");
+        return (伤害属性 == DamageNature.特殊 ? "特殊" : "物理") + 类别 + (GuaranteedHit ? "（必中）" : "");
     }
 }

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>一次攻击结算的完整结果，方便打日志 / 飘字 / 调试。</summary>
 public struct AttackResult
@@ -76,7 +76,8 @@ public struct AttackResult
 ///
 /// 组合出四种攻击，三步公式如下：
 ///
-/// 【第一步 · 命中判定】四种攻击完全一致
+/// 【第一步 · 命中判定】物理属性攻击一律100%命中，跳过闪避掷骰。
+///   特殊属性攻击：
 ///     闪避率 = 受击方闪避 ÷ (受击方闪避 + 攻击方忽视闪避 + 闪避基准)
 ///     · 受击方闪避为 0 → 必中
 ///     · 否则按该概率判定「被闪避」，结果夹在 [0, 闪避上限]
@@ -279,7 +280,7 @@ public static class CombatCalculator
         r.攻击类别 = spec.攻击类别;
 
         // 第一步：命中
-        if (spec.必定命中)
+        if (spec.GuaranteedHit)
         {
             r.命中 = true;
             r.闪避率 = 0f;

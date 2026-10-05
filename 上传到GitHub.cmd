@@ -5,7 +5,7 @@ cd /d "%~dp0"
 
 echo ============================================================
 echo   备份 project-cultivation 到 GitHub
-echo   仓库: https://github.com/Rihyokin/project-cultivation
+echo   仓库: https://github.com/BerryP1e/project-cultivation
 echo ============================================================
 echo.
 
@@ -24,8 +24,8 @@ for /f "delims=" %%v in ('git --version') do echo [OK] %%v
 echo.
 
 REM ---------- 2) 身份（没配过就只在本仓库里配一份，不动全局） ----------
-git config user.name  >nul 2>nul || git config user.name  "Rihyokin"
-git config user.email >nul 2>nul || git config user.email "Rihyokin@users.noreply.github.com"
+git config user.name  >nul 2>nul || git config user.name  "BerryP1e"
+git config user.email >nul 2>nul || git config user.email "BerryP1e@users.noreply.github.com"
 
 REM ---------- 3) 初始化 ----------
 if not exist ".git" (
@@ -46,9 +46,9 @@ git commit -m "备份 %D% %time:~0,5%"
 if errorlevel 1 echo      （没有新改动，或者提交被跳过）
 
 REM ---------- 5) 远端 ----------
-echo [4/5] 设置远端 origin ...
-git remote remove origin >nul 2>nul
-git remote add origin https://github.com/Rihyokin/project-cultivation.git
+echo [4/5] 检查远端 origin（保留已有认证配置）...
+git remote get-url origin >nul 2>nul
+if errorlevel 1 git remote add origin https://github.com/BerryP1e/project-cultivation.git
 
 echo [5/5] 推送 ...
 echo.
@@ -70,6 +70,6 @@ if errorlevel 1 (
 )
 
 echo.
-echo [OK] 推送完成: https://github.com/Rihyokin/project-cultivation
+echo [OK] 推送完成: https://github.com/BerryP1e/project-cultivation
 echo.
 pause
