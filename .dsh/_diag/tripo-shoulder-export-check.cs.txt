@@ -1,0 +1,10 @@
+string parent="Assets/Art";string folderName="ShoulderExportQA_"+System.Guid.NewGuid().ToString("N");UnityEditor.AssetDatabase.CreateFolder(parent,folderName);string folder=parent+"/"+folderName;
+try{var source=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/better_player_test/better_player_test.fbx");using(var r=TripoShoulderRepair.创建副本(source,.25f,.25f,0)){
+var originalMaterials=source.GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials;r.设置预览材质();r.root.transform.position+=Vector3.right*99;
+var path=TripoShoulderRepair.导出(r,folder);var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);var renderer=prefab.GetComponentInChildren<SkinnedMeshRenderer>();var a=prefab.GetComponent<Animator>();
+if(!a.enabled||!a.avatar.isHuman||!a.avatar.isValid||a.runtimeAnimatorController!=null)throw new System.Exception("Export Animator invalid");
+if(!renderer.sharedMaterials.SequenceEqual(originalMaterials))throw new System.Exception("Preview materials leaked into export");
+if(Vector3.Distance(prefab.transform.localPosition,source.transform.localPosition)>.00001f)throw new System.Exception("Preview stage position leaked into export");
+if(!UnityEditor.EditorUtility.IsPersistent(renderer.sharedMesh)||!UnityEditor.EditorUtility.IsPersistent(a.avatar))throw new System.Exception("Missing persistent rig asset");
+return "Export round-trip OK: Avatar + Mesh subasset, original materials, root restored, Animator enabled; temporary assets removed";
+}}finally{UnityEditor.AssetDatabase.DeleteAsset(folder);}

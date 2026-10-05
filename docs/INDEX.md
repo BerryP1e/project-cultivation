@@ -135,6 +135,7 @@ docs/
 │   ├─ 八九玄功.md         近战普攻 · 完整攻击与御风重定向 · 杨戬 Run 持械移动 · 手骨握持标定
 │   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md · 默认移动动画.md
 │   ├─ 御风前进动作.md      舒展滑行循环 · 骑乘共用 · 持械兼容 · 动图复验
+│   ├─ Tripo肩关节修复.md   肩位外移工具 · 蒙皮绑定补偿 · Avatar重建 · 模型导出
 │   ├─ UI换皮.md          当前接入范围 · Assets目录 · 验证 · 后续入口
 │   └─ 备份与恢复说明.md
 │
@@ -196,6 +197,7 @@ docs/
 | **场景生成 / 摆点（宗门野外）** | [guides/宗门野外生成说明](guides/宗门野外生成说明.md) | [architecture/系统总览 §1](architecture/系统总览.md) |
 | **画面色调 / 场景昏暗 / 材质不统一 / 后处理** | [guides/画面统一调色](guides/画面统一调色.md) | [architecture/系统总览 §2.2~2.3](architecture/系统总览.md) |
 | **外观 / 换装** | [guides/外观系统说明](guides/外观系统说明.md) | — |
+| **Tripo肩位过窄 / 骨架修复** | [guides/Tripo肩关节修复](guides/Tripo肩关节修复.md) | [guides/外观系统说明](guides/外观系统说明.md) |
 | **特效放哪 / 加新特效包怎么整理** | [guides/特效系统](guides/特效系统.md) | [guides/特效资源清单](guides/特效资源清单.md) |
 | **找某个特效的路径** | [guides/特效资源清单](guides/特效资源清单.md)（自动生成） | — |
 | **电系功法「玄霄雷决」+ 雷动千闪** | [guides/玄霄雷决与雷动千闪](guides/玄霄雷决与雷动千闪.md) | [guides/瞬雷天闪](guides/瞬雷天闪.md) · [guides/千劫雷狱](guides/千劫雷狱.md) · [guides/雷云](guides/雷云.md) · [guides/闪电链特效](guides/闪电链特效.md) |

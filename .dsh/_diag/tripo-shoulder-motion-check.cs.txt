@@ -1,0 +1,20 @@
+using UnityEngine.Playables;
+var sb=new System.Text.StringBuilder();var lib=UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/resources/Animation Library/1/UAL1_Standard.fbx").OfType<AnimationClip>();
+var idle=lib.First(c=>c.name=="Armature|Idle_Loop");var run=lib.First(c=>c.name=="Armature|Sprint_Loop");var flight=UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Animations/凭虚御风/御风_前进.anim");
+var paths=new[]{"better_player_test/better_player_test.fbx","大师兄/大师兄.fbx","太虚宗掌门（师傅）/太虚宗掌门（师傅）.fbx","成男村民/成男村民.fbx"};
+foreach(var path in paths){var src=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/"+path);
+using(var a=TripoShoulderRepair.创建副本(src,0,0,0))using(var b=TripoShoulderRepair.创建副本(src,.25f,.25f,0)){
+a.设置预览材质();b.设置预览材质();var rigs=new[]{a,b};var utility=new UnityEditor.PreviewRenderUtility();utility.cameraFieldOfView=30;utility.camera.nearClipPlane=.01f;utility.camera.farClipPlane=100;utility.camera.clearFlags=CameraClearFlags.SolidColor;utility.camera.backgroundColor=new Color(.19f,.20f,.22f);utility.lights[0].intensity=1.3f;utility.lights[0].transform.rotation=Quaternion.Euler(30,-30,0);utility.lights[1].intensity=.5f;
+try{var bounds=a.root.GetComponentInChildren<SkinnedMeshRenderer>().bounds;float h=bounds.size.y,w=Mathf.Max(bounds.size.x,h*.7f);var bones=a.root.GetComponentsInChildren<Transform>(true).ToDictionary(t=>t.name);var across=(bones["R_Upperarm"].position-bones["L_Upperarm"].position).normalized;var front=Vector3.Cross(across,Vector3.up).normalized;a.root.transform.position-=across*w*.55f;b.root.transform.position+=across*w*.55f;foreach(var r in rigs){utility.AddSingleGO(r.root);foreach(var renderer in r.root.GetComponentsInChildren<SkinnedMeshRenderer>())renderer.forceMatrixRecalculationPerRender=true;}
+foreach(var mode in new[]{"bind","idle","run","flight"}){
+var graph=UnityEngine.Playables.PlayableGraph.Create("ShoulderValidation");graph.SetTimeUpdateMode(UnityEngine.Playables.DirectorUpdateMode.Manual);var players=new UnityEngine.Animations.AnimationClipPlayable[2];
+try{if(mode!="bind"){var clip=mode=="idle"?idle:mode=="run"?run:flight;for(int i=0;i<2;i++){var animator=rigs[i].root.GetComponent<Animator>();animator.enabled=true;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;players[i]=UnityEngine.Animations.AnimationClipPlayable.Create(graph,clip);players[i].SetSpeed(0);var output=UnityEngine.Animations.AnimationPlayableOutput.Create(graph,"Rig"+i,animator);output.SetSourcePlayable(players[i]);}graph.Play();
+for(int phase=0;phase<61;phase++){foreach(var p in players)p.SetTime(clip.length*phase/60);graph.Evaluate(0);var mesh=new Mesh();try{b.root.GetComponentInChildren<SkinnedMeshRenderer>().BakeMesh(mesh);if(mesh.vertices.Any(v=>float.IsNaN(v.x)||float.IsInfinity(v.x)||float.IsNaN(v.y)||float.IsInfinity(v.y)||float.IsNaN(v.z)||float.IsInfinity(v.z)))throw new System.Exception("Nonfinite motion "+src.name+" "+mode);}finally{Object.DestroyImmediate(mesh);}}
+foreach(var p in players)p.SetTime(clip.length*.2);graph.Evaluate(0);}
+utility.BeginPreview(new Rect(0,0,1100,750),GUIStyle.none);var center=bounds.center;utility.camera.transform.position=center+front*Mathf.Max(h*3.2f,w*3.2f)+Vector3.up*h*.05f;utility.camera.transform.LookAt(center);utility.Render();var rt=utility.EndPreview() as RenderTexture;var previous=RenderTexture.active;RenderTexture.active=rt;var tex=new Texture2D(1100,750,TextureFormat.RGB24,false);try{tex.ReadPixels(new Rect(0,0,1100,750),0,0);tex.Apply();System.IO.File.WriteAllBytes("screenshots/tripo-shoulder-"+src.name+"-"+mode+".png",tex.EncodeToPNG());}finally{RenderTexture.active=previous;Object.DestroyImmediate(tex);}
+sb.AppendLine(src.name+" "+mode+" OK");
+}finally{if(graph.IsValid())graph.Destroy();}
+}
+}finally{utility.Cleanup();}
+}}
+return sb.ToString();
