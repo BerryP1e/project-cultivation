@@ -26,4 +26,4 @@ public class PassiveDivineAbility : DivineAbilityDefinition
     }
 }
 
-public enum PassiveSkillKind { 属性增益, 斜眼, 物理护罩, 特殊护罩, 双重护罩, 绝对护罩 }
+public enum PassiveSkillKind { 属性增益, 邪眼, 物理护罩, 特殊护罩, 双重护罩, 绝对护罩 }

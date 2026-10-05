@@ -20,26 +20,33 @@ public static class NewAbilityAssets
         已处理.Clear();
         创建("WaterDragon", "EffectsSet_1(NotScriptBased)/Effects/Effect_28_PurifierBeam/Effect_28_PurifierBeam.prefab");
         var 激光 = 创建("DevilEyeLaser", "EffectsSet_1(NotScriptBased)/Effects/Effect_28_PurifierBeam/Effect_28_PurifierBeam.prefab");
-        // 同一套粒子束，不额外造几何线条；用色彩区分斜眼和水炮。
+        // 同一套粒子束，不额外造几何线条；用色彩区分邪眼和水炮。
         using (var 内容 = new PrefabEditScope(AssetDatabase.GetAssetPath(激光)))
         {
             foreach (var ps in 内容.Root.GetComponentsInChildren<ParticleSystem>(true))
             { var m = ps.main; m.startColor = new Color(.7f, .35f, 1f, 1f); }
             内容.Save();
         }
-        创建("BindingChain", "EffectsSet_1(NotScriptBased)/Effects/Effect_48_CriticalTumor/Effect_48_BondageChain/Effect_48_BondageChain.prefab", x =>
+        创建("BindingChain", "EffectsSet_1(NotScriptBased)/Effects/Effect_48_CriticalTumor/Effect_48_CriticalTumor.prefab", x =>
         {
-            // CriticalTumor 同目录真正的束缚锁链部件；主预制体里的 Chain 只是散射细线。
-            foreach (var 节点 in x.GetComponentsInChildren<Transform>(true))
-                if (节点 != null && (节点.name.Contains("Sphere") || 节点.name.Contains("Particle") || 节点.name.Contains("Flame") || 节点.name.Contains("Simple")))
-                    UnityEngine.Object.DestroyImmediate(节点.gameObject);
-            foreach (Transform 子 in x.transform)
-            {
-                子.localPosition -= Vector3.up * 7.5f;
-                if (子.name.Contains("MainChain")) 子.localScale = new Vector3(.25f, 1f, .25f);
-            }
+            // 主特效的球形分布锁链先细后展开；BondageChain 是另一套地面束缚，不能替代它。
+            for (int i = x.transform.childCount - 1; i >= 0; i--)
+                if (x.transform.GetChild(i).name != "Effect_48_Chain") UnityEngine.Object.DestroyImmediate(x.transform.GetChild(i).gameObject);
+            var 链 = x.GetComponentInChildren<ParticleSystem>();
+            var 主 = 链.main; float 原尺寸 = 主.startSize.constantMax;
+            // 小体型上链环容易退化成细线，只加宽 LongSlide 的X轴，保留长度与展开曲线。
+            主.startSize3D = true; 主.startSizeX = 原尺寸 * 2.4f; 主.startSizeY = 原尺寸; 主.startSizeZ = 原尺寸;
         });
-        创建("DevilEye", "EffectsSet_1(NotScriptBased)/Effects/Effect_32_DevilEye/Effect_32_DevilEye.prefab");
+        创建("DevilEye", "EffectsSet_1(NotScriptBased)/Effects/Effect_32_DevilEye/Effect_32_DevilEye.prefab", x =>
+        {
+            var 十字 = x.transform.Find("Effect_32_ObjectSphere");
+            if (十字 != null) UnityEngine.Object.DestroyImmediate(十字.gameObject);
+            // 分层实测：Sphere_2 / Sphere_3 是交叉的白色竖横闪光，不能当实体瞳孔保留。
+            foreach (var t in x.GetComponentsInChildren<Transform>(true))
+                if (t.name == "Effect_32_Sphere_2" || t.name == "Effect_32_Sphere_3") UnityEngine.Object.DestroyImmediate(t.gameObject);
+            foreach (var r in x.GetComponentsInChildren<ParticleSystemRenderer>(true))
+                if (r.renderMode == ParticleSystemRenderMode.Mesh) r.alignment = ParticleSystemRenderSpace.Local;
+        });
         创建("SmallSwordArray", "EffectsSet_2(ScriptBased)/Effects/Effect_34_SwordDance/Effect_34_SwordDance.prefab");
         string[] 名 = { "PhysicalShield", "SpecialShield", "DualShield", "AbsoluteShield" };
         string[] 源名 = { "Effect_09_HoloShield(IncludeHit)", "Effect_09_HolyShield(IncludeHit)", "Effect_09_InfernoShield(IncludeHit)", "Effect_09_GloryShield" };
@@ -50,6 +57,7 @@ public static class NewAbilityAssets
                     if (x.transform.GetChild(j).name.Contains("MultipleShot")) UnityEngine.Object.DestroyImmediate(x.transform.GetChild(j).gameObject);
             });
         生成法环();
+        生成瞳孔();
         导入图标();
         安全导入配置表.ImportAssetsOnly("主动神通表", "被动神通表", "物品表");
         设置图标();
@@ -113,8 +121,19 @@ public static class NewAbilityAssets
                 材质.SetFloat("_NoiseScale", 原材质.GetFloat("_NoiseScale") * .25f);
                 EditorUtility.SetDirty(材质); 渲染.sharedMaterial = 材质;
             }
+            foreach (var 移动 in 临时.GetComponentsInChildren<ObjectMoveDestroy>(true))
+            {
+                var 落剑 = 移动.gameObject.AddComponent<AbilityFallingSword>();
+                落剑.速度 = 移动.MoveSpeed;
+                if (移动.m_hitObject != null)
+                {
+                    var 命中 = 移动.m_hitObject.gameObject;
+                    string 命中路径 = 输出 + "/Parts/" + 命中.name + "_" + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(命中)).Substring(0, 8) + ".prefab";
+                    落剑.触地特效 = 净化(命中, 命中路径);
+                }
+            }
             foreach (var 脚本 in 临时.GetComponentsInChildren<MonoBehaviour>(true))
-                if (脚本 != null && !(脚本 is AbilityVfxEmitter)) UnityEngine.Object.DestroyImmediate(脚本);
+                if (脚本 != null && !(脚本 is AbilityVfxEmitter) && !(脚本 is AbilityFallingSword)) UnityEngine.Object.DestroyImmediate(脚本);
             foreach (var ps in 临时.GetComponentsInChildren<ParticleSystem>(true))
             { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; m.simulationSpace = ParticleSystemSimulationSpace.Local; }
             foreach (var 碰撞 in 临时.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(碰撞);
@@ -122,6 +141,46 @@ public static class NewAbilityAssets
             return 已处理[键];
         }
         finally { UnityEngine.Object.DestroyImmediate(临时); }
+    }
+
+    public static void 生成瞳孔()
+    {
+        var 根 = new GameObject("DevilEyePupil");
+        try
+        {
+            根.AddComponent<DevilEyePupil>();
+            var 琥珀 = 材质("DevilEyeAmber", new Color(.65f, .16f, .015f), new Color(.75f, .2f, .01f));
+            var 瞳 = 材质("DevilEyeBlack", new Color(.008f, .005f, .012f), Color.black);
+            var 光 = 材质("DevilEyeHighlight", new Color(1f, .85f, .5f), new Color(1f, .55f, .15f));
+            球("Cornea", Vector3.zero, new Vector3(.32f, .38f, .22f), 琥珀);
+            球("Pupil", Vector3.zero, new Vector3(.055f, .25f, .245f), 瞳);
+            球("GlintBack", new Vector3(-.055f, .065f, -.11f), Vector3.one * .025f, 光);
+            球("GlintFront", new Vector3(.055f, .065f, .11f), Vector3.one * .025f, 光);
+            PrefabUtility.SaveAsPrefabAsset(根, 输出 + "/DevilEyePupil.prefab");
+            void 球(string 名, Vector3 位, Vector3 大小, Material mat)
+            {
+                var 球体 = GameObject.CreatePrimitive(PrimitiveType.Sphere); 球体.name = 名;
+                球体.transform.SetParent(根.transform, false); 球体.transform.localPosition = 位; 球体.transform.localScale = 大小;
+                UnityEngine.Object.DestroyImmediate(球体.GetComponent<Collider>());
+                var r = 球体.GetComponent<MeshRenderer>(); r.sharedMaterial = mat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
+            }
+        }
+        finally { UnityEngine.Object.DestroyImmediate(根); }
+    }
+    static Material 材质(string 名, Color 颜色, Color 发光)
+    {
+        string 路径 = 输出 + "/Materials/" + 名 + ".mat";
+        var m = AssetDatabase.LoadAssetAtPath<Material>(路径);
+        if (m == null) { m = new Material(Shader.Find("Standard")); AssetDatabase.CreateAsset(m, 路径); }
+        m.color = 颜色; m.SetFloat("_Glossiness", .75f); m.SetColor("_EmissionColor", 发光); m.EnableKeyword("_EMISSION");
+        m.SetFloat("_Mode", 3f); m.SetOverrideTag("RenderType", "Transparent");
+        m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        m.SetInt("_ZWrite", 1); m.DisableKeyword("_ALPHATEST_ON"); m.DisableKeyword("_ALPHABLEND_ON"); m.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+        // 粒子为叠加混合，原先会盖亮竖瞳；实体眼球在粒子之后绘制，仍使用正常深度测试。
+        m.renderQueue = 名 == "DevilEyeBlack" ? 3110 : 名 == "DevilEyeHighlight" ? 3120 : 3100;
+        EditorUtility.SetDirty(m); return m;
     }
 
     public static void 生成法环()
@@ -141,7 +200,7 @@ public static class NewAbilityAssets
             var 矩阵 = 人.transform.worldToLocalMatrix * 网格.transform.localToWorldMatrix;
             var 边界 = new Bounds(矩阵.MultiplyPoint3x4(顶点[0]), Vector3.zero);
             for (int i = 0; i < 顶点.Length; i++) { 顶点[i] = 矩阵.MultiplyPoint3x4(顶点[i]); 边界.Encapsulate(顶点[i]); }
-            // 保持原杨戬法环的姿态，中心归零后便于把斜眼放进空缺。
+            // 保持原杨戬法环的姿态，中心归零后便于把邪眼放进空缺。
             for (int i = 0; i < 顶点.Length; i++) 顶点[i] -= 边界.center;
             烘焙.vertices = 顶点; 烘焙.RecalculateBounds(); 烘焙.RecalculateNormals();
             // 原模型仅有正面；玩家背后会从反面观察。补实体背面，保持同一贴图和原始姿态。
