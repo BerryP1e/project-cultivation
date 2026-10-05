@@ -19,6 +19,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     RectTransform root,stage,lid,mouth,scrollReveal,scrollCanvas;
     Image dragIcon,resultIcon;
     Image bambooTube,bambooCap;
+    Sprite closedTube,openTube;
     Text recipeText,recipeTitle,hint,mana,startText,resultText;
     CanvasGroup scrollWords;
     UIInkAlchemyFX fx;
@@ -33,7 +34,8 @@ public class UIInkAlchemyPage : MonoBehaviour
     Vector2 dragOrigin,lidBase;
     float lidTarget,refreshAt,scrollAt=-100;
     string inventoryKey="",recipeKey="";
-    bool animatingDrop,heating;
+    bool animatingDrop,heating,switchingRecipe,recipeClosed;
+    Coroutine recipeTransition;
     static readonly Color Light=new Color(.95f,.95f,.87f);
     static readonly Color Muted=new Color(.70f,.79f,.72f);
 
@@ -71,11 +73,13 @@ public class UIInkAlchemyPage : MonoBehaviour
         textLayout.childControlHeight=true;textLayout.childControlWidth=true;textLayout.childForceExpandHeight=false;
         description.content.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
         scrollWords=scrollCanvas.gameObject.AddComponent<CanvasGroup>();
+        scrollReveal.gameObject.SetActive(false);
         scrollAt=Time.unscaledTime;
         bambooTube=UIBuildUtils.CreateImage("OpeningRecipeTube",root,Color.white);
-        bambooTube.sprite=Asset("recipe-bamboo-tube-open");bambooTube.preserveAspect=true;
+        closedTube=Asset("recipe-bamboo-tube");openTube=Asset("recipe-bamboo-tube-open");
+        bambooTube.sprite=closedTube;bambooTube.preserveAspect=true;
         bambooTube.rectTransform.anchorMin=bambooTube.rectTransform.anchorMax=new Vector2(.07f,.75f);
-        bambooTube.rectTransform.sizeDelta=new Vector2(180,225);bambooTube.enabled=false;
+        bambooTube.rectTransform.sizeDelta=new Vector2(180,225);bambooTube.enabled=true;
         bambooCap=UIBuildUtils.CreateImage("OpeningRecipeCap",bambooTube.transform,Color.white);
         bambooCap.sprite=Asset("recipe-bamboo-cap");bambooCap.preserveAspect=true;
         bambooCap.rectTransform.anchorMin=bambooCap.rectTransform.anchorMax=new Vector2(.64f,.74f);
@@ -96,8 +100,9 @@ public class UIInkAlchemyPage : MonoBehaviour
         UIBuildUtils.Stretch(body.rectTransform);body.preserveAspect=true;
         mouth=UIBuildUtils.CreateRect("MouthDropTarget",stage);Place(mouth,.265f,.67f,.735f,.88f);
         var lidImage=UIBuildUtils.CreateImage("CauldronLid",stage,Color.white);lidImage.sprite=Asset("cauldron-lid");
-        lid=lidImage.rectTransform;lid.anchorMin=lid.anchorMax=new Vector2(.5f,.765f);
-        lid.sizeDelta=new Vector2(565,185);lidBase=lid.anchoredPosition;lidImage.preserveAspect=true;
+        // 炉身口沿约占源图 x=325..1209；按盖面有效轮廓对齐，不能按整张含透明留白的图片铺满。
+        lid=lidImage.rectTransform;lid.anchorMin=lid.anchorMax=new Vector2(.5f,.86f);
+        lid.sizeDelta=new Vector2(505,168);lidBase=lid.anchoredPosition;lidImage.preserveAspect=true;
         for(int i=0;i<5;i++)
         {
             int index=i;Vector2 p=i==0 ? new Vector2(.5f,.43f) : new Vector2(i<3 ? .32f : .68f,(i==1 || i==3) ? .48f:.29f);
@@ -132,6 +137,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     public void 关闭()
     {
         StopAllCoroutines();animatingDrop=false;dragging=null;正在炼制=false;heating=false;
+        recipeTransition=null;switchingRecipe=false;recipeClosed=false;scrollAt=Time.unscaledTime-.65f;
         if(dragIcon!=null)Destroy(dragIcon.gameObject);
         if(fx!=null){fx.热度=0;fx.开盖度=0;}
         lidTarget=0;炉盖开度=0;
@@ -158,13 +164,20 @@ public class UIInkAlchemyPage : MonoBehaviour
     {
         if(!已打开)return;
         float dt=Time.unscaledDeltaTime;
-        float width=815*Mathf.SmoothStep(0,1,(Time.unscaledTime-scrollAt)/.48f);
-        scrollReveal.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Max(8,width));
-        scrollWords.alpha=Mathf.Clamp01((Time.unscaledTime-scrollAt-.12f)/.28f);
+        scrollReveal.gameObject.SetActive(selected!=null && !recipeClosed);
+        if(!switchingRecipe)
+        {
+            float width=815*Mathf.SmoothStep(0,1,(Time.unscaledTime-scrollAt)/.48f);
+            scrollReveal.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Max(8,width));
+            scrollWords.alpha=Mathf.Clamp01((Time.unscaledTime-scrollAt-.12f)/.28f);
+        }
         float bambooAge=Time.unscaledTime-scrollAt;
-        bool showingTube=selected!=null && bambooAge<.65f;
-        bambooTube.enabled=showingTube;bambooCap.enabled=showingTube;
-        if(showingTube)
+        bool closed=selected==null || recipeClosed;
+        bool showingTube=closed || (!switchingRecipe && bambooAge<.65f);
+        bambooTube.sprite=closed?closedTube:openTube;
+        bambooTube.enabled=showingTube;bambooCap.enabled=!closed && showingTube;
+        if(closed)bambooTube.color=Color.white;
+        if(!closed && showingTube)
         {
             float capLift=Mathf.SmoothStep(0,1,bambooAge/.32f);
             bambooCap.rectTransform.anchoredPosition=new Vector2(14*capLift,44*capLift);
@@ -227,7 +240,7 @@ public class UIInkAlchemyPage : MonoBehaviour
         }
         var vitals=FindObjectOfType<PlayerVitals>();mana.text=vitals!=null ? $"灵气 {vitals.当前灵气:F0} / {vitals.灵气上限:F0}" : "";
         var match=匹配丹方();bool ready=match!=null && furnace.能炼(match,out var reason);
-        start.interactable=!正在炼制 && !animatingDrop && ready;startText.text=正在炼制?"炼制中…":"开炼";
+        start.interactable=!正在炼制 && !animatingDrop && !switchingRecipe && ready;startText.text=正在炼制?"炼制中…":"开炼";
         if(!正在炼制 && string.IsNullOrEmpty(hint.text))hint.text=known.Count==0 ? "尚未学会丹方" : items.Count==0 ? "背包中暂无可炼丹的药材" : "";
     }
 
@@ -256,7 +269,28 @@ public class UIInkAlchemyPage : MonoBehaviour
     public void 选择丹方(string id)
     {
         if(正在炼制 || animatingDrop || dragging!=null || !炼丹炉.已学会(id))return;
-        selected=炼丹炉.取().取丹方(id);if(selected==null)return;
+        var next=炼丹炉.取().取丹方(id);if(next==null)return;
+        if(recipeTransition!=null)StopCoroutine(recipeTransition);
+        if(selected==null){应用丹方(next);return;}
+        recipeTransition=StartCoroutine(收合再展开(next));
+    }
+    IEnumerator 收合再展开(灵丹定义 next)
+    {
+        switchingRecipe=true;recipeClosed=false;start.interactable=false;
+        float width=scrollReveal.rect.width,alpha=scrollWords.alpha,age=0;
+        while(age<.22f)
+        {
+            age+=Time.unscaledDeltaTime;float p=Mathf.SmoothStep(0,1,Mathf.Clamp01(age/.22f));
+            scrollReveal.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Lerp(width,8,p));
+            scrollWords.alpha=Mathf.Lerp(alpha,0,p);yield return null;
+        }
+        recipeClosed=true;
+        yield return new WaitForSecondsRealtime(.10f);
+        switchingRecipe=false;recipeClosed=false;recipeTransition=null;应用丹方(next);
+    }
+    void 应用丹方(灵丹定义 next)
+    {
+        selected=next;
         清空投料();recipeTitle.text=selected.名+" · "+selected.品+"品";
         var sb=new StringBuilder();var furnace=炼丹炉.取();int index=0;
         foreach(var kv in furnace.全部材料(selected))
@@ -268,7 +302,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     int 暂存数量(string id)=>slots.Where(s=>s.item!=null && s.item.物品id==id).Sum(s=>s.count);
     bool CanStage(ItemDefinition item,out int index)
     {
-        index=-1;if(item==null || 正在炼制 || animatingDrop)return false;
+        index=-1;if(item==null || 正在炼制 || animatingDrop || switchingRecipe)return false;
         var data=FindObjectOfType<UIPanelData>();if(data==null || data.物品数量(item)<=暂存数量(item.物品id)){hint.text="这味药材已经全部投入炉中";return false;}
         if(selected!=null)
         {
@@ -342,12 +376,12 @@ public class UIInkAlchemyPage : MonoBehaviour
     }
     public void 清空投料()
     {
-        if(正在炼制 || animatingDrop || dragging!=null)return;
+        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe)return;
         foreach(var s in slots){s.item=null;s.count=0;}hint.text="";resultIcon.enabled=false;resultText.text="";刷新内容();
     }
     void 取回(int index)
     {
-        if(正在炼制 || animatingDrop || dragging!=null)return;
+        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe)return;
         var s=slots[index];if(s.count>0){s.count--;hint.text="取回 "+s.item.DisplayName;if(s.count==0)s.item=null;刷新内容();}
     }
     灵丹定义 匹配丹方()
@@ -363,7 +397,7 @@ public class UIInkAlchemyPage : MonoBehaviour
     }
     public void 开炼()
     {
-        if(正在炼制 || animatingDrop || dragging!=null)return;
+        if(正在炼制 || animatingDrop || dragging!=null || switchingRecipe)return;
         var recipe=匹配丹方();if(recipe==null){hint.text="投料还未与已学丹方相符";return;}
         if(!炼丹炉.取().能炼(recipe,out var reason)){hint.text=reason;return;}
         StartCoroutine(炼制演出(recipe));

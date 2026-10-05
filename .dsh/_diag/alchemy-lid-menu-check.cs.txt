@@ -1,0 +1,43 @@
+﻿using UnityEngine.UI;
+System.Collections.IEnumerator Run(){
+var menu=Object.FindObjectOfType<PlayerStatsDebugPanel>();bool visible=menu.Visible;
+var marks=对话标记.全部标记();var data=Object.FindObjectOfType<UIPanelData>();var items=data.物品.ToArray();
+var quest=Object.FindObjectOfType<任务管理器>();bool questEnabled=quest!=null && quest.enabled;if(quest!=null)quest.enabled=false;
+var all=炼丹炉.取().全部丹方();var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");var view=Object.Instantiate(prefab).GetComponent<UIInkAlchemyPage>();
+var sb=new System.Text.StringBuilder();void Check(bool ok,string text){if(!ok)throw new System.Exception(text);sb.AppendLine(text+" OK");}
+try{
+menu.Visible=false;yield return new WaitForSecondsRealtime(.4f);
+var mask=view.GetComponentsInChildren<RectTransform>(true).First(t=>t.name=="RecipeUnrollMask");
+var tube=view.GetComponentsInChildren<Image>(true).First(t=>t.name=="OpeningRecipeTube");var cap=view.GetComponentsInChildren<Image>(true).First(t=>t.name=="OpeningRecipeCap");
+Check(!mask.gameObject.activeSelf && tube.enabled && tube.sprite.name=="recipe-bamboo-tube" && !cap.enabled,"未选丹方保持竹筒闭合，隐藏空竹简");
+ScreenCapture.CaptureScreenshot("screenshots/alchemy-lid-"+Screen.width+"x"+Screen.height+"-closed.png");yield return null;
+foreach(var d in all)对话标记.移除(炼丹炉.丹方标记(d.id));
+Check(!menu.添加调试丹方("not-a-recipe"),"未知丹方被拒绝");
+Check(menu.添加调试丹方(all[0].id) && 炼丹炉.已学会(all[0].id),"P菜单单张丹方直接学会");
+Check(!menu.添加调试丹方(all[0].id),"重复添加不重复写入");
+view.选择丹方(all[0].id);yield return new WaitForSecondsRealtime(.8f);
+Check(mask.gameObject.activeSelf && !tube.enabled,"选择丹方后竹简展开");
+Check(menu.添加全部调试丹方()==all.Count-1 && menu.添加全部调试丹方()==0,"全部丹方逐一学会，再次添加为零");
+Check(data.物品.SequenceEqual(items) && 对话标记.全部标记().Where(m=>m.StartsWith("炼成_")).OrderBy(m=>m).SequenceEqual(marks.Where(m=>m.StartsWith("炼成_")).OrderBy(m=>m)),"添加丹方不产丹、不冒充炼成");
+yield return new WaitForSecondsRealtime(.6f);
+Check(view.GetComponentsInChildren<Button>().Count(b=>b.name.StartsWith("Recipe_"))==all.Count,"丹房自动刷新全部丹方");
+view.选择丹方(all[1].id);yield return new WaitForSecondsRealtime(.11f);
+Check(view.选中丹方==all[0].id && mask.rect.width<815 && mask.rect.width>8,"切换先收合旧丹方，不提前换字");
+ScreenCapture.CaptureScreenshot("screenshots/alchemy-recipe-"+Screen.width+"x"+Screen.height+"-closing.png");yield return null;
+bool observedClosed=false;float deadline=Time.unscaledTime+2;
+while(view.选中丹方==all[0].id && Time.unscaledTime<deadline){observedClosed|=!mask.gameObject.activeSelf && tube.sprite.name=="recipe-bamboo-tube";yield return null;}
+Check(observedClosed,"收合完成后显示闭合竹筒");
+yield return new WaitForSecondsRealtime(.12f);
+Check(view.选中丹方==all[1].id && mask.gameObject.activeSelf && mask.rect.width<815,"新丹方再开盖展开");
+view.选择丹方(all[2].id);yield return new WaitForSecondsRealtime(.05f);view.选择丹方(all[3].id);yield return new WaitForSecondsRealtime(.9f);
+Check(view.选中丹方==all[3].id && Mathf.Abs(mask.rect.width-815)<1,"快速切换只展开最后选择");
+var lid=view.GetComponentsInChildren<Image>().First(i=>i.name=="CauldronLid").rectTransform;
+Check(lid.sizeDelta==new Vector2(505,168) && lid.anchorMin==new Vector2(.5f,.86f),"盖面按有效轮廓缩小并上移贴合炉口");
+view.关闭();menu.Visible=true;yield return new WaitForSecondsRealtime(.3f);
+ScreenCapture.CaptureScreenshot("screenshots/alchemy-debug-"+Screen.width+"x"+Screen.height+".png");yield return null;
+System.IO.File.WriteAllText("screenshots/alchemy-lid-menu-check-"+Screen.width+"x"+Screen.height+".txt",sb.ToString());Debug.Log(sb.ToString());
+}finally{
+view.关闭();Object.Destroy(view.gameObject);menu.Visible=visible;对话标记.清空();foreach(var mark in marks)对话标记.添加(mark);if(quest!=null)quest.enabled=questEnabled;
+}
+}
+return Run();

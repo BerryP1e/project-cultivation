@@ -40,6 +40,8 @@ HudHoverTarget沿用原入口：0–5为技能，-1为功法。只有槽底接�
 
 调试属性面板使用**P**。PlayerStatsDebugPanel.Awake把旧场景序列化的F1映射到P，其他自定义按键保留。关闭面板用组件内部显示开关；不要禁用Player GameObject，否则玩家与冷却都停止。
 
+P 面板整页可滚动；“添加丹方”区位于无敌开关之后，支持名称/id 筛选、添加选中丹方及学会全部丹方。它只写丹方学习标记，具体规则见 [炼丹 §4.1](../guides/炼丹.md)。
+
 ## 4. 验证与维护
 
 仓库根`.dsh/_diag/hud-dialogue-ink-check.cs.txt`使用独立UIPanelData与禁用的ActiveSkillCaster，临时替换HUD引用，结束恢复；不改真实玩家功法/装备/冷却，不施放技能。

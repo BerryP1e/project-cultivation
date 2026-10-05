@@ -31,6 +31,7 @@ public class PlayerStatsDebugPanel : MonoBehaviour
 
     bool 显示;
     Vector2 滚动;
+    Vector2 面板滚动;
     GUIStyle 标题样式, 行样式;
     string[] 编辑缓存;
 
@@ -67,11 +68,13 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         // 字段是序列化的，改默认值不会影响场景里已有的组件，所以加上
         // 「召唤 NPC」之后面板总内容超过了 640，召唤按钮正好被挤出窗口
         // 下边缘 —— 表现就是"看不到召唤按钮"。
-        float 高 = Mathf.Max(面板高度, Screen.height - 24f);
+        float 高 = Mathf.Min(Mathf.Max(面板高度, Screen.height - 24f), Screen.height - 24f);
         var rect = new Rect(12f, 12f, 面板宽度, 高);
         GUILayout.BeginArea(rect, GUI.skin.box);
 
         GUILayout.Label("玩家数值调试  (" + 开关按键 + " 开关)", 标题样式);
+        // 工具区增加后，整页可滚动，低分辨率下丹方、物品和属性均可访问。
+        面板滚动 = GUILayout.BeginScrollView(面板滚动);
         GUILayout.Space(4f);
 
         GUILayout.BeginHorizontal();
@@ -112,6 +115,8 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         // 放底下会被挤出窗口下边缘（召唤按钮当初就踩过这个坑，见上面 GUILayout 高度的注释）
         画无敌开关();
         GUILayout.Space(4f);
+        画丹方区();
+        GUILayout.Space(4f);
 
         // 召唤区放在「应用修改到角色」正下方 —— 之前放在属性列表底下，
         // 面板内容超高，按钮被挤出窗口下边缘，压根看不见。
@@ -144,6 +149,7 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         GUILayout.Space(4f);
         GUILayout.Label("当前生效值：" + 玩家战斗属性.当前属性.ToReadableString(), 行样式);
 
+        GUILayout.EndScrollView();
         GUILayout.EndArea();
         if (玩家战斗属性.使用调试数值) 玩家战斗属性.Recalculate();
     }
@@ -389,6 +395,64 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         }
         GUI.enabled = true;
         GUI.backgroundColor = 旧色;
+    }
+
+    Vector2 丹方滚动;
+    string 丹方搜索 = "";
+    string 选中丹方id = "";
+    string 丹方提示 = "";
+
+    void 画丹方区()
+    {
+        GUILayout.Label("—— 添加丹方 ——", 行样式);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("筛选", 行样式, GUILayout.Width(36f));
+        丹方搜索 = GUILayout.TextField(丹方搜索 ?? "");
+        if (GUILayout.Button("清", GUILayout.Width(30f))) 丹方搜索 = "";
+        GUILayout.EndHorizontal();
+        string 搜索 = 丹方搜索.Trim();
+        int 显示数 = 0;
+        丹方滚动 = GUILayout.BeginScrollView(丹方滚动, GUILayout.Height(100f));
+        foreach (var 丹方 in 炼丹炉.取().全部丹方())
+        {
+            if (搜索.Length > 0 && (丹方.名 ?? "").IndexOf(搜索, System.StringComparison.OrdinalIgnoreCase) < 0
+                && (丹方.id ?? "").IndexOf(搜索, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+            显示数++;
+            var 原色 = GUI.backgroundColor;
+            if (选中丹方id == 丹方.id) GUI.backgroundColor = new Color(1f, .85f, .45f);
+            if (GUILayout.Button(丹方.名 + " · " + 丹方.品 + "品" + (炼丹炉.已学会(丹方.id) ? "  [已学会]" : "")))
+                选中丹方id = 丹方.id;
+            GUI.backgroundColor = 原色;
+        }
+        if (显示数 == 0) GUILayout.Label("（没有匹配的丹方）", 行样式);
+        GUILayout.EndScrollView();
+        GUILayout.BeginHorizontal();
+        bool 原可用 = GUI.enabled;
+        GUI.enabled = 原可用 && !string.IsNullOrEmpty(选中丹方id) && !炼丹炉.已学会(选中丹方id);
+        if (GUILayout.Button("添加选中丹方", GUILayout.Height(28f))) 添加调试丹方(选中丹方id);
+        GUI.enabled = 原可用;
+        if (GUILayout.Button("学会全部丹方", GUILayout.Height(28f))) 添加全部调试丹方();
+        GUILayout.EndHorizontal();
+        if (!string.IsNullOrEmpty(丹方提示)) GUILayout.Label(丹方提示, 行样式);
+    }
+
+    /// <summary>只写已有存档使用的丹方学习标记；不产丹、不写炼成标记、不强制保存。</summary>
+    public bool 添加调试丹方(string id)
+    {
+        var 丹方 = 炼丹炉.取().取丹方(id);
+        if (丹方 == null || !丹方.是丹方 || 炼丹炉.已学会(id)) return false;
+        对话标记.添加(炼丹炉.丹方标记(id));
+        丹方提示 = "已添加丹方：" + 丹方.名;
+        Debug.Log("[调试面板] " + 丹方提示);
+        return true;
+    }
+
+    public int 添加全部调试丹方()
+    {
+        int 数量 = 0;
+        foreach (var 丹方 in 炼丹炉.取().全部丹方()) if (添加调试丹方(丹方.id)) 数量++;
+        丹方提示 = "新增 " + 数量 + " 张丹方（已学会的不重复添加）";
+        return 数量;
     }
 
     // ================================================================
