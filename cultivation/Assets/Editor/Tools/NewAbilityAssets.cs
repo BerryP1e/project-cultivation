@@ -71,7 +71,8 @@ public static class NewAbilityAssets
             // 所有碰撞面由运行时放在目标处，不能引用演示预制体的远处平面。
             foreach (var p in x.GetComponentsInChildren<ParticleSystem>(true))
             {
-                var m = p.main; m.loop = false;
+                var m = p.main; m.loop = p.name == "Effect_47_TrailParticle";
+                if (m.loop) { var e = p.emission; e.rateOverTime = 1600f; }
                 var c = p.collision; c.enabled = false;
                 for (int i = 0; i < 6; i++) c.SetPlane(i, null);
             }

@@ -5,6 +5,7 @@ public class AbilityPreciseShotVfx : MonoBehaviour
 {
     public float 飞行速度 = 40f;
     ParticleSystem 子弹;
+    ParticleSystem 拖尾;
     Transform 命中面;
     Vector3 终点;
     ParticleSystem.Particle[] 粒子;
@@ -15,6 +16,14 @@ public class AbilityPreciseShotVfx : MonoBehaviour
         {
             var m = ps.main;
             if (!ps.name.Contains("Mark")) m.simulationSpace = ParticleSystemSimulationSpace.World;
+            if (ps.name == "Effect_47_TrailParticle")
+            {
+                拖尾 = ps;
+                // 原拖尾每0.1秒循环一次；改成单次会只留下约4米的一截。
+                ps.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                m.loop = true;
+                var 发射 = ps.emission; 发射.rateOverTime = 1600f;
+            }
             if (ps.name != "Effect_47_BulletEffects") continue;
             子弹 = ps;
             var 速 = ps.velocityOverLifetime; 速.enabled = false;
@@ -32,6 +41,12 @@ public class AbilityPreciseShotVfx : MonoBehaviour
     {
         终点 = 目标点;
         Vector3 差 = 终点 - 起点;
+        if (拖尾 != null)
+        {
+            var m = 拖尾.main;
+            // 从发射点留下完整光路，覆盖实际飞行时间，再给命中后的渐隐留余量。
+            m.startLifetime = Mathf.Max(.5f, 差.magnitude / Mathf.Max(1f, 飞行速度) + .35f);
+        }
         transform.position = 起点;
         if (差.sqrMagnitude > .0001f) transform.rotation = Quaternion.LookRotation(差);
         if (命中面 != null)
