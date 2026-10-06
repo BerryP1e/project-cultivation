@@ -80,7 +80,7 @@ public class PlayerAbilityLoader : MonoBehaviour
     void 补齐内置登记()
     {
         if (被动神通表 == null) 被动神通表 = new List<被动神通绑定>();
-        string[] 新被动 = { "ability_xieyan", "ability_huzhao_wuli", "ability_huzhao_teshu", "ability_huzhao_shuangchong", "ability_huzhao_juedui" };
+        string[] 新被动 = { "ability_xieyan", "ability_huzhao_wuli", "ability_huzhao_teshu", "ability_huzhao_shuangchong" };
         foreach (string id in 新被动)
             if (!被动神通表.Exists(b => b != null && b.神通id == id))
                 被动神通表.Add(new 被动神通绑定 { 神通id = id,
@@ -112,8 +112,10 @@ public class PlayerAbilityLoader : MonoBehaviour
     public void Refresh()
     {
         if (面板数据 == null) return;
+        面板数据.EnsureLists();
 
         var 需要 = new HashSet<string>();
+        if (面板数据.四御已激活 && 面板数据.绝对护罩剩余次数 > 0) 需要.Add("PassiveShieldAbilities");
 
         // ---- 功法提供的普攻方法 ----
         var 功法 = 面板数据.当前功法;

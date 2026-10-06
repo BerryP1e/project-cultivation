@@ -177,7 +177,7 @@ docs/
 | **伤害公式 / 属性 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) | `Assets/Scripts/Combat/CombatCalculator.cs` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
 | **水炮 / 持续锁链 / 主动键施放的被动伤害剑阵** | [水龙炮](guides/水龙炮.md) · [禁锢锁链](guides/禁锢锁链.md) · [小剑阵](guides/小剑阵.md) | [配置表字段](reference/配置表字段.md#31-神通运行效果字段) |
-| **背负邪眼 / 四种护罩 / 棱柱次数保存** | [邪眼](guides/邪眼.md) · [防护罩](guides/防护罩.md) | [神通图标](reference/UI素材/神通图标.md) |
+| **邪眼攻击耗蓝 / 减伤护罩互斥耗蓝 / 主动四御与次数保存** | [邪眼](guides/邪眼.md) · [防护罩](guides/防护罩.md) | [神通图标](reference/UI素材/神通图标.md) |
 | **气血/灵力 HUD / 大境界墨圈 / 神通同款三维技能链 / 墨晕冷却** | [architecture/游戏HUD](architecture/游戏HUD.md) | [architecture/主动技能与神通](architecture/主动技能与神通.md) · [guides/时间系统](guides/时间系统.md) |
 | **加一个 NPC 的 AI** | [architecture/敌人AI](architecture/敌人AI.md) | [ai/踩坑总库 §专题：NPC/敌人 AI](ai/踩坑总库.md) |
 | **怪物近战 / 出手站位** | [guides/怪物近战判定](guides/怪物近战判定.md) | [architecture/敌人AI](architecture/敌人AI.md) |

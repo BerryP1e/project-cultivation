@@ -274,7 +274,7 @@ public static class NewAbilityAssets
         for (int i = 0; i < 编号.Length; i++)
         {
             var 图标 = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/resources/UI/InkUI/Abilities/" + 图标名[i] + ".png");
-            string 类型 = i < 3 ? "ActiveDivineAbility" : "PassiveDivineAbility";
+            string 类型 = i < 3 || i == 7 ? "ActiveDivineAbility" : "PassiveDivineAbility";
             var 技能 = AssetDatabase.LoadAssetAtPath<DivineAbilityDefinition>("Assets/Data/Generated/" + 类型 + "/" + 编号[i] + ".asset");
             if (技能 == null) throw new InvalidOperationException("缺少神通资产 " + 编号[i]);
             技能.图标 = 图标; EditorUtility.SetDirty(技能);

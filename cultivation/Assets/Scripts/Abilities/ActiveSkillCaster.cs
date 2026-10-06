@@ -286,6 +286,13 @@ public class ActiveSkillCaster : MonoBehaviour
         播施法动作(神通);
         if (战斗属性 == null) 解析引用();
 
+        if (神通.结算方式 == ActiveSkillKind.四御护罩)
+        {
+            var 护罩 = GetComponent<PassiveShieldAbilities>() ?? gameObject.AddComponent<PassiveShieldAbilities>();
+            护罩.面板数据 = 面板数据; 护罩.enabled = true; 护罩.激活四御();
+            return;
+        }
+
         if (神通.结算方式 == ActiveSkillKind.定向水炮 || 神通.结算方式 == ActiveSkillKind.小剑阵)
         {
             var 宿主 = new GameObject("DirectedSkill_" + 神通.神通id);

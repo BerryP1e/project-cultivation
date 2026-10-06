@@ -48,6 +48,7 @@ public enum ActiveSkillKind
     定向水炮 = 5,
     持续禁锢 = 6,
     小剑阵 = 7,
+    四御护罩 = 8,
 }
 
 /// <summary>

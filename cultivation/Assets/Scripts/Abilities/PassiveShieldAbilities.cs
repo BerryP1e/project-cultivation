@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>四种护罩共用一个受击入口。各减伤相乘；绝对护罩优先挡住整次真实伤害。</summary>
+/// <summary>三种减伤被动互斥并持续耗蓝；主动四御优先挡住整次真实伤害。</summary>
 public class PassiveShieldAbilities : MonoBehaviour
 {
     public UIPanelData 面板数据;
@@ -11,24 +11,36 @@ public class PassiveShieldAbilities : MonoBehaviour
     bool 尺寸已确定;
     float 固定缩放;
     Vector3 固定位置;
+    PlayerVitals 生命;
+    GameObject 四御特效;
     public int 剩余棱柱 => 面板数据 != null ? Mathf.Clamp(面板数据.绝对护罩剩余次数, 0, 4) : 0;
 
     void Awake()
     {
         var 装载器 = GetComponent<PlayerAbilityLoader>();
         面板数据 = 装载器 != null ? 装载器.面板数据 : FindObjectOfType<UIPanelData>();
+        生命 = GetComponent<PlayerVitals>();
+    }
+    public void 激活四御()
+    {
+        if (面板数据 == null) return;
+        面板数据.绝对护罩剩余次数 = 4;
+        面板数据.四御已激活 = true;
+        更新四御();
+        面板数据.RaiseChanged();
     }
     public float 过滤伤害(float 伤害, DamageNature 属性)
     {
         if (面板数据 == null || 伤害 <= 0f) return 伤害;
+        if (面板数据.四御已激活 && 剩余棱柱 > 0)
+        {
+            面板数据.绝对护罩剩余次数--;
+            if (剩余棱柱 == 0) 面板数据.四御已激活 = false;
+            更新四御();
+            return 0f;
+        }
+        if (生命 == null || 生命.当前灵气 <= 0f) return 伤害;
         var 启用 = 面板数据.GetEnabledPassives();
-        foreach (var 技能 in 启用)
-            if (技能.结算方式 == PassiveSkillKind.绝对护罩 && 剩余棱柱 > 0)
-            {
-                面板数据.绝对护罩剩余次数--;
-                更新棱柱();
-                return 0f;
-            }
         foreach (var 技能 in 启用)
         {
             bool 有效 = 技能.结算方式 == PassiveSkillKind.双重护罩
@@ -41,10 +53,26 @@ public class PassiveShieldAbilities : MonoBehaviour
 
     void Update()
     {
-        if (Time.unscaledTime < 下次检查) return;
-        下次检查 = Time.unscaledTime + .2f;
         if (面板数据 == null) return;
         var 启用 = 面板数据.GetEnabledPassives();
+        if (生命 == null || 生命.IsDead) { 清理特效(); return; }
+        foreach (var 技能 in 启用)
+        {
+            if (!UIPanelData.是减伤护罩(技能)) continue;
+            float 消耗 = Mathf.Max(0f, 技能.维持消耗灵力) * Time.deltaTime;
+            if (生命.当前灵气 <= 消耗)
+            {
+                生命.扣灵气直到零(消耗);
+                面板数据.SetPassiveEnabled(技能, false);
+                // 扣到零时立刻收掉罩体，不能等下次定时检查。
+                if (特效.TryGetValue(技能, out var 旧) && 旧 != null) Destroy(旧);
+                特效.Remove(技能);
+            }
+            else 生命.扣灵气(消耗);
+        }
+        if (Time.unscaledTime < 下次检查) return;
+        下次检查 = Time.unscaledTime + .2f;
+        启用 = 面板数据.GetEnabledPassives();
         var 删除 = new List<PassiveDivineAbility>();
         foreach (var 对 in 特效)
             if (!启用.Contains(对.Key)) { if (对.Value != null) Destroy(对.Value); 删除.Add(对.Key); }
@@ -52,7 +80,7 @@ public class PassiveShieldAbilities : MonoBehaviour
         确定尺寸();
         foreach (var 技能 in 启用)
         {
-            if (技能.结算方式 < PassiveSkillKind.物理护罩 || 特效.ContainsKey(技能)) continue;
+            if (!UIPanelData.是减伤护罩(技能) || 特效.ContainsKey(技能)) continue;
             特效[技能] = AbilityVfxUtility.生成(技能.特效资源路径, transform, 固定缩放, true);
         }
         foreach (var 对 in 特效)
@@ -61,7 +89,7 @@ public class PassiveShieldAbilities : MonoBehaviour
                 对.Value.transform.localScale = Vector3.one * 固定缩放;
                 对.Value.transform.localPosition = 固定位置;
             }
-        更新棱柱();
+        更新四御();
     }
 
     void 确定尺寸()
@@ -88,20 +116,29 @@ public class PassiveShieldAbilities : MonoBehaviour
         尺寸已确定 = true;
     }
 
-    void 更新棱柱()
+    void 更新四御()
     {
-        foreach (var 对 in 特效)
+        if (面板数据 == null) return;
+        if (!面板数据.四御已激活 || 剩余棱柱 == 0)
         {
-            if (对.Key.结算方式 != PassiveSkillKind.绝对护罩 || 对.Value == null) continue;
-            var 棱柱 = 对.Value.transform.Find("Effect_09_Crystals");
-            if (棱柱 != null)
-                for (int i = 0; i < 棱柱.childCount; i++) 棱柱.GetChild(i).gameObject.SetActive(i < 剩余棱柱);
-            对.Value.SetActive(剩余棱柱 > 0);
+            if (四御特效 != null) Destroy(四御特效);
+            四御特效 = null; return;
         }
+        确定尺寸();
+        if (四御特效 == null) 四御特效 = AbilityVfxUtility.生成("Abilities/AbsoluteShield", transform, 固定缩放, true);
+        if (四御特效 == null) return;
+        四御特效.transform.localScale = Vector3.one * 固定缩放;
+        四御特效.transform.localPosition = 固定位置;
+        var 棱柱 = 四御特效.transform.Find("Effect_09_Crystals");
+        if (棱柱 != null)
+            for (int i = 0; i < 棱柱.childCount; i++) 棱柱.GetChild(i).gameObject.SetActive(i < 剩余棱柱);
     }
-    void OnDisable()
+    void 清理特效()
     {
         foreach (var 对 in 特效) if (对.Value != null) Destroy(对.Value);
         特效.Clear();
+        if (四御特效 != null) Destroy(四御特效);
+        四御特效 = null;
     }
+    void OnDisable() => 清理特效();
 }

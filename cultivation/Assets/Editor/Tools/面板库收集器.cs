@@ -52,6 +52,10 @@ public static class 面板库收集器
         foreach (var g in AssetDatabase.FindAssets("t:PassiveDivineAbility"))
             库.神通.Add(AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>(AssetDatabase.GUIDToAssetPath(g)));
         库.神通.RemoveAll(x => x == null);
+        var 主动id = new HashSet<string>();
+        foreach (var a in 库.神通) if (a is ActiveDivineAbility) 主动id.Add(a.神通id);
+        // 四御由被动改为主动，旧资产仍留给旧场景引用迁移，目录只展示主动版本。
+        库.神通.RemoveAll(x => x is PassiveDivineAbility && 主动id.Contains(x.神通id));
 
         // ---- 法宝 / 灵阵 ----
         var 法宝 = new List<TreasureDefinition>();

@@ -70,6 +70,7 @@ public class DevilEyeAbility : MonoBehaviour
         }
         if (!有目标 || 属性 == null || Time.time < 下次攻击) return;
         下次攻击 = Time.time + Mathf.Max(.1f, 神通.攻击间隔);
+        if (!生命.扣灵气(Mathf.Max(0f, 神通.消耗灵力))) return;
         目标.ReceiveAttack(属性, new AttackSpec(DamageNature.特殊, AttackKind.被动神通, false, 神通.伤害倍率));
         激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, .12f);
         if (激光 != null)

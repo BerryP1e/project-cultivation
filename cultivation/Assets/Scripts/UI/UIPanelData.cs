@@ -8,8 +8,9 @@ using UnityEngine;
 /// </summary>
 public class UIPanelData : MonoBehaviour
 {
-    [Tooltip("绝对护罩剩余棱柱。停用、切场景和读档均保留；新角色初始四枚。")]
-    public int 绝对护罩剩余次数 = 4;
+    [Tooltip("主动四御施放后恢复四枚；切场景和读档保留剩余次数。")]
+    public int 绝对护罩剩余次数;
+    public bool 四御已激活;
     [Header("玩家")]
     [Tooltip("玩家基本属性定义（lore/玩家基本属性.txt）")]
     public PlayerStatsDefinition 玩家属性;
@@ -153,6 +154,7 @@ public class UIPanelData : MonoBehaviour
         if (已获得被动神通.Contains(p)) return false;
         已获得被动神通.Add(p);
         if (已停用被动 != null) 已停用被动.Remove(p);
+        关闭其他护罩(p);
         RaiseChanged();
         return true;
     }
@@ -203,6 +205,36 @@ public class UIPanelData : MonoBehaviour
         if (已获得真灵 == null) 已获得真灵 = new List<NpcDefinition>();
         EnsureFormationSlots();
         从面板库灌目录();
+        迁移四御学习记录();
+        PassiveDivineAbility 保留 = null;
+        foreach (var p in 已获得被动神通)
+            if (是减伤护罩(p) && !已停用被动.Contains(p))
+            {
+                if (保留 == null) 保留 = p;
+                else 已停用被动.Add(p);
+            }
+    }
+
+    public static bool 是减伤护罩(PassiveDivineAbility p) => p != null
+        && (p.结算方式 == PassiveSkillKind.物理护罩 || p.结算方式 == PassiveSkillKind.特殊护罩
+            || p.结算方式 == PassiveSkillKind.双重护罩);
+
+    void 关闭其他护罩(PassiveDivineAbility p)
+    {
+        if (!是减伤护罩(p)) return;
+        if (已停用被动 == null) 已停用被动 = new List<PassiveDivineAbility>();
+        foreach (var 其他 in 已获得被动神通)
+            if (其他 != p && 是减伤护罩(其他) && !已停用被动.Contains(其他)) 已停用被动.Add(其他);
+    }
+
+    void 迁移四御学习记录()
+    {
+        var 主动 = 神通.Find(a => a is ActiveDivineAbility && a.神通id == "ability_huzhao_juedui") as ActiveDivineAbility;
+        if (主动 == null) return;
+        bool 已学 = 已获得被动神通.Exists(p => p != null && p.神通id == 主动.神通id);
+        if (已学 && !已获得主动神通.Contains(主动)) 已获得主动神通.Add(主动);
+        已获得被动神通.RemoveAll(p => p != null && p.神通id == 主动.神通id);
+        已停用被动.RemoveAll(p => p != null && p.神通id == 主动.神通id);
     }
 
     /// <summary>
@@ -348,6 +380,7 @@ public class UIPanelData : MonoBehaviour
         已获得主动神通 = new List<ActiveDivineAbility>();
         已获得被动神通 = new List<PassiveDivineAbility>();
         当前功法 = null;
+        四御已激活 = false; 绝对护罩剩余次数 = 0;
         待装备神通 = null;
         当前经验 = 0;
         突破所需总经验 = 0;
@@ -396,6 +429,7 @@ public class UIPanelData : MonoBehaviour
         //   结果主角什么都没获得，御风却照飞（YufengFlight 第 158 行就是调这个方法判的）。
         //   所有权是硬门槛，必须挡在最前面。
         if (ability == null) return false;
+        if (ability.结算方式 == PassiveSkillKind.绝对护罩) return false;
         if (!已获得被动(ability)) return false;
         return !已停用被动.Contains(ability);
     }
@@ -409,6 +443,7 @@ public class UIPanelData : MonoBehaviour
         bool nowEnabled;
         if (已停用被动.Contains(ability)) { 已停用被动.Remove(ability); nowEnabled = true; }
         else { 已停用被动.Add(ability); nowEnabled = false; }
+        if (nowEnabled) 关闭其他护罩(ability);
 
         // ★ 启用【凭虚御风】→ **自动取消装备坐骑**（用户 2026-09-24 定的规则）
         bool 卸了坐骑 = nowEnabled && 取消坐骑因为御风(ability);
@@ -426,6 +461,7 @@ public class UIPanelData : MonoBehaviour
         EnsureLists();
         if (enabled) 已停用被动.Remove(ability);
         else if (!已停用被动.Contains(ability)) 已停用被动.Add(ability);
+        if (enabled) 关闭其他护罩(ability);
 
         // 同 TogglePassive：启用御风就卸坐骑
         if (enabled && 取消坐骑因为御风(ability))

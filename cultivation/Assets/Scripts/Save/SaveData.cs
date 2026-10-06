@@ -12,8 +12,9 @@ using UnityEngine;
 [Serializable]
 public class SaveData
 {
-    public int 绝对护罩剩余次数 = 4;
-    public const int 当前版本 = 15;   // 14：今日清单；15：已获得外观列表（保留现有字段，兼容旧档）
+    public int 绝对护罩剩余次数;
+    public bool 四御已激活;
+    public const int 当前版本 = 16;   // 16：主动四御激活状态；旧四御学习记录迁移为主动
 
     [Header("身份")]
     public int 版本 = 当前版本;

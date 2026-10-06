@@ -178,7 +178,7 @@ public static class SaveSystem
     /// </summary>
     static void 面板内容全清(SaveData 数据)
     {
-        数据.绝对护罩剩余次数 = 4;
+        数据.绝对护罩剩余次数 = 0; 数据.四御已激活 = false;
         数据.背包物品.Clear();
         数据.法宝.Clear();
         数据.灵阵.Clear();
@@ -316,16 +316,7 @@ public static class SaveSystem
 
                 // ★ 已获得的能力：**以存档为准**（新档就是空的 —— 用户要求"学了才有"）
                 面板.EnsureLists();
-                面板.已获得主动神通 = new System.Collections.Generic.List<ActiveDivineAbility>();
-                if (数据.已获得主动神通 != null)
-                    foreach (var id in 数据.已获得主动神通)
-                        foreach (var a in 面板.神通)
-                            if (a is ActiveDivineAbility act && act.神通id == id && !面板.已获得主动(act)) 面板.已获得主动神通.Add(act);
-                面板.已获得被动神通 = new System.Collections.Generic.List<PassiveDivineAbility>();
-                if (数据.已获得被动神通 != null)
-                    foreach (var id in 数据.已获得被动神通)
-                        foreach (var a in 面板.神通)
-                            if (a is PassiveDivineAbility ps && ps.神通id == id && !面板.已获得被动(ps)) 面板.已获得被动神通.Add(ps);
+                恢复神通学习记录(数据, 面板);
 
                 面板.RaiseChanged();
             }
@@ -352,7 +343,10 @@ public static class SaveSystem
                        && (数据.法宝 == null || 数据.法宝.Count == 0)
                        && (数据.灵阵 == null || 数据.灵阵.Count == 0)
                        && (数据.坐骑 == null || 数据.坐骑.Count == 0)
-                       && (数据.已获得真灵 == null || 数据.已获得真灵.Count == 0);
+                       && (数据.已获得真灵 == null || 数据.已获得真灵.Count == 0)
+                       && (数据.已获得主动神通 == null || 数据.已获得主动神通.Count == 0)
+                       && (数据.已获得被动神通 == null || 数据.已获得被动神通.Count == 0)
+                       && (数据.已学功法 == null || 数据.已学功法.Count == 0);
             if (是新档)
             {
                 bool 场景里本来有东西 = !面板数据.玩法数据为空();
@@ -597,6 +591,7 @@ public static class SaveSystem
         if (面板.已停用被动 != null)
             foreach (var p in 面板.已停用被动) if (p != null) 数据.已停用被动.Add(p.神通id);
         数据.绝对护罩剩余次数 = Mathf.Clamp(面板.绝对护罩剩余次数, 0, 4);
+        数据.四御已激活 = 面板.四御已激活 && 数据.绝对护罩剩余次数 > 0;
 
         数据.已获得真灵.Clear();
         if (面板.已获得真灵 != null)
@@ -620,6 +615,7 @@ public static class SaveSystem
     static void 恢复面板(SaveData 数据, UIPanelData 面板)
     {
         面板.EnsureLists();
+        恢复神通学习记录(数据, 面板);
 
         // ---- 背包：一件物品有几个就是几条（和 采集面板 对称）----
         面板.物品 = new System.Collections.Generic.List<ItemDefinition>();
@@ -652,6 +648,7 @@ public static class SaveSystem
 
         // ---- 已停用被动 ----
         面板.绝对护罩剩余次数 = Mathf.Clamp(数据.绝对护罩剩余次数, 0, 4);
+        面板.四御已激活 = 数据.四御已激活 && 面板.绝对护罩剩余次数 > 0;
         面板.已停用被动 = new System.Collections.Generic.List<PassiveDivineAbility>();
         if (数据.已停用被动 != null)
             foreach (var id in 数据.已停用被动)
@@ -683,6 +680,21 @@ public static class SaveSystem
         面板.RaiseChanged();
         Debug.Log("[存档] 已恢复背包 " + 面板.物品.Count + " 件、法宝 " + 面板.法宝.Count
             + "、坐骑 " + 面板.坐骑.Count + "、技能槽 " + 面板.主动技能.Count + " 格");
+    }
+
+    static void 恢复神通学习记录(SaveData 数据, UIPanelData 面板)
+    {
+        面板.已获得主动神通 = new System.Collections.Generic.List<ActiveDivineAbility>();
+        面板.已获得被动神通 = new System.Collections.Generic.List<PassiveDivineAbility>();
+        foreach (var a in 面板.神通)
+        {
+            if (a is ActiveDivineAbility act &&
+                ((数据.已获得主动神通 != null && 数据.已获得主动神通.Contains(a.神通id))
+                || (a.神通id == "ability_huzhao_juedui" && 数据.已获得被动神通 != null
+                    && 数据.已获得被动神通.Contains(a.神通id)))) 面板.已获得主动神通.Add(act);
+            else if (a is PassiveDivineAbility ps && 数据.已获得被动神通 != null
+                && 数据.已获得被动神通.Contains(a.神通id)) 面板.已获得被动神通.Add(ps);
+        }
     }
 
     /// <summary>把一串 id 还原成当前面板里的定义列表（按 id 匹配，忽略找不到的）</summary>
