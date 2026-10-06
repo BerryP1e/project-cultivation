@@ -45,6 +45,12 @@ public class UIMountPage : MonoBehaviour
     public float 模型抬高 = 0f;
     [Tooltip("预览相机能不能被鼠标拖动旋转（左键拖）")]
     public bool 可以拖动旋转 = true;
+    public bool 正交展示;
+    public bool 自定义展示旋转;
+    public float 正交取景倍率=1f;
+    public Vector3 展示模型旋转;
+    public void 设置观察角度(float yaw,float pitch){当前偏航=yaw;当前俯仰=pitch;刷新相机();}
+    Bounds 展示包围盒;
 
     [Header("调试")]
     public bool 打印日志 = false;
@@ -77,7 +83,7 @@ public class UIMountPage : MonoBehaviour
         建场地();
         // 列表在 OnEnable 里会重建并 Select(entries[0])，那一瞬间可能还没轮到我们订阅，
         // 所以这里主动拉一次当前选中项。
-        选中变化(列表 != null ? 列表.Selected : null);
+        选中变化(列表 != null ? 列表.Selected : 当前条目);
     }
 
     void OnDisable()
@@ -98,7 +104,7 @@ public class UIMountPage : MonoBehaviour
         if (场地 != null) { 场地.gameObject.SetActive(true); 相机.enabled = true; 刷新相机(); return; }
 
         var 根 = new GameObject("坐骑预览场地");
-        根.transform.position = new Vector3(0f, 场地高度, 0f);
+        根.transform.position = new Vector3(GetInstanceID() % 1000 * 100f, 场地高度, 0f);
         场地 = 根.transform;
 
         var 相机物体 = new GameObject("预览相机", typeof(Camera));
@@ -211,10 +217,10 @@ public class UIMountPage : MonoBehaviour
 
         if (信息栏 != null && m != null) 刷新信息文本(m);
 
-        if (m == null) { 清模型(); if (预览图 != null) 预览图.color = new Color(1f, 1f, 1f, 0.35f); return; }
+        if (m == null && !(entry is TreasureDefinition)) { 清模型(); if (预览图 != null) 预览图.color = new Color(1f, 1f, 1f, 0.35f); return; }
         if (预览图 != null) 预览图.color = Color.white;
 
-        换模型(m);
+        换模型(entry);
     }
 
     void 刷新信息文本(MountDefinition m)
@@ -241,22 +247,23 @@ public class UIMountPage : MonoBehaviour
         return "【乘骑增益】\n" + string.Join("　", 行.ToArray());
     }
 
-    void 换模型(MountDefinition m)
+    void 换模型(IPanelEntry entry)
     {
         清模型();
         if (场地 == null) 建场地();
 
-        var prefab = m.加载模型();
+        var m = entry as MountDefinition; var treasure = entry as TreasureDefinition;
+        var prefab = m != null ? m.加载模型() : treasure != null ? treasure.加载模型() : null;
         if (prefab == null)
         {
-            if (打印日志) Debug.LogWarning("[坐骑页] 加载不到模型：" + m.模型资源路径, this);
+            if (打印日志) Debug.LogWarning("[坐骑页] 加载不到模型：" + entry.DisplayName, this);
             return;
         }
 
         当前模型 = Instantiate(prefab, 场地);
-        当前模型.name = "预览_" + m.坐骑名称;
+        当前模型.name = "预览_" + entry.DisplayName;
         当前模型.transform.localPosition = Vector3.zero;
-        当前模型.transform.localRotation = Quaternion.identity;
+        当前模型.transform.localRotation = 自定义展示旋转 ? Quaternion.Euler(展示模型旋转) : treasure != null ? Quaternion.Euler(-8, 0, -12) : Quaternion.identity;
 
         // 预览不参与任何物理 / 拾取
         外观预览.去掉会干活的组件(当前模型);
@@ -286,6 +293,7 @@ public class UIMountPage : MonoBehaviour
             当前模型.transform.position += (场地.position + Vector3.up * 模型抬高) - b.center;
 
         b = 取包围盒(当前模型);
+        展示包围盒=b;
         环绕中心 = b.center;
         环绕半径 = Mathf.Max(0.5f, b.extents.magnitude);
 
@@ -294,7 +302,7 @@ public class UIMountPage : MonoBehaviour
         // 而 Instantiate 当帧 Start 还没跑 → PlayAction 直接 return false，
         // 表现就是**预览里的坐骑僵在默认姿势、不播 idle**（用户 2026-09-23 报的）。
         // 所以这里交给 试播待机() 每帧重试，播上了就停（同 MountRider 里出生动画的处理）。
-        待播动作 = string.IsNullOrEmpty(m.待机动作) ? "Idle" : m.待机动作;
+        待播动作 = m == null || string.IsNullOrEmpty(m.待机动作) ? "Idle" : m.待机动作;
         待播帧数 = 120;                  // 两秒还播不上就放弃（别每帧刷警告）
         试播待机();
 
@@ -362,8 +370,21 @@ public class UIMountPage : MonoBehaviour
         if (相机 == null) return;
         float 距 = 环绕半径 / Mathf.Tan(相机.fieldOfView * 0.5f * Mathf.Deg2Rad) * Mathf.Max(1.0f, 取景留白);
         var 旋转 = Quaternion.Euler(当前俯仰, 当前偏航, 0f);
+        相机.orthographic = 正交展示;
+        if (正交展示)
+        {
+            if (贴图 != null) 相机.aspect=贴图.width/(float)贴图.height;
+            var extent=展示包围盒.extents;
+            var up=旋转*Vector3.up; var right=旋转*Vector3.right;
+            float vertical=Mathf.Abs(up.x)*extent.x+Mathf.Abs(up.y)*extent.y+Mathf.Abs(up.z)*extent.z;
+            float horizontal=Mathf.Abs(right.x)*extent.x+Mathf.Abs(right.y)*extent.y+Mathf.Abs(right.z)*extent.z;
+            相机.orthographicSize=Mathf.Max(.1f,Mathf.Max(vertical,horizontal/相机.aspect))*取景留白*Mathf.Max(.1f,正交取景倍率);
+            距=环绕半径*3+2;
+            相机.farClipPlane=Mathf.Max(60,距+环绕半径*2+5);
+        }
         相机.transform.position = 环绕中心 + 旋转 * new Vector3(0f, 0f, -距);
         相机.transform.LookAt(环绕中心);
+        相机.backgroundColor = 背景色;
     }
 
     void Update()
@@ -375,7 +396,7 @@ public class UIMountPage : MonoBehaviour
         if (可以拖动旋转 && Input.GetMouseButton(0) && 指针在预览图上())
         {
             当前偏航 += Input.GetAxis("Mouse X") * 4f;
-            当前俯仰 = Mathf.Clamp(当前俯仰 - Input.GetAxis("Mouse Y") * 3f, -70f, 70f);
+            // 原型要求只允许左右拖动。
         }
         // 场景 / 灯光可能在运行时变，每帧对一次很便宜
         刷新相机();

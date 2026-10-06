@@ -23,7 +23,7 @@ public class UIInkFormationPage : MonoBehaviour
     static GameObject Player(){var actor=Object.FindObjectOfType<PlayerController>();return actor!=null?actor.gameObject:null;}
     public static void 应用(Transform root){
         if(!UIInkNavigation.启用)return;var panel=root.GetComponent<CharacterPanelUI>();if(panel==null || panel.tabs.Count<6)return;
-        var page=panel.tabs[5].page;var view=page.GetComponent<UIInkFormationPage>();if(view==null)view=page.AddComponent<UIInkFormationPage>();view.Build();
+        var page=panel.tabs[5].page;if(page==null)return;var view=page.GetComponent<UIInkFormationPage>();if(view==null)view=page.AddComponent<UIInkFormationPage>();view.Build();
     }
     void Build(){
         if(ready)return;brush=new MaterialPropertyBlock();九宫=GetComponentInChildren<UISpiritFormationBar>(true);真灵=transform.Find("SpiritList").GetComponent<UIEntryList>();详情=真灵.infoTarget;九宫.infoTarget=详情;

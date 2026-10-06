@@ -195,6 +195,8 @@ public static class 场景自举
             // 3C_Testbed / Sect_Wilderness / Demon-Suppressing Tower 一直缺；
             // 它不在自举名单里，所以这个漂移永远抹不平。见 工作日志 §27。
             确保组件<主动神通开关>(玩家, 场景.name);
+            确保组件<TreasureCaster>(玩家, 场景.name);
+            确保组件<QingshanSwordTreasure>(玩家, 场景.name);
         }
 
         // ---- 主相机：机位旋转工具（临时调角度用，可随时摘掉）----

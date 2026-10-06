@@ -41664,7 +41664,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 6070768}
+  m_AnchoredPosition: {x: 0, y: 6107046}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1506604455
@@ -50070,6 +50070,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 7
   m_Component:
+  - component: {fileID: 1900000001}
   - component: {fileID: 1805764444}
   - component: {fileID: 1805764443}
   - component: {fileID: 1805764445}
@@ -50100,6 +50101,18 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1900000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1805764442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abaaee870eb67db449a5a43d4c7eea5c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!143 &1805764443
 CharacterController:
   m_ObjectHideFlags: 0
@@ -50405,32 +50418,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd5d00b2237b04447a2301a1e6b07382, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  "\u65B9\u6CD5id": basic_sword_01
   "\u5251\u6A21\u578B\u8D44\u6E90": {fileID: 919132149155446097, guid: 6fa17133cd25e9741ae22bd3e40d30d8, type: 3}
   "\u6A21\u578B\u671D\u5411\u8865\u507F": {x: 225, y: 0, z: 0}
   "\u60AC\u6D6E\u504F\u79FB": {x: 0.55, y: 1.15, z: -0.45}
   "\u5251\u5C16\u5411\u4E0B\u65CB\u8F6C": {x: 90, y: 0, z: 0}
   "\u60AC\u6D6E\u8DDF\u968F\u901F\u5EA6": 10
   "\u98DE\u884C\u901F\u5EA6": 14
-  "\u8F6C\u5411\u901F\u5EA6": 420
-  "\u7A7F\u4F53\u5224\u5B9A\u534A\u5F84": 0.9
-  "\u7A7F\u4F53\u6700\u5C0F\u95F4\u9694": 0.15
-  "\u7ED5\u884C\u957F\u8F74": 3.5
-  "\u7ED5\u884C\u77ED\u8F74": 2.2
-  "\u7ED5\u884C\u5468\u671F": 2.6
   "\u57FA\u7840\u7D22\u654C\u8303\u56F4": 4
   "\u6BCF\u70B9\u795E\u8BC6\u8303\u56F4": 0.8
   "\u7D22\u654C\u8303\u56F4\u4E0A\u9650": 40
-  "\u9501\u5B9A\u5C42\u7EA7":
-    serializedVersion: 2
-    m_Bits: 4294967295
-  "\u653B\u51FB\u952E": 324
-  "\u9501\u5B9A\u76F8\u673A": {fileID: 1786122617}
   "\u73A9\u5BB6\u6218\u6597\u5C5E\u6027": {fileID: 1805764448}
   "\u76EE\u6807\u7BA1\u7406\u5668": {fileID: 1805764450}
   "\u6253\u5370\u6218\u6597\u65E5\u5FD7": 1
-  "\u7784\u51C6\u9AD8\u5EA6": 0.9
-  "\u7784\u51C6\u5E73\u6ED1\u901F\u5EA6": 14
+  "\u60AC\u6D6E\u7F13\u52A8\u65F6\u95F4": 0.18
+  "\u60AC\u6D6E\u8F6C\u5411\u65F6\u95F4": 0.2
+  "\u60AC\u6D6E\u8D77\u4F0F\u5E45\u5EA6": 0.07
+  "\u60AC\u6D6E\u8D77\u4F0F\u5468\u671F": 2.8
+  "\u6700\u5927\u8DDF\u968F\u62D6\u5C3E": 0.85
+  "\u60AC\u6D6E\u540E\u79FB\u8DDD\u79BB": 0.65
+  "\u4E07\u5251\u51B7\u5374": 18
+  "\u4E07\u5251\u4F24\u5BB3\u500D\u7387": 6
+  "\u5DE8\u5251\u57FA\u7840\u500D\u7387": 10.13
+  "\u4E07\u5251\u547D\u4E2D\u7279\u6548\u500D\u7387": 0.22
+  "\u4E07\u5251\u6D88\u6563\u65F6\u95F4": 1.2
+  "\u5DE8\u5251\u8D2F\u7A7F\u65F6\u95F4": 1.2
 --- !u!114 &1805764456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50445,8 +50456,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   "\u9762\u677F\u6570\u636E": {fileID: 0}
   "\u666E\u653B\u65B9\u6CD5\u8868":
-  - "\u65B9\u6CD5id": basic_sword_01
-    "\u7EC4\u4EF6\u7C7B\u540D": BasicSword01
+  - "\u65B9\u6CD5id": basic_taixu_sword_01
+    "\u7EC4\u4EF6\u7C7B\u540D": BasicTaixuSword01
   - "\u65B9\u6CD5id": basic_remoteattack_01
     "\u7EC4\u4EF6\u7C7B\u540D": BasicRemoteAttack01
   - "\u65B9\u6CD5id": basic_thunder_01
@@ -51013,7 +51024,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   "\u8981\u9501\u7684\u7EC4\u4EF6":
   - PlayerController
-  - BasicSword01
+  - QingshanSwordTreasure
   - ActiveSkillCaster
   - YufengFlight
   "\u5BF9\u8BDD\u4E5F\u9501": 1

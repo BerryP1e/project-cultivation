@@ -211,6 +211,8 @@ public class NpcInstance : MonoBehaviour, ICombatStats
 
     /// <summary>死亡事件</summary>
     public event Action<NpcInstance> Died;
+    public static event Action<NpcInstance,ICombatStats> CombatKilled;
+    ICombatStats damageSource;
 
     /// <summary>重生事件</summary>
     public event Action<NpcInstance> Revived;
@@ -262,6 +264,7 @@ public class NpcInstance : MonoBehaviour, ICombatStats
             当前气血 = 0f;
             已死亡 = true;
             Died?.Invoke(this);
+            if(damageSource!=null)CombatKilled?.Invoke(this,damageSource);
 
             // 【杀怪 → 修炼次数】按设计文档：单只掉落 = 基础 1 次 × 等级差系数
             //（等级差 = 怪物等级 − 玩家等级）。挂在这里而不是各 AI 里，
@@ -422,7 +425,9 @@ public class NpcInstance : MonoBehaviour, ICombatStats
         var result = CombatCalculator.Resolve(attacker, this, spec);
         if (result.命中 && result.伤害 > 0f)
         {
-            TakeDamage(result.伤害, alreadyMitigated: true);   // 伤害已按公式算完，别再减一次防御
+            var previousSource=damageSource;damageSource=attacker;
+            try { TakeDamage(result.伤害, alreadyMitigated: true); }
+            finally { damageSource=previousSource; }   // 伤害已按公式算完，别再减一次防御
 
             // 挨打就掉好感（策划要求「极大程度降低」，默认每次 -20）。
             // 注意这是【每次伤害结算】都掉：焚天炎术那种多段 AoE 会掉很多次。

@@ -7,7 +7,7 @@ using UnityEngine;
 /// 按【当前功法】与【启用中的被动神通】动态装卸玩家身上的能力组件。
 ///
 /// 规则（按策划说明）：
-///   · 太虚炼气诀 → basic_sword_01 → 装 BasicSword01；换功法就卸掉旧的、装上新的
+///   · 太虚炼气诀 → basic_remoteattack_01；青山剑由法宝装备独立管理
 ///   · 凭虚御风启用 → 装 YufengFlight + YufengVfx；停用就卸掉，重新启用再装上
 ///
 /// 组件按【类名】配置，运行时用反射找类型 —— 这样加新功法/新神通只要在表里加一行，
@@ -55,6 +55,9 @@ public class PlayerAbilityLoader : MonoBehaviour
         new string[] { "basic_jiuba_01", "BasicJiuba01" },   // 八九玄功：近战普攻
         new string[] { "basic_jiuba_01", "武器挂载" },         // 八九玄功：把三尖两刃刀挂到右手
         new string[] { "basic_jiuba_01", "WeaponCarryAnim" }, // 八九玄功：移动/御风片段换成持械上半身版
+        new string[] { "basic_taixu_sword_01", "BasicTaixuSword01" },
+        new string[] { "basic_taixu_sword_01", "武器挂载" },
+        new string[] { "basic_taixu_sword_01", "WeaponCarryAnim" },
     };
 
     [Header("调试")]
@@ -86,6 +89,7 @@ public class PlayerAbilityLoader : MonoBehaviour
                 被动神通表.Add(new 被动神通绑定 { 神通id = id,
                     组件类名 = new[] { id == "ability_xieyan" ? "DevilEyeAbility" : "PassiveShieldAbilities" } });
         if (普攻方法表 == null) 普攻方法表 = new List<普攻方法绑定>();
+        普攻方法表.RemoveAll(b=>b!=null && (b.方法id=="basic_sword_01" || b.组件类名=="QingshanSwordTreasure" || b.组件类名=="BasicSword01"));
         foreach (var 条 in 内置登记)
         {
             if (条 == null || 条.Length < 2) continue;
@@ -211,7 +215,10 @@ public class PlayerAbilityLoader : MonoBehaviour
     Behaviour 取组件(string 类名)
     {
         var t = FindType(类名);
-        return t != null ? GetComponent(t) as Behaviour : null;
+        if (t == null) return null;
+        foreach (var component in GetComponents<Behaviour>())
+            if (component.GetType() == t) return component;
+        return null;
     }
 
     /// <summary>尝试销毁组件。有别的组件 RequireComponent 依赖它时 Unity 会拒绝，这里返回 false。</summary>

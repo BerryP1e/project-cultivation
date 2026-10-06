@@ -16,6 +16,12 @@ public sealed class JiubaWeaponVfx : MonoBehaviour
     public bool 正在挥舞 { get; private set; }
     public Vector3 刃尖位置 => emitter != null ? emitter.transform.position : transform.position;
 
+    public void 绑定(BasicJiuba01 owner)
+    {
+        if (attack == owner) return;
+        停止(true); attack = owner; attackNumber = -1;
+    }
+
     void Awake()
     {
         attack = GetComponent<BasicJiuba01>();

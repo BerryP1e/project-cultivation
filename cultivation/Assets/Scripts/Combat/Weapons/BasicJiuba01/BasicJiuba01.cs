@@ -234,7 +234,7 @@ public class BasicJiuba01 : MonoBehaviour
     Bounds 缓存目标体积;
     bool 缓存目标体积有效;
 
-    void Awake() => 解析引用();
+    protected virtual void Awake() => 解析引用();
 
     void 解析引用()
     {
@@ -246,17 +246,17 @@ public class BasicJiuba01 : MonoBehaviour
         if (演出锁 == null) 演出锁 = GetComponent<演出锁>();
     }
 
-    void OnEnable() => 解析引用();
+    protected virtual void OnEnable() => 解析引用();
 
     JiubaWeaponVfx 刃光;
 
-    void OnDisable()
+    protected virtual void OnDisable()
     {
         出手动作中 = false;
         if (刃光 != null) 刃光.停止(true);
     }
 
-    void Update()
+    protected virtual void Update()
     {
         解析引用();
 
@@ -286,6 +286,7 @@ public class BasicJiuba01 : MonoBehaviour
         if (!可以出手) return false;
         if (刃光 == null) 刃光 = GetComponent<JiubaWeaponVfx>() ?? gameObject.AddComponent<JiubaWeaponVfx>();
 
+        刃光.绑定(this);
         出手动作中 = true;
         下次可出手时间 = Time.time + 实际冷却;
         本轮已结算 = false;
@@ -304,7 +305,7 @@ public class BasicJiuba01 : MonoBehaviour
         }
 
         if (打印战斗日志)
-            Debug.Log("[basic_jiuba_01] 出手：片段「" + 路径 + "」"
+            Debug.Log("[" + 方法id + "] 出手：片段「" + 路径 + "」"
                 + (是御风版 ? "（御风版）" : "（地面版）")
                 + "｜目标「" + 取目标名() + "」"
                 + "｜攻速 " + 攻速系数.ToString("0.##")
@@ -368,7 +369,7 @@ public class BasicJiuba01 : MonoBehaviour
         {
             本轮已结算 = true;
             if (打印战斗日志)
-                Debug.Log("[basic_jiuba_01] 打空：「" + 取目标名() + "」没被武器扫到"
+                Debug.Log("[" + 方法id + "] 打空：「" + 取目标名() + "」没被武器扫到"
                     + "（窗口 " + 起.ToString("0.##") + "~" + 止.ToString("0.##")
                     + "，动作进度 " + 进度.ToString("0.###")
                     + (打印判定距离 && 本次最近有效 ? "，窗口内刀离目标最近 " + 本次最近距离.ToString("F2") + " 米（判定阈值 " + 上次阈值.ToString("F2") + "）" : "")
@@ -384,14 +385,14 @@ public class BasicJiuba01 : MonoBehaviour
         if (玩家战斗属性 == null) 解析引用();
         if (玩家战斗属性 == null)
         {
-            Debug.LogWarning("[basic_jiuba_01] 没有 PlayerCombatStats，算不了伤害", this);
+            Debug.LogWarning("[" + 方法id + "] 没有 PlayerCombatStats，算不了伤害", this);
             return;
         }
 
         var 目标 = 锁定单位;
         if (目标 == null)
         {
-            if (打印战斗日志) Debug.Log("[basic_jiuba_01] 没有锁定目标 → 不结算（" + 原因 + "）", this);
+            if (打印战斗日志) Debug.Log("[" + 方法id + "] 没有锁定目标 → 不结算（" + 原因 + "）", this);
             return;
         }
 
@@ -401,12 +402,12 @@ public class BasicJiuba01 : MonoBehaviour
         if (结果.命中)
         {
             var 位置 = 接触点 == Vector3.zero ? 取目标体积(目标).center : 接触点;
-            BasicSword01HitEffect.Spawn(位置, 位置 - transform.position, 结果.暴击,
+            SwordHitEffect.Spawn(位置, 位置 - transform.position, 结果.暴击,
                 new Color(1f, 0.88f, 0.55f));
         }
 
         if (打印战斗日志)
-            Debug.Log("[basic_jiuba_01] 砍「" + 目标.名字 + "」 " + 结果
+            Debug.Log("[" + 方法id + "] 砍「" + 目标.名字 + "」 " + 结果
                 + "（" + 原因 + "，片段「" + 当前动作路径 + "」"
                 + "，接触点 " + 接触点.ToString("F2")
                 + "，倍率 " + 伤害倍率.ToString("0.##") + "）", this);
@@ -443,7 +444,7 @@ public class BasicJiuba01 : MonoBehaviour
                 if (!报过找不到武器)
                 {
                     报过找不到武器 = true;
-                    Debug.LogWarning("[basic_jiuba_01] 在自己身上找不到武器节点「" + 武器节点名
+                    Debug.LogWarning("[" + 方法id + "] 在自己身上找不到武器节点「" + 武器节点名
                         + "」→ 退回「到出手进度就打」。\n" +
                         "（武器要由 `武器挂载` 组件实例化；prefab 里那个蒙皮网格节点就叫 YangJian_03_Weapon）", this);
                 }
@@ -581,12 +582,12 @@ public class BasicJiuba01 : MonoBehaviour
             线段SMR = smr;
             线段已标定 = true;
             if (打印战斗日志)
-                Debug.Log("[basic_jiuba_01] 刀身线段已标定（BakeMesh）：本地 " + 线段本地A.ToString("F3") + " → " + 线段本地B.ToString("F3")
+                Debug.Log("[" + 方法id + "] 刀身线段已标定（BakeMesh）：本地 " + 线段本地A.ToString("F3") + " → " + 线段本地B.ToString("F3")
                           + "，长 " + Vector3.Distance(线段本地A, 线段本地B).ToString("F2") + " 米，半径 " + 线段本地半径.ToString("F3"), this);
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning("[basic_jiuba_01] BakeMesh 标定失败：" + e.Message + " → 本轮退回盒相交", this);
+            Debug.LogWarning("[" + 方法id + "] BakeMesh 标定失败：" + e.Message + " → 本轮退回盒相交", this);
             线段已标定 = false;
         }
         finally { UnityEngine.Object.DestroyImmediate(烘); }
@@ -666,6 +667,8 @@ public class BasicJiuba01 : MonoBehaviour
         是御风版 = false;
         if (string.IsNullOrEmpty(路径)) return null;
 
+        // Flight can be learned after this attack component was initialized.
+        if (御风 == null) 御风 = GetComponent<YufengFlight>();
         bool 在御风 = 御风 != null && 御风.御风流程中;
         if (在御风 && !string.IsNullOrEmpty(御风动作后缀))
         {
@@ -674,7 +677,7 @@ public class BasicJiuba01 : MonoBehaviour
             if (御风片段 != null) { 是御风版 = true; return 御风片段; }
 
             if (报过找不到.Add(御风路径))
-                Debug.LogWarning("[basic_jiuba_01] 找不到御风版动作「" + 御风路径 + "」→ 退回地面版「" + 路径 + "」", this);
+                Debug.LogWarning("[" + 方法id + "] 找不到御风版动作「" + 御风路径 + "」→ 退回地面版「" + 路径 + "」", this);
         }
         return 读片段(路径);
     }
@@ -687,7 +690,7 @@ public class BasicJiuba01 : MonoBehaviour
         var 片段 = Resources.Load<AnimationClip>(路径);
         if (片段 != null) 片段缓存[路径] = 片段;
         else if (报过找不到.Add(路径))
-            Debug.LogWarning("[basic_jiuba_01] 找不到动作 Assets/resources/" + 路径 + ".anim", this);
+            Debug.LogWarning("[" + 方法id + "] 找不到动作 Assets/resources/" + 路径 + ".anim", this);
         return 片段;
     }
 

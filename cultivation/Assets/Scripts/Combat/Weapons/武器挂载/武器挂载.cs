@@ -9,7 +9,7 @@
 /// ## 为什么需要它
 /// 八九玄功的四段近战动作（长刀女 / 杨戬的 Attack1、2）**手里必须真的有刀**才不违和 ——
 /// 动作是"持械挥砍"，而玩家模型本身不带武器。工程里以前没有"给玩家挂握持武器"的机制：
-/// `base_sword` 只当**飞剑弹丸**用（<see cref="BasicSword01"/> 生成后飞出去），
+/// `青山剑模型` 只当**飞剑弹丸**用（<see cref="QingshanSwordTreasure"/> 生成后飞出去），
 /// NPC 的武器则是各自模型里的蒙皮网格。所以这一层是新加的。
 ///
 /// ## 标定值（别随手改 <see cref="本地缩放"/>）
@@ -79,6 +79,10 @@ public class 武器挂载 : MonoBehaviour
     /// <summary>当前挂在手上的武器实例（null = 没挂 / 已销毁）</summary>
     public GameObject 实例 { get; private set; }
 
+    bool 太虚剑 => 面板数据 != null && 面板数据.当前功法 != null
+        && 面板数据.当前功法.功法id == "gongfa_taixu_jianjue";
+    string 当前武器路径 => 太虚剑 ? "Weapons/太虚剑决_神秘人剑" : 武器资源路径;
+    string 实例资源路径;
     Transform 挂点缓存;
     bool 报过找不到武器;
     bool 报过找不到骨骼;
@@ -165,7 +169,8 @@ public class 武器挂载 : MonoBehaviour
         var 骨 = 找挂点();
         if (骨 == null) { 销毁实例(); return; }      // 找不到骨骼时不实例化（已经在 找挂点 里警告过）
 
-        if (实例 == null) 实例 = 创建实例(骨);
+        if (实例 != null && 实例资源路径 != 当前武器路径) 销毁实例();
+        if (实例 == null) { 实例 = 创建实例(骨); 实例资源路径 = 当前武器路径; }
         if (实例 == null) return;
 
         应用本地TRS(实例.transform);
@@ -176,16 +181,16 @@ public class 武器挂载 : MonoBehaviour
     {
         if (string.IsNullOrEmpty(显示条件功法id)) return true;          // 留空 = 一直显示
         var 功法 = 面板数据 != null ? 面板数据.当前功法 : null;
-        return 功法 != null && 功法.功法id == 显示条件功法id;
+        return 功法 != null && (功法.功法id == 显示条件功法id || 太虚剑);
     }
 
     // ============================================================ 实例
 
     GameObject 创建实例(Transform 骨)
     {
-        if (string.IsNullOrEmpty(武器资源路径)) return null;
+        if (string.IsNullOrEmpty(当前武器路径)) return null;
 
-        var 预制 = Resources.Load<GameObject>(武器资源路径);
+        var 预制 = Resources.Load<GameObject>(当前武器路径);
         if (预制 == null)
         {
             if (!报过找不到武器)
@@ -210,16 +215,16 @@ public class 武器挂载 : MonoBehaviour
             smr.updateWhenOffscreen = true;
 
         if (打印日志)
-            Debug.Log("[武器挂载] 已把「" + go.name + "」挂到「" + 骨.name + "」（缩放 " + 本地缩放.ToString("0.####") + "）", this);
+            Debug.Log("[武器挂载] 已把「" + go.name + "」挂到「" + 骨.name + "」（缩放 " + (太虚剑 ? 1f : 本地缩放).ToString("0.####") + "）", this);
         return go;
     }
 
     void 应用本地TRS(Transform t)
     {
         if (t == null) return;
-        t.localPosition = 本地位置;
-        t.localRotation = Quaternion.Euler(本地旋转欧拉);
-        t.localScale = Vector3.one * Mathf.Max(0.0001f, 本地缩放);
+        t.localPosition = 太虚剑 ? Vector3.zero : 本地位置;
+        t.localRotation = 太虚剑 ? Quaternion.identity : Quaternion.Euler(本地旋转欧拉);
+        t.localScale = Vector3.one * (太虚剑 ? 1f : Mathf.Max(0.0001f, 本地缩放));
     }
 
     void 销毁实例()

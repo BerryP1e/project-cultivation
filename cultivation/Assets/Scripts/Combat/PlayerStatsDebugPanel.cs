@@ -115,6 +115,8 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         // 放底下会被挤出窗口下边缘（召唤按钮当初就踩过这个坑，见上面 GUILayout 高度的注释）
         画无敌开关();
         GUILayout.Space(4f);
+        画青山剑区();
+        GUILayout.Space(4f);
         画丹方区();
         GUILayout.Space(4f);
 
@@ -152,6 +154,29 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         GUILayout.EndScrollView();
         GUILayout.EndArea();
         if (玩家战斗属性.使用调试数值) 玩家战斗属性.Recalculate();
+    }
+
+    void 画青山剑区()
+    {
+        var data=FindObjectOfType<UIPanelData>();
+        GUILayout.Label("—— 青山剑等级 ——", 行样式);
+        if(data==null){GUILayout.Label("未找到角色面板数据",行样式);return;}
+        bool owned=data.已拥有法宝!=null && data.已拥有法宝.Contains(QingshanSwordTreasure.法宝id);
+        GUILayout.Label("当前 "+data.青山剑数量+" 级 / "+data.青山剑数量+" 把剑 · 有效击杀 "+data.青山剑有效击杀,行样式);
+        bool wasEnabled=GUI.enabled;GUI.enabled=wasEnabled && owned;
+        GUILayout.BeginHorizontal();
+        for(int level=1;level<=9;level++)if(GUILayout.Button(level.ToString(),GUILayout.Width(30f),GUILayout.Height(26f)))调整青山剑等级(level);
+        GUILayout.EndHorizontal();GUI.enabled=wasEnabled;
+        GUILayout.Label(owned?"选择等级立即改变剑数；3级解锁万剑归宗。":"请先获得并认主青山剑。",行样式);
+        if(owned)GUILayout.Label("击杀进度同时设为该等级起点。",行样式);
+    }
+
+    public bool 调整青山剑等级(int level)
+    {
+        var data=FindObjectOfType<UIPanelData>();
+        if(data==null || data.已拥有法宝==null || !data.已拥有法宝.Contains(QingshanSwordTreasure.法宝id))return false;
+        level=Mathf.Clamp(level,1,9);data.青山剑有效击杀=(level-1)*50;data.RaiseChanged();
+        Debug.Log("[调试面板] 青山剑已设为 "+level+" 级（"+level+" 把剑）");return true;
     }
 
     /// <summary>

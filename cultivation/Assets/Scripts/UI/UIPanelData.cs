@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -33,6 +33,26 @@ public class UIPanelData : MonoBehaviour
     public List<DivineAbilityDefinition> 神通 = new List<DivineAbilityDefinition>();
     [Tooltip("法宝目录。运行时从 面板库 灌")]
     public List<TreasureDefinition> 法宝 = new List<TreasureDefinition>();
+    public List<string> 已拥有法宝 = new List<string>();
+    public TreasureDefinition 当前法宝;
+    public bool 收服系统已初始化;
+    public int 青山剑有效击杀;
+    public int 青山剑数量 => Mathf.Clamp(1+Mathf.Clamp(青山剑有效击杀,0,400)/50,1,9);
+    public bool 记录青山剑击杀(NpcInstance npc, int playerLevel) {
+        if(当前法宝==null || 当前法宝.法宝id!=QingshanSwordTreasure.法宝id || !已拥有(当前法宝)
+            || npc==null || npc.类型!=NpcKind.妖魔 || npc.GetComponent<FormationSpirit>()!=null || npc.定义.死亡后立即重生 || 青山剑有效击杀>=400)return false;
+        int level=npc.击杀计入等级>0 ? npc.击杀计入等级 : npc.当前补正等级>0 ? Mathf.RoundToInt(npc.当前补正等级) : npc.定义.境界;
+        if(level<playerLevel)return false;
+        int before=青山剑数量;青山剑有效击杀=Mathf.Clamp(青山剑有效击杀+1,0,400);RaiseChanged();
+        if(青山剑数量>before)ShowHint("青山剑进化 · "+青山剑数量+"剑"+(青山剑数量==3?" · 万剑归宗已解锁":""));return true;
+    }
+    public const string 镇妖葫id = "treasure_zhenyaohu";
+    public bool 已拥有(TreasureDefinition t) => t != null && 已拥有法宝.Contains(t.法宝id);
+    public void 设置当前法宝(TreasureDefinition t) { EnsureLists(); if(t != null && !已拥有(t)) return; 当前法宝=t; RaiseChanged(); }
+    public bool 收服真灵(NpcDefinition d) {
+        EnsureLists(); if(d == null || 已获得真灵.Exists(n=>n != null && n.id == d.id)) return false;
+        已获得真灵.Add(d); 已获得真灵.Sort(比真灵); RaiseChanged(); ShowHint("收服真灵：「"+d.DisplayName+"」"); return true;
+    }
     [Tooltip("灵阵目录。运行时从 面板库 灌")]
     public List<SpiritArrayDefinition> 灵阵 = new List<SpiritArrayDefinition>();
 
@@ -82,9 +102,7 @@ public class UIPanelData : MonoBehaviour
     public ActiveDivineAbility 待装备神通;
 
     [Header("战阵")]
-    [Tooltip("已获得的战阵真灵 —— 只有这些能上阵。\n" +
-             "**当前 = 所有 demon / human（NPC表.csv 里填了「模型资源路径」的那些）**，\n" +
-             "由 DataTableImporter.RewirePanelData 自动收集，不用手工维护白名单")]
+    [Tooltip("玩家通过镇妖葫实际收服的真灵，存档与跨场景保存；不代表候选目录")]
     public List<NpcDefinition> 已获得真灵 = new List<NpcDefinition>();
 
     [Tooltip("战阵站位。**固定 9 个格子**（概念图的九宫格），null = 空位。\n" +
@@ -111,6 +129,7 @@ public class UIPanelData : MonoBehaviour
     {
         if (g == null) return false;
         if (已学功法 == null) 已学功法 = new List<GongFaDefinition>();
+        已学功法.RemoveAll(g=>g==null);
         if (已学功法.Contains(g)) return false;
         已学功法.Add(g);
         RaiseChanged();
@@ -211,6 +230,13 @@ public class UIPanelData : MonoBehaviour
         if (已获得真灵 == null) 已获得真灵 = new List<NpcDefinition>();
         EnsureFormationSlots();
         从面板库灌目录();
+        if(当前功法==null)当前功法=PanelDatabase.取()?.功法.Find(g=>g!=null && g.功法id=="gongfa_taixu_lianqi");
+        if (已拥有法宝 == null) 已拥有法宝 = new List<string>();
+        if (!收服系统已初始化) {
+            已获得真灵.Clear(); for(int i=0;i<战阵站位.Count;i++) 战阵站位[i]=null;
+            待上阵真灵=null; 收服系统已初始化=true;
+        }
+        if (当前法宝 != null && !已拥有(当前法宝)) 当前法宝=null;
         坐骑.RemoveAll(m => m == null || m.坐骑id == "mount_julong_01");
         if (当前坐骑 != null && !已学坐骑.Contains(当前坐骑.坐骑id)) 当前坐骑 = null;
         迁移四御学习记录();
@@ -344,12 +370,6 @@ public class UIPanelData : MonoBehaviour
             坐骑 = new List<MountDefinition>(库.坐骑);
             if (坐骑.Count > 1) 坐骑.Sort(比坐骑);       // 和编辑器同一套排序，避免两处各排一套
         }
-        if (库.真灵 != null && 库.真灵.Count > 0)
-        {
-            // 「已获得真灵」这个名字有点误导 —— 它其实是**可获真灵目录**
-            // （谁已经获得由 战阵站位 决定）。这里同样是"目录"，跟着库走。
-            已获得真灵 = new List<NpcDefinition>(库.真灵);
-        }
     }
 
     /// <summary>「读不到面板库」只报一次，别每帧刷屏</summary>
@@ -379,7 +399,7 @@ public class UIPanelData : MonoBehaviour
     {
         EnsureLists();
         物品 = new List<ItemDefinition>();
-        法宝 = new List<TreasureDefinition>();
+        已拥有法宝.Clear(); 当前法宝=null; 收服系统已初始化=false;
         灵阵 = new List<SpiritArrayDefinition>();
         坐骑 = new List<MountDefinition>();
         已学坐骑.Clear();
@@ -389,7 +409,7 @@ public class UIPanelData : MonoBehaviour
         已获得主动神通 = new List<ActiveDivineAbility>();
         已获得被动神通 = new List<PassiveDivineAbility>();
         当前功法 = null;
-        四御已激活 = false; 绝对护罩剩余次数 = 0;
+        四御已激活 = false; 绝对护罩剩余次数 = 0; 青山剑有效击杀=0;
         待装备神通 = null;
         当前经验 = 0;
         突破所需总经验 = 0;
@@ -731,6 +751,7 @@ public class UIPanelData : MonoBehaviour
     /// <summary>进入「等玩家点格子」的状态</summary>
     public void BeginPendingSpirit(NpcDefinition spirit)
     {
+        if (spirit == null || !已获得真灵.Contains(spirit)) return;
         待上阵真灵 = spirit;
         RaiseChanged();
     }
@@ -950,7 +971,7 @@ public class UIPanelData : MonoBehaviour
         }
         return 出;
     }
-    public List<IPanelEntry> GetTreasures()    { return ToEntries(法宝); }
+    public List<IPanelEntry> GetTreasures()    { return ToEntries(法宝.FindAll(t=>已拥有(t))); }
     public List<IPanelEntry> GetSpiritArrays() { return ToEntries(灵阵); }
 
     /// <summary>拥有的坐骑（给坐骑页列表用）。**按修炼门槛升序**，同一门槛按 id 稳定排序</summary>

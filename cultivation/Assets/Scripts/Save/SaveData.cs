@@ -7,14 +7,17 @@ using UnityEngine;
 ///
 /// 现在只存最核心的一层（身份 + 位置 + 资源 + 已选功法/神通），
 /// 因为完整的属性结算系统还没做。等那个做出来后再往这里加字段，
-/// 有 版本 号兜底，旧存档可以按版本做迁移。
+/// 开发期间按新建存档验证；后续不再补旧存档恢复或兼容迁移。
 /// </summary>
 [Serializable]
 public class SaveData
 {
     public int 绝对护罩剩余次数;
     public bool 四御已激活;
-    public const int 当前版本 = 16;   // 16：主动四御激活状态；旧四御学习记录迁移为主动
+    public bool 收服系统已初始化;
+    public string 当前法宝 = "";
+    public int 青山剑有效击杀;
+    public const int 当前版本 = 18;   // 18：青山剑击杀成长进度
 
     [Header("身份")]
     public int 版本 = 当前版本;

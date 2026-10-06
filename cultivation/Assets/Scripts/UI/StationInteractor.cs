@@ -490,7 +490,7 @@ public class StationInteractor : MonoBehaviour
 
     /// <summary>圆角方块 sprite（带 9 宫格 border，缩放不走形）。程序生成一次、所有提示共用</summary>
     static Sprite 圆角精灵;
-    static Sprite 取圆角()
+    public static Sprite 取圆角()
     {
         if (圆角精灵 != null) return 圆角精灵;
         const int N = 32; const float r = 10f;

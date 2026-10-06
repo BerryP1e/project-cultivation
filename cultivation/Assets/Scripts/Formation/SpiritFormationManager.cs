@@ -123,6 +123,11 @@ public class SpiritFormationManager : MonoBehaviour
 
     // ============================================================ 生命周期
 
+    public bool CanRelease => 面板数据 != null && 面板数据.当前法宝 != null
+        && 面板数据.当前法宝.法宝id == UIPanelData.镇妖葫id && 面板数据.已拥有(面板数据.当前法宝);
+    bool lastReleaseAllowed;
+    void Update() { if(CanRelease != lastReleaseAllowed) 重建(); }
+
     void Awake() => 解析引用();
 
     void OnEnable()
@@ -216,6 +221,8 @@ public class SpiritFormationManager : MonoBehaviour
         解析引用();
         if (面板数据 == null) return;
         面板数据.EnsureLists();
+        lastReleaseAllowed=CanRelease;
+        if(!lastReleaseAllowed) { 全部清掉(true); return; }
 
         var 站位 = 面板数据.战阵站位;
 
@@ -244,15 +251,15 @@ public class SpiritFormationManager : MonoBehaviour
         }
     }
 
-    void 全部清掉()
+    void 全部清掉(bool recall = false)
     {
         var 全部 = new List<int>(场上.Keys);
-        foreach (var 格 in 全部) 销毁(格);
+        foreach (var 格 in 全部) 销毁(格, recall);
         场上.Clear();
         场上定义.Clear();
     }
 
-    void 销毁(int 格)
+    void 销毁(int 格, bool recall = false)
     {
         if (!场上.TryGetValue(格, out var 真灵)) { 场上.Remove(格); 场上定义.Remove(格); return; }
 
@@ -262,6 +269,8 @@ public class SpiritFormationManager : MonoBehaviour
         if (真灵 != null)
         {
             if (打印日志) Debug.Log("[战阵] 下阵：" + 真灵.name + "（格子 " + 格 + "）", this);
+            if(recall)SpiritRecallEffect.Play(真灵.gameObject, 主人Transform);
+            真灵.gameObject.SetActive(false);
             Destroy(真灵.gameObject);
         }
     }

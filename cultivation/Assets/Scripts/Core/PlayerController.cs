@@ -204,7 +204,9 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void FaceDirection(Vector3 moveDir)
     {
-        if (近战普攻 == null) 近战普攻 = GetComponent<BasicJiuba01>();
+        if (近战普攻 == null || !近战普攻.isActiveAndEnabled)
+            foreach (var attack in GetComponents<BasicJiuba01>())
+                if (attack.isActiveAndEnabled) { 近战普攻 = attack; break; }
         // Let the authored body turn complete around the direction captured at windup.
         // Movement is still allowed, but must not steer an ongoing melee thrust sideways.
         if (近战普攻 != null && 近战普攻.isActiveAndEnabled && 近战普攻.出手动作中) return;

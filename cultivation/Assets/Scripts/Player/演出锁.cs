@@ -8,7 +8,7 @@ using UnityEngine;
 /// 和 <see cref="DialogueUI.正在显示"/>（对话框开着）；只要其中一个成立，就把**走 / 打 / 技能 / 飞**
 /// 四类组件关掉（名单和 <c>PlayerDeathSequence.收集操作组件</c> 保持一致 —— 死亡流程也是这么干的）。
 ///
-/// 【关键】只还原**自己关掉的那些**：`BasicSword01` 这类能力组件平时就可能是关的
+/// 【关键】只还原**自己关掉的那些**：`QingshanSwordTreasure` 这类能力组件平时就可能是关的
 /// （没学功法时本来就该关着，见 `PlayerAbilityLoader`）。所以：
 ///   1. 关之前记下每个组件当时的 enabled；
 ///   2. 解锁时按记录还原；
@@ -19,7 +19,7 @@ using UnityEngine;
 public class 演出锁 : MonoBehaviour
 {
     [Tooltip("演出/对话期间要关掉的操作组件类名（和 PlayerDeathSequence 的死亡禁用名单一致）")]
-    public string[] 要锁的组件 = { "PlayerController", "BasicSword01", "ActiveSkillCaster", "YufengFlight" };
+    public string[] 要锁的组件 = { "PlayerController", "QingshanSwordTreasure", "ActiveSkillCaster", "YufengFlight" };
 
     [Tooltip("对话框开着的时候也锁（不只是黑幕过场）")]
     public bool 对话也锁 = true;

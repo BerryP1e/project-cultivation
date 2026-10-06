@@ -18,7 +18,7 @@ public class 功德堂兑换 : MonoBehaviour
     public GameObject 面板根=>面板!=null?面板.gameObject:null;
     public bool 面板已开=>面板!=null && 面板.gameObject.activeSelf;
     string 堂名=>传法阁?"传法阁":"功德堂";
-    string[] 分类名=>传法阁?new[]{"全部典藏","功法秘籍","主动神通","被动神通","御兽契","炼丹丹方"}:new[]{"全部供物","灵植种子","洞府用具"};
+    string[] 分类名=>传法阁?new[]{"全部典藏","功法秘籍","主动神通","被动神通","御兽契","炼丹丹方","法宝"}:new[]{"全部供物","灵植种子","洞府用具"};
     void Awake(){宗门贡献.变化+=贡献变化;}
     void OnDestroy(){宗门贡献.变化-=贡献变化;UiEscRegistry.SetSceneInputBlocked(this,false);if(画布!=null)Destroy(画布.gameObject);}
     void Update()
@@ -30,7 +30,7 @@ public class 功德堂兑换 : MonoBehaviour
     }
     void 贡献变化(int _){if(面板已开)刷新详情();}
     public static bool 是传法物品(ItemDefinition i)=>i!=null && (i.使用效果 is 学功法效果 || i.使用效果 is 学主动神通效果
-        || i.使用效果 is 学被动神通效果 || i.使用效果 is 学坐骑效果 || i.使用效果 is 学丹方效果);
+        || i.使用效果 is 学被动神通效果 || i.使用效果 is 学坐骑效果 || i.使用效果 is 学丹方效果 || i.使用效果 is 获得法宝效果);
     public List<ItemDefinition> 取兑换目录()
     {
         var list=new List<ItemDefinition>();var db=QuestDatabase.取();if(db==null || db.物品库==null)return list;
@@ -50,7 +50,7 @@ public class 功德堂兑换 : MonoBehaviour
     bool 属于分类(ItemDefinition i)
     {
         if(分类==0)return true;if(!传法阁)return 分类==1?i.物品id.StartsWith("item_seed_"):!i.物品id.StartsWith("item_seed_");
-        return 分类==1?i.使用效果 is 学功法效果:分类==2?i.使用效果 is 学主动神通效果:分类==3?i.使用效果 is 学被动神通效果:分类==4?i.使用效果 is 学坐骑效果:i.使用效果 is 学丹方效果;
+        return 分类==1?i.使用效果 is 学功法效果:分类==2?i.使用效果 is 学主动神通效果:分类==3?i.使用效果 is 学被动神通效果:分类==4?i.使用效果 is 学坐骑效果:分类==5?i.使用效果 is 学丹方效果:i.使用效果 is 获得法宝效果;
     }
     void 建目录()
     {

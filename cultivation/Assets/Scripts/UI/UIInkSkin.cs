@@ -228,6 +228,7 @@ public class UIInkSkin : MonoBehaviour
         UIInkSkillsPage.应用(r);
         UIInkFormationPage.应用(r);
         UIInkAppearancePage.应用(r);
+        UIEquipmentShowcasePage.应用(r);
         foreach(var scroll in r.GetComponentsInChildren<Scrollbar>(true)) InkUITheme.ScrollbarStyle(scroll);
     }
 

@@ -313,7 +313,7 @@ public static class SaveSystem
                         var g = 修炼.取功法(id);
                         if (g != null && !还原.Contains(g)) 还原.Add(g);
                     }
-                    if (还原.Count > 0) 面板.已学功法 = 还原;
+                    面板.已学功法 = 还原;
                 }
 
                 // ★ 已获得的能力：**以存档为准**（新档就是空的 —— 用户要求"学了才有"）
@@ -352,7 +352,7 @@ public static class SaveSystem
                        && string.IsNullOrEmpty(数据.对话标记)
                        && string.IsNullOrEmpty(数据.任务进度)
                        && string.IsNullOrEmpty(数据.宗门任务记录);
-            if (是新档)
+            if (是新档 && !(跨场景数据.正在接力 && 跨场景数据.HasSnapshot))
             {
                 bool 场景里本来有东西 = !面板数据.玩法数据为空();
                 面板数据.清空玩法数据();
@@ -381,10 +381,8 @@ public static class SaveSystem
         TowerProgress.从存档读(数据);
 
         // ---- 战阵 ----
-        // 「已获得的真灵」= `Assets/Data/Generated/NpcDefinition` 里所有 demon / human
-        //（由 DataTableImporter 自动收集），所以按 id 在「已获得列表 + 场上 NPC」里就能找到。
-        // 兽宠 / 驯服那套玩法已经取消，不需要再存"已获得"进度。
-        if (面板数据 != null && 数据.战阵站位 != null && 数据.战阵站位.Count > 0)
+        // 仅恢复实际捕获的真灵；过渡中优先保留新场景已经接到的会话快照。
+        if (面板数据 != null && !(跨场景数据.正在接力 && 跨场景数据.HasSnapshot) && 数据.收服系统已初始化 && 数据.战阵站位 != null && 数据.战阵站位.Count > 0)
         {
             面板数据.EnsureLists();
             int 还原数 = 0;
@@ -392,8 +390,8 @@ public static class SaveSystem
             {
                 var id = i < 数据.战阵站位.Count ? 数据.战阵站位[i] : null;
                 var 真灵 = 找真灵定义(id, 面板数据);
-                面板数据.战阵站位[i] = 真灵;
-                if (真灵 != null) 还原数++;
+                面板数据.战阵站位[i] = 真灵 != null && 面板数据.已获得真灵.Contains(真灵) && i != 4 ? 真灵 : null;
+                if (面板数据.战阵站位[i] != null) 还原数++;
             }
             // 广播出去 → 挂在玩家身上的 SpiritFormationManager 会差量重建场上的真灵
             面板数据.RaiseChanged();
@@ -410,6 +408,8 @@ public static class SaveSystem
             foreach (var s in 面板.已获得真灵)
                 if (s != null && s.id == id) return s;
 
+        var catalog = PanelDatabase.取();
+        if (catalog != null && catalog.真灵 != null) foreach(var d in catalog.真灵) if(d != null && d.id == id) return d;
         foreach (var n in UnityEngine.Object.FindObjectsOfType<NpcInstance>())
             if (n != null && n.定义 != null && n.定义.id == id) return n.定义;
 
@@ -576,8 +576,10 @@ public static class SaveSystem
             foreach (var it in 面板.物品) if (it != null) 数据.背包物品.Add(it.物品id);
 
         数据.法宝.Clear();
-        if (面板.法宝 != null)
-            foreach (var t in 面板.法宝) if (t != null) 数据.法宝.Add(t.法宝id);
+        数据.法宝.AddRange(面板.已拥有法宝);
+        数据.当前法宝 = 面板.当前法宝 != null ? 面板.当前法宝.法宝id : "";
+        数据.青山剑有效击杀=Mathf.Clamp(面板.青山剑有效击杀,0,400);
+        数据.收服系统已初始化 = 面板.收服系统已初始化;
 
         数据.灵阵.Clear();
         if (面板.灵阵 != null)
@@ -639,8 +641,18 @@ public static class SaveSystem
         }
 
         // ---- 法宝 / 灵阵 / 坐骑：按 id 在「当前场景面板自带的表」里找 ----
-        面板.法宝 = 按id还原(数据.法宝, 面板.法宝,
-            (t) => t != null ? t.法宝id : null);
+        bool 保留收服快照 = 跨场景数据.正在接力 && 跨场景数据.HasSnapshot;
+        if (!保留收服快照)
+        {
+            面板.已拥有法宝 = new List<string>();
+            if (数据.法宝 != null) foreach(var id in 数据.法宝)
+                if (面板.法宝.Exists(t=>t != null && t.法宝id == id) && !面板.已拥有法宝.Contains(id)) 面板.已拥有法宝.Add(id);
+            面板.当前法宝 = 面板.法宝.Find(t=>t != null && t.法宝id == 数据.当前法宝 && 面板.已拥有(t));
+            面板.收服系统已初始化 = true;
+            面板.青山剑有效击杀=Mathf.Clamp(数据.青山剑有效击杀,0,400);
+            for(int i=0;i<面板.战阵站位.Count;i++) 面板.战阵站位[i]=null;
+            面板.待上阵真灵=null;
+        }
         面板.灵阵 = 按id还原(数据.灵阵, 面板.灵阵,
             (t) => t != null ? t.灵阵id : null);
         面板.已学坐骑 = new List<string>();
@@ -666,13 +678,17 @@ public static class SaveSystem
                         面板.已停用被动.Add(ps);
 
         // ---- 已获得真灵 ----
-        面板.已获得真灵 = new System.Collections.Generic.List<NpcDefinition>();
-        if (数据.已获得真灵 != null)
-            foreach (var id in 数据.已获得真灵)
-            {
-                var d = 找真灵定义(id, 面板);
-                if (d != null && !面板.已获得真灵.Contains(d)) 面板.已获得真灵.Add(d);
-            }
+        if (!保留收服快照)
+        {
+            面板.已获得真灵 = new System.Collections.Generic.List<NpcDefinition>();
+            if (数据.收服系统已初始化 && 数据.已获得真灵 != null)
+                foreach (var id in 数据.已获得真灵)
+                {
+                    var d = 找真灵定义(id, 面板);
+                    if (d != null && !面板.已获得真灵.Contains(d)) 面板.已获得真灵.Add(d);
+                }
+
+        }
 
         // ---- 主动技能槽（空槽写空字符串）----
         if (数据.主动技能槽 != null && 数据.主动技能槽.Count > 0)

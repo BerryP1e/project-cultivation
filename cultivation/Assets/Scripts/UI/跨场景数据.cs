@@ -79,7 +79,7 @@ public class 跨场景数据 : MonoBehaviour
 
     // ================================================================ 静态快照
     //
-    // 只搬"玩法数据"，不搬"场景配的展示数据"（比如 神通 全表、已获得真灵全表是导入器按表灌的，
+    // 只搬"玩法数据"，不搬"场景配的展示数据"（比如 神通 全表是导入器按表灌的；已获得真灵现在是玩家捕获记录，必须搬，
     // 新场景自己会灌一份，搬过去反而会串味 ✗）。
 
     static class 快照
@@ -95,6 +95,11 @@ public class 跨场景数据 : MonoBehaviour
         public static bool 四御已激活;
         public static List<UnityEngine.Object> 主动技能;
         public static GongFaDefinition 当前功法;
+        public static List<string> 已拥有法宝;
+        public static TreasureDefinition 当前法宝;
+        public static int 青山剑有效击杀;
+        public static bool 收服系统已初始化;
+        public static List<NpcDefinition> 已获得真灵, 战阵站位;
         public static MountDefinition 当前坐骑;
         public static List<string> 已学坐骑;
         public static string 任务进度;
@@ -111,6 +116,9 @@ public class 跨场景数据 : MonoBehaviour
             四御已激活 = 面板.四御已激活;
             主动技能 = new List<UnityEngine.Object>(面板.主动技能);
             当前功法 = 面板.当前功法;
+            已拥有法宝 = new List<string>(面板.已拥有法宝); 当前法宝=面板.当前法宝;青山剑有效击杀=面板.青山剑有效击杀;
+            收服系统已初始化=面板.收服系统已初始化;
+            已获得真灵=new List<NpcDefinition>(面板.已获得真灵); 战阵站位=new List<NpcDefinition>(面板.战阵站位);
             当前坐骑 = 面板.当前坐骑;
             已学坐骑 = new List<string>(面板.已学坐骑);
             // 主线进度也一起带走（任务管理器可能在新场景里才 Awake，所以先存成字符串）
@@ -131,6 +139,10 @@ public class 跨场景数据 : MonoBehaviour
             面板.四御已激活 = 四御已激活 && 面板.绝对护罩剩余次数 > 0;
             面板.主动技能 = new List<UnityEngine.Object>(主动技能);
             面板.当前功法 = 当前功法;
+            面板.已拥有法宝=已拥有法宝 != null ? new List<string>(已拥有法宝) : new List<string>();
+            面板.当前法宝=当前法宝;面板.青山剑有效击杀=青山剑有效击杀; 面板.收服系统已初始化=收服系统已初始化;
+            面板.已获得真灵=已获得真灵 != null ? new List<NpcDefinition>(已获得真灵) : new List<NpcDefinition>();
+            面板.战阵站位=战阵站位 != null ? new List<NpcDefinition>(战阵站位) : new List<NpcDefinition>();
             面板.当前坐骑 = 当前坐骑;
             面板.已学坐骑 = 已学坐骑 != null ? new List<string>(已学坐骑) : new List<string>();
             面板.EnsureLists(); // 快照列表灌入后再迁移旧四御、清理旧护罩叠开状态。
@@ -149,7 +161,7 @@ public class 跨场景数据 : MonoBehaviour
         {
             物品 = null; 已学功法 = null; 已获得主动 = null; 已获得被动 = null;
             已停用被动 = null; 主动技能 = null; 当前功法 = null; 当前坐骑 = null;
-            已学坐骑 = null;
+            青山剑有效击杀=0; 已学坐骑 = null; 已拥有法宝=null; 当前法宝=null; 已获得真灵=null; 战阵站位=null; 收服系统已初始化=false;
         }
     }
 

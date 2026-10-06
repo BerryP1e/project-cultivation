@@ -81,6 +81,10 @@ public static class 场景一致性体检
             补齐 = (场景, t) => 场景内新建(场景, "宗门任务引导", t) });
         单.Add(new 应备项 { 名字 = "宗门悬赏刷怪", 类型名 = "宗门悬赏刷怪",
             补齐 = (场景, t) => 场景内新建(场景, "宗门悬赏刷怪", t) });
+        单.Add(new 应备项 { 名字 = "法宝控制", 类型名 = "TreasureCaster", 挂Player = true,
+            补齐 = (场景, t) => 给玩家挂(场景, t) });
+        单.Add(new 应备项 { 名字 = "青山剑法宝", 类型名 = "QingshanSwordTreasure", 挂Player = true,
+            补齐 = (场景, t) => 给玩家挂(场景, t) });
         return 单;
     }
 

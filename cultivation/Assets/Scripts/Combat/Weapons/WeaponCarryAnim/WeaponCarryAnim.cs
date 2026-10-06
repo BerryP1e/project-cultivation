@@ -42,6 +42,16 @@ public class WeaponCarryAnim : MonoBehaviour
     [Header("调试")]
     public bool 打印日志 = true;
 
+    bool 太虚剑 => 面板 != null && 面板.当前功法 != null && 面板.当前功法.功法id == "gongfa_taixu_jianjue";
+    string 已应用功法;
+    static readonly List<替换项> 太虚替换 = new List<替换项>
+    {
+        new 替换项 { 原片段="Armature|Idle_Loop", 新片段路径="技能动作/太虚剑决/持剑_Idle" },
+        new 替换项 { 原片段="Armature|Walk_Loop", 新片段路径="技能动作/太虚剑决/持剑_前进" },
+        new 替换项 { 原片段="Armature|Sprint_Loop", 新片段路径="技能动作/太虚剑决/持剑_前进" },
+        new 替换项 { 原片段="御风_Idle", 新片段路径="技能动作/太虚剑决/持剑_Idle_御风" },
+        new 替换项 { 原片段="御风_前进", 新片段路径="技能动作/太虚剑决/持剑_前进_御风" },
+    };
     Animator 动画器;
     RuntimeAnimatorController 原始控制器;
     AnimatorOverrideController 覆盖;
@@ -50,7 +60,7 @@ public class WeaponCarryAnim : MonoBehaviour
 
     void Awake() { 解析(); }
 
-    void OnEnable() { 解析(); 刷新(); }
+    void OnEnable() { 解析(); if (面板 != null) { 面板.Changed -= 刷新; 面板.Changed += 刷新; } 刷新(); }
 
     void OnDisable() { 退订(); 还原(); }
 
@@ -84,7 +94,7 @@ public class WeaponCarryAnim : MonoBehaviour
         get
         {
             if (string.IsNullOrEmpty(显示条件功法id)) return true;
-            return 面板 != null && 面板.当前功法 != null && 面板.当前功法.功法id == 显示条件功法id;
+            return 面板 != null && 面板.当前功法 != null && (面板.当前功法.功法id == 显示条件功法id || 太虚剑);
         }
     }
 
@@ -98,11 +108,13 @@ public class WeaponCarryAnim : MonoBehaviour
 
     void 应用()
     {
-        if (覆盖 == null || 覆盖.runtimeAnimatorController != 原始控制器)
+        string profile = 太虚剑 ? "gongfa_taixu_jianjue" : 显示条件功法id;
+        if (覆盖 == null || 覆盖.runtimeAnimatorController != 原始控制器 || 已应用功法 != profile)
         {
             覆盖 = new AnimatorOverrideController(原始控制器);
+            已应用功法 = profile;
             int 换了 = 0;
-            foreach (var 项 in 替换)
+            foreach (var 项 in 太虚剑 ? 太虚替换 : 替换)
             {
                 if (项 == null || string.IsNullOrEmpty(项.原片段) || string.IsNullOrEmpty(项.新片段路径)) continue;
                 var 新 = Resources.Load<AnimationClip>(项.新片段路径);

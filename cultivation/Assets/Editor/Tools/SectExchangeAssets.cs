@@ -38,7 +38,8 @@ public static class SectExchangeAssets
         foreach(var g in AssetDatabase.FindAssets("t:ItemDefinition",new[]{"Assets/Data/Generated/ItemDefinition"}))
         {
             var item=AssetDatabase.LoadAssetAtPath<ItemDefinition>(AssetDatabase.GUIDToAssetPath(g));Sprite icon=null;
-            if(item.使用效果 is 学主动神通效果 a)icon=AbilityIcon(a.取神通());
+            if(item.使用效果 is 获得法宝效果 treasure)icon=treasure.取法宝()?.图标;
+            else if(item.使用效果 is 学主动神通效果 a)icon=AbilityIcon(a.取神通());
             else if(item.使用效果 is 学被动神通效果 b)icon=AbilityIcon(b.取神通());
             else if(item.使用效果 is 学坐骑效果 m)
             {

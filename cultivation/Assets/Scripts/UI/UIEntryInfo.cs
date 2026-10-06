@@ -204,7 +204,8 @@ public class UIEntryInfo : MonoBehaviour
         if (是可用物品)
         {
             bool 能用 = 物品使用器.可使用(物品, data);
-            if (actionLabel != null) actionLabel.text = 能用 ? "使用" : "已获得";
+            bool 是认主法宝 = 物品.使用效果 is 获得法宝效果;
+            if (actionLabel != null) actionLabel.text = 是认主法宝 ? (能用 ? "滴血认主" : "已认主") : (能用 ? "使用" : "已获得");
             actionButton.image.color = 能用
                 ? new Color(0.40f, 0.70f, 0.45f)      // 能用 → 绿
                 : new Color(0.45f, 0.45f, 0.45f);     // 已经学过了 → 灰

@@ -1,16 +1,10 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// 法宝父类。
-///
-/// ⚠ lore/法宝父类.txt 目前只有「待开发」三个字，尚无字段定义。
-/// 这里先给出「法宝 UI 页」能跑起来所需的最小字段（名称/id/品阶/图标/介绍），
-/// 等 lore 补全后再往这里加真正的战斗与养成字段。
-/// </summary>
-[CreateAssetMenu(fileName = "Treasure_", menuName = "修仙/法宝父类（待开发）", order = 8)]
+/// <summary>法宝定义：持有/装备、真 3D 展示，以及镇妖葫收服参数。</summary>
+[CreateAssetMenu(fileName = "Treasure_", menuName = "修仙/法宝", order = 8)]
 public class TreasureDefinition : ScriptableObject, IPanelEntry
 {
-    [Header("占位字段（lore 待补全）")]
+    [Header("法宝")]
     [Tooltip("法宝名称")]
     public string 法宝名称 = "新法宝";
 
@@ -25,6 +19,17 @@ public class TreasureDefinition : ScriptableObject, IPanelEntry
 
     [TextArea(2, 8)]
     public string 介绍 = "";
+
+    [Header("收服法宝")]
+    public GameObject 模型;
+    public string 模型资源路径 = "法宝/镇妖葫/镇妖葫模型";
+    public Vector3 瓶口局部位置 = new Vector3(0, .96f, 0);
+    public float 放大比例 = 1.65f;
+    public float 收服距离 = 25f;
+    public float 最长施放时间 = 30f;
+    public float 冷却时间 = 6f;
+    public float 伤害倍率 = .05f;
+    public GameObject 加载模型() => 模型 != null ? 模型 : Resources.Load<GameObject>(模型资源路径);
 
     // ---- IPanelEntry ----
     public string DisplayName => string.IsNullOrEmpty(法宝名称) ? name : 法宝名称;

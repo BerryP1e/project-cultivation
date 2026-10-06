@@ -46,16 +46,18 @@ public class UIInkNavigation : MonoBehaviour
     }
     void 重排()
     {
+        int visible = 0;
         for(int i=0;i<panel.tabs.Count;i++)
         {
             var binding=panel.tabs[i]; var button=binding.button;
-            if(button==null) continue;
+            if(button==null || i==(int)CharacterTab.战阵) continue;
+            int position=visible++;
             var parentImage=button.transform.parent.GetComponent<Image>();
             if(parentImage!=null) parentImage.enabled=false;
             var layout=button.transform.parent.GetComponent<LayoutGroup>(); if(layout!=null) layout.enabled=false;
             var rt=button.transform as RectTransform;
             rt.anchorMin=rt.anchorMax=new Vector2(0,1); rt.pivot=new Vector2(.5f,.5f);
-            rt.anchoredPosition=positions[i]; rt.sizeDelta=new Vector2(146,106);
+            rt.anchoredPosition=positions[position]; rt.sizeDelta=new Vector2(146,106);
             var oldMotion=button.GetComponent<UIInkMotion>(); if(oldMotion!=null) oldMotion.enabled=false;
             var oldReveal=button.GetComponent<UIInkReveal>(); if(oldReveal!=null) { oldReveal.进度=1; oldReveal.上浮=0; oldReveal.enabled=false; }
             var hit=button.GetComponent<InkUIHitShape>(); if(hit!=null) hit.enabled=false;

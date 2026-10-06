@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 角色面板的页签，顺序与概念图左侧一致：
-/// **背包 / 境界 / 神通 / 法宝 / 灵阵 / 战阵 / 坐骑 / 外观**。
+/// **背包 / 境界 / 神通 / 法宝 / 灵阵 / 坐骑 / 外观**；保留旧索引以对应现有场景绑定。
 /// </summary>
 public enum CharacterTab
 {
@@ -14,7 +14,7 @@ public enum CharacterTab
     神通 = 2,
     法宝 = 3,
     灵阵 = 4,
-    战阵 = 5,
+    战阵 = 5, // 仅保留页面索引，入口由镇妖葫图标右键接管。
     坐骑 = 6,
     外观 = 7,
 }
@@ -101,7 +101,17 @@ public class CharacterPanelUI : MonoBehaviour
 
     void Start()
     {
+        if (tabs.Count > 5 && tabs[5].button != null) tabs[5].button.gameObject.SetActive(false);
         SetOpen(!startClosed, true);
+        StartCoroutine(DetachFormation());
+    }
+
+    System.Collections.IEnumerator DetachFormation()
+    {
+        // Let the existing skin finish building the formation preview before moving it.
+        yield return null;
+        GourdFormationUI.Attach(this);
+        UIInkNavigation.应用(transform);
     }
 
     void Update()
@@ -128,7 +138,7 @@ public class CharacterPanelUI : MonoBehaviour
 
         if (open)
         {
-            ShowTab(defaultTab);
+            ShowTab(defaultTab == CharacterTab.战阵 ? CharacterTab.境界 : defaultTab);
             if (showCursorWhenOpen)
             {
                 Cursor.visible = true;
@@ -174,6 +184,7 @@ public class CharacterPanelUI : MonoBehaviour
     /// <summary>切换到指定页签</summary>
     public void ShowTab(CharacterTab tab)
     {
+        if (tab == CharacterTab.战阵) return;
         if(tab!=CurrentTab)UIDragContext.End(true);
         CurrentTab = tab;
         int active = (int)tab;
@@ -181,7 +192,7 @@ public class CharacterPanelUI : MonoBehaviour
         for (int i = 0; i < tabs.Count; i++)
         {
             var b = tabs[i];
-            if (b.page != null) b.page.SetActive(i == active);
+            if (b.page != null) b.page.SetActive(i == active && i != (int)CharacterTab.战阵);
             if (b.background != null)
                 b.background.color = (i == active) ? UIBuildUtils.ColorTabActive : UIBuildUtils.ColorTabNormal;
         }

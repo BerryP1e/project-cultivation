@@ -523,15 +523,13 @@ public static class DataTableImporter
         // 【已修】以前这里是一份**写死的白名单**（只有三只白鹿精），
         // 结果是「新做完一只怪，它不会出现在战阵真灵里」—— 用户反馈过
         // 「白熊精没有同步到战阵真灵中」✗ 现在改成**自动收集**：
-        // 导入配置表 / 重建面板之后，做完的怪自动就能上阵。
+        // 导入只维护候选目录，真灵必须由玩家收服才能上阵。
         //
         // 排序：**妖魔 → 人类 → 同族相邻 → 族内由弱到强**（见 UIPanelData.比真灵）。
         // 用户在列表里要的是"同一族的挨在一起、人类别和 demon 混着"，
         // 所以这里和运行时 GetSpirits() 用**同一个比较器**，避免两处各排一套。
         if (data.已获得真灵 == null) data.已获得真灵 = new List<NpcDefinition>();
-        data.已获得真灵.Clear();
-        foreach (var npc in LoadAll<NpcDefinition>())
-            if (能当真灵(npc)) data.已获得真灵.Add(npc);
+        // 导入器只维护候选目录，不授予玩家真灵。
         data.已获得真灵.Sort(UIPanelData.比真灵);
         data.EnsureLists();      // 站位列表补成 9 格
 
@@ -627,8 +625,8 @@ public static class DataTableImporter
         var player = GameObject.Find("Player");
         if (player != null)
         {
-            var sword = player.GetComponent<BasicSword01>();
-            if (sword != null) 方法id = sword.方法id;
+            var panel = UnityEngine.Object.FindObjectOfType<UIPanelData>();
+            if (panel != null && panel.当前功法 != null) 方法id = panel.当前功法.普攻方法id;
         }
 
         var 全部 = LoadAll<GongFaDefinition>();

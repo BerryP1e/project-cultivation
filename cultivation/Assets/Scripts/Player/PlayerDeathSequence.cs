@@ -96,7 +96,7 @@ public class PlayerDeathSequence : MonoBehaviour
     {
         if (死亡时禁用 != null && 死亡时禁用.Length > 0) return;
         // 死亡时该停下来的东西：走 / 打 / 技能 / 飞
-        var 名单 = new[] { "PlayerController", "BasicSword01", "ActiveSkillCaster", "YufengFlight" };
+        var 名单 = new[] { "PlayerController", "QingshanSwordTreasure", "ActiveSkillCaster", "YufengFlight" };
         var 收集 = new System.Collections.Generic.List<MonoBehaviour>();
         foreach (var c in GetComponents<MonoBehaviour>())
         {

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfe6fcb52b706541aad5cb735cea8bf, type: 3}
+  m_Name: item_treasure_zhenyaohu
+  m_EditorClassIdentifier: 
+  "\u7269\u54C1\u540D": "\u9547\u5996\u846B\xB7\u5F85\u8BA4\u4E3B"
+  "\u7269\u54C1id": item_treasure_zhenyaohu
+  "\u6700\u5927\u5806\u53E0\u6570\u91CF": 1
+  "\u56FE\u6807": {fileID: 21300000, guid: ff6c4b9f8c28f9a42add23ee5489f663, type: 3}
+  "\u4ECB\u7ECD": "\u5C1A\u672A\u8BA4\u4E3B\u7684\u9547\u5996\u846B\uFF0C\u6EF4\u8840\u8BA4\u4E3B\u540E\u53EF\u88C5\u5907\u6536\u670D\u5996\u9B54\u771F\u7075\u3002"
+  "\u54C1\u9636": 3
+  "\u53EF\u4F7F\u7528": 1
+  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: 317017d4a35a9e44aa6eed6b4d9a4050, type: 2}
+  "\u5151\u6362\u6D88\u8017\u8D21\u732E": 120

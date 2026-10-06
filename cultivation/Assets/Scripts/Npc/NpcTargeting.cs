@@ -315,9 +315,9 @@ public class NpcTargeting : MonoBehaviour
     ///
     /// ## 为什么要放在这里（玩家身上），而不是某个普攻方法里
     ///
-    /// 这条功能原来写在 `BasicSword01.找下一个目标()` 里 —— 结果是**剑自己的逻辑**：
+    /// 这条功能原来写在 `QingshanSwordTreasure.找下一个目标()` 里 —— 结果是**剑自己的逻辑**：
     /// · 量的是「到**剑**的距离」（剑在飞，不是玩家在感知）
-    /// · **换功法就没了**：`PlayerAbilityLoader` 会把 `BasicSword01` 停用
+    /// · **换功法就没了**：`PlayerAbilityLoader` 会把 `QingshanSwordTreasure` 停用
     ///   （用玄霄雷决 / 雷动千闪 / 沧澜寒渊录时它就是停用状态），功能整个消失
     /// · 别的普攻方法（远程 / 冰刺 / 雷）**根本没有**这套
     ///

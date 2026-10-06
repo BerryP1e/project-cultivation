@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfe6fcb52b706541aad5cb735cea8bf, type: 3}
+  m_Name: item_treasure_qingshan_sword
+  m_EditorClassIdentifier: 
+  "\u7269\u54C1\u540D": "\u9752\u5C71\u5251\xB7\u5F85\u8BA4\u4E3B"
+  "\u7269\u54C1id": item_treasure_qingshan_sword
+  "\u6700\u5927\u5806\u53E0\u6570\u91CF": 1
+  "\u56FE\u6807": {fileID: 21300000, guid: 4ddc7c398eec54a409f652a3327b2679, type: 3}
+  "\u4ECB\u7ECD": "\u5C1A\u672A\u8BA4\u4E3B\u7684\u9752\u5C71\u7075\u5251\uFF0C\u6EF4\u8840\u8BA4\u4E3B\u540E\u53EF\u88C5\u5907\u5FA1\u5251\u7A7F\u654C\u3002"
+  "\u54C1\u9636": 3
+  "\u53EF\u4F7F\u7528": 1
+  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: c99652c79374fa04e9d6c35f4647f655, type: 2}
+  "\u5151\u6362\u6D88\u8017\u8D21\u732E": 120

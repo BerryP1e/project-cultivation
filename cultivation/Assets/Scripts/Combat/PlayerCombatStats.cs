@@ -163,7 +163,7 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     /// **神识范围换算（全项目唯一一份公式）**：`基础 + 神识 × 每点` 再封顶。
     ///
     /// 为什么做成静态共用方法：这个式子原来在 <c>BasicRemoteAttack01</c>、
-    /// <c>BasicSword01</c>、<c>SpiritFormationManager</c> 里各抄了一份
+    /// <c>QingshanSwordTreasure</c>、<c>SpiritFormationManager</c> 里各抄了一份
     /// （系数都是 基础 4 / 每点 0.8 / 上限 40），再加新组件就会变成第 5、6 份。
     /// 系数仍然**由调用方传**，因为不同玩法确实要给不同系数
     /// （例：雷决的普攻索敌给 0.55 / 18，比飞剑的追踪距离保守）。
