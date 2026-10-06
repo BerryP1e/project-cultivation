@@ -1,18 +1,18 @@
 ﻿物品id,物品名,最大堆叠数量,品阶,介绍,可使用,效果类型,效果参数id,效果说明,兑换消耗贡献
 item_huichundan,回春丹,99,凡品,一颗下去，气血缓慢回复。使用后 1 小时内气血回复 +5%。,1,属性增益,hui_fu_5pct,使用后 1 小时内气血回复 +5%,
-item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼气诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_taixu_lianqi,使用后学会功法「太虚炼气诀」。,
-item_gongfa_qingyun_jianjue,青云剑诀 秘籍,1,地品,记载着「青云剑诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_qingyun_jianjue,使用后学会功法「青云剑诀」。,
-item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。,
-item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。,
+item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼气诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_taixu_lianqi,使用后学会功法「太虚炼气诀」。,60
+item_gongfa_qingyun_jianjue,青云剑诀 秘籍,1,地品,记载着「青云剑诀」的入门功法，研读之后即可修习。,1,学功法,gongfa_qingyun_jianjue,使用后学会功法「青云剑诀」。,120
+item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。,240
+item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。,60
 item_menpai_bianfu,门派便服,1,凡品,太虚宗发给新弟子的门派便服。穿上它，就有了正式弟子的样子。,1,学外观,app_player,使用后获得外观「修仙者」并立刻换上,
-item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。,
-item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。,
-item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。,
-item_passive_ability_qianjie_leiyu,千劫雷狱 心得,1,天品,记载着「千劫雷狱」的修炼心得，读罢即可掌握。,1,学被动神通,ability_qianjie_leiyu,使用后获得被动神通「千劫雷狱」。,
-item_passive_ability_leiyun,雷云 心得,1,地品,记载着「雷云」的修炼心得，读罢即可掌握。,1,学被动神通,ability_leiyun,使用后获得被动神通「雷云」。,
-item_gongfa_canglan_hanyuanlu,沧澜寒渊录 秘籍,1,地品,记载着「沧澜寒渊录」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_canglan_hanyuanlu,使用后学会功法「沧澜寒渊录」。,
-item_active_ability_hanxu,寒墟 神通玉简,1,天品,刻着「寒墟」的玉简，神识一触即可领悟。,1,学主动神通,ability_hanxu,使用后获得主动神通「寒墟」。,
-item_active_ability_bingbao_shu,冰暴术 神通玉简,1,天品,刻着「冰暴术」的玉简，神识一触即可领悟。,1,学主动神通,ability_bingbao_shu,使用后获得主动神通「冰暴术」。,
+item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。,60
+item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。,120
+item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。,240
+item_passive_ability_qianjie_leiyu,千劫雷狱 心得,1,天品,记载着「千劫雷狱」的修炼心得，读罢即可掌握。,1,学被动神通,ability_qianjie_leiyu,使用后获得被动神通「千劫雷狱」。,240
+item_passive_ability_leiyun,雷云 心得,1,地品,记载着「雷云」的修炼心得，读罢即可掌握。,1,学被动神通,ability_leiyun,使用后获得被动神通「雷云」。,120
+item_gongfa_canglan_hanyuanlu,沧澜寒渊录 秘籍,1,地品,记载着「沧澜寒渊录」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_canglan_hanyuanlu,使用后学会功法「沧澜寒渊录」。,120
+item_active_ability_hanxu,寒墟 神通玉简,1,天品,刻着「寒墟」的玉简，神识一触即可领悟。,1,学主动神通,ability_hanxu,使用后获得主动神通「寒墟」。,240
+item_active_ability_bingbao_shu,冰暴术 神通玉简,1,天品,刻着「冰暴术」的玉简，神识一触即可领悟。,1,学主动神通,ability_bingbao_shu,使用后获得主动神通「冰暴术」。,240
 item_shenglingcao,生灵草,99,凡品,灵田出产的基础灵草。聚气凝神，是炼丹最常见的辅材。,0,,,,
 item_ningluhua,凝露花,99,凡品,花心凝露，清冽回甘。清障丹的主材。,0,,,,
 item_qingxinlian,清心莲,99,凡品,静心凝神之莲。愈伤丹的辅材，需一阶中品灵田方可种植。,0,,,,
@@ -38,12 +38,33 @@ item_seed_huichun,回春草种,99,凡品,回春草的种子。,0,,,,8
 item_lingtian_ling,灵田升阶令,99,黄品,宗门贡献处兑换的令牌，用于提升灵田品阶。,0,,,,60
 item_muzhuang,练功木桩,99,黄品,一具练功用的木桩。摆在洞府里可以随时试招，打空后会自动恢复。不打人也不还手。,1,摆放物件,muzhuang,使用后进入摆放状态：鼠标处出现半透明的木桩，R 旋转朝向，左键放下，右键取消。只能在个人洞府里使用。,20
 item_lingtian_kaituo,灵田开拓令,99,黄品,宗门贡献处兑换的令牌。在个人洞府里使用，可开垦一块新灵田。,1,摆放物件,lingtian,使用后进入摆放状态：鼠标处出现半透明的灵田，R 旋转朝向，左键放下，右键取消。只能在个人洞府里使用。,30
-item_gongfa_jiuba_xuangong,八九玄功 秘籍,1,玄品,记载着「八九玄功」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_jiuba_xuangong,使用后学会功法「八九玄功」。,
-item_ability_shuilong_pao,水龙炮 神通玉简,1,地品,记载水龙炮的玉简，使用后学会对应神通。,1,学主动神通,ability_shuilong_pao,使用后学会水龙炮。,
-item_ability_jingu_suolian,禁锢锁链 神通玉简,1,地品,记载禁锢锁链的玉简，使用后学会对应神通。,1,学主动神通,ability_jingu_suolian,使用后学会禁锢锁链。,
-item_ability_xiao_jianzhen,小剑阵 神通玉简,1,地品,记载小剑阵的玉简，使用后学会对应神通。,1,学主动神通,ability_xiao_jianzhen,使用后学会小剑阵。,
-item_ability_xieyan,邪眼 神通玉简,1,地品,记载邪眼的玉简，使用后学会对应神通。,1,学被动神通,ability_xieyan,使用后学会邪眼。,
-item_ability_huzhao_wuli,防护罩·玄甲 神通玉简,1,地品,记载防护罩·玄甲的玉简，使用后学会对应神通。,1,学被动神通,ability_huzhao_wuli,使用后学会防护罩·玄甲。,
-item_ability_huzhao_teshu,防护罩·灵光 神通玉简,1,地品,记载防护罩·灵光的玉简，使用后学会对应神通。,1,学被动神通,ability_huzhao_teshu,使用后学会防护罩·灵光。,
-item_ability_huzhao_shuangchong,防护罩·两仪 神通玉简,1,地品,记载防护罩·两仪的玉简，使用后学会对应神通。,1,学被动神通,ability_huzhao_shuangchong,使用后学会防护罩·两仪。,
-item_ability_huzhao_juedui,防护罩·四御 神通玉简,1,天品,记载主动神通四御的玉简，施放后恢复四次完整免伤机会。,1,学主动神通,ability_huzhao_juedui,使用后学会防护罩·四御。,
+item_gongfa_jiuba_xuangong,八九玄功 秘籍,1,玄品,记载着「八九玄功」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_jiuba_xuangong,使用后学会功法「八九玄功」。,60
+item_ability_shuilong_pao,水龙炮 神通玉简,1,地品,记载水龙炮的玉简，使用后学会对应神通。,1,学主动神通,ability_shuilong_pao,使用后学会水龙炮。,120
+item_ability_jingu_suolian,禁锢锁链 神通玉简,1,地品,记载禁锢锁链的玉简，使用后学会对应神通。,1,学主动神通,ability_jingu_suolian,使用后学会禁锢锁链。,120
+item_ability_xiao_jianzhen,小剑阵 神通玉简,1,地品,记载小剑阵的玉简，使用后学会对应神通。,1,学主动神通,ability_xiao_jianzhen,使用后学会小剑阵。,120
+item_ability_xieyan,邪眼 神通玉简,1,地品,记载邪眼的玉简，使用后学会对应神通。,1,学被动神通,ability_xieyan,使用后学会邪眼。,120
+item_ability_huzhao_wuli,防护罩·玄甲 神通玉简,1,地品,记载防护罩·玄甲的玉简，使用后学会对应神通。,1,学被动神通,ability_huzhao_wuli,使用后学会防护罩·玄甲。,120
+item_ability_huzhao_teshu,防护罩·灵光 神通玉简,1,地品,记载防护罩·灵光的玉简，使用后学会对应神通。,1,学被动神通,ability_huzhao_teshu,使用后学会防护罩·灵光。,120
+item_ability_huzhao_shuangchong,防护罩·两仪 神通玉简,1,地品,记载防护罩·两仪的玉简，使用后学会对应神通。,1,学被动神通,ability_huzhao_shuangchong,使用后学会防护罩·两仪。,120
+item_ability_huzhao_juedui,防护罩·四御 神通玉简,1,天品,记载主动神通四御的玉简，施放后恢复四次完整免伤机会。,1,学主动神通,ability_huzhao_juedui,使用后学会防护罩·四御。,240
+item_mount_chibang_01,灵翅 御兽契,1,黄品,记载驾驭灵翅的方法。使用后获得坐骑；乘骑仍需达到境界序号1。,1,学坐骑,mount_chibang_01,学会驾驭「灵翅」，不会自动装备。,30
+item_mount_langqi_01,狼骑 御兽契,1,玄品,记载驾驭狼骑的方法。使用后获得坐骑；乘骑仍需达到境界序号10。,1,学坐骑,mount_langqi_01,学会驾驭「狼骑」，不会自动装备。,60
+item_mount_luzuoqi_01,灵鹿 御兽契,1,玄品,记载驾驭灵鹿的方法。使用后获得坐骑；乘骑仍需达到境界序号20。,1,学坐骑,mount_luzuoqi_01,学会驾驭「灵鹿」，不会自动装备。,60
+item_mount_bishuishou_01,碧水兽 御兽契,1,地品,记载驾驭碧水兽的方法。使用后获得坐骑；乘骑仍需达到境界序号25。,1,学坐骑,mount_bishuishou_01,学会驾驭「碧水兽」，不会自动装备。,120
+item_mount_xiongmaozuoqi_01,熊猫坐骑 御兽契,1,地品,记载驾驭熊猫坐骑的方法。使用后获得坐骑；乘骑仍需达到境界序号30。,1,学坐骑,mount_xiongmaozuoqi_01,学会驾驭「熊猫坐骑」，不会自动装备。,120
+item_mount_zhanqi_01,灵鹤 御兽契,1,地品,记载驾驭灵鹤的方法。使用后获得坐骑；乘骑仍需达到境界序号35。,1,学坐骑,mount_zhanqi_01,学会驾驭「灵鹤」，不会自动装备。,120
+item_mount_qilingzuoqi_01,麒麟坐骑 御兽契,1,天品,记载驾驭麒麟坐骑的方法。使用后获得坐骑；乘骑仍需达到境界序号45。,1,学坐骑,mount_qilingzuoqi_01,学会驾驭「麒麟坐骑」，不会自动装备。,240
+item_mount_shenlong_01,上古神龙 御兽契,1,仙品,记载驾驭上古神龙的方法。使用后获得坐骑；乘骑仍需达到境界序号75。,1,学坐骑,mount_shenlong_01,学会驾驭「上古神龙」，不会自动装备。,480
+item_recipe_dan_juqi,聚气丹 丹方,1,凡品,一卷记载聚气丹炼制方法的竹简。研读后可在丹房查看1品丹药的材料与炼制方法。,1,学丹方,item_dan_juqi,学会「聚气丹」丹方。,15
+item_recipe_dan_qingzhang,清障丹 丹方,1,凡品,一卷记载清障丹炼制方法的竹简。研读后可在丹房查看1品丹药的材料与炼制方法。,1,学丹方,item_dan_qingzhang,学会「清障丹」丹方。,15
+item_recipe_dan_yushang,愈伤丹 丹方,1,凡品,一卷记载愈伤丹炼制方法的竹简。研读后可在丹房查看1品丹药的材料与炼制方法。,1,学丹方,item_dan_yushang,学会「愈伤丹」丹方。,15
+item_recipe_huichundan,回春丹 丹方,1,凡品,一卷记载回春丹炼制方法的竹简。研读后可在丹房查看1品丹药的材料与炼制方法。,1,学丹方,item_huichundan,学会「回春丹」丹方。,15
+item_recipe_dan_pojing_lianqi,炼气破境丹 丹方,1,凡品,一卷记载炼气破境丹炼制方法的竹简。研读后可在丹房查看1品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_lianqi,学会「炼气破境丹」丹方。,15
+item_recipe_dan_pojing_zhuji,筑基破境丹 丹方,1,凡品,一卷记载筑基破境丹炼制方法的竹简。研读后可在丹房查看2品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_zhuji,学会「筑基破境丹」丹方。,60
+item_recipe_dan_pojing_jindan,金丹破境丹 丹方,1,黄品,一卷记载金丹破境丹炼制方法的竹简。研读后可在丹房查看3品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_jindan,学会「金丹破境丹」丹方。,135
+item_recipe_dan_pojing_yuanying,元婴破境丹 丹方,1,玄品,一卷记载元婴破境丹炼制方法的竹简。研读后可在丹房查看4品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_yuanying,学会「元婴破境丹」丹方。,240
+item_recipe_dan_pojing_huashen,化神破境丹 丹方,1,玄品,一卷记载化神破境丹炼制方法的竹简。研读后可在丹房查看5品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_huashen,学会「化神破境丹」丹方。,375
+item_recipe_dan_pojing_lianxu,炼虚破境丹 丹方,1,地品,一卷记载炼虚破境丹炼制方法的竹简。研读后可在丹房查看6品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_lianxu,学会「炼虚破境丹」丹方。,540
+item_recipe_dan_pojing_heti,合体破境丹 丹方,1,地品,一卷记载合体破境丹炼制方法的竹简。研读后可在丹房查看7品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_heti,学会「合体破境丹」丹方。,735
+item_recipe_dan_pojing_dacheng,大乘破境丹 丹方,1,天品,一卷记载大乘破境丹炼制方法的竹简。研读后可在丹房查看8品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_dacheng,学会「大乘破境丹」丹方。,960
+item_recipe_dan_pojing_dengxian,登仙破境丹 丹方,1,仙品,一卷记载登仙破境丹炼制方法的竹简。研读后可在丹房查看9品丹药的材料与炼制方法。,1,学丹方,item_dan_pojing_dengxian,学会「登仙破境丹」丹方。,1215

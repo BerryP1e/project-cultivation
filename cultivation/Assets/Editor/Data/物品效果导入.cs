@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -46,6 +46,22 @@ public static class 物品效果导入
 
         switch (类型.Trim())
         {
+            case "学坐骑":
+                {
+                    var e = 取或建<学坐骑效果>(物品.物品id);
+                    if (e.坐骑id != 参数id) { e.坐骑id = 参数id; e.坐骑 = null; }
+                    e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
+                    EditorUtility.SetDirty(e); 物品.使用效果 = e;
+                    break;
+                }
+            case "学丹方":
+                {
+                    var e = 取或建<学丹方效果>(物品.物品id);
+                    e.丹方id = 参数id;
+                    e.说明 = string.IsNullOrEmpty(说明) ? e.说明 : 说明;
+                    EditorUtility.SetDirty(e); 物品.使用效果 = e;
+                    break;
+                }
             // ================================================================
             // ★ 关于「直接引用」（功法 / 神通 / 外观）—— 2026-10-02 修的一处数据腐坏
             //

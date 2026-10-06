@@ -71,13 +71,13 @@ rg -n "<关键词>" docs cultivation/Assets/Data/Tables
 | `environment_building_minju_003_a` | 炼器阁 | `炼器` | 炼器 | ❌ 空（法宝系统未做） |
 | `environment_building_qinghuacifangwu_02_a` | 阵法阁 | `布阵` | 布阵 | ❌ 空（无灵阵界面组件） |
 | `environment_Building_diaojiaolou_001_h` | 执事阁 | `修炼`⚠️占位 | 悬赏任务 | ❌ 待开发 |
-| `environment_Building_luoxiaguan_001_b` | 传法阁 | `修炼`⚠️占位 | 兑换神通/功法 | ❌ 待开发 |
-| `environment_Building_luoxiaguan_001_d` | 功德堂 | `修炼`⚠️占位 | 兑换修炼物品 | ❌ 待开发 |
+| `environment_Building_luoxiaguan_001_b` | 传法阁 | `修炼`（由运行时兑换组件接管） | 兑换全部功法/神通/坐骑学习道具和丹方 | ✅ [细线兑换面板](guides/宗门兑换面板.md) |
+| `environment_Building_luoxiaguan_001_d` | 功德堂 | `修炼`（由运行时兑换组件接管） | 兑换种子、灵田令牌与练功木桩 | ✅ [细线兑换面板](guides/宗门兑换面板.md) |
 | `environment_Building_luoxiaguan_001_h` | 宗门大殿 | `修炼`⚠️占位 | 任务互动/讲课 | ❌ 待开发 |
 
-> ⚠️ **最后 4 座的 `类型=修炼` 是占位值，它们不是修炼建筑！**
+> ⚠️ **执事阁、宗门大殿的 `类型=修炼` 仍是占位值，它们不是修炼建筑！** 功德堂、传法阁已由运行时兑换组件接管。
 > **别给它们挂 `CultivationUI`**（那会让"在执事阁按 F 弹出修炼面板"）。
-> 要做先给 `StationInteractable.StationKind` 补类型。
+> 新功能可像功德堂、传法阁一样用独立组件接管交互，无需为接线保存场景。
 > 它们开着 `显示靠近提示` 是**正常的**（原设计想用 `现在可交互=false` 关，但那是
 > `[NonSerialized]`、场景里存不住）。
 >

@@ -346,7 +346,9 @@ public static class SaveSystem
                        && (数据.已获得真灵 == null || 数据.已获得真灵.Count == 0)
                        && (数据.已获得主动神通 == null || 数据.已获得主动神通.Count == 0)
                        && (数据.已获得被动神通 == null || 数据.已获得被动神通.Count == 0)
-                       && (数据.已学功法 == null || 数据.已学功法.Count == 0);
+                       && (数据.已学功法 == null || 数据.已学功法.Count == 0)
+                       && string.IsNullOrEmpty(数据.对话标记)
+                       && string.IsNullOrEmpty(数据.任务进度);
             if (是新档)
             {
                 bool 场景里本来有东西 = !面板数据.玩法数据为空();
@@ -578,8 +580,8 @@ public static class SaveSystem
             foreach (var a in 面板.灵阵) if (a != null) 数据.灵阵.Add(a.灵阵id);
 
         数据.坐骑.Clear();
-        if (面板.坐骑 != null)
-            foreach (var m in 面板.坐骑) if (m != null) 数据.坐骑.Add(m.坐骑id);
+        if (面板.已学坐骑 != null)
+            foreach (var id in 面板.已学坐骑) if (id != "mount_julong_01" && !数据.坐骑.Contains(id)) 数据.坐骑.Add(id);
         数据.当前坐骑 = 面板.当前坐骑 != null ? 面板.当前坐骑.坐骑id : "";
 
         数据.主动技能槽.Clear();
@@ -637,14 +639,17 @@ public static class SaveSystem
             (t) => t != null ? t.法宝id : null);
         面板.灵阵 = 按id还原(数据.灵阵, 面板.灵阵,
             (t) => t != null ? t.灵阵id : null);
-        面板.坐骑 = 按id还原(数据.坐骑, 面板.坐骑,
-            (t) => t != null ? t.坐骑id : null);
+        面板.已学坐骑 = new List<string>();
+        if (数据.坐骑 != null)
+            foreach (var id in 数据.坐骑)
+                if (id != "mount_julong_01" && 面板.坐骑.Exists(m => m != null && m.坐骑id == id)
+                    && !面板.已学坐骑.Contains(id)) 面板.已学坐骑.Add(id);
 
         // 当前坐骑（走 设置当前坐骑，互斥规则写在那一处）
         面板.当前坐骑 = null;
         if (!string.IsNullOrEmpty(数据.当前坐骑) && 面板.坐骑 != null)
             foreach (var m in 面板.坐骑)
-                if (m != null && m.坐骑id == 数据.当前坐骑) { 面板.当前坐骑 = m; break; }
+                if (m != null && m.坐骑id == 数据.当前坐骑 && 面板.已学坐骑.Contains(m.坐骑id)) { 面板.当前坐骑 = m; break; }
 
         // ---- 已停用被动 ----
         面板.绝对护罩剩余次数 = Mathf.Clamp(数据.绝对护罩剩余次数, 0, 4);

@@ -73,7 +73,7 @@ public static class 面板库收集器
         var 坐骑 = new List<MountDefinition>();
         foreach (var g in AssetDatabase.FindAssets("t:MountDefinition"))
             坐骑.Add(AssetDatabase.LoadAssetAtPath<MountDefinition>(AssetDatabase.GUIDToAssetPath(g)));
-        坐骑.RemoveAll(x => x == null);
+        坐骑.RemoveAll(x => x == null || x.坐骑id == "mount_julong_01");
         坐骑.Sort(UIPanelData.比坐骑);
         库.坐骑 = 坐骑;
 

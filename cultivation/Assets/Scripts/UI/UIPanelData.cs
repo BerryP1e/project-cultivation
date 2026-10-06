@@ -39,6 +39,8 @@ public class UIPanelData : MonoBehaviour
     [Header("坐骑")]
     [Tooltip("坐骑目录。运行时从 面板库 灌（按门槛排序）")]
     public List<MountDefinition> 坐骑 = new List<MountDefinition>();
+    [Tooltip("实际学会驾驭的坐骑 id；目录不代表拥有")]
+    public List<string> 已学坐骑 = new List<string>();
 
     [Tooltip("当前乘骑的坐骑。null = 没骑。\n" +
              "★ **不要直接赋值** —— 一律走 设置当前坐骑()，" +
@@ -200,11 +202,17 @@ public class UIPanelData : MonoBehaviour
         if (法宝 == null) 法宝 = new List<TreasureDefinition>();
         if (灵阵 == null) 灵阵 = new List<SpiritArrayDefinition>();
         if (坐骑 == null) 坐骑 = new List<MountDefinition>();
+        if (已学坐骑 == null) 已学坐骑 = new List<string>();
+        已学坐骑.RemoveAll(id => id == "mount_julong_01");
+        坐骑.RemoveAll(m => m == null || m.坐骑id == "mount_julong_01");
+        if (当前坐骑 != null && 当前坐骑.坐骑id == "mount_julong_01") 当前坐骑 = null;
         EnsureSkillSlots();
         if (已停用被动 == null) 已停用被动 = new List<PassiveDivineAbility>();
         if (已获得真灵 == null) 已获得真灵 = new List<NpcDefinition>();
         EnsureFormationSlots();
         从面板库灌目录();
+        坐骑.RemoveAll(m => m == null || m.坐骑id == "mount_julong_01");
+        if (当前坐骑 != null && !已学坐骑.Contains(当前坐骑.坐骑id)) 当前坐骑 = null;
         迁移四御学习记录();
         PassiveDivineAbility 保留 = null;
         foreach (var p in 已获得被动神通)
@@ -374,6 +382,7 @@ public class UIPanelData : MonoBehaviour
         法宝 = new List<TreasureDefinition>();
         灵阵 = new List<SpiritArrayDefinition>();
         坐骑 = new List<MountDefinition>();
+        已学坐骑.Clear();
         当前坐骑 = null;
         已获得真灵 = new List<NpcDefinition>();
         已学功法 = new List<GongFaDefinition>();
@@ -398,7 +407,7 @@ public class UIPanelData : MonoBehaviour
         return (物品 == null || 物品.Count == 0)
             && (法宝 == null || 法宝.Count == 0)
             && (灵阵 == null || 灵阵.Count == 0)
-            && (坐骑 == null || 坐骑.Count == 0)
+            && (已学坐骑 == null || 已学坐骑.Count == 0)
             && (已获得真灵 == null || 已获得真灵.Count == 0);
     }
 
@@ -484,6 +493,10 @@ public class UIPanelData : MonoBehaviour
     {
         EnsureLists();
         if (当前坐骑 == m) return;
+        if (m != null && !已学坐骑.Contains(m.坐骑id)) { ShowHint("请先学习此坐骑的御兽契"); return; }
+        var 修炼 = FindObjectOfType<PlayerCultivation>();
+        if (m != null && 修炼 != null && 修炼.等级 < m.修炼门槛)
+        { ShowHint("驾驭「" + m.DisplayName + "」需要境界序号 " + m.修炼门槛); return; }
 
         当前坐骑 = m;
 
@@ -945,7 +958,7 @@ public class UIPanelData : MonoBehaviour
     {
         EnsureLists();
         var 列表 = new List<MountDefinition>();
-        foreach (var m in 坐骑) if (m != null) 列表.Add(m);
+        foreach (var m in 坐骑) if (m != null && m.坐骑id != "mount_julong_01" && 已学坐骑.Contains(m.坐骑id)) 列表.Add(m);
         列表.Sort(比坐骑);
         return ToEntries(列表);
     }

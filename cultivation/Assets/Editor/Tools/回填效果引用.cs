@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -49,6 +49,7 @@ public static class 回填效果引用
         收<ActiveDivineAbility>(o => o.神通id);
         收<PassiveDivineAbility>(o => o.神通id);
         收<AppearanceDefinition>(o => o.id);
+        收<MountDefinition>(o => o.坐骑id);
 
         int 查过 = 0, 填了 = 0, 找不到 = 0;
         var 缺的 = new List<string>();
@@ -65,7 +66,16 @@ public static class 回填效果引用
             bool 改了 = false;
 
             // 学功法
-            if (效果 is 学功法效果 学功)
+            if (效果 is 学坐骑效果 学骑)
+            {
+                if (该填了(学骑.坐骑, 学骑.坐骑id))
+                {
+                    if (映射.TryGetValue(学骑.坐骑id, out var v) && v is MountDefinition m)
+                    { 学骑.坐骑 = m; 改了 = true; }
+                    else { 找不到++; 缺的.Add(物品.物品id + " → 坐骑 " + 学骑.坐骑id); }
+                }
+            }
+            else if (效果 is 学功法效果 学功)
             {
                 if (该填了(学功.功法, 学功.功法id))
                 {

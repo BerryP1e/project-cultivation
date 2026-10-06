@@ -327,14 +327,16 @@ public static class 场景自举
         foreach (var 根 in 场景.GetRootGameObjects())
             foreach (var t in 根.GetComponentsInChildren<Transform>(true))
             {
-                if (t.name != 功德堂物体名) continue;
+                bool 传法 = t.name == "environment_Building_luoxiaguan_001_b";
+                if (t.name != 功德堂物体名 && !传法) continue;
                 if (t.GetComponent<StationInteractable>() == null) continue;
                 if (t.GetComponent<功德堂兑换>() == null)
                 {
-                    t.gameObject.AddComponent<功德堂兑换>();
+                    var 兑换 = t.gameObject.AddComponent<功德堂兑换>();
+                    兑换.传法阁 = 传法;
                     Debug.Log("[场景自举] 「" + 场景.name + "」的「" + t.name + "」缺 功德堂兑换 → 已自动补上");
                 }
-                return;
+                t.GetComponent<StationInteractable>().显示名 = 传法 ? "传法阁" : "功德堂";
             }
     }
 

@@ -96,6 +96,7 @@ public class 跨场景数据 : MonoBehaviour
         public static List<UnityEngine.Object> 主动技能;
         public static GongFaDefinition 当前功法;
         public static MountDefinition 当前坐骑;
+        public static List<string> 已学坐骑;
         public static string 任务进度;
 
         public static void 拍下(UIPanelData 面板)
@@ -111,6 +112,7 @@ public class 跨场景数据 : MonoBehaviour
             主动技能 = new List<UnityEngine.Object>(面板.主动技能);
             当前功法 = 面板.当前功法;
             当前坐骑 = 面板.当前坐骑;
+            已学坐骑 = new List<string>(面板.已学坐骑);
             // 主线进度也一起带走（任务管理器可能在新场景里才 Awake，所以先存成字符串）
             var 任务 = Object.FindObjectOfType<任务管理器>();
             任务进度 = 任务 != null ? 任务.导出进度() : 任务进度;
@@ -130,6 +132,7 @@ public class 跨场景数据 : MonoBehaviour
             面板.主动技能 = new List<UnityEngine.Object>(主动技能);
             面板.当前功法 = 当前功法;
             面板.当前坐骑 = 当前坐骑;
+            面板.已学坐骑 = 已学坐骑 != null ? new List<string>(已学坐骑) : new List<string>();
             面板.EnsureLists(); // 快照列表灌入后再迁移旧四御、清理旧护罩叠开状态。
             面板.RaiseChanged();
 
@@ -146,6 +149,7 @@ public class 跨场景数据 : MonoBehaviour
         {
             物品 = null; 已学功法 = null; 已获得主动 = null; 已获得被动 = null;
             已停用被动 = null; 主动技能 = null; 当前功法 = null; 当前坐骑 = null;
+            已学坐骑 = null;
         }
     }
 
