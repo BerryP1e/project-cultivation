@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// NPC 动作播放器。挂在使用 Character 控制器的模型上。
@@ -12,10 +12,11 @@ using UnityEngine;
 ///   a.PlayAction("Idle", loop: true);
 /// </summary>
 [RequireComponent(typeof(Animator))]
+[DefaultExecutionOrder(-100)]
 public class NpcAnimator : MonoBehaviour
 {
     [Header("动作名表（顺序要和控制器里的状态一致）")]
-    [Tooltip("留空则运行时从 Animator 的状态里自动读")]
+    [Tooltip("留空则从打包前生成的 NPC动作映射 读取")]
     public string[] 动作列表;
 
     [Header("常用动作（可按需改）")]
@@ -24,6 +25,9 @@ public class NpcAnimator : MonoBehaviour
 
     Animator 动画;
     bool 已就绪;
+    NpcAnimationCatalog.Controller 映射;
+    bool 已警告缺表;
+    int 当前索引 = -1;
 
     void Awake()
     {
@@ -40,37 +44,30 @@ public class NpcAnimator : MonoBehaviour
         }
         取动作表();
         已就绪 = true;
-        PlayAction(待机动作, true);
+        if (动作列表 != null && System.Array.IndexOf(动作列表, 待机动作) >= 0) PlayAction(待机动作, true);
     }
 
     void 取动作表()
     {
         if (动作列表 != null && 动作列表.Length > 0) return;
 
-        // 运行时读不到 UnityEditor.Animations，用反射拿状态名（顺序就是索引顺序）
-        var ctrl = 动画.runtimeAnimatorController;
-        if (ctrl == null) return;
-        // RuntimeAnimatorController 上没有 layers，同样要反射
-        var 层属性 = ctrl.GetType().GetProperty("layers");
-        var 层 = 层属性 != null ? 层属性.GetValue(ctrl) as System.Array : null;
-        if (层 == null || 层.Length == 0) return;
-        var sm属性 = 层.GetValue(0).GetType().GetProperty("stateMachine");
-        var sm = sm属性 != null ? sm属性.GetValue(层.GetValue(0)) : null;
-        if (sm == null) return;
-        var 状态 = sm.GetType().GetProperty("states");
-        if (状态 == null) return;
-        var arr = 状态.GetValue(sm) as System.Array;
-        if (arr == null) return;
-
-        var 名 = new System.Collections.Generic.List<string>();
-        foreach (var e in arr)
+        if (动画 == null) 动画 = GetComponent<Animator>();
+        if (动画 == null || 动画.runtimeAnimatorController == null) return;
+        映射 = NpcAnimationCatalog.Find(动画.runtimeAnimatorController);
+        if (映射 == null)
         {
-            var 名属性 = e.GetType().GetProperty("state");
-            var st = 名属性 != null ? 名属性.GetValue(e) : null;
-            var n = st != null ? st.GetType().GetProperty("name") : null;
-            if (n != null) 名.Add(n.GetValue(st) as string);
+            if (!已警告缺表)
+            {
+                已警告缺表 = true;
+                Debug.LogError("[NpcAnimator] 缺少运行时动作映射：" + 动画.runtimeAnimatorController.name
+                    + "。请执行 Bake Runtime Animation Catalog 后重新打包。", this);
+            }
+            return;
         }
-        动作列表 = 名.ToArray();
+        int count = 0;
+        foreach (var action in 映射.actions) count = Mathf.Max(count, action.index + 1);
+        动作列表 = new string[count];
+        foreach (var action in 映射.actions) 动作列表[action.index] = action.name;
     }
 
     /// <summary>按动作名切。找不到就保持原样并打警告。</summary>
@@ -87,16 +84,24 @@ public class NpcAnimator : MonoBehaviour
             return false;
         }
 
-        动画.SetInteger("Action", 索引);
-        动画.SetFloat("Speed", 1f);
-        return true;
+        return PlayActionByIndex(索引);
     }
 
     /// <summary>按索引切（想按顺序遍历时用）</summary>
     public bool PlayActionByIndex(int 索引)
     {
-        if (动作列表 == null || 索引 < 0 || 索引 >= 动作列表.Length) return false;
-        动画.SetInteger("Action", 索引);
+        if (!已就绪 || 动画 == null || 动作列表 == null || 索引 < 0 || 索引 >= 动作列表.Length
+            || string.IsNullOrEmpty(动作列表[索引])) return false;
+        var mapping = NpcAnimationCatalog.Find(动画.runtimeAnimatorController);
+        if (mapping == null || mapping.usesActionParameter) 动画.SetInteger("Action", 索引);
+        else
+        {
+            foreach (var action in mapping.actions)
+                if (action.index == 索引 && 当前索引 != 索引) 动画.CrossFadeInFixedTime(action.statePath, .1f, 0);
+        }
+        foreach (var parameter in 动画.parameters)
+            if (parameter.name == "Speed" && parameter.type == AnimatorControllerParameterType.Float) { 动画.SetFloat("Speed", 1f); break; }
+        当前索引 = 索引;
         return true;
     }
 
@@ -120,6 +125,11 @@ public class NpcAnimator : MonoBehaviour
         var ctrl = 动画.runtimeAnimatorController;
         if (ctrl == null) return 0f;
 
+        var mapping = NpcAnimationCatalog.Find(ctrl);
+        if (mapping != null && !(ctrl is AnimatorOverrideController))
+            foreach (var action in mapping.actions)
+                if (action.name == 动作名 && action.clip != null) return action.clip.length;
+
         foreach (var c in ctrl.animationClips)
             if (c != null && c.name == 动作名) return c.length;
         return 0f;
@@ -130,7 +140,8 @@ public class NpcAnimator : MonoBehaviour
         get
         {
             if (动画 == null || 动作列表 == null) return "";
-            int i = 动画.GetInteger("Action");
+            var mapping = NpcAnimationCatalog.Find(动画.runtimeAnimatorController);
+            int i = mapping != null && !mapping.usesActionParameter ? 当前索引 : 动画.GetInteger("Action");
             return i >= 0 && i < 动作列表.Length ? 动作列表[i] : "";
         }
     }

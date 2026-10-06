@@ -17,6 +17,7 @@ using UnityEngine;
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Animator))]
+[DefaultExecutionOrder(-200)]
 public class Npc动画自检 : MonoBehaviour
 {
     [Tooltip("启动时补一次 Rebind，修老场景里僵住的实例")]

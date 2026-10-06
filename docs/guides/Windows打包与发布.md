@@ -23,3 +23,15 @@
 保留同一输出目录下的 exe、数据目录、引擎 DLL 和 Mono 运行库，整目录压缩成 ZIP。解压到可写目录后运行 `cultivation.exe`；不能只复制 exe。
 
 正式上传前检查程序启动日志。发布说明标明对应源码提交，附上 ZIP 和 SHA-256 校验文件。存档由游戏写入系统用户数据目录，不随软件包打包。邮箱恢复文档、访问令牌和临时诊断文件不发布。
+
+## NPC 动画回归验证
+
+NPC 动作表不能在正式运行时通过反射读取编辑器的 `AnimatorController.layers`。`NpcAnimationCatalogBuilder` 在每次构建前生成 `resources/NPC数据/NPC动作映射.asset`，保存真实控制器引用、状态名、Action 条件索引及动作片段。不会改动场景或预制体；没有 Action 参数的控制器按状态名切换，空片段不当作可播放动作。
+
+发布前运行独立程序的专项检查：
+
+```powershell
+& './cultivation/Builds/Windows-x64/cultivation.exe' -batchmode -force-d3d11 -npc-animation-smoke -npc-animation-report './cultivation/Builds/npc-animation-player-report.json' -logFile './cultivation/Builds/npc-animation-player.log'
+```
+
+检查全部 146 个妖魔预制体的可播放动作：请求是否成功、片段时长、实际进入的状态和骨骼运动。报告 `passed` 必须为 `true`，程序通过返回 0，失败返回 1。这是动画回归验证，不代替完整战斗与 AI 行为验收。

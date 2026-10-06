@@ -1,0 +1,2923 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ed51e8445f2bb84da3da54190cfb4f7, type: 3}
+  m_Name: "NPC\u52A8\u4F5C\u6620\u5C04"
+  m_EditorClassIdentifier: 
+  controllers:
+  - controller: {fileID: 9100000, guid: 74fc37b97d4541842b027bfa13d08d2c, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 0aa2b9539e85ed742abe63e4d0fb450c, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 17bca143df5109443bbeb8c215fa6a63, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 7071f21e8341b074d8cd3a46c7f7b624, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 08376334658753749a6ecc596c04b319, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: ea9c29e4743b29746968e65ceea8d4d6, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 789e122dc3b7947438a5a350ce50ce73, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: eac7e39f18e0a814c89c6b3c886ef869, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 8dc38dfc11f0f9d4eb632fd3eeeec408, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 519096e883cfa924ebe6b3e023ea2444, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 7a10bc09b817b8d4aae220168bc5e2ee, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: c7b5998e178f4164995ee65c75b2172c, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 30b41f94663e34b49bc0e2fb648e48d8, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 49a206b8e6b40e8458bdb3279d314046, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 50686981c9909f941b59b721df7140d0, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: f00a95d1044492443b4083323e09d94a, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 822d8e0cb003f4c4197d3187e3ac01c8, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 2ddae5c86d52a7e4bbe5ba7cea1f1fd2, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 3f0f134c714ffa04d9eadc10229ef232, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: b598ae72b99a6954f9cc18b5e638b4da, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: e18ef1da4c0bb7d488d6f4f1a72449d8, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 1b745e05d08bf284a9fbe1ea6340f093, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 6a331f61742e1f3408f5c5be276c3bda, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: e276ae6fe2b599442910b8ae6cd2b4d0, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 859234523a4af1d439fcd42316469673, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 094f57275b1cec442914b5ea55d05e25, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 606b35c199389194a9ffd4ddf1860066, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 4d0d7bb6b1fed0d43bbc943036382f66, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 61a3d7100c8a9024d9ddda1696516db9, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 902925c09f8e36046834866b6f7d497b, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: d8ca228302f211d468e04d1fd4e2d4d2, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 540fc54fcda5f544da4329807ee1f0ef, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: c5cb2693add97964cbab2c6c19d4922f, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 23d802c7f8cfc8f40a63b32ffe0845d6, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 9b39f7625b2629e42add2d856acc66aa, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 06cc339181de962449b125176fffe03e, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 6e0c0abb7f0540b43843949ae7820511, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: e7d00b1d50dc5c24f81a2a20c1ac5ec6, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 8028dc81f2933be48b623e5df5f12f21, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 21f517aefc27fde49a3c4784748641fd, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 0dbd494fe07a6f84997d10d1eeb563d5, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 8319d7683b6e9714280986a0477aaba4, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 087efc1910726c94fac3ee74191ba9f8, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 2be6abc1ce4bc9749b5edffa273731d6, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 06b78874fb7e63f48a5653853a5930c5, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 16587aa15ada20549af159e129f1020f, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: afca45a4a6d8bfc41ba31ae10120c462, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 26bce42e5d201914c8565f1eb3439583, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 826c2c94229d47548889821079d1eaa8, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: d88cf645419291f4198f182de9a94aad, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 3d3050706fa810e4c9245c51da7685e6, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: f67435a3cd7df7746b24d3f5d33c8507, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: d56b90a55e0bf6144954c4098a6d7c9e, type: 3}
+      statePath: Base Layer.Run
+    - name: HuDong
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 7db343c1226a74340be73a9ef1e2ff04, type: 3}
+      statePath: Base Layer.HuDong
+    - name: IdleSpecial
+      index: 3
+      clip: {fileID: 1827226128182048838, guid: 989c2154fdd0caa47a30aa2cf61a694e, type: 3}
+      statePath: Base Layer.IdleSpecial
+    - name: Birth
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 08c103924da8989499bf98c487f234b5, type: 3}
+      statePath: Base Layer.Birth
+    - name: LeveUp
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 066aa9751a44cc04db8040928de5f656, type: 3}
+      statePath: Base Layer.LeveUp
+    - name: Die
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 066aa9751a44cc04db8040928de5f656, type: 3}
+      statePath: Base Layer.Die
+  - controller: {fileID: 9100000, guid: 2509e8cccba573d418d8abf859647332, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 468ef0f2a6a8dbc448bcc5ff41897940, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 8402da3710c6a6d45b3bb3b1baa69180, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 710e32b65372b774fb0f3962d93baef5, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 479ad7604b982cf45ad03eece6bd999e, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 9d31160f32f167448ad0d0b510bb5a9c, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 24a6825f48e7c734786ee275928769c6, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 20c30a493421e554882f21987dd08ff6, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 42b578f1704c1bb4e8eae9352bec6fbf, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 466f63932d8edbd4faa385291d456d09, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 90d9073f048d2f749b91ba575fa77f62, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 25df1a3ef09003f4c929aca70ec41ed1, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 57773331bcbbeee41ab17902d01f3dfb, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: d1170436eafcb0543bb25371ddc076fe, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 255719f584ed4fb4fbf239d34c86c711, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: daaffd00d6ea7384f84500cf9afa3cd6, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 3ed66728a5ebd764299b743608cead28, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: c6e219aa8542e834b908e8c35a50da47, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: c5a609ffc5d472e459ea549031e19c13, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: dbbec1670fb69e0489bb5df3c794d9e1, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: aa488ce26c0d5dd479f21a52c226a2bc, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: a0fd97f1186552a48866a17b1bd64f04, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 279c515e2c7d7c4429fbe9f664dadb94, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 310b794d07af1c840a3ff0a372627c2f, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: c35da887a6330f04db2d8ec5bcdf1578, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 50f3f4c7d899d944d8302aa54b36d70e, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 076ecccd81c92cb46921b7bf53a05424, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 4e4c6b7d845e6e24887772b0d2323273, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: f44000f81c580a147ab71a7652a8723d, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 5de956559d1563b41ae64ca13462f7e0, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: ec33a6030422d6548999b699437ee9d9, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 5cdd592f609b0114faa9472a7c02c59c, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 18856621f8375074493ae4b884a3c9e0, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: ed8822399b561514181f34f155c467b2, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: f34ea062e0b43f246a60496f237850e0, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: cd86a3cccf9cd6b45ae1ec99f2fb14a4, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 0f7ab56a158f77a4ca7f4c1342dfa166, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 79d5fa70e4b654943be0b494edf266bb, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 24788410ebc1c3b4d909754a5fb7d571, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 9dfa22f20fd51b342a33aed6d25e6136, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 6ff83241289c2c84ba9a2be814b57e98, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: aaf9e4ce5c9fea948ba9fc13c826feb0, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: bfa4607f7535a3e4b8bb70bce31799cd, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: b394256949526564e8bbd6794e66b66b, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 6e782189690289649b315e96ffc10025, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 82b01d2194308a94ea79cb8e83bf3e21, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: a231acfbbcd16e84095d1d813eaad918, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 570ff90cf852b434581eeccf1f0d1e04, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 524371c9fbb8a314395b3364d633eee1, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 14aefcd14c2f71d4eb5a93a762b66a50, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: caecaf7d228d99840909c07d6c2c39b9, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: e62d0228c8d5928459f1259d1962fd06, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 66abe622107891842b431b675fde4093, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: fc78677df6be2fd4a8b4d24d6d649c90, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: f95734bcabcd4e94e8d80222ee9ff97e, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: f152a71dc90e4504982ff6c3c5d0d713, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 9fad91c3a8e4db745aa6001a4dc96376, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 54ad0b1cfa6fcc44ea1e8af68f2d0ff6, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 749a2d0c15fda924d9f517a2aa50946e, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 9956278cfa50a2243927a163f0148fc8, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 030a413b8850acb499f6e423a7b56dda, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 47b3fe39e478c1d4ba0da57a164257df, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: c8413912e7d324146870fd1c0910172f, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: b2233d4dd87fc004d9a7ceee566915a8, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 9e40d7bdf5af1994bbd2c4f9aecd669e, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 1de9e3b7374e20f468615df03f7fb1d7, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: a79036b06aea57443922b5e62eeb5d57, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 9400114e87189e84f979055dd3849eb7, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: bd8210e38dd334f479674076497b6692, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 3745919d6caa1a845a4355a6f59f6667, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: b594002891b5b4f4c80df5eec5f38480, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: a29772c8e4b382a4ba392eadaf3fea3c, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 6f31b6f84def49d419787cb3ed97574d, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 4a71447c1d2440449b0158fb7f20d2f1, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: cb3ad150550729b4ab4ac04c28d76786, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 9582d8bb760412a4fb0444725375ecf2, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 7057276a86dfdb647b3cbf6987422a2d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 54d508908e8d94343a75a885f53b60cf, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 8270e09003d8c2542a29836e7dcfad6b, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 74752768c7029a44e93d2dbdbe05e4bc, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: c97b670f908819541bb527c9cdc43bfb, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 8022d3d33b025e445a289a51c98cf3bf, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 537b2878e62e4c14e9ab75173de3c99c, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: b83c6970f9b2f4545bf0d90641531894, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 5b4be4ee74e945b469351e0412a64a21, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: c2e7d87761766524a8374d3e4ca6324e, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 9ffeee0d7c17e094dbb3d53b5b3ae27d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 2b838224e2c3cb84ea55de1088249fef, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 7c6b1ab25703acd42bb55fff005b0b0e, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 30fcd6abea0fb214c946af816daab3d9, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 74c0dee66e6ce0e43965a4b374261c7f, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: fa4f5940aec9f664ba58802ee31b77ee, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 366b053774c311743ad7141a39252de7, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 5567078947258474bb3b276e4963b7ed, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 0ba483c78fed6a349b7c4886d51af484, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 0386a732bcc81414dac72dccd0de3eb4, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: ddd100fe430583f43ba9d218026a510d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: aa29b04b5d7e1f4468dec1765954f1a8, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 5827f235f970eba4d9a1c730e5ab8af2, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 529d43709eaa6c149a68b7f6099a4b13, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: d318f486f64a6df4b814a10dfe16e65e, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 43294f758158cf744bc01fcc69ed7bc1, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 57ea470aed30b9840a0cc8a7da842638, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 2af295d0bd638704ba349fecd3599593, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: 38e8f1d09addf584ab77ab8700f69dc4, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 6b00c24628eba2e44840eb458346eff2, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 3572db2bedd1bd64f86277d14f7cc804, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 0d243f059e18a9c458b43886dd3b7547, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 6a82e93613e142947b4c5a059302d390, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 3c6d06d788b8146449b38993ec314254, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 808db3d5a7fbbed4fb9198ca361069ec, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 8816e3765e358a24f9ab86155c41c9a3, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: bb8c685b2c0cbe441b2b3acc65665b9a, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 94c0781d24316f34d995afd62f143045, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: af84d02aed42bc842bd73e88fe5ffba4, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 97e00f5e69c17ab4b85ebeefa15a2100, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: f99503ccbb2c0764b9d468aa27ecefbe, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 75a20163fee9aa647ac387c055f74dae, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 94b32bf96233b9a49902f95e81701a59, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: cbe9cc30a2c93a84fb00e219ccada173, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: ad3bb02de4f5f6b4387c4f4c70f66b33, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: cefc0e7ca5916aa4e8455b76f72173f8, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: d435f570332703b45b81f101e0dbf453, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 566748204788f2a48b16b339017daad7, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 530bb3538c2dc3348a6a72288fa060d5, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: c8cc0753a296f3c49b317e82eb72ce8e, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 3e904be77eb50374f8ecdacc955cb248, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 4e71ff61b675d3640931b99b00a02a23, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: dae376ba375ca1d4e950907537a49bc9, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 9db35f6aef6e02f408799195f343676c, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 39f7fa3174883b64f97dd57efa94e218, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 83b77416b57e6f447bff831486d1d2af, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 9aa9ec6161e62514b90a32dbfecbe823, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: aa2326aaf2f8a084ba51ddc2edb75eb3, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 090e17c2295cf9c4fb79108d782e3550, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: ac904467e1542464b9527a5d41d04b5a, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: b0b7b0a7a2eecc64d9431760967bce13, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: b5097e123a004be4182a81d2ab80e7b9, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: ff4d37f8d4d70764a8c2daaa108f27dd, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: dd9cda23de9ea714199a0fd727387f4a, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 53d34dc4c9c2935438e926ef52bc4cb8, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 030ed9153365535479247702b25e1403, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: fe200d9f025851a46941af0c9e88111d, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 6e792dcc63040e142942e35cec35de25, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 500c85e14c81fab45a8f37ed6be6d1eb, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 4bdffcd55dadaee409cd706c9136ed28, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 22331dc34e02b4b48997d4107070ba64, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: c020d625ec0b9dd4099238d69d1b4ddd, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: af898d2d556d6c349ba981285ea58028, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 7149cf9360818544caa423be4d4915ca, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 356782c975024e54583a37b11ceb367d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 46c7f6b20ab91c543ae270ca351255c8, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: c2cf957539994ae469f17bae8f0ecd8c, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 4ff475970d5a61646874bd66f78078b2, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 453ed22a1fb75c54ca66aa9374bffaf3, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 920136e42d67159428ab62742590e6ea, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: e03931a2dcb8d8e4189287905488c17f, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 0bfbf050f260e8e4390e6550c9831798, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 8e515c86929d1db4b9ee2251e2990ac0, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 00238c1da60d6bf469d21c47facf9696, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 10b5e438359546841813f25d52e821ca, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 2afc64cc01d68934082ab627d151f53b, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 5b06ce566c76aa34aabba2f17add0575, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: f9a6a53435b05234392d6b63f0b6db0e, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: c4f80994c1d167d45ad10bbaad7a9e37, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 6f0c850bff44045429f7d1a9319ddc0e, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 4a2e9a51084b3af49a69efc5d61e2cf9, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: ecdb4016d86dcb74694c50b9e26af2ea, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 301f409cbf0a0644784756b505c978e5, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 2ef4796dec730eb429faae32e7aa8aed, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: b31987f099cfbb14e9eb4f4919ea52ed, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 0ca2d4462a93a4a4193a8d86db2daa34, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 4597d44c2c832ea4992c8c6585912568, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 7a0413023e1e9524e85dd10a99c2c979, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 345881bd31daae64daca51e5c310c022, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 065da3a10b1bec147941eb5a75d9f15c, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 9366900323010084fb240bc6932b9fe3, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: afbc3b5fe77d91c498443ad0f314669d, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: faf70994dd0eec845ad01450fec0a37d, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: a6ad87f48e84df042a30e19876343823, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 4aa58bbe7e1e4ea44a38c53d499953e9, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 64e9610a61e64464f9f743f8d0659791, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 8432d3aa8d4858a45a61d3217717b46e, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 6f59d24116f5669478b7e1cd314b0c7d, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 2bc82123bed7320468ea73369814d698, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 168fdea02504a6448a8731b94b0663c8, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 8092274b489884c48883e00e17aeeb11, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 38f6c5106264c6d468d25fee6bf44cbf, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: a6931387304df4c48bb04cfaef58a6ac, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 2e6a794b99f7ebc4b83fe8b4ad59fad5, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: bcac86237a3bdfd4196b3ace9e0afea5, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 8c93064592c526c4299671c4202846dd, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: bb79d1d84e8eb5c47936598a6161d0d9, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: ca8b82d2ea5097645b6f835971237811, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: ee1260ce51284984daef2174f923b024, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: d3b0fd919cb7d524f87018d72b39a6fe, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: f7644b25e8190c34d80c298fae576835, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: d07964a1bd0b65d4ba50e8ad6284f520, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 7da5410f30a71a34980eec97a3942529, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 5048176d951515041acc48f83e5e5449, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: bd7ace88f823884438dcc8ae40f3d2e8, type: 3}
+      statePath: Base Layer.Specialidle
+  - controller: {fileID: 9100000, guid: 50cc88c796537514787323c93488d1f5, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 9ffc12b753361f14e947a04b20bbea17, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 1cf599e68163ffc40b13740349012dd7, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: ed16f783116ca4048ae8cafbc4de6e88, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 4e092346a65dee341b6d7efea88deb67, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: da4fceb9e9610d54ca4d834e2ecd404a, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: d402afcab6d3f2c43ab7507228b96af3, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 678910e9bd86c0c4584122ee3ff0d71e, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: ddebfa1ac8cb078469309039cf5e10d3, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: df1a17f470f3e6e46b238228b23ffbf6, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 7fda9306e056303488573bb1b1df3a4b, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 2bd7bdc14d55b1042a06c0e273f9088b, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: e6719beaf123fe74684cc2bcb0cc593c, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 347e613eede6b7d41bf90c655418f83a, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 755b5fb00e0befb49b4df542b7562840, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 245eee66309600943a2e2819a6d99080, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 47a4a59433e37294a950a0edc903e640, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 931b0d57eb1dad54583f06190ea59890, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 7ec04a18d8b17464bb3766a92c010aba, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: a2c96687583408142be75d12dc299b19, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 05129c8c462a0ec49b72ee98458dfc14, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 0916a8a4f08200941916a1afcef0f3e4, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 1a3b3247fab06774ab3b9bccdd192565, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: dbf8be134ce916041b82d4c5ecb0b607, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 35ef3d080972afc48a9d6463b2ff4080, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 42fb06076203f2a4cbb8083eab206205, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 875ed972845c94f41ad8e0b852405fef, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 3b0d3092cbe44164691b9a041bdea30d, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 8280a50de4a88d84f925278ce0121295, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 994a4daee5ae7e241bca58ed78a34a3e, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 14748407a87fff742bc87875fdfadeee, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 4282adc3d6048ff479413aa158f2afe0, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 2ba327eab36ad764c818cc0cfd2858d3, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 4d203c358db56a94094338b7ce7389c5, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 587c1603718f17c418c2d6d150fb8830, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 170ada91617655549b9bbf5492606447, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: c485be49b757d5348acb1ee03c6616a1, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 7c29b4eade4714e41bf75c0edd1b68e2, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 00a8928c3c1c4b842a10936fb36941aa, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: fb406cb9b993769469fc15d29fdfcba9, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 6c88e9da93e533b4b932a61d2390094f, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 04df3bd1767763b49b130c1a6cae895a, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: ceb98dd27fbe6214f821a0f6e9883f1f, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 846bcce65ff667f4d92a9d3fb5cdb1a3, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 6b683a816b3fb614386bb06ee41e9c04, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: ad77cf1383d1d8847970e43a4d82fca8, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 9d09ce929628c294f89d95bba98a3a10, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: fe7b45bb5e23762438d0039cc8b975e8, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 6b001a7761e726c429173e3bef4b4df8, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 9a04a59c2232c4043aab32ffdaa5de68, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 4a058c022cd55714dbe8593b1c8b829f, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: c3956828b6d7a874e897f3fa5ef6c256, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 7d481a9bf78ae754bafcb0b9251af5fa, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 4d796d3637ca72145a750de2476f18d4, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 59c801d26d79f464fa71f7915b29fe5e, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 740d9d6f1c69b7e46b8e46184db0fc56, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 30cb30ef3579700489a4770e3eb4c15f, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 1ad833661363dcf4586784f2e0e861c4, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 800b6e810b2e5b34e8c1f5661631f000, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 398c443c6770cda48bc6e2d89db2a485, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 43b7d9685c5bd544c95a23b7452ce035, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: ZhanLi
+      index: 0
+      clip: {fileID: -8861705643629993270, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      statePath: Base Layer.ZhanLi
+    - name: XingZou
+      index: 1
+      clip: {fileID: 4761516253837273642, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      statePath: Base Layer.XingZou
+    - name: PuTongGongJi
+      index: 2
+      clip: {fileID: -5958666899366826995, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      statePath: Base Layer.PuTongGongJi
+    - name: JiNengGongJi1
+      index: 3
+      clip: {fileID: 2911413264191128045, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      statePath: Base Layer.JiNengGongJi1
+    - name: JiNengGongJi2
+      index: 4
+      clip: {fileID: 7100561207116417463, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      statePath: Base Layer.JiNengGongJi2
+    - name: SiWang
+      index: 5
+      clip: {fileID: -8878685067223734105, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      statePath: Base Layer.SiWang
+  - controller: {fileID: 9100000, guid: 3cacc95569bcc4e45b7cf9770cc14799, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 5a5a188441ef39344a3a14b7c33fbab1, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: afd9cbcba3eb6e24d9a178ebf2113cb8, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 1e847044ff100ef48b5d82bbc93b5fb4, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: bac2e1097c3194b48a90f6ed7b7a7248, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 647120a48d615334bada8d7ecd44836b, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: e9ce371f239d87143b55a783789e33ec, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: f8f49f2083f9d7b4a8454d119bde9776, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 02df0197819b0514594c20757de54d6a, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 22db7ad93da7e644aaadffa65672bd4d, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 395d8a78bfb94f643a696087c239b579, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: dde2fdbe305fa084794e4f0a0630fbd6, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 2a39663fbfb5ef347881be39c1d6f3ab, type: 3}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: c7f3fab8a6e841d45956641533853c07, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 6eff59623b686134f8e5ed325d8e3c8b, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 3ffc8ecba08d3254d9ec3218e69aa9a2, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 4bb79f0c0b1716e4e8838c22086f6e08, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: a7644125c4add804a9df8f2ac657c697, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: f244c1ef0069a3f4bb5e0d9182a179b7, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: e17df6e3162c41040bd845cab107bdb5, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: e09b04aa37dbd594486f46566c3793e5, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: ef1f220bbf682ed488ef8a7e12c7573f, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 3ea6307e604a72e4ea61b8cd86d6f851, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: db888f9cec57f0f4895f1b3b05d790c7, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 0bb9728f76713164db261b0f9d109a15, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 0b3a412255485384eb5cb072b5e3c82b, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 6b4e48111b575594d9d3a5d98c46b1d8, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 9928080fc46436d4ab2a7bd86f81a7ea, type: 3}
+      statePath: Base Layer.Death
+    - name: Deffence
+      index: 4
+      clip: {fileID: 7400000, guid: 1f1900f4b2f24864eb91ce642addb18f, type: 3}
+      statePath: Base Layer.Deffence
+    - name: Dodge
+      index: 5
+      clip: {fileID: 7400000, guid: 470fef8b00663c141803b651127602a6, type: 3}
+      statePath: Base Layer.Dodge
+    - name: Fight
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 39b264bff9904f649b1b21a1a346462d, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: a19fe773a7162104591a34adebb2f751, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 8
+      clip: {fileID: 1827226128182048838, guid: 8f91b1c05466e3c4887b65f4cb93f981, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 9
+      clip: {fileID: 1827226128182048838, guid: ad4a7afaa89a4e34789ec31a133bec82, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 10
+      clip: {fileID: 7400000, guid: e52297a841eb2744dae0e074a454a781, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: a4143c38a23cccf4a958d4dde1c4ebf8, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 7c988123f17a3ff4bafb5abdcbafb1ec, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: a55c75e7032880c48bf990cb850fb06f, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: f42f8d254461727479afddf0ddd799d4, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: f41155ca0343b8c44871f2bd5bdf8ce7, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 2bf2ffc870aaa774f81008321d89a8f2, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 83334a91c96428d41a8d53578eeea130, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 18c51dbd667a55a4aadd81199a80a04c, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 4a27e2245d1993c4685611717f8cff17, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 00d6eea29f747194eab7f9acdb81c50b, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: b463b005a83f20247a34cefbb3ba8db9, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 82697eedd5ae1cf4883b1c3e8ed5b8b2, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 30733d6b00a6f5b49bd6ed1b9cae2fba, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 643cc6ad6a0a1774d93d849077ff5023, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: c706d47a96faede4fb756abd41897870, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: d9810b135b8a0df4e868e30d83e4e09e, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: c16b83fb11b5b204ea63bac28a596917, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: aa30dbea3e533544c8aec1ab896fb503, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 0d2763a3950565e4e831211e1536431c, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: bd33d6ad76e8e1e47978f2398052d36f, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 87659b2b17262b54e8e5abd2cd688ac4, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 64e3ebfde3510254e90c9cb87df1403d, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: db6810634cca1d54984b7a0fb882d5de, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: c0dcaf33084bcf64892e834a00aa3fda, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 2ee6efcabc642744abe2cdf5373ad80b, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: a4bb76f459b5e3f48b90b151ce3f40b0, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 3e5e4dab8a98d8649a47126d526cd47f, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: b311ecfef7f751b46a20332ed65ce8d3, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 00774a27cb67c5a4bad4216a93c725c9, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 550962f1d02966e4aac4ff6c41f81a8e, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 03734261a8739424a8a15bb1896874d0, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: bed4886f34d84784f811630f897523a9, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: da39c2170b84aa64bb6c1197860ae099, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 02c05d879f8bcd449a97d10b6da0f702, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: 23d415a0dff854042bc4a169d81d22a3, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: eed982e22571837459c4a76bc8811b79, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: a9e29fe240e3c2e4bb99811d604386e9, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: e5996be0b9695324b96f4e017e4d8bec, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: d8bd9a58302e4524b859f965a5dcdb9d, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: b75c4823e3099354a899ca31bb40f79f, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: cd988664dd69aa14e92a7b8470cc5c75, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 0056a027750ed614d864976713a600e5, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 35c2f42620bd1d1469b2327d5d674c12, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: ee7e15fce6565fe4383f2b9ceddf0e9a, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 40ec71ba5a1532443a8f2d90021bc47a, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 53a52add051229548a935d74c81c0104, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 5b41419bd3e370342926ff5f120afec2, type: 3}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: ebaa4159ef8a39f498a623be83ca885a, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 0e170aa50993bd244b3e4774805d85aa, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: e4a129f1fb0045b4797671b2aac25bdd, type: 3}
+      statePath: Base Layer.Run
+    - name: Specialidle
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 18d067453e4e468418344fc0092a6f14, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 3
+      clip: {fileID: 1827226128182048838, guid: 355776e3a311e8b40abfb769ee1a4dc2, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: 71fdb6438d284b8488208deb5983b0a2, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: b9fa29525de6023479ee515ee359688b, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 626ab83d8f40c0143aa502f3eb96c7eb, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 6848ea97cc8a3a24ab8d38371b3cc4cc, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 10c3f2c0a86d22c40bfe70d58c217ef7, type: 3}
+      statePath: Base Layer.Death
+    - name: Deffence
+      index: 4
+      clip: {fileID: 7400000, guid: 81f8caa12e7c1b548bda7ea03311683d, type: 3}
+      statePath: Base Layer.Deffence
+    - name: Dodge
+      index: 5
+      clip: {fileID: 7400000, guid: 42f7f05b078ebfd41ac84f44636e6fb5, type: 3}
+      statePath: Base Layer.Dodge
+    - name: Fight
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: c6c60386c5545f54f9227e4c2bb346d0, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 770e58899e17f72458b5159e400c76c2, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 8
+      clip: {fileID: 1827226128182048838, guid: 2211a277827da884586c71ab7ea96d80, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 9
+      clip: {fileID: 1827226128182048838, guid: b17fceca3b3c8db4e9c3acdaab54883f, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 10
+      clip: {fileID: 7400000, guid: 2ec1907a09e881d4583bd1249365853d, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 848e3cc3e8095404eb30320eb97285a8, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: c390c60c041d4de40b2602aade660ef9, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: e8f5f2db0bd9f1c4da3929eff8efbec5, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 781579fac336eff4da6f1d2f3f9efe37, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 84fe7b4014530b644855d42e2c54b24a, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 1ac5173d79eb18f4fa6d26020564307a, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 19dfb75de8762454d88c507038b7455a, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 89a2fa404a4ab0741b33953a52a0a33d, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 944da85ef4af5194a9e53ab70ff7fd6f, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 03572a9cef6acd94e95846b801e7d0f3, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: ab36fff0bdd14a341a8e061e49900d38, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: c0874d3717b8d0a42a2b427d2b336415, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 5b571e63c5307bf49b915d66f272d21d, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 3afe734917d3334499cad0ce5b5ad754, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: ef8f2a1762fbbeb4f9cd2d55495956ce, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: e24c851c9136ab1438b422f8bd298774, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: b9d2ba1121cccc948ae11638ce99f467, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: ba62fba9fc904c2499b6e6fa20eb81f7, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: d88f138e00d994d4abb847eadc58bb29, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: ef00ba2c657e77840a1688da1fd20219, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 2cc0c274f3390434f87482c75d4e2017, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 81e30ed08d9ec014c87a9c158d348c0b, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 1569c073aa0eaa5408148f553f981da5, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 1fb2594c4cd794d45aad949e9b75cfb0, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: fbf6f7b4747733e48b5d7e1d7dc38f21, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 8be9b07f6e4d8d24b9f81f6dffd0c11f, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: db1f78cf4d4799f489f820d6450aaafa, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 97dca5ce914cd7540967e9db2b365365, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 0ab159f237927614985cb0992f82c905, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: c3ce9274333584145ac118e5e1cbb2bc, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 1f87f4b67a698cf4b985b8df31775bd1, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 932ee714796db85418bbe4121e557d02, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 8c2f3df1af79ec24aad07d6cfd022794, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 106aa830bdb95d243845cbef598f12ce, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 804b7468864334f4484c0b9536b087ce, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: b854017939722884495b302fe6524b80, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: e2988a84968205246b738cf5d8a0bcfe, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 8c4cf9af586654b47b7456693149e652, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 273f3bc68d93bad4fb7cf3ecb3047b7a, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 260e1ce088618374e80fdf7b403ed483, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 497f2d236649ba9459a033e85aa94ec4, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 45e88cabf77c61d44813062f9d9dd141, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 4b4a93ec3718837439131d80be27d089, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: b6b0cd3d99f15ad4ebd67480e6413bf7, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 99cd6544f2dda16488a3db11ff0e4ca4, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 4719600b30e40164c8389549bceab3ee, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 40950e363f94cbe4caaf83fc5bc6dd3a, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: bc7f51b0a7dffd94c8b91f3f87f6648c, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 88835c8551ef1c2439777edb28e97689, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 639213491ec29834eae75366b2dfeeb3, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 160cb17c7fc59b345b867b5141a065b9, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 0c275edc9c2dcb246b3c8665c637fa38, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 1d8ad6709d5429d42b824b40bd20b99a, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 533e3f154de3dbd45accb6ccf79312eb, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 83a96f91537f8da40939ad7a94be74b0, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: fdcc6433a2bee1e42831c38045af9858, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: e0d79f1d98916944ca7c05a1ce267783, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 50a617ef7e89c9948a5c56eac985109a, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: ee8ab29cb48b19849af29d9aa1de55dd, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: ccce053a4bc5fef4e89f991bfe417f18, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: eb88faf1cd489e143b74dedfc22debf1, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 5797a9f8935faec4c809f294d40031dd, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: f32b440c16e3eb24995139b4adeebcfb, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 3eff3d067c2eb5a4fbe4c1d8ad79eb74, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 2dc06abde393abd41a49366ea9db779f, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: b294dbadd356f0f4ca4a7be9693c3366, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 34ed8ddffd6cc3e4ea5e72844046996a, type: 3}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: d23833356cf8c58459549c75367da118, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 0f7cfa79327b24141ba4328eb2fc7b0b, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: b874fcbc23811d2479ee473517c8a500, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: a617eefb7940f614cbca0004da8a2563, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: b3d755b994a07ee4bab88573a5774171, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 6dee8ead388c3a344a8791e44672ebd6, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 5a001391ed33d024aabf3e4bc2ac4485, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 7ed658590ba30f442a139b42d78d8014, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: ef62b5e57a1d53c4db8e4b4d789ee46e, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 88c3a231ae3dd7949b96a66d90a614b7, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 8aa2e888e741fe04ca4c601bdde591b8, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 4a6f4d971b0311d4dbb7146847a8e494, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: ea63c46fb5d10b04389ebfd7a6fd9603, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 8ecffc14860d89c45b8aa456d5eb5261, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 1c3c7e60957d6904389ece2a38241dd9, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 3e946b822310cd643a054b09b2d8177a, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: ab6424373f3c9df4f894769befdc4b3b, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 2193de7a3b6c5424090f72b5d44ae710, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 06bf73dea28ac304b888b27a956fdd58, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 9fa0f0d5f2576824e8cc4fa04fd76989, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: ab47b892e1120ac409c3dc18ba49d2d2, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400002, guid: 08175375e1874414ca03aabf2434e49b, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: ea0dd3557e306c64cabfee509036b64f, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: c49fb0eabb5f1a045a7dd738df9a880a, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 0bf381d13623c2d489afa13711e4c19a, type: 3}
+      statePath: Base Layer.Death
+    - name: Deffence
+      index: 4
+      clip: {fileID: 7400000, guid: 7194d7a3d07c1af4096d47e9c84bd1a8, type: 3}
+      statePath: Base Layer.Deffence
+    - name: Dodge
+      index: 5
+      clip: {fileID: 7400000, guid: e0e8abea8f00bb245b0e71aef1c6415b, type: 3}
+      statePath: Base Layer.Dodge
+    - name: Fight
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 1f783c6ee5c680a49a7d8ea669ebfb05, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 02e73fed3ccab5441beecdd79af4516e, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 8
+      clip: {fileID: 1827226128182048838, guid: b126014c66536e24a93037f1da92be5f, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 9
+      clip: {fileID: 1827226128182048838, guid: 59ac183de8644fb42b66978cce6810d5, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 10
+      clip: {fileID: 7400000, guid: 8fe0d29536c88054596bc97c373db632, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: e74fb3b4ebc49024fab4fe0ee4a3d2c4, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 4d491bd84d185814e84a2d1101b1469f, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 2c54f1b29e803f448849b9f79be2be6c, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 6d694d6d7a256324ea0e06ae96c30e9d, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 39bd14e883dd0c042ac9d95c5bc78679, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 47d089c0439dedb46b28083a2f10f34e, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 906bcb3eb6103444bab3975821e02caf, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 955e6f5d2364b584798318f2b5e5a2cb, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: ae517c37589ddf64f876d07f23de77f4, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: ca6aad577b0945d478141a696e1385fb, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: c086e0d8650f4f946b21b66f7da0d8b0, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: CINEMA_4D___
+      index: 0
+      clip: {fileID: -2551817162246492632, guid: 944fd8ca06ad55c42ab72f73dee78860, type: 3}
+      statePath: Base Layer.CINEMA_4D___
+  - controller: {fileID: 9100000, guid: 24f0e6a87b588034286b2d1d87c85e52, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 6ec5e76e9117b214ba9359bf7f0f3d8e, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Idle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 5428de3534e8d7e459a01f5c010e2604, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 2ae137251c09f7d46991d05cf62ca85d, type: 3}
+      statePath: Base Layer.Run
+    - name: Specialidle
+      index: 3
+      clip: {fileID: 1827226128182048838, guid: dd29fd8506537c04399f6097ee1f4a77, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: f810b83a398c6d342b29cdb2d72946e2, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: 3446ee58ce22ece43ab2b8a51125be7f, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: ed818d490f7552c4d901b85a73c4c956, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: b1ecd1ec1c8bb9343b12d33a14b4fba0, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: d67dc34b7aca8564eb0ec4f626b82b00, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 91bbe35d9745a074a83ec0741a38cf0f, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: c7418cffd0f5995409599234618421a3, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 264e5cbd6d5a5944e97458d732ccbb4d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 3973387be814ccc45865aa34ed5f5e98, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: df97c0226755f7544b664c8fcdb0a2ae, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: e8c90eb702acf024396f19413eb9c9d1, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 8428e6488934a5b49b8b2e0e86d57b8d, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 752a283723b611741a3f2d939c21a8d0, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: ef6c54bc4c521a34cb9ed5e5c26ffba9, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 941cddbc8680532498dc906000a26071, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: c44e3f472ee6437418f7022095ad93a6, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 1ee996289effdcd41a5c0e8c08921a24, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: f837d65a1b5a53945be9bfbe42c723b2, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 04abfccd69f354043aaebc02bf8910b3, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 7916b0202894bea4ea967897872cc9f7, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 78a976ad310f647429a9eaae17442f2e, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 9f83646ab58fc4f49abc038d77bb16a3, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 83620aeab96752d449dc2a803dc5a437, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 479859b01fcd39649b6e07a0c1908463, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 207290d840fb1f94aa3ab85a6d4c8081, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: c14629873d922a04db8e1f1ca74f9beb, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 2ebb9a0a6e9905b49b4e764e58d61ae7, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: ada799b4230d11c47b5f1f5e30b5d702, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 508ff7ad17d22194ba136c73eec435e4, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 155efa7ed3cc4fd42966e6700f34506b, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 3a8492179a94e094581f3359bc16723b, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 1645b6579fe62a34b8b8e732b86e1f5d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: b3cf24a49bc063e4d997420547f9f617, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 45de89dc754beac45bd66f957e16c57c, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 912fcbf21720d384695419a69c37e1ca, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 26297490448cfa5408dbe332c9def982, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 0b5a70483b05b3946a2905be9f24d13d, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 93b28fe55cd97454bbce305c514d2fa6, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 335afd80e9170c74f9e0aa5d3998ece0, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: 991ee7174ca9cde4caa66104bf45a177, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 3a78ff880a81d1c4fbc87bf48fbf8e7e, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 978960eca4be7e944981c1b7afab32ae, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 0fcd41f8c3d0a014eaf31e01b3599e7c, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: f019e61fc8891a94d94dfcfe8eeeb648, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 7fc920529c063394594d668ccf8124c9, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 7603c4136382a7e4e907486c8dd806f7, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 3deb45ba1439cfd41a7194a5c588cc64, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 1d2804e815ef3ef4ba9bc09341d80392, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 234b5268a7555fe418cba1b4b621b0a7, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 089ffaea253411b458ec578ac9cf7f75, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 3b748e8dd1f17de48970decd7fbb3896, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 32278b60ffabd4946852a4f22b716b71, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: f20c9de88b1e8fc4ca489d6029cd2dda, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: b71fcd84e124b7b4db8e4b242c0e32c6, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 7e7597c2808f732459e4587c6a13132c, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 6a294be48940061448d364186d3e0a1c, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 8074d6de75e122e488368385241f0456, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 2392143a584996443a941e7a3bc9a081, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 281532f89f17eef488dbfe0d80abb69a, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 14c8ab2afa7d5f24895df9d05a592348, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: f8c382e2fccc9b5478d203318b041e39, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 6ae7eb30c9e51cf43a4e26e7dca66e0c, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: dc5c0a625ed8d7e4d9fe0ded003549c7, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 4762002eab5580f40a0f1f55b462f48e, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 138fe098fa34fe042bfee95ce099d180, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 6336f8964c0f1d64fa474e7a816149d4, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: c3afb07eb18dd3e4090f1ade16dfeeeb, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 839103605a06e35409eb93054fea1a06, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: edcf59740cc7aa84f848fe2de2f36c68, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 034d079a522d7ea428dc9a32839e08ca, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 1c2fd6719ef3a4943afb89048683f0d7, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 1aa24f1d496cadc4c9eec19cfbfa4507, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 0e2a346609aa3bc4fb23305cb9c88414, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: e2707d26ff2dd444980d428959055b31, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 227da62c2e2171c4ab703aa1e65ed496, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: cf55ec80c8ed83d408a891bbdde9119e, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 2dd8ecc5e59275e429e13cf948d37563, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 58f36893adbc7cd4c9917deaacdf1adc, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 77f08e85a3291b24b87e7f000a641fce, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 0a4ff521be0dc614089715c3721f0a00, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 14b4aa2091f580c41a456b3ab00913d1, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: b8ce82bbd9c1e8a438c8692c53b74222, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: c492d27d09eb66048a0693657fa666fb, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: f92694e378c38db43b3f0f72b4f6031b, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: f79361198c652854e886582099d87ef0, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 71b93a0a896521d41a21916e88cd7f77, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 00068d816eb11e24b836275390da26a0, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 08a0ff9471e5aa34d83c9186a26c1938, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: b1606cbfa9d6f7846839da451e5fa02c, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: f128ac1079fc3ab4d851b3cd9d159e62, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 622a150d67111e54f974c84f5308f0dd, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 0b31a75a829135340a2b3b1dda643b72, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 7620d40bcdae90448bac4cab73c593d9, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: e5004461226a5f244b456d3b79b92f5b, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Run
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 5fb4f3d0c2f1a8b42843e72fbe45e18d, type: 3}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: fb5873535b97ee04e9c519dbbe071d1e, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: f9bc0faeaa1face468b302328bc43486, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 899a3ff411d5e72499ce82e3aeb2c5d7, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 61f225a95226f0e43a319b9229ebf4bc, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: f9075e7a56c3ee449992aaddf462474f, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: c720ac7455df1d849a6637b991c63792, type: 3}
+      statePath: Base Layer.Idle
+    - name: Specialidle
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 944125dea6550e842a43f1ce7046012e, type: 3}
+      statePath: Base Layer.Specialidle
+    - name: Walk
+      index: 2
+      clip: {fileID: 1827226128182048838, guid: 60245e6bb35e08541ac47e0743e74f27, type: 3}
+      statePath: Base Layer.Walk
+  - controller: {fileID: 9100000, guid: 762db4c28516f1f4f90095cbd5db3b74, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 7c7ab59d68b6fee43af1711631609e94, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 863f85d771729394893c97977003ea6e, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 06f86d22872367a4cac57a153424320d, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 59cf5b3cc20cabe42ab668a1d04133a7, type: 3}
+      statePath: Base Layer.Death
+    - name: Deffence
+      index: 4
+      clip: {fileID: 7400000, guid: c0420d6fd7ca091499c07c0c62696ebb, type: 3}
+      statePath: Base Layer.Deffence
+    - name: Dodge
+      index: 5
+      clip: {fileID: 7400000, guid: 48349d6e4dc12b649bec2db4e7114b0f, type: 3}
+      statePath: Base Layer.Dodge
+    - name: Fight
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 22c3dc37ace919a4e9a23993b2d32a47, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 37ce44743d0c3ac498fc5267c9e36cbe, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 8
+      clip: {fileID: 1827226128182048838, guid: 728a70f44401b254485612570133ba84, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 9
+      clip: {fileID: 1827226128182048838, guid: 4b61b68d82c3f7a4e8b03fe84de0cc42, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 10
+      clip: {fileID: 7400000, guid: 654546a5e123e6a4ea760820c54c1606, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 698716fc5afedb045877b887749a9681, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: dc7226472134ee74897b9dbc066a175a, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 794145a1455be6642adaeea401c58331, type: 3}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: 171957c9d18a54a4a8975aed601a0661, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: d526dcdb0d68c5841a7b29ae717ff265, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 2e883e5d8a3eca64fa30689c50287de2, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 89dab157d8935b34d833017d055793bd, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: bae22d9c5871c9a48b75ff29ab276bd8, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 9d357a5d3e5607546a30f829e1f88b75, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: b025dbd1ec62a2e45acaf7aa6d92c963, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 3274d1dd5e42b214da9d64427e6b6229, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 20acfd63842ee6f4582af05d181421ef, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: dcfffa81bd7349c4ab1dad3ed0b40c8d, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: d33abf8239c274c4796761288661d07b, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 3010ebbd3efb51d49bb1ed09c1d1caf9, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 872bc63f45fe4c44d9b7511b08c4fab6, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 5fb9433d778f8264bb54a667ab8268eb, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 9929f7df7dcb75b40af64553fb1c6a96, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: e2a9e179a14c66144b571ca229df9d94, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 4bd56df08c808714d8aaafc71887944e, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 68c44c7ce8c210c4b876d142d96100db, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: bbcfd7a07b9bcc54cb585ab8ad6e67f7, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: fe89a0eaf10412443b68c6590a4b864e, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: c530925f0a39df341bc19da3acd589f6, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 77e122851a345f546873fbd1a4e31ba3, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 1af4e9531e228e04485e3cdaeab6bdad, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: e668dc1f558168b46b0bc7d60090c182, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 18e86d90f1ff1d645990f41e233e5ed1, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: e609ce35954b5aa49b6eba3faf903369, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 70807ff777b1515418e055a7a0a70fa4, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: fa3faed40912d1341ad65243c8082f5a, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: ece3419eb38c82d48b625748d5b58526, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: f5b45b5c0008e314fbc647d493389c33, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 87b0f2b2c2b7bc5468bd7fe06d11e28e, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: d7a2479ded638a64a8917b51b7e28cb7, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 2a96c189d90f4934480fe1666b4e546d, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 54e0c56c9ba615f4d90c04c4ac535744, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: a8832a6d94bda6e4892960f36acb584e, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: c531d066e3d04d447adff1c74a1112e2, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: db686c6abd1c9ac458c3c3bd0511fe82, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: cc226094c37cca346b6dcc26ece7b0f7, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: df71ab9e7a0cf984197d3f01749f77aa, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: ec471a5708b787d4986aa9828129aa17, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: bbc82d680c0873e4687775362e077484, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 4271a4b06d5600c488b19da2f9a4e7ff, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: aa96628f9645c5846a38f8735e0d0b77, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 7cc106209ae2d104596a0e41ae73e7e5, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 26fcdf47c1e718248bae2975f5c46541, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: ab76ab4a74199b64b8caa7d416f78b70, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 783693cde0cc56f449a4b77fa3195225, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: e251773c271233e47a5d15a88beb7529, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 2a85f3943de5a044b867e465e898e8f0, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 1028ec3200e33a44a9e0a66d2f38a538, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 2144902030a8b1a43ba388c95c8123ce, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: bc2727028941c5b40b76d2c2bc3fc5e6, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: dd39b3e47ee5a524fb3177d5ae9ff6f5, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 19d1861db30ff284381ee74047b4cec8, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: ac12db98cf36eff42a81ca5c35a793e5, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: 708590fcf6a703347a65e844a1e1d89d, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: f2d3fcc100d329442b43793d9eb1560f, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: 71b7995aef686714596cd08b12c18dd8, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 4ccf05b7fe844cc47b158339a90b49ae, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: b626c4640e2ce8244a4883a35917ab75, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 7fcc4c80ebfa9a04fb131042f080d167, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 7400000, guid: 3d383074deb163f46b29932c953f1ec3, type: 2}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 7400000, guid: e95ea1e4a500f7c449a4a67a578921d4, type: 2}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: 15138e196f86f1247a42239365d8e1ea, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: 3213c43a3e15a0b48b90a83980e4f05e, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: f7c259adab3f6c84088a050b22c0eb0c, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 2889aba7518412e4d8d58f79ad66fd34, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 7775f58f2a3e1084ba2e96830db501f2, type: 3}
+      statePath: Base Layer.Death
+    - name: Fight
+      index: 4
+      clip: {fileID: 1827226128182048838, guid: fddd882083f40e3409172e50d0845950, type: 3}
+      statePath: Base Layer.Fight
+    - name: Idle
+      index: 5
+      clip: {fileID: 1827226128182048838, guid: 850224f60b2a4bb4c8ad510cb67a9537, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 6
+      clip: {fileID: 1827226128182048838, guid: e95733521bf09834aa2982524903aca0, type: 3}
+      statePath: Base Layer.Run
+    - name: Walk
+      index: 7
+      clip: {fileID: 1827226128182048838, guid: 0d96dc7b2be861e458b6a3c08a40c2d9, type: 3}
+      statePath: Base Layer.Walk
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 4c507a032342056479302279d8365478, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: 00a8eab2afb9b3c41853ca41b35a1982, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Idle
+      index: 0
+      clip: {fileID: 1827226128182048838, guid: 44bebfbe03c2d68458018fde06ae7ddd, type: 3}
+      statePath: Base Layer.Idle
+    - name: Run
+      index: 1
+      clip: {fileID: 1827226128182048838, guid: 4d5c0a8fc9dac7f4fb5611a8a38578b6, type: 3}
+      statePath: Base Layer.Run
+  - controller: {fileID: 9100000, guid: 64f66359f38542d4ab564024dd73c693, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: d815782c3c1a07d4394840d26d1f6e7e, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 5c50b1a132c1cfd46bc4103b970ddae5, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: fe496ab512de1b64f8bb61276ad4d097, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: c8e5c908e566470408a9f56f0269d47d, type: 3}
+      statePath: Base Layer.Death
+    - name: Deffence
+      index: 4
+      clip: {fileID: 7400000, guid: 0d06a4dc2aeb19f438d8aa08f937ebe6, type: 3}
+      statePath: Base Layer.Deffence
+    - name: Dodge
+      index: 5
+      clip: {fileID: 7400000, guid: bcbffd952379dc84d90edd83e80e9eb3, type: 3}
+      statePath: Base Layer.Dodge
+    - name: Wound
+      index: 10
+      clip: {fileID: 7400000, guid: c0ce58792b9c6e14faa8c98fe264fec3, type: 3}
+      statePath: Base Layer.Wound
+  - controller: {fileID: 9100000, guid: a0ee3729da01ed54783b96abe50d8389, type: 2}
+    usesActionParameter: 1
+    actions:
+    - name: Attack1
+      index: 0
+      clip: {fileID: 7400000, guid: d1f7ce08e6bd76c478f50b9cfd13cd8d, type: 3}
+      statePath: Base Layer.Attack1
+    - name: Attack2
+      index: 1
+      clip: {fileID: 7400000, guid: 692c11c6c82f96b4eb5ca5de9306068d, type: 3}
+      statePath: Base Layer.Attack2
+    - name: Attack3
+      index: 2
+      clip: {fileID: 7400000, guid: 659af153179979244971928df7517325, type: 3}
+      statePath: Base Layer.Attack3
+    - name: Death
+      index: 3
+      clip: {fileID: 7400000, guid: 57e5e33a9824a6846a069197bb59cd7c, type: 3}
+      statePath: Base Layer.Death
+    - name: Wound
+      index: 8
+      clip: {fileID: 7400000, guid: 609718bdaf93a0246bcb5b38cbec4987, type: 3}
+      statePath: Base Layer.Wound
