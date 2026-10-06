@@ -19,14 +19,7 @@ public static class NewAbilityAssets
         AssetDatabase.Refresh();
         已处理.Clear();
         创建("WaterDragon", "EffectsSet_1(NotScriptBased)/Effects/Effect_28_PurifierBeam/Effect_28_PurifierBeam.prefab");
-        var 激光 = 创建("DevilEyeLaser", "EffectsSet_1(NotScriptBased)/Effects/Effect_28_PurifierBeam/Effect_28_PurifierBeam.prefab");
-        // 同一套粒子束，不额外造几何线条；用色彩区分邪眼和水炮。
-        using (var 内容 = new PrefabEditScope(AssetDatabase.GetAssetPath(激光)))
-        {
-            foreach (var ps in 内容.Root.GetComponentsInChildren<ParticleSystem>(true))
-            { var m = ps.main; m.startColor = new Color(.7f, .35f, 1f, 1f); }
-            内容.Save();
-        }
+        生成邪眼射击();
         创建("BindingChain", "EffectsSet_1(NotScriptBased)/Effects/Effect_48_CriticalTumor/Effect_48_CriticalTumor.prefab", x =>
         {
             // 主特效的球形分布锁链先细后展开；BondageChain 是另一套地面束缚，不能替代它。
@@ -63,6 +56,27 @@ public static class NewAbilityAssets
         设置图标();
         AssetDatabase.SaveAssets();
         Debug.Log("[神通资产] 八种特效、法环、图标与学习物品已生成；没有修改场景");
+    }
+
+    [MenuItem("修仙/神通/仅更新邪眼射击特效")]
+    public static void 生成邪眼射击()
+    {
+        Directory.CreateDirectory(输出 + "/Parts");
+        Directory.CreateDirectory(输出 + "/Materials");
+        已处理.Clear();
+        创建("DevilEyeLaser", "EffectsSet_1(NotScriptBased)/Effects/Effect_47_PreciseShot/Effect_47_PreciseShot.prefab", x =>
+        {
+            foreach (var t in x.GetComponentsInChildren<Transform>(true))
+                if (t.name == "Effect_47_BulletEffects") t.gameObject.SetActive(true);
+            // 所有碰撞面由运行时放在目标处，不能引用演示预制体的远处平面。
+            foreach (var p in x.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var m = p.main; m.loop = false;
+                var c = p.collision; c.enabled = false;
+                for (int i = 0; i < 6; i++) c.SetPlane(i, null);
+            }
+        });
+        AssetDatabase.SaveAssets();
     }
 
     static GameObject 创建(string 名, string 相对路径, Action<GameObject> 筛选 = null)

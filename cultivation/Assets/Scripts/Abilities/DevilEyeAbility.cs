@@ -15,6 +15,7 @@ public class DevilEyeAbility : MonoBehaviour
     PlayerCombatStats 属性;
     PlayerVitals 生命;
     GameObject 激光;
+    AbilityPreciseShotVfx 射击;
     float 下次攻击, 光束结束;
     Vector3 挂点偏移, 跟随位置;
     float 跟随限幅;
@@ -65,20 +66,24 @@ public class DevilEyeAbility : MonoBehaviour
         if (激光 != null)
         {
             if (!有目标 || Time.time >= 光束结束) { Destroy(激光); 激光 = null; }
-            else AbilityVfxUtility.对准光束(激光, 法环.transform.position, AbilityVfxUtility.命中点(目标.transform), .025f);
+            else if (射击 != null) 射击.对准(法环.transform.position, AbilityVfxUtility.命中点(目标.transform));
         }
         if (!有目标 || 属性 == null || Time.time < 下次攻击) return;
         下次攻击 = Time.time + Mathf.Max(.1f, 神通.攻击间隔);
         目标.ReceiveAttack(属性, new AttackSpec(DamageNature.特殊, AttackKind.被动神通, false, 神通.伤害倍率));
-        激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, 1f);
-        光束结束 = Time.time + .4f;
-        AbilityVfxUtility.对准光束(激光, 法环.transform.position, AbilityVfxUtility.命中点(目标.transform), .025f);
+        激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, .12f);
+        if (激光 != null)
+        {
+            射击 = 激光.AddComponent<AbilityPreciseShotVfx>();
+            射击.对准(法环.transform.position, AbilityVfxUtility.命中点(目标.transform));
+        }
+        光束结束 = Time.time + 2.4f;
     }
     void 清理()
     {
         if (法环 != null) Destroy(法环);
         if (激光 != null) Destroy(激光);
-        法环 = null; 激光 = null;
+        法环 = null; 激光 = null; 射击 = null;
     }
     void OnDisable() { 清理(); }
 }
