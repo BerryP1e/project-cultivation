@@ -51,6 +51,7 @@ public class YufengPoseSettings : ScriptableObject
     [Tooltip("落地时屈膝缓冲的幅度")]
     [Range(0f, 1f)] public float 落地_缓冲幅度 = 0.28f;
 
+#if UNITY_EDITOR
     /// <summary>取参数资产；不存在就新建一个</summary>
     public static YufengPoseSettings LoadOrCreate()
     {
@@ -70,4 +71,5 @@ public class YufengPoseSettings : ScriptableObject
         UnityEditor.AssetDatabase.SaveAssets();
         return s;
     }
+#endif
 }

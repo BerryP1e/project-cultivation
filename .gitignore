@@ -122,3 +122,7 @@ cultivation/*.png
 # 真正的产物在 cultivation/Assets/resources/灵田/ 下。
 tools/参考素材/_raw/
 __pycache__/
+
+# Local diagnostics and private account recovery document (never release).
+.dsh/_diag/
+/proton邮箱恢复短语.pdf
