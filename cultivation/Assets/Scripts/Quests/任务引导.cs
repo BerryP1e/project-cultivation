@@ -600,7 +600,7 @@ public class 任务引导 : MonoBehaviour
     /// 生成"朝上的实心三角 + 深色描边"的精灵（和 `StationInteractor` 现画圆角精灵一个路子）。
     /// 为什么不用现成图：工程里没有箭头图，为一个 44 像素的小三角去导一张 png 不值当。
     /// </summary>
-    static Sprite 取三角精灵()
+    internal static Sprite 取三角精灵()
     {
         if (三角缓存 != null) return 三角缓存;
         const int 边 = 64;

@@ -547,6 +547,17 @@ public class StationInteractor : MonoBehaviour
             return;
         }
 
+        var 执事 = 设施.GetComponentInParent<执事阁界面>();
+        if (执事 != null)
+        {
+            当前设施 = 设施;
+            执事.开面板();
+            当前界面 = 执事.面板根;
+            有界面打开 = true;
+            本次右键已被占用 = true;
+            return;
+        }
+
         // ★ 功德堂兑换：和灵田地块一个路子 —— 面板由它自己画（行数取决于上架几件）。
         //   判据是"这台设施上有没有 功德堂兑换 组件"，而不是某个 StationKind：
         //   功德堂在场景里是当「建筑」配的（类型=修炼），加一种 StationKind 反而要动枚举 + 场景数据。
@@ -637,6 +648,16 @@ public class StationInteractor : MonoBehaviour
             关闭冷却 = 0.25f;
             Debug.Log($"[StationInteractor] 关闭【{当前设施.标题}】传送面板", 当前设施);
             当前设施 = null;
+            return;
+        }
+
+        var 执事 = 当前设施 != null ? 当前设施.GetComponentInParent<执事阁界面>() : null;
+        if (执事 != null)
+        {
+            执事.关面板();
+            当前界面 = null;
+            当前设施 = null;
+            关闭冷却 = 0.25f;
             return;
         }
 

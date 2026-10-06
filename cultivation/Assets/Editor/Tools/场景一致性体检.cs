@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -76,6 +76,11 @@ public static class 场景一致性体检
             名字 = "CameraYawRotator", 类型名 = "CameraYawRotator", 挂Player = false,
             补齐 = (场景, t) => 场景内新建(场景, "CameraYawRotator", t),
         });
+        // 执事阁追踪与悬赏刷怪由场景自举在每个游戏场景补齐；这里也登记供装配报告。
+        单.Add(new 应备项 { 名字 = "宗门任务引导", 类型名 = "宗门任务引导",
+            补齐 = (场景, t) => 场景内新建(场景, "宗门任务引导", t) });
+        单.Add(new 应备项 { 名字 = "宗门悬赏刷怪", 类型名 = "宗门悬赏刷怪",
+            补齐 = (场景, t) => 场景内新建(场景, "宗门悬赏刷怪", t) });
         return 单;
     }
 

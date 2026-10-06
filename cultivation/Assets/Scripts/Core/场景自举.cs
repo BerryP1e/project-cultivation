@@ -247,6 +247,8 @@ public static class 场景自举
             确保组件<纪年HUD>(相机, 场景.name);
             确保组件<灵田界面>(相机, 场景.name);
             确保组件<任务引导>(相机, 场景.name);
+            确保组件<宗门任务引导>(相机, 场景.name);
+            确保组件<宗门悬赏刷怪>(相机, 场景.name);
 
             // ★ 日常循环（第四阶段）：四件事的状态机（收获 / 炼制 / 打坐 / 入塔）。
             确保组件<日常循环>(相机, 场景.name);
@@ -327,6 +329,12 @@ public static class 场景自举
         foreach (var 根 in 场景.GetRootGameObjects())
             foreach (var t in 根.GetComponentsInChildren<Transform>(true))
             {
+                if (t.name == "environment_Building_diaojiaolou_001_h" || t.GetComponent<StationInteractable>()?.显示名 == "执事阁")
+                {
+                    if (t.GetComponent<StationInteractable>() != null && t.GetComponent<执事阁界面>() == null)
+                        t.gameObject.AddComponent<执事阁界面>();
+                    continue;
+                }
                 bool 传法 = t.name == "environment_Building_luoxiaguan_001_b";
                 if (t.name != 功德堂物体名 && !传法) continue;
                 if (t.GetComponent<StationInteractable>() == null) continue;
