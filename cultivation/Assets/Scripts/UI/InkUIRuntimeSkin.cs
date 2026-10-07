@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public class InkUIRuntimeSkin : MonoBehaviour
 {
     static readonly HashSet<string> CanvasNames = new HashSet<string> {
-        "CultivationCanvas", "AlchemyCanvas", "灵田地块界面", "灵田总览", "功德堂Canvas", "对话界面",
+        "CultivationCanvas", "AlchemyCanvas", "功德堂Canvas", "对话界面",
         "PauseMenuCanvas", "MenuCanvas", "DeathScreenCanvas", "起名界面", "ToastCanvas", "TowerCanvas", "传送面板",
         "QuestGuideCanvas", "ChronicleCanvas", "StationHint", "StationUIPlaceholder"
     };
@@ -37,6 +37,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         if (!Application.isPlaying || !InkUITheme.Enabled || parent == null) return;
         var canvas = parent.GetComponentInParent<Canvas>(true);
         if (canvas == null || !CanvasNames.Contains(canvas.name)) return;
+        if (canvas.GetComponent<MainMenuUI>() != null || canvas.name == "灵田地块界面" || canvas.name == "灵田总览") return;
         if (canvas.GetComponent<InkUIRuntimeSkin>() == null) canvas.gameObject.AddComponent<InkUIRuntimeSkin>();
     }
     void Start()
@@ -70,7 +71,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
     {
         if (!InkUITheme.Enabled) return;
         // 对话、传送和丹房已使用独立布局，避免登记器重新套回旧纸卷/金框。
-        if (GetComponent<DialogueUI>() != null || GetComponent<UIInkTeleportPanel>() != null
+        if (name == "灵田地块界面" || name == "灵田总览" || GetComponent<MainMenuUI>() != null || GetComponent<DialogueUI>() != null || GetComponent<UIInkTeleportPanel>() != null
             || GetComponentInParent<UIInkAlchemyPage>(true) != null
             || name == "ChronicleCanvas" || name == "QuestGuideCanvas" || name == "StationHint") return;
         string canvas = name;
@@ -79,6 +80,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
             if (IsSaveWindow(image)) continue;
             if (!handled.Add(image.GetInstanceID())) continue;
             string n = image.name;
+            if (canvas == "ToastCanvas" && n == "底") { InkUITheme.NoticeBackground(image); continue; }
             string path = Map(canvas, image);
             if (path != null) InkUITheme.Image(image, path, !path.EndsWith("furnace-stage"));
             if (path != null && (image.name == "主面板" || image.name == "内容框" || image.name == "面板" || image.name == "功德堂" || image.name == "对话框" || image.name == "底板" || image.name == "SavePanel"))
@@ -95,7 +97,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         }
         foreach (var scroll in GetComponentsInChildren<ScrollRect>(true))
             if (handled.Add(scroll.GetInstanceID())) InkUITheme.Scroll(scroll);
-        bool paper = canvas != "DeathScreenCanvas" && canvas != "PauseMenuCanvas" && canvas != "起名界面" && canvas != "MenuCanvas" && canvas != "TowerCanvas";
+        bool paper = canvas != "ToastCanvas" && canvas != "DeathScreenCanvas" && canvas != "PauseMenuCanvas" && canvas != "起名界面" && canvas != "MenuCanvas" && canvas != "TowerCanvas";
         foreach (var text in GetComponentsInChildren<Text>(true))
         {
             if (IsSaveWindow(text)) continue;
@@ -103,7 +105,11 @@ public class InkUIRuntimeSkin : MonoBehaviour
             if (text.name.Contains("余额") || text.name.Contains("贡献") || text.name == "灵气数值" || text.name == "进度文字") UIInkNumber.Attach(text);
             if (text.name == "塔层HUD") { Backdrop(text, "CommonPanels/tower-floor-bar"); text.color = new Color(.98f, .95f, .85f); }
             if ((canvas == "PauseMenuCanvas" || canvas == "DeathScreenCanvas" || canvas == "起名界面" || canvas == "StationUIPlaceholder") && text.name == "标题")
-            { Backdrop(text, "CommonPanels/title-plaque"); text.color = InkUITheme.Ink; }
+            {
+                if (canvas != "起名界面") Backdrop(text, "Dynamic/nav-ink-blot-4");
+                text.color = new Color(.96f,.95f,.89f);
+                continue;
+            }
             if (!paper) continue;
             if (text.name.Contains("立绘") || text.transform.parent.name.Contains("立绘")) continue;
             if (text.GetComponentInParent<Button>(true) != null) continue;
@@ -125,7 +131,9 @@ public class InkUIRuntimeSkin : MonoBehaviour
         var source = text.rectTransform; var rt = image.rectTransform;
         rt.anchorMin = source.anchorMin; rt.anchorMax = source.anchorMax; rt.pivot = source.pivot;
         rt.sizeDelta = source.sizeDelta + new Vector2(24, 24); rt.anchoredPosition = source.anchoredPosition;
-        InkUITheme.Image(image, path); rt.SetSiblingIndex(text.transform.GetSiblingIndex()); image.raycastTarget = false;
+        if (path == "Dynamic/nav-ink-blot-4") InkUITheme.NoticeBackground(image);
+        else InkUITheme.Image(image,path);
+        rt.SetSiblingIndex(text.transform.GetSiblingIndex()); image.raycastTarget = false;
     }
     static string Map(string canvas, Image image)
     {

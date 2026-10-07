@@ -34,10 +34,10 @@ public class 灵田地块界面 : MonoBehaviour
     // ============================================================ 配色
 
     static readonly Color 幕布色 = new Color(0f, 0f, 0f, 0.55f);
-    static readonly Color 面板色 = new Color(0.16f, 0.14f, 0.12f, 0.98f);
+    static readonly Color 面板色 = new Color(.025f, .055f, .06f, .86f);
     static readonly Color 标题色 = new Color(0.97f, 0.93f, 0.80f, 1f);
     static readonly Color 正文色 = new Color(0.88f, 0.87f, 0.83f, 1f);
-    static readonly Color 按钮字色 = new Color(0.10f, 0.09f, 0.07f, 1f);
+    static readonly Color 按钮字色 = SpiritFieldPanelStyle.TextColor;
     static readonly Color 强调色 = new Color(0.78f, 0.52f, 0.33f, 1f);
 
     /// <summary>
@@ -48,8 +48,8 @@ public class 灵田地块界面 : MonoBehaviour
     /// </summary>
     static readonly Color 灰字色 = new Color(0.80f, 0.78f, 0.74f, 0.9f);
 
-    const float 窗宽 = 500f;
-    const float 窗高 = 570f;
+    const float 窗宽 = 720f;
+    const float 窗高 = 700f;
 
     // ============================================================ 状态
 
@@ -108,6 +108,7 @@ public class 灵田地块界面 : MonoBehaviour
         面rt.pivot = new Vector2(0.5f, 0.5f);
         面rt.anchoredPosition = Vector2.zero;
         面rt.sizeDelta = new Vector2(窗宽, 窗高);
+        SpiritFieldPanelStyle.Frame(面rt);
 
         标题文本 = UIBuildUtils.CreateText("标题", 面rt, 字体, "", 26, TextAnchor.MiddleLeft, 标题色);
         锚顶(标题文本.rectTransform, -14f, 36f);
@@ -134,6 +135,7 @@ public class 灵田地块界面 : MonoBehaviour
         var 挪 = UIBuildUtils.CreateButton("挪动地块", 面rt, 字体, "挪动地块", 18);
         锚底(挪.GetComponent<RectTransform>(), new Vector2(16f, 70f), new Vector2(160f, 42f), false);
         挪.onClick.AddListener(点挪动);
+        SpiritFieldPanelStyle.Button(挪);
 
         升级按钮 = UIBuildUtils.CreateButton("升级田地", 面rt, 字体, "升级这块地", 18);
         锚底(升级按钮.GetComponent<RectTransform>(), new Vector2(-16f, 70f), new Vector2(300f, 42f), true);
@@ -141,8 +143,9 @@ public class 灵田地块界面 : MonoBehaviour
         升级按钮.onClick.AddListener(点升级);
 
         var 关 = UIBuildUtils.CreateButton("关闭", 面rt, 字体, "关　闭（ESC）", 18);
-        锚底(关.GetComponent<RectTransform>(), new Vector2(0f, 16f), new Vector2(220f, 42f), false);
+        锚底(关.GetComponent<RectTransform>(), new Vector2(16f, 16f), new Vector2(220f, 42f), false);
         关.onClick.AddListener(() => 块.关面板());
+        SpiritFieldPanelStyle.Button(关);
     }
 
     static void 锚顶(RectTransform rt, float y, float 高)
@@ -217,7 +220,7 @@ public class 灵田地块界面 : MonoBehaviour
         string 需求 = 灵田.取() != null ? 灵田.取().升级需求文本(块.编号) : "";
         提示文本.text = b.已满阶 ? 需求
             : (能升级 ? "可升级！" + 需求 : 需求 + "　（" + 升级原因 + "）");
-        InkUITheme.Button(升级按钮);
+        SpiritFieldPanelStyle.Button(升级按钮);
     }
 
     void 清空动作区()
@@ -278,7 +281,7 @@ public class 灵田地块界面 : MonoBehaviour
             string id = d.id;
             btn.onClick.AddListener(() => { 选中灵植 = id; 刷新(); });
             if (选中灵植 == d.id) btn.GetComponent<Image>().color = 强调色;
-            InkUITheme.Choice(btn, "CommonPanels/dialog-choice", 选中灵植 == d.id);
+            SpiritFieldPanelStyle.Button(btn, 选中灵植 == d.id);
 
             种子按钮.Add(btn);
             种子文字.Add(字);
@@ -311,7 +314,7 @@ public class 灵田地块界面 : MonoBehaviour
         if (可点 && 动作 != null) btn.onClick.AddListener(动作);
         主按钮字 = btn.GetComponentInChildren<Text>();
         if (!可点 && 主按钮字 != null) 主按钮字.color = 灰字色;
-        InkUITheme.Button(btn);
+        SpiritFieldPanelStyle.Button(btn);
         return btn;
     }
 

@@ -10,16 +10,15 @@ using UnityEngine.EventSystems;
 /// 生成开始界面场景。
 ///
 /// 布局照概念图：
-///   背景   begin_ui.png 全屏铺满（保持比例，多出来的部分裁掉）
-///   标题   「修仙」居上
+///   背景   外围树林与石阶框景，中央留空给动态阵法与漩涡
+///   标题   「争渡」位于左侧按钮上方
 ///   左侧   新游戏 / 读取存档 / 设置 / 退出 四个竖排按钮
-///   右侧   存档面板（默认隐藏），里面 5 个槽位
+///   中央   漩涡与滚动存档栏，由 MainMenuUI 在运行时补齐动态分层
 ///
 /// 菜单：修仙 / 生成开始界面场景   （ASCII：Cultivation / Build Main Menu Scene）
 /// </summary>
 public static class MainMenuBuilder
 {
-    const string BgPath = "Assets/Resources/UI/MainMenu/begin_ui.png";
     const string FontPath = "Assets/Fonts/SimHei.ttf";
     const string ScenePath = "Assets/Scenes/StartScene.scene";
     const string GameScene = "3C_Testbed";
@@ -30,8 +29,6 @@ public static class MainMenuBuilder
     {
         var font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
         if (font == null) { Debug.LogError("[MainMenuBuilder] 找不到中文字体 " + FontPath); return; }
-        var bg = AssetDatabase.LoadAssetAtPath<Sprite>(BgPath);
-        if (bg == null) { Debug.LogError("[MainMenuBuilder] 找不到背景图 " + BgPath + "（要把它的 Texture Type 设成 Sprite）"); return; }
 
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -60,14 +57,15 @@ public static class MainMenuBuilder
         var root = canvasGo.GetComponent<RectTransform>();
 
         // ---- 背景：全屏铺满，保持比例 ----
-        var bgImg = UIBuildUtils.CreateImage("Background", root, Color.white);
+        var bgImg = UIBuildUtils.CreateImage("Background", root, new Color(.006f,.025f,.03f,1));
         UIBuildUtils.Stretch(bgImg.rectTransform);
-        bgImg.sprite = bg;
+        bgImg.sprite=AssetDatabase.LoadAssetAtPath<Sprite>("Assets/resources/UI/MainMenu/Animated/frame.png");
+        if(bgImg.sprite!=null) bgImg.color=Color.white;
         bgImg.type = Image.Type.Simple;
         bgImg.preserveAspect = false;   // 概念图是 16:9，直接铺满即可
 
-        // ---- 顶部标题「修仙」----
-        var title = UIBuildUtils.CreateText("Title", root, font, "修仙", 150, TextAnchor.UpperCenter,
+        // ---- 标题（最终位置由共用布局设置）----
+        var title = UIBuildUtils.CreateText("Title", root, font, "争渡", 104, TextAnchor.UpperCenter,
             new Color(0.06f, 0.09f, 0.10f, 1f));
         UIBuildUtils.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
             new Vector2(0f, -230f), new Vector2(0f, -40f));
@@ -147,6 +145,7 @@ public static class MainMenuBuilder
         ui.提示 = 提示;
         ui.字体 = font;
         ui.关闭按钮 = closeBtn;
+        MainMenuPresentation.Layout(root);
 
         // 面板在场景里就设成隐藏，编辑器里看着干净；运行时 MainMenuUI.Awake 也会再关一次
         panelBg.gameObject.SetActive(false);

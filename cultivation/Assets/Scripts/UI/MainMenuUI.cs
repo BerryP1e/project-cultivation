@@ -7,9 +7,9 @@ using UnityEngine.SceneManagement;
 /// 开始界面的逻辑。
 ///
 /// 布局按概念图：
-///   · 背景是 begin_ui.png 全屏铺满
+///   · 深青黑底与独立动态阵法、漩涡、人物和灵气粒子
 ///   · 左侧竖排四个按钮：新游戏 / 读取存档 / 设置 / 退出
-///   · 右侧弹出一个存档面板，里面一列槽位，每格左上「角色名 境界」、右下「最后存档时间」，
+///   · 中央漩涡浮现滚动存档栏，每格左上「角色名 境界」、右下「最后存档时间」，
 ///     空槽显示「暂无存档」
 ///
 /// 「新游戏」和「读取存档」共用同一个面板，只是模式不同：
@@ -42,6 +42,8 @@ public class MainMenuUI : MonoBehaviour
     bool 新游戏模式;
     readonly List<GameObject> 槽位行 = new List<GameObject>();
     float 提示到期;
+    MainMenuSaveCarousel 存档轮盘;
+    bool[] 存档占用;
 
     // 删除确认：点第一次是「准备删除」，3 秒内再点一次才真删
     int 待删除槽位 = -1;
@@ -55,6 +57,8 @@ public class MainMenuUI : MonoBehaviour
     void Awake()
     {
         配置存档窗口();
+        MainMenuPresentation.Install(this);
+        存档轮盘 = MainMenuSaveCarousel.Build(this);
         if (新游戏按钮 != null) 新游戏按钮.onClick.AddListener(() => 打开面板(true));
         if (读取存档按钮 != null) 读取存档按钮.onClick.AddListener(() => 打开面板(false));
         if (设置按钮 != null) 设置按钮.onClick.AddListener(() => 提示一下("设置功能尚未实现"));
@@ -206,18 +210,20 @@ public class MainMenuUI : MonoBehaviour
         if (槽位容器 == null) return;
 
         var 全部 = SaveSystem.读全部();
+        存档占用 = new bool[SaveSystem.槽位数];
+        for (int i = 0; i < 存档占用.Length; i++) 存档占用[i] = 全部[i] != null && !全部[i].是空的;
         for (int i = 0; i < SaveSystem.槽位数; i++) 建一行(i, 全部[i]);
+        if (存档轮盘 != null) 存档轮盘.Refresh(新游戏模式);
     }
 
     void 建一行(int 槽位, SaveData 数据)
     {
         bool 有档 = 数据 != null && !数据.是空的;
-        bool 可点 = 新游戏模式 ? !有档 : 有档;
 
         var 行 = UIBuildUtils.CreateImage("Slot" + 槽位, 槽位容器, 有档 ? 槽位底色 : 槽位空底色);
         var 行Rt = 行.rectTransform;
         var le = 行.gameObject.AddComponent<LayoutElement>();
-        le.minHeight = 104f; le.preferredHeight = 104f;
+        le.minHeight = 116f; le.preferredHeight = 116f;
         细框(行Rt, false);
 
         // UIBuildUtils.CreateImage 默认把 raycastTarget 关掉了（它当底板用）。
@@ -227,13 +233,13 @@ public class MainMenuUI : MonoBehaviour
 
         var 按钮 = 行.gameObject.AddComponent<Button>();
         按钮.targetGraphic = 行;
-        按钮.interactable = 可点;
+        按钮.interactable = true;
         var 行颜色 = 按钮.colors;
         行颜色.disabledColor = new Color(.72f,.72f,.72f,1);
         行颜色.highlightedColor = new Color(1.2f,1.2f,1.2f,1);
         按钮.colors = 行颜色;
         int 捕获 = 槽位;
-        按钮.onClick.AddListener(() => 点槽位(捕获));
+        按钮.onClick.AddListener(() => 存档轮盘.Select(捕获));
 
         // 左上：角色名 + 境界
         var 左上 = UIBuildUtils.CreateText("Name", 行Rt, 字体,
@@ -311,6 +317,18 @@ public class MainMenuUI : MonoBehaviour
         SaveSystem.当前存档 = 数据;
         SaveSystem.当前槽位 = 槽位;
         进游戏(数据);
+    }
+
+    public bool 中央存档可用(int 槽位)
+    {
+        if (存档占用 == null || 槽位 < 0 || 槽位 >= 存档占用.Length) return false;
+        bool exists = 存档占用[槽位];
+        return 新游戏模式 ? !exists : exists;
+    }
+
+    public void 确认中央存档(int 槽位)
+    {
+        if (中央存档可用(槽位)) 点槽位(槽位);
     }
 
     void 进游戏(SaveData 数据)

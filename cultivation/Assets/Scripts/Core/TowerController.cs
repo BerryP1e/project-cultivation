@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -361,7 +361,11 @@ public class TowerController : MonoBehaviour
     }
 
     /// <summary>下一层（到底了就留在顶层）</summary>
-    public void 下一层() => 进入层(当前层 + 1);
+    public void 下一层()
+    {
+        if (等待死亡选择 || (玩家气血 != null && 玩家气血.已死亡)) return;
+        进入层(当前层 + 1);
+    }
 
     /// <summary>
     /// 留在这一层（**立刻**重刷本层）。
@@ -558,7 +562,7 @@ public class TowerController : MonoBehaviour
         隐藏通关传送点();
 
         if (打印日志) Debug.Log("[镇妖塔] 玩家在第 " + 当前层 + " 层倒下 —— "
-                               + 死亡选择时限 + " 秒内选择：出塔 / 继续深入（下一层）", this);
+                               + 死亡选择时限 + (当前层 > 1 ? " 秒内选择：出塔 / 返回上一层" : " 秒内选择：出塔"), this);
 
         死亡倒数开始?.Invoke(死亡选择时限);
         StartCoroutine(死亡选择倒计时());
@@ -592,6 +596,8 @@ public class TowerController : MonoBehaviour
     {
         if (!等待死亡选择) return;
         等待死亡选择 = false;
+        // 第一层没有可退的楼层；也拦住外部调用或旧按钮回调。
+        进上一层 = 进上一层 && 当前层 > 1;
 
         if (界面 != null) 界面.隐藏死亡选择();
         死亡选择完成?.Invoke(进上一层);
@@ -609,7 +615,7 @@ public class TowerController : MonoBehaviour
 
         // 进上一层：满血复活 + 刷新 + 等级调整
         复活玩家();
-        进入层(当前层 + 1);
+        进入层(当前层 - 1);
 
         if (打印日志) Debug.Log("[镇妖塔] 死亡后选择进入上一层 → 第 " + 当前层
                                + " 层（怪等级 " + 当前怪物等级 + "），已满血复活", this);

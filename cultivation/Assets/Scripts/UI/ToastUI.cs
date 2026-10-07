@@ -61,6 +61,30 @@ public class ToastUI : MonoBehaviour
         t.构建(文本, 时长);
     }
 
+    ItemDefinition 获得物品定义;
+    int 获得数量;
+    public static void 获得物品(ItemDefinition item, int count)
+    {
+        if (!Application.isPlaying || item==null || count<=0) return;
+        foreach(var toast in 活动)
+            if(toast!=null && toast.获得物品定义==item)
+            { toast.获得数量+=count;toast.计时=0;toast.更新物品文字();return; }
+        var root=取画布();if(root==null)return;
+        var go=new GameObject("获得物品_"+item.物品id,typeof(RectTransform));go.transform.SetParent(root.transform,false);
+        var t=go.AddComponent<ToastUI>();t.尺寸=new Vector2(460,68);t.获得物品定义=item;t.获得数量=count;
+        t.构建("",3.5f);t.组.blocksRaycasts=false;t.组.interactable=false;
+        var text=go.transform.Find("文字").GetComponent<Text>();text.alignment=TextAnchor.MiddleLeft;
+        text.rectTransform.offsetMin=new Vector2(76,8);text.rectTransform.offsetMax=new Vector2(-14,-8);text.resizeTextForBestFit=true;text.resizeTextMinSize=16;text.resizeTextMaxSize=22;
+        var icon=UIBuildUtils.CreateImage("物品图标",go.transform,Color.white);icon.sprite=item.图标;icon.preserveAspect=true;
+        var rt=icon.rectTransform;rt.anchorMin=rt.anchorMax=new Vector2(0,.5f);rt.pivot=new Vector2(0,.5f);rt.anchoredPosition=new Vector2(12,0);rt.sizeDelta=new Vector2(52,52);icon.raycastTarget=false;icon.enabled=item.图标!=null;
+        t.更新物品文字();
+    }
+    void 更新物品文字()
+    {
+        var text=transform.Find("文字")?.GetComponent<Text>();
+        if(text!=null)text.text="获得  "+获得物品定义.DisplayName+"  ×"+获得数量;
+    }
+
     static Canvas 取画布()
     {
         if (共享画布 != null) return 共享画布;
@@ -110,6 +134,7 @@ public class ToastUI : MonoBehaviour
         自己.sizeDelta = 尺寸;
 
         var 底 = UIBuildUtils.CreateImage("底", transform, 底色);
+        if (InkUITheme.Enabled) InkUITheme.NoticeBackground(底);
         底图 = 底.rectTransform;
         底.raycastTarget = false;                        // 提示不该挡住点击
         UIBuildUtils.Stretch(底.rectTransform, 0f);

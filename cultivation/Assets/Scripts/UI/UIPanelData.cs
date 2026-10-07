@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -198,6 +198,7 @@ public class UIPanelData : MonoBehaviour
         if (物品 == null || 数量 <= 0) return;
         if (this.物品 == null) this.物品 = new List<ItemDefinition>();
         for (int i = 0; i < 数量; i++) this.物品.Add(物品);
+        ToastUI.获得物品(物品, 数量);
         RaiseChanged();
     }
 
@@ -230,7 +231,6 @@ public class UIPanelData : MonoBehaviour
         if (已获得真灵 == null) 已获得真灵 = new List<NpcDefinition>();
         EnsureFormationSlots();
         从面板库灌目录();
-        if(当前功法==null)当前功法=PanelDatabase.取()?.功法.Find(g=>g!=null && g.功法id=="gongfa_taixu_lianqi");
         if (已拥有法宝 == null) 已拥有法宝 = new List<string>();
         if (!收服系统已初始化) {
             已获得真灵.Clear(); for(int i=0;i<战阵站位.Count;i++) 战阵站位[i]=null;

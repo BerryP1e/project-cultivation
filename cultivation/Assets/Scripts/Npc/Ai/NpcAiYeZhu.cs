@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 野猪（YeZhu）—— 近战妖魔，**结构照抄白熊精**（<see cref="NpcAiBaiXiongJing"/>）。
@@ -63,8 +63,8 @@ public class NpcAiYeZhu : NpcAiDemon
         base.取默认参数();
 
         // 近战站位 = **中心距**。野猪没有长兵器，比白熊精的 2.5 米更近一档。
-        索敌范围 = 14f;
-        脱战范围 = 22f;
+        索敌范围 = 22f;
+        脱战范围 = 30f;
         攻击距离 = 2.2f;
         攻击间隔倍率 = 1.2f;
         转向速度 = 380f;      // 猪转身比熊灵活一点

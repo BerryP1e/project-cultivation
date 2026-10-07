@@ -45,7 +45,7 @@ public class 功德堂兑换 : MonoBehaviour
         if(i==null || !取兑换目录().Contains(i))return false;
         var panel=玩家背包();if(panel==null){提示("未找到背包，未扣除贡献");return false;}
         if(!宗门贡献.扣(i.兑换消耗贡献,"兑换「"+i.DisplayName+"」")){提示("宗门贡献不足");return false;}
-        panel.给物品(i);提示("已将「"+i.DisplayName+"」放入背包");刷新详情();return true;
+        panel.给物品(i);MainQuestTutorial.记录兑换(传法阁);提示("已将「"+i.DisplayName+"」放入背包");刷新详情();return true;
     }
     bool 属于分类(ItemDefinition i)
     {

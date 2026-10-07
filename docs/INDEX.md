@@ -159,6 +159,8 @@ docs/
 
 ---
 
+当前开始界面专用文档：[争渡开始界面](art/开始界面动效.md)，素材提示词：[main-menu-prompts.json](art/main-menu-prompts.json)。主线与巡览统一查[主线剧情](design/主线剧情.md)，教学条件查[任务系统](design/任务系统.md)，共享水墨提示底查[UI换皮](guides/UI换皮.md)。
+
 ## 2. 按任务找文档
 
 | 我要做的事 | 先读 | 再读 |
@@ -196,6 +198,9 @@ docs/
 | **UI 重制用户要求与原话** | [八页重制总纲](design/UI重制/八页重制总纲.md) | [全套UI施工单](design/UI重制/全套UI施工单.md) |
 | **UI 素材规格与提示词** | [素材规格与提示词](reference/UI素材/素材规格与提示词.md) | [第二轮提示词](reference/UI素材/提示词-第二轮.md) |
 | **UI 原始制作记录（只读历史）** | [UI制作归档](ai/archive/UI重制/README.md) | 当前状态先查 [UI换皮](guides/UI换皮.md) |
+| **开始界面 / 争渡标题 / 漩涡与存档轮盘** | [art/开始界面动效](art/开始界面动效.md) | [存档系统](design/存档系统.md) · [UI换皮](guides/UI换皮.md) |
+| **宗门巡览 / 丹房衔接 / 师兄站位** | [主线剧情](design/主线剧情.md) | [对话系统](design/对话系统.md) · [执事阁](guides/执事阁与宗门任务.md) |
+| **获得物品提示 / 水墨提示底** | [物品系统](design/物品系统.md) | [UI换皮](guides/UI换皮.md) |
 | **镇妖塔 / 刷怪 / 关卡难度** | [guides/镇妖塔](guides/镇妖塔.md) | [ai/踩坑总库 §H](ai/踩坑总库.md) |
 | **传送门 / 落点 / 切场景** | [architecture/传送系统](architecture/传送系统.md) | [design/任务系统 §8](design/任务系统.md) · [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **加可交互物 / 「按 F 打开」的界面** | [architecture/系统总览 §2.5](architecture/系统总览.md) · [design/交互系统](design/交互系统.md) | [ai/踩坑总库](ai/踩坑总库.md) |

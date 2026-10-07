@@ -194,11 +194,12 @@ public class DialogueUI : MonoBehaviour
         {
             bool 最后一句 = (i == 有效.Count - 1);
             ui.临时台词 = 有效[i];
-            ui.显示临时();
             // ★ 只有最后一句的「继续」才收起对话框；中间的只结束这一句、换下一句
             ui.当前继续回调 = 最后一句
                 ? (System.Action)(() => { ui.是临时演出 = false; ui.收起来(); })
                 : (System.Action)(() => { ui.该句看完 = true; });
+
+            ui.显示临时();
 
             ui.该句看完 = false;
             int 起帧 = Time.frameCount;
@@ -230,7 +231,7 @@ public class DialogueUI : MonoBehaviour
         名字文本.text = 玩家在说
             ? (string.IsNullOrEmpty(起名界面.当前名字) ? "主角" : 起名界面.当前名字)
             : 临时说话人;
-        内容文本.text = 临时台词;
+        内容文本.text = (临时台词 ?? "").Replace("xxx", string.IsNullOrEmpty(起名界面.当前名字) ? "小师弟" : 起名界面.当前名字);
         // 按钮回调走 当前继续回调（多行演出会改它），没有就用默认的"收起"
         var 回调 = 当前继续回调 ?? (System.Action)(() => { 是临时演出 = false; 收起来(); });
         加按钮("继续 ▸", () => 回调());

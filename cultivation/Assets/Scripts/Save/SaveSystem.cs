@@ -149,7 +149,7 @@ public static class SaveSystem
             //   主角开局什么功法都没有，第一门功法要靠在背包里「使用」秘籍类物品学会，
             //   学会第一门时它才会成为「当前修炼的功法」（见 学功法效果.使用）。
             //   原来这里写死 "gongfa_taixu_lianqi" —— 那和"已学功法为空"自相矛盾，
-            //   而且 应用到角色 里有 `if (功法 != null) 面板.当前功法 = 功法;`，
+            //   而且 应用到角色 里有 `面板.当前功法 = 功法;`，
             //   一旦取得到就会让主角**凭空多出一门功法**。
             功法id = "",
         };
@@ -300,11 +300,12 @@ public static class SaveSystem
             var 面板 = 修炼.面板数据;
             if (面板 != null)
             {
-                // 功法按 id 还原（取不到就保持当前）
+                // 空功法也必须覆盖场景预设；新档在正式学会之前没有功法。
                 var 功法 = 修炼.取功法(数据.功法id);
-                if (功法 != null) 面板.当前功法 = 功法;
+                面板.当前功法 = 功法;
 
-                // 已学功法（按 id 还原；存档为空时保持默认=全学）
+                // 学习记录以存档为准，空列表代表尚未学会。
+                面板.已学功法 = new System.Collections.Generic.List<GongFaDefinition>();
                 if (数据.已学功法 != null && 数据.已学功法.Count > 0)
                 {
                     var 还原 = new System.Collections.Generic.List<GongFaDefinition>();
@@ -470,7 +471,7 @@ public static class SaveSystem
             var 面板 = 修炼.面板数据;
             if (面板 != null)
             {
-                if (面板.当前功法 != null) 数据.功法id = 面板.当前功法.功法id;
+                数据.功法id = 面板.当前功法 != null ? 面板.当前功法.功法id : "";
                 数据.已学功法.Clear();
                 if (面板.已学功法 != null)
                     foreach (var g in 面板.已学功法)

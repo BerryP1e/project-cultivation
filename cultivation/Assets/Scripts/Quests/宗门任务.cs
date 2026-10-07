@@ -92,6 +92,7 @@ public static class 宗门任务
         { 提示 = "此悬赏的妖群配置不完整，暂不能接取"; return false; }
         if (!q.是悬赏 && (q.需求物品 == null || q.数量 <= 0)) { 提示 = "提交物品配置不完整"; return false; }
         数据.记录.Add(new 宗门委托记录 { id = id, 剩余妖魔 = ids }); 数据.追踪id = id;
+        MainQuestTutorial.记录悬赏(q);
         提示 = q.是悬赏 ? "悬赏已接取，前往宗门野外剿妖" : "委托已接取，备齐物品后回来提交";
         变化?.Invoke(); return true;
     }

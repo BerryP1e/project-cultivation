@@ -85,6 +85,9 @@ public class 主线开场 : MonoBehaviour
             return;
         }
 
+        // 编辑器直接运行古古镇时也按新开局处理，不能继承场景的测试功法。
+        var panel=Object.FindObjectOfType<UIPanelData>();
+        if(panel!=null){panel.当前功法=null;panel.已学功法.Clear();panel.RaiseChanged();}
         演过 = true;
         StartCoroutine(开始开场());
     }

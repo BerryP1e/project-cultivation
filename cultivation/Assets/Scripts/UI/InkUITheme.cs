@@ -25,6 +25,7 @@ public static class InkUITheme
 
     public static Sprite Load(string path)
     {
+        if (path == "CommonPanels/toast" || path == "CommonPanels/title-plaque") path = "Dynamic/nav-ink-blot-4";
         if (sprites.TryGetValue(path, out var cached)) return cached;
         var source = Resources.Load<Sprite>("UI/InkUI/" + path);
         if (source == null) return null;
@@ -52,6 +53,7 @@ public static class InkUITheme
 
     public static void Image(Image image, string path, bool sliced = true, bool resetColor = true)
     {
+        if (path == "CommonPanels/toast" || path == "CommonPanels/title-plaque") { NoticeBackground(image); return; }
         if (!Enabled) return;
         if (image == null) return;
         var sprite = Load(path);
@@ -64,6 +66,25 @@ public static class InkUITheme
         if (resetColor) image.color = Color.white;
         if (path == "CommonPanels/plot-tag" && sprite.texture.isReadable) image.alphaHitTestMinimumThreshold = .12f;
         if (image.type == UnityEngine.UI.Image.Type.Filled) UIInkFill.Attach(image);
+    }
+
+    static Sprite noticeSprite;
+    public static void NoticeBackground(Image image)
+    {
+        if (image == null) return;
+        var source = Load("Dynamic/nav-ink-blot-4");
+        if (source == null) return;
+        if (noticeSprite == null)
+        {
+            var original=source.rect;
+            // 墨点源图上下透明留白较多，先收紧绘制范围，避免九宫格把它挤成一条黑线。
+            var r=new Rect(original.x+original.width*.05f,original.y+original.height*.18f,original.width*.9f,original.height*.6f);
+            noticeSprite=Sprite.Create(source.texture,r,new Vector2(.5f,.5f),source.pixelsPerUnit,0,SpriteMeshType.FullRect,
+                new Vector4(r.width*.25f,r.height*.18f,r.width*.25f,r.height*.18f));
+            noticeSprite.name="InkNoticeBackdrop";
+        }
+        image.sprite=noticeSprite;image.overrideSprite=null;image.type=UnityEngine.UI.Image.Type.Sliced;
+        image.pixelsPerUnitMultiplier=2;image.color=new Color(.16f,.20f,.18f,.92f);
     }
 
     public static void Button(Button button, string material = null)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -64,6 +64,7 @@ public class 任务管理器 : MonoBehaviour
 
     /// <summary>外部（黑幕自动收幕）通知：演出结束，放行阶段推进</summary>
     public static void 清演出中() { 演出中 = false; }
+    public static void 保持演出中() { 演出中 = true; if (实例 != null) 实例.空演出计时 = 0f; }
 
     /// <summary>"自称在演出、实际没有"持续了多久 —— 超过阈值就把 `演出中` 清掉（见自愈那段）</summary>
     float 空演出计时;
@@ -684,7 +685,7 @@ public class 任务管理器 : MonoBehaviour
         }
         else 空演出计时 = 0f;
 
-        if (演出中) return;      // ★ 其余条件：有阻塞式演出在跑就先别推进阶段
+        if (演出中 || 黑幕字幕.有幕在显示) return;      // ★ 其余条件：有阻塞式演出在跑就先别推进阶段
         // ★ 接手过来的阶段，动作在这里（场景激活完之后的第一帧）才发
         if (待发动作.Count > 0)
         {
@@ -721,6 +722,8 @@ public class 任务管理器 : MonoBehaviour
             }
         }
 
+        // 补发动作可能刚刚开启对话/黑幕，不能在同一帧跳过该阶段。
+        if (演出中 || 黑幕字幕.有幕在显示) return;
         var 快照 = new List<string>(当前阶段.Keys);
         foreach (var 任务id in 快照)
         {
@@ -747,6 +750,7 @@ public class 任务管理器 : MonoBehaviour
                     }
                 case 任务条件.到达:
                     {
+                        if (!string.IsNullOrEmpty(阶段.场景名) && UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != 阶段.场景名) break;
                         var 玩家 = 物品使用器.取玩家物体();
                         if (玩家 != null && Vector3.Distance(玩家.transform.position, 阶段.坐标) <= 阶段.到达半径)
                             完成当前阶段(任务id);
@@ -825,7 +829,7 @@ public class 任务管理器 : MonoBehaviour
                         // 灵田教学"种下第一颗种子"靠它验真（原来那一阶段是 `条件=无`，
                         // 收到道具的下一帧就完成，"去种一颗"这件事根本没被检查过）
                         var 田 = 灵田.取();
-                        if (田 != null && 田.已种数 >= Mathf.Max(1, 阶段.数量)) 完成当前阶段(任务id);
+                        if (田 != null && 田.已种数 >= Mathf.Max(1, 阶段.数量) && !灵田窗口已开()) 完成当前阶段(任务id);
                         break;
                     }
                 case 任务条件.炼过丹:
@@ -836,9 +840,15 @@ public class 任务管理器 : MonoBehaviour
                         //   （那一步早被"走到"吃掉了）。用户口径：**任意一种丹药都算**。
                         //   判据 = `丹方_` 标记的个数（`炼制()` 只在**成功**时加，见 炼丹炉），
                         //   而标记是进存档的 ⇒ 存档-退出-再炼也不会漏。
-                        if (炼丹炉.炼成过的种类数 >= Mathf.Max(1, 阶段.数量)) 完成当前阶段(任务id);
+                        if (炼丹炉.炼成过的种类数 >= Mathf.Max(1, 阶段.数量) && !MainQuestTutorial.操作面板已开()) 完成当前阶段(任务id);
                         break;
                     }
+                case 任务条件.宗门兑换:
+                    if (对话标记.具备("教学兑换_"+阶段.id) && !MainQuestTutorial.操作面板已开()) 完成当前阶段(任务id);
+                    break;
+                case 任务条件.已接宗门悬赏:
+                    if (MainQuestTutorial.已接指定悬赏(阶段) && !MainQuestTutorial.操作面板已开()) 完成当前阶段(任务id);
+                    break;
                 case 任务条件.在场景:
                     {
                         // ★ 「走进那道光 / 回到洞府」这类目标：**人在不在那个场景**就是完成条件。
@@ -1020,47 +1030,9 @@ public class 任务管理器 : MonoBehaviour
         switch (阶段.动作)
         {
             case 任务动作.生成NPC:     生成NPC(阶段); return;
+            case 任务动作.师兄引路: StartCoroutine(师兄开始引路(阶段)); return;
             case 任务动作.推进天数:
-                {
-                    // 「过了一夜」要真的过一天：不然玩家拿不到新的一份修炼机会，纪年也不动。
-                    var 时 = 时间管理器.取();
-                    if (时 == null) Debug.LogWarning("[任务] 推进天数：场景里没有 时间管理器");
-                    else
-                    {
-                        int 前 = 时.当前天数;
-                        时.推进(1f);
-                        Debug.Log("[任务] 调度：时间推进 1 天 → 第 " + 时.当前天数 + " 天（原第 " + 前 + " 天）");
-                    }
-
-                    // ★ 台词非空 = 顺便打一段黑幕字幕（「过夜 / 翌日」这一幕用）。
-                    //
-                    //   为什么塞在这个动作里（用户 2026-10-02 报的）：
-                    //   「过了一夜，也没有真的过了一夜；那个'翌日、太虚宗'的黑幕出场时机也有问题」——
-                    //   ① 天数在偷偷跳，画面上什么都没有（`条件=等待秒数 3` 只是在干等）；
-                    //   ② 那次黑幕被排在**大师兄早上那段话之后**（阶段25），顺序是反的 ——
-                    //      玩家先在"白天"听师兄说「小师弟，醒了？」，才看到「翌日」的黑幕。
-                    //   任务表「动作」只有一列，而"过了一夜"本来就是**时间 + 一幕黑**两件事，
-                    //   所以让它顺手演了这一幕。用户要的顺序：**大师兄那段话之后 → 黑幕「翌日」→ 去丹房**。
-                    //
-                    //   参数全部走已有的列（和 `移动玩家且黑幕` 同一套）：
-                    //     · 台词     = 黑幕上要打的字（多行用 |）
-                    //     · 等待秒   = **字打完之后再停多久**（幕由黑幕自己定时收，
-                    //                  见 黑幕字幕.下落并定时收起）
-                    //     · 淡入/淡出档数、打字速度 同其它黑幕阶段
-                    //   ⚠️ 本阶段的 `条件=等待秒数` 会被 `演出中` 挡到**幕收掉之后**才判定
-                    //      （条件检查在 `if (演出中) return;` 之后），所以不会在天还黑着的时候推进。
-                    var 行 = 拆台词(阶段.台词);
-                    if (行.Count > 0)
-                    {
-                        演出中 = true;
-                        黑幕字幕.下落并定时收起(阶段.等待秒, 行.ToArray(), 阶段.打字速度,
-                                                 取淡入档数(阶段), 取淡出档数(阶段));
-                        Debug.Log("[任务] 调度：推进天数 + 黑幕「" + 阶段.台词
-                            + "」打完停留 " + 阶段.等待秒.ToString("F2") + "s，淡入 "
-                            + 取淡入档数(阶段) + " 档 / 淡出 " + 取淡出档数(阶段) + " 档");
-                    }
-                    return;
-                }
+                StartCoroutine(过夜(阶段)); return;
             case 任务动作.镜头回玩家:  StartCoroutine(镜头回玩家(阶段.镜头时长, 阶段.镜头高度)); return;
             case 任务动作.黑幕字幕:    播黑幕(阶段); return;
             case 任务动作.闪白:        黑幕字幕.闪白(); Debug.Log("[任务] 调度：白屏闪一下"); return;
@@ -1150,6 +1122,9 @@ public class 任务管理器 : MonoBehaviour
                     Debug.Log("[任务] 调度：" + npc.name + " 把玩家当成了敌人");
                     break;
                 }
+            case 任务动作.刀光处决:
+                StartCoroutine(刀光斩杀(npc));
+                break;
             case 任务动作.处决:
                 {
                     // 直接打死（三幕大师兄一刀劈野猪）：TakeDamage(伤害, 是否已减免)
@@ -1281,6 +1256,86 @@ public class 任务管理器 : MonoBehaviour
                                  取淡入档数(阶段), 取淡出档数(阶段));
     }
 
+    System.Collections.IEnumerator 师兄开始引路(QuestDefinition stage)
+    {
+        演出中 = true;
+        while (黑幕字幕.有幕在显示 || 黑幕字幕.过渡进行中 || 落点进行中_公开) { 演出中=true; yield return null; }
+        yield return MainQuestTutorial.讲述者到身旁("大师兄",false,stage.id=="q_main_005_gongde_lead");
+        if (!string.IsNullOrEmpty(stage.台词)) yield return DialogueUI.演出("大师兄",stage.台词);
+        var actor=MainQuestTutorial.取师兄();
+        if(actor!=null)
+        {
+            var guide=actor.GetComponent<StoryCompanionGuide>();
+            if(guide==null) guide=actor.AddComponent<StoryCompanionGuide>();
+            guide.Configure(this,stage);
+        }
+        演出中=false;
+    }
+
+    static bool 灵田窗口已开()
+    {
+        if (UnityEngine.Object.FindObjectOfType<灵田地块界面>() != null) return true;
+        var overview=UnityEngine.Object.FindObjectOfType<灵田界面>();
+        return overview!=null && overview.已打开;
+    }
+
+    // 和上一段对话错开一帧；遮罩全黑后才推进时间和摆放角色。
+    System.Collections.IEnumerator 过夜(QuestDefinition stage)
+    {
+        演出中=true;
+        yield return null;
+        var lines=拆台词(stage.台词);
+        if(lines.Count>0)
+        {
+            黑幕字幕.下落并定时收起(Mathf.Max(2f,stage.等待秒),lines.ToArray(),stage.打字速度,取淡入档数(stage),取淡出档数(stage));
+            while(!黑幕字幕.落黑幕完成){演出中=true;yield return null;}
+        }
+        var clock=时间管理器.取();
+        if(clock!=null)clock.推进(1.25f-clock.当天进度);
+        if(!string.IsNullOrEmpty(stage.动作参数))
+        {
+            var hut=黑幕字幕.找场景物体(stage.动作参数);
+            if(hut!=null)
+            {
+                // 复用修炼设施的实际交互点，避免落到建筑模型里面。
+                var station=hut.GetComponentInChildren<StationInteractable>(true);
+                Vector3 position=station!=null && (station.transform.position-hut.position).sqrMagnitude>1f
+                    ? station.transform.position : hut.position+Vector3.ProjectOnPlane(hut.forward,Vector3.up).normalized*3.5f;
+                请求落点(position+Vector3.up*.15f,.6f);
+                var player=物品使用器.取玩家物体();
+                if(player!=null){var dir=position-hut.position;dir.y=0;if(dir.sqrMagnitude>.01f)player.transform.rotation=Quaternion.LookRotation(dir);}
+            }
+            else Debug.LogWarning("[主线] 找不到休息落点："+stage.动作参数);
+        }
+        while(黑幕字幕.有幕在显示 || 落点进行中_公开){演出中=true;yield return null;}
+        演出中=false;
+    }
+
+    System.Collections.IEnumerator 刀光斩杀(GameObject target)
+    {
+        if(target==null)yield break;
+        var center=target.transform.position+Vector3.up;
+        var source=找NPC("npc_dashixiong");
+        var direction=source!=null?center-source.transform.position:Vector3.forward;
+        direction.y=0; if(direction.sqrMagnitude<.01f)direction=Vector3.forward;direction.Normalize();
+        var side=Vector3.Cross(Vector3.up,direction);
+        var prefab=Resources.Load<GameObject>("Abilities/Parts/Effect_34_Slash_4225eaf0");
+        if(prefab!=null){var fx=Instantiate(prefab,center,Quaternion.LookRotation(direction));fx.transform.localScale*=2.5f;Destroy(fx,2f);}
+        var streak=new GameObject("大师兄_一闪刀光");
+        var line=streak.AddComponent<LineRenderer>();
+        var material=new Material(Shader.Find("Sprites/Default"));line.sharedMaterial=material;
+        line.positionCount=3;line.useWorldSpace=true;line.numCapVertices=8;
+        line.SetPositions(new[]{center-side*3.4f-Vector3.up*.5f,center,center+side*3.4f+Vector3.up*.5f});
+        line.startWidth=.22f;line.endWidth=.03f;
+        for(float elapsed=0;elapsed<.32f;elapsed+=Time.unscaledDeltaTime)
+        {
+            var color=new Color(.85f,1f,.94f,1f-elapsed/.32f);line.startColor=line.endColor=color;
+            if(elapsed>=.06f && target!=null && !target.GetComponent<NpcInstance>().IsDead)target.GetComponent<NpcInstance>().TakeDamage(9999999f,false);
+            yield return null;
+        }
+        Destroy(streak);Destroy(material);
+    }
+
     /// <summary>台词列按 | 拆成多行（黑幕与强制对话共用）</summary>
     static List<string> 拆台词(string 台词)
     {
@@ -1317,6 +1372,16 @@ public class 任务管理器 : MonoBehaviour
             }
         }
 
+        // 炼丹与宗门教学必须有讲述者在场，不能隔着场景只弹对白。
+        if (阶段.任务id == "q_main_005" || 阶段.id == "q_main_004_24" || 阶段.id == "q_main_004_alchemy_intro"
+            || 阶段.id == "q_main_004_alchemy_report" || 阶段.id == "q_main_004_38")
+            yield return MainQuestTutorial.讲述者到身旁(阶段.说话人,
+                阶段.id=="q_main_004_alchemy_intro" || 阶段.id=="q_main_004_alchemy_report");
+        var speakerAI = MainQuestTutorial.取讲述者(阶段.说话人)?.GetComponent<NpcAiBase>();
+        bool speakerWasEnabled = speakerAI != null && speakerAI.enabled;
+        if (speakerAI != null) speakerAI.enabled = false;
+        try
+        {
         var 行 = 拆台词(阶段.台词);
         if (行.Count > 1)
         {
@@ -1328,7 +1393,12 @@ public class 任务管理器 : MonoBehaviour
             Debug.Log("[任务] 调度：强制对话（" + 阶段.说话人 + "）「" + 阶段.台词 + "」情绪=" + 阶段.情绪);
             yield return DialogueUI.演出(阶段.说话人, 阶段.台词, 阶段.情绪, 阶段.情绪强度);
         }
-        演出中 = false;
+        }
+        finally
+        {
+            if (speakerAI != null) speakerAI.enabled = speakerWasEnabled;
+            演出中 = false;
+        }
     }
 
     /// <summary>
@@ -1570,6 +1640,20 @@ public class 任务管理器 : MonoBehaviour
         }
         var go = Instantiate(预制, 阶段.坐标, Quaternion.identity);
         go.name = 预制.name + "_任务生成";
+        if (go.GetComponent<NpcInstance>()?.定义?.id == "demon_yezhu_01")
+        {
+            var player = 物品使用器.取玩家物体();
+            if (player != null)
+            {
+                var direction=player.transform.position-go.transform.position; direction.y=0;
+                var ai=go.GetComponent<NpcAiBase>();
+                if (direction.sqrMagnitude>.001f)go.transform.rotation=Quaternion.LookRotation(direction)*Quaternion.Euler(0,ai!=null?ai.模型朝向补偿:0,0);
+                // 剧情野猪可追赶，但始终比此时玩家的跑步速度低。
+                var controller=player.GetComponent<PlayerController>();
+                var instance=go.GetComponent<NpcInstance>();
+                if(ai!=null && controller!=null)ai.奔跑倍率=Mathf.Min(1f,controller.runSpeed*.85f/Mathf.Max(.05f,instance.移动速度));
+            }
+        }
         // ★ 记住「这个任务 NPC 是用哪个预制体造的」，供 找NPC 在它被切场景销毁后重建。
         //
         // ⚠️ 不能只看 `动作目标npcId` 有没有填 —— 任务表里 `生成NPC` 那一行**常常只填了
@@ -1610,6 +1694,20 @@ public class 任务管理器 : MonoBehaviour
             {
                 var go = Instantiate(预制, 位, Quaternion.identity);
                 go.name = 预制.name + "_任务生成";
+        if (go.GetComponent<NpcInstance>()?.定义?.id == "demon_yezhu_01")
+        {
+            var player = 物品使用器.取玩家物体();
+            if (player != null)
+            {
+                var direction=player.transform.position-go.transform.position; direction.y=0;
+                var ai=go.GetComponent<NpcAiBase>();
+                if (direction.sqrMagnitude>.001f)go.transform.rotation=Quaternion.LookRotation(direction)*Quaternion.Euler(0,ai!=null?ai.模型朝向补偿:0,0);
+                // 剧情野猪可追赶，但始终比此时玩家的跑步速度低。
+                var controller=player.GetComponent<PlayerController>();
+                var instance=go.GetComponent<NpcInstance>();
+                if(ai!=null && controller!=null)ai.奔跑倍率=Mathf.Min(1f,controller.runSpeed*.85f/Mathf.Max(.05f,instance.移动速度));
+            }
+        }
                 // 兜底位置更新到「这次重建的地方」，免得反复重建时位置乱跳
                 NPC兜底位置 = 位;
                 return go;

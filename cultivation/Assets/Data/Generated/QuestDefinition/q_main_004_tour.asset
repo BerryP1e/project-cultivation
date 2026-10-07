@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83848d2459b23ef429820b86ddb31e64, type: 3}
+  m_Name: q_main_004_tour
+  m_EditorClassIdentifier:
+  id: q_main_004_tour
+  "\u4EFB\u52A1id": q_main_004
+  "\u4EFB\u52A1\u540D": "\u62DC\u5165\u592A\u865A\u5B97"
+  "\u7C7B\u578B": 0
+  "\u9636\u6BB5": 42
+  "\u9636\u6BB5\u540D": "\u968F\u5E08\u5144\u719F\u6089\u5B97\u95E8"
+  "\u8BF4\u660E":
+  "\u6761\u4EF6": 0
+  "\u7269\u54C1id":
+  "\u6570\u91CF": 1
+  "\u76EE\u6807npcId":
+  "\u5750\u6807X": 0
+  "\u5750\u6807Y": 0
+  "\u5750\u6807Z": 0
+  "\u5230\u8FBE\u534A\u5F84": 0
+  "\u5BF9\u8BDDid":
+  "\u7B49\u5F85\u79D2": 0.5
+  "\u52A8\u4F5C\u901F\u5EA6": 0
+  "\u955C\u5934\u65F6\u957F": 0
+  "\u955C\u5934\u9AD8\u5EA6": 0
+  "\u9700\u8981\u6807\u8BB0":
+  "\u6392\u9664\u6807\u8BB0":
+  "\u63A5\u53D6\u52A0\u6807\u8BB0":
+  "\u5B8C\u6210\u52A0\u6807\u8BB0":
+  "\u6253\u6807\u8BB0":
+  "\u5956\u52B1\u7269\u54C1":
+  "\u5956\u52B1\u8D21\u732E": 0
+  "\u52A8\u4F5C": 17
+  "\u52A8\u4F5C\u76EE\u6807npcId":
+  "\u52A8\u4F5C\u53C2\u6570": q_main_005
+  "\u53F0\u8BCD":
+  "\u8BF4\u8BDD\u4EBA": "\u5927\u5E08\u5144"
+  "\u60C5\u7EEA": "\u5E73\u9759"
+  "\u60C5\u7EEA\u5F3A\u5EA6": 1
+  "\u573A\u666F\u540D":
+  "\u6DE1\u5165\u6863\u6570": 0
+  "\u6DE1\u51FA\u6863\u6570": 0
+  "\u6253\u5B57\u901F\u5EA6": 0
+  "\u81EA\u52A8\u63A5\u53D6": 0
+  "\u524D\u7F6E\u4EFB\u52A1id":
+  "\u5F15\u5BFCnpcId":
+  "\u5F15\u5BFC\u5750\u6807":
+  "\u5F15\u5BFC\u5730\u70B9\u540D":
+  "\u5F15\u5BFC\u573A\u666F":

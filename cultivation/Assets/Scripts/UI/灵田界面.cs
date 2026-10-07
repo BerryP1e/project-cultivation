@@ -53,8 +53,8 @@ public class 灵田界面 : MonoBehaviour
     public Font 字体;
 
     [Header("配色")]
-    public Color 幕布色 = new Color(0f, 0f, 0f, 0.72f);
-    public Color 面板色 = new Color(0.16f, 0.14f, 0.12f, 0.97f);
+    public Color 幕布色 = new Color(0f, 0f, 0f, 0.5f);
+    public Color 面板色 = new Color(.025f, .055f, .06f, .86f);
     public Color 标题色 = new Color(0.97f, 0.93f, 0.80f, 1f);
     public Color 正文色 = new Color(0.88f, 0.87f, 0.83f, 1f);
     public Color 可收色 = new Color(1f, 0.85f, 0.42f, 1f);
@@ -171,7 +171,8 @@ public class 灵田界面 : MonoBehaviour
         面板.anchorMin = 面板.anchorMax = new Vector2(0.5f, 1f);
         面板.pivot = new Vector2(0.5f, 1f);
         面板.anchoredPosition = new Vector2(0f, -90f);
-        面板.sizeDelta = new Vector2(720f, 620f);
+        面板.sizeDelta = new Vector2(900f, 720f);
+        SpiritFieldPanelStyle.Frame(面板);
 
         var 标 = UIBuildUtils.CreateText("标题", 面板, 字体, "洞府灵田 · 总览", 28,
             TextAnchor.MiddleLeft, 标题色);
@@ -212,7 +213,7 @@ public class 灵田界面 : MonoBehaviour
             清单文本.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             var scroll = 面板.gameObject.AddComponent<ScrollRect>(); scroll.viewport = view; scroll.content = 清单文本.rectTransform;
             scroll.horizontal = false; scroll.movementType = ScrollRect.MovementType.Clamped;
-            InkUITheme.Scroll(scroll, 112);
+            UIBuildUtils.AddVerticalScrollbar(scroll, 10);
         }
 
         提示文本 = UIBuildUtils.CreateText("提示", 面板, 字体, "", 17,
@@ -231,6 +232,7 @@ public class 灵田界面 : MonoBehaviour
         收rt.anchoredPosition = new Vector2(18f, 16f);
         收rt.sizeDelta = new Vector2(240f, 44f);
         收.onClick.AddListener(点一键收取);
+        SpiritFieldPanelStyle.Button(收);
 
         var 关 = UIBuildUtils.CreateButton("关闭", 面板, 字体, "关　闭（F4）", 20);
         var 关rt = 关.GetComponent<RectTransform>();
@@ -240,6 +242,7 @@ public class 灵田界面 : MonoBehaviour
         关rt.anchoredPosition = new Vector2(-18f, 16f);
         关rt.sizeDelta = new Vector2(180f, 44f);
         关.onClick.AddListener(关闭);
+        SpiritFieldPanelStyle.Button(关);
     }
 
     // ============================================================ 刷新

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -353,6 +353,8 @@ public class 黑幕字幕 : MonoBehaviour
         //   （否则开场三句 `说()` 之间黑幕会一黑一亮，见 逐行打 的说明）
         //   ⚠️ 必须在 StartCoroutine 之前设：协程第一帧就会调 落下()，
         //      而 落下() 会把 落幕后自动收 清成 false（起幕 = 取消上次残留的收幕）。
+        c.待自动收 = false;
+        c.StartCoroutine(c.逐行打(行 ?? new string[0], 0f, 淡入步数));
         c.落幕后自动收 = true;
         c.演出开始时刻 = Time.unscaledTime;
         // 死线兜底：按"最长一行的字数 / 打字速度"再放宽 15 秒，防止打字卡住导致永远黑屏
@@ -362,8 +364,7 @@ public class 黑幕字幕 : MonoBehaviour
         float 淡入耗时 = 淡入步数 > 0 ? 淡入步数 / Mathf.Max(1f, c.淡步频) : 0f;
         c.自动收幕死线 = Time.unscaledTime + 淡入耗时 + (最长 / c.有效每秒字数)
             + Mathf.Max(2f, c.打完后的停留) + 15f;
-        c.待自动收 = true;                       // ★ 不会被 落下() 清掉的"待收"标记
-        c.StartCoroutine(c.逐行打(行 ?? new string[0], 0f, 淡入步数));
+        c.待自动收 = true;                       // 起幕后登记，避免被 落下() 清掉。
 
         Debug.Log("[黑幕开关] 待收=" + c.待自动收 + " 自动收=" + c.落幕后自动收
             + " 停留=" + c.打完后的停留.ToString("F2")
@@ -434,6 +435,7 @@ public class 黑幕字幕 : MonoBehaviour
 
     /// <summary>这一次演出要"打完自动收幕"</summary>
     bool 待自动收;
+    bool 字幕打字中;
 
     /// <summary>这一次演出打完字就停住、不自动收幕（见 下落并停留不收起）</summary>
     bool 不自动收;
@@ -514,7 +516,7 @@ public class 黑幕字幕 : MonoBehaviour
 
             // ★ 兜底：如果「打字完成时刻」因为任何原因没写上，这里自己判定一次 ——
             //   幕已经全黑（淡入协程结束）且文字不再变化，就算打完了。
-            if (打字完成时刻 <= 0f && 淡入协程 == null && 幕在显示)
+            if (打字完成时刻 <= 0f && !字幕打字中 && 淡入协程 == null && 幕在显示)
             {
                 打字完成时刻 = Time.unscaledTime;
                 Debug.Log("[黑幕] 退而求其次：由「幕已全黑」判定打字完成");
@@ -574,7 +576,10 @@ public class 黑幕字幕 : MonoBehaviour
     /// </summary>
     public IEnumerator 逐行打(string[] 行, float 额外停顿, int 淡入步数)
     {
+        字幕打字中 = true;
         落下(淡入步数);
+        立即清空();
+        while (淡入协程 != null) yield return null;
         打字完成时刻 = -1f;
         可点击收幕时刻 = -1f;
         for (int i = 0; i < 行.Length; i++)
@@ -582,8 +587,9 @@ public class 黑幕字幕 : MonoBehaviour
             立即清空();
             yield return 打一行(行[i]);
             float 停 = 行间停顿 + 额外停顿;
-            if (停 > 0f) yield return new WaitForSeconds(停);
+            if (停 > 0f) yield return new WaitForSecondsRealtime(停);
         }
+        字幕打字中 = false;
     }
 
     IEnumerator 打一行(string 整句)

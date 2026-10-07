@@ -1,0 +1,23 @@
+{
+  "mode": "built-in image_gen",
+  "date": "2026-10-07",
+  "reference": "cultivation/Assets/resources/UI/MainMenu/begin_ui.png",
+  "assets": {
+    "figure": {
+      "path": "cultivation/Assets/resources/UI/MainMenu/Animated/figure.png",
+      "prompt": "Use case: background-extraction. Reference is the game landscape. Extract/repaint ONLY the full-body black-robed swordsman seen from behind in the lower right, as a standalone high-resolution transparent game sprite. Preserve same silhouette, facing toward upper left into distance, long ponytail, black flowing robe, right trailing hem and ribbons. Entire person visible, feet visible, elegant painted ink fantasy style, restrained pale teal rim light. No ground, posts, clouds, swords, circle or text. Generous transparent padding, center figure. Genuine alpha transparency."
+    },
+    "frame": {
+      "path": "cultivation/Assets/resources/UI/MainMenu/Animated/frame.png",
+      "prompt": "Use case: precise-object-edit / background-extraction. EDIT TARGET is the supplied clean landscape. Create a transparent CENTER APERTURE BACKGROUND FRAME for this EXACT Chinese fantasy game menu. Preserve the original peripheral illustration as faithfully as possible: dark teal forest and leafy branches along entire LEFT edge and top left; trees along RIGHT and top right; bottom left wispy teal fog; complete stone staircase and stone foreground ground along bottom center; wooden posts on lower right and small lower center, right edge cliffs. These peripheral elements MUST remain in exactly the same relative positions, same scale, same painted style, colors and composition as the reference. REMOVE ONLY the central opening's distant mountain peaks, central cloud sea, central waterfall and central sky to TRUE TRANSPARENCY. The opening is a large irregular oval occupying roughly x=24% to 81%, y=8% to 77%, following the inner silhouette of forest edges and the top of bottom foreground stair/platform. Forest leaves may project naturally into the opening. Retain the outer frame's fog at bottom left and right, but no distant mountain scenery in opening. Feather transparency transition gently so a magical vortex behind can blend into the perimeter. No solid black fill in center; genuine alpha transparency. Do NOT add swords, circles, people, titles, text or UI. Wide 16:9 composition unchanged."
+    },
+    "seal": {
+      "path": "cultivation/Assets/resources/UI/MainMenu/Animated/seal-ink.png",
+      "prompt": "Use case: style-transfer. Edit target: supplied circular magic seal. Make a TRANSPARENT Chinese ink wash cultivation game magic formation ring, elegant traditional ink painting, restrained scholarly mystic aesthetic. Maintain a full perfect circular annulus and empty transparent center, same front-facing composition. Replace bright neon cyan, lightning and gold metallic ornament with layered hand-brushed CHARCOAL ink circular strokes, dry-brush broken edges, weathered ivory gray mystical seal marks, sparse faded sage jade ink accents. Brush fibres, watery bleeding and paper-grain texture within ink only; no rectangular paper background. Fine concentric circular lines and restrained abstract seal symbols spaced evenly around ring. Distinct variation in ink density, subtle misted edges. NO neon bloom, NO electricity, NO glowing outline, NO gold, NO glitter, NO bright saturated colors, NO cartoon ornamental spikes. Ring should be legible softly against a very dark ink green background. Completely empty transparent center 72 percent diameter and transparent outside. Square format, all circle visible. No scenery, words, title or UI."
+    },
+    "title": {
+      "path": "cultivation/Assets/resources/UI/MainMenu/Animated/title.png",
+      "prompt": "Use case: logo-brand. Transparent title logo for a Chinese cultivation fantasy game. Exact Chinese text ONLY: “争渡”. Two large Chinese characters horizontally arranged, exceptionally beautiful readable bold brush calligraphy, sweeping confident strokes, ivory silver ink with restrained pale jade cyan rim and subtle aged gold accents. Match refined Chinese ink fantasy landscape style. Isolated lettering, no plaque, no frame, no English, no additional text, no illustration or background, genuine transparent alpha. Wide composition and generous padding. Characters must be accurate."
+    }
+  }
+}

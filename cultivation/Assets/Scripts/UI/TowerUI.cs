@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -69,6 +69,7 @@ public class TowerUI : MonoBehaviour
     Text HUD文本;
     RectTransform 死亡面板;
     Text 死亡倒计时文本;
+    Button 返回上一层按钮;
 
     /// <summary>死亡选择面板开着吗</summary>
     public bool 死亡面板已显示 => 死亡面板 != null && 死亡面板.gameObject.activeSelf;
@@ -158,6 +159,11 @@ public class TowerUI : MonoBehaviour
         {
             var t = 标题.GetComponent<Text>();
             if (t != null) t.text = "你在第 " + 层 + " 层倒下";
+        }
+        if (返回上一层按钮 != null)
+        {
+            返回上一层按钮.interactable = 层 > 1;
+            返回上一层按钮.gameObject.SetActive(层 > 1);
         }
         更新死亡倒数(时限);
     }
@@ -276,8 +282,10 @@ public class TowerUI : MonoBehaviour
         var 根 = 搭选择面板(父, "死亡选择", new[]
         {
             ("出塔",           (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(false); })),
-            ("继续深入 · 下一层", (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(true);  })),
+            ("返回上一层", (System.Action)(() => { if (塔 != null) 塔.执行死亡选择(true);  })),
         });
+
+        返回上一层按钮 = 根.Find("按钮排/返回上一层").GetComponent<Button>();
 
         死亡倒计时文本 = UIBuildUtils.CreateText("倒计时", 根, 字体, "", 28,
             TextAnchor.MiddleCenter, 倒数码色);
