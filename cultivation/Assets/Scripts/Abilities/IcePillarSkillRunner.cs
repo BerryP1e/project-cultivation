@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -280,6 +280,7 @@ public class IcePillarSkillRunner : MonoBehaviour
     void 扫一段(float d)
     {
         var 中心 = 玩家.position + 方向 * d;
+        VoxelCombatDamage.Sphere(中心,Mathf.Max(.35f,冰柱宽度*.5f));
         int n = Physics.OverlapSphereNonAlloc(中心, Mathf.Max(0.2f, 冰柱宽度 * 0.5f), 命中缓存,
                                               敌人层, QueryTriggerInteraction.Ignore);
         for (int i = 0; i < n; i++)

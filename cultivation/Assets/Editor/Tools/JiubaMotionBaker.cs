@@ -124,14 +124,14 @@ public static class JiubaMotionBaker
             idle.name = name;
             foreach (var binding in AnimationUtility.GetCurveBindings(source))
             {
-                if (binding.type != typeof(Animator) || !HumanTrait.MuscleName.Contains(binding.propertyName)) continue;
+                if (binding.type != typeof(Animator) || !HumanTrait.MuscleName.Contains(HandMotionRetargeting.MuscleName(binding.propertyName))) continue;
                 string muscle = binding.propertyName;
                 if (muscle.Contains("Leg") || muscle.Contains("Foot") || muscle.Contains("Toes")) continue;
                 var curve = AnimationUtility.GetEditorCurve(source, binding);
                 float value = curve.Evaluate(source.length * .5f);
                 AnimationUtility.SetEditorCurve(idle, binding, AnimationCurve.Constant(0, basis.length, value));
             }
-            Save(idle, name);
+            HandMotionRetargeting.Apply(idle,HandMotionRetargeting.AvatarFor(source));Save(idle, name);
             return;
         }
         if (!split)
@@ -177,6 +177,7 @@ public static class JiubaMotionBaker
                     AnimationUtility.SetEditorCurve(native, binding, curve);
                 }
             }
+            HandMotionRetargeting.Apply(native,HandMotionRetargeting.AvatarFor(source));
             Save(native, name);
             return;
         }
@@ -258,11 +259,13 @@ public static class JiubaMotionBaker
             result.EnsureQuaternionContinuity();
         }
         AnimationUtility.SetAnimationClipSettings(result, settings);
+        HandMotionRetargeting.Apply(result,HandMotionRetargeting.AvatarFor(source));
         Save(result, name);
     }
 
     static void Save(AnimationClip result, string name)
     {
+        HandMotionRetargeting.Apply(result);
         string path = Folder + name + ".anim";
         var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         if (existing != null) { EditorUtility.CopySerialized(result, existing); EditorUtility.SetDirty(existing); UnityEngine.Object.DestroyImmediate(result); }

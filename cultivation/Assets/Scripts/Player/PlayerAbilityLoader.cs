@@ -58,6 +58,9 @@ public class PlayerAbilityLoader : MonoBehaviour
         new string[] { "basic_taixu_sword_01", "BasicTaixuSword01" },
         new string[] { "basic_taixu_sword_01", "武器挂载" },
         new string[] { "basic_taixu_sword_01", "WeaponCarryAnim" },
+        new string[] { "basic_lingxu_sword_01", "BasicLingxuSword01" },
+        new string[] { "basic_lingxu_sword_01", "武器挂载" },
+        new string[] { "basic_lingxu_sword_01", "WeaponCarryAnim" },
     };
 
     [Header("调试")]

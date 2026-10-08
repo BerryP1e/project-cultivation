@@ -32,12 +32,14 @@ public class AbilityFallingSword : MonoBehaviour
         Vector3 前 = transform.position;
         transform.localPosition += transform.localRotation * Vector3.forward * (速度 * Time.deltaTime);
         Vector3 后 = transform.position;
-        if (后.y <= 地面高度 && 前.y > 地面高度)
+        bool hitSurface=VoxelCombatDamage.Ray(前,后,out var surface);
+        if (hitSurface || !VoxelCombatDamage.Active && 后.y <= 地面高度 && 前.y > 地面高度)
         {
             float t = Mathf.InverseLerp(后.y, 前.y, 地面高度);
-            Vector3 命中 = Vector3.Lerp(后, 前, t);
+            Vector3 命中 = hitSurface?surface.point:Vector3.Lerp(后, 前, t);
             transform.position = 命中;
             已落地 = true;
+            VoxelCombatDamage.Sphere(命中,Mathf.Clamp(transform.lossyScale.x*.7f,.45f,1.5f));
             foreach (var 粒子 in GetComponentsInChildren<ParticleSystem>(true))
             {
                 if (粒子.name.Contains("SwordBody") || 粒子.name.Contains("SwordHead"))

@@ -124,8 +124,10 @@ public class HomingBoltSkillRunner : MonoBehaviour
     [Tooltip("打印日志")]
     public bool 打印日志 = true;
 
+    Vector3? 手动点;
+    public float 环境破坏半径=2.5f;
     public void 初始化(ActiveDivineAbility 神通, PlayerCombatStats 战斗属性, NpcInstance 锁定,
-                        PlayerAnimationController 动画, Transform 玩家, LayerMask 敌人层)
+                        PlayerAnimationController 动画, Transform 玩家, LayerMask 敌人层,Vector3? 落点=null)
     {
         this.神通 = 神通;
         this.战斗属性 = 战斗属性;
@@ -133,6 +135,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
         this.动画 = 动画;
         this.玩家 = 玩家;
         this.敌人层 = 敌人层;
+        手动点=落点;
     }
 
     /// <summary>日志与物件名前缀：用**神通自己的名字**（这个 runner 现在也服务「冰暴术」）</summary>
@@ -140,7 +143,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
 
     void Start()
     {
-        if (神通 == null || 玩家 == null || 锁定 == null) { Destroy(gameObject); return; }
+        if (神通 == null || 玩家 == null || (锁定 == null && !手动点.HasValue)) { Destroy(gameObject); return; }
 
         起算时刻 = Time.time;
 
@@ -263,9 +266,9 @@ public class HomingBoltSkillRunner : MonoBehaviour
         已放飞 = true;
         if (动画 != null) 动画.定住动作(false);
 
-        if (球 == null || 锁定 == null) { 收尾(); return; }
+        if (球 == null || (锁定 == null && !手动点.HasValue)) { 收尾(); return; }
 
-        Vector3 目标点 = 锁定.transform.position + Vector3.up * 1.1f;   // 胸口高度
+        Vector3 目标点 = 手动点 ?? (锁定.transform.position + Vector3.up * 1.1f);
         Vector3 向 = 目标点 - 球.transform.position;
         if (向.sqrMagnitude > 0.0001f) 球.transform.rotation = Quaternion.LookRotation(向.normalized, Vector3.up);
 
@@ -274,10 +277,12 @@ public class HomingBoltSkillRunner : MonoBehaviour
         弹.追踪终止距离 = 神通 != null && 神通.范围 > 0f ? 神通.范围 : 0f;
         弹.最大飞行距离 = 0f;                       // 交给 追踪终止距离 / 最长追踪时间 收尾
         弹.enabled = true;
-        弹.设置追踪飞行(锁定.transform, Mathf.Max(1f, 飞行速度), Mathf.Max(30f, 转向速率));
+        弹.检测体素=true;
+        if(手动点.HasValue)弹.设置飞行(目标点,Mathf.Max(1,飞行速度));
+        else 弹.设置追踪飞行(锁定.transform, Mathf.Max(1f, 飞行速度), Mathf.Max(30f, 转向速率));
 
         if (打印日志)
-            Debug.Log("[" + 名称 + "] 放飞：从 " + 球.transform.position.ToString("F2") + " → 目标「" + 锁定.DisplayName
+            Debug.Log("[" + 名称 + "] 放飞：从 " + 球.transform.position.ToString("F2") + " → 目标「" + (锁定?锁定.DisplayName:"鼠标落点")
                 + "」 " + 目标点.ToString("F2") + "（距离 " + Vector3.Distance(球.transform.position, 目标点).ToString("0.##")
                 + "m｜速度 " + 飞行速度 + "m/s｜转向 " + 转向速率 + "°/s）", this);
     }
@@ -303,9 +308,12 @@ public class HomingBoltSkillRunner : MonoBehaviour
     {
         if (已结算) return;
         已结算 = true;
+        bool 环境=手动点.HasValue || 弹!=null && 弹.击中体素;
+        Vector3 环境点=环境 && 弹!=null?弹.命中点:(锁定?锁定.transform.position:手动点.GetValueOrDefault());
+        VoxelCombatDamage.Sphere(环境点,环境破坏半径*Mathf.Max(.1f,命中特效缩放));
 
         // 1) 命中特效：放在锁定目标身上（**贴地**时放在敌人脚下 —— 冰暴术的 frost-frozen-tomb）
-        if (!string.IsNullOrEmpty(命中特效路径) && 锁定 != null)
+        if (!string.IsNullOrEmpty(命中特效路径) && (锁定 != null || 环境))
         {
             float 存活 = Mathf.Max(0.1f, 命中特效存活);
             if (命中特效存活按自然)
@@ -314,7 +322,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
                 存活 = Mathf.Max(存活, 特效摆放.量特效总时长(预制, 命中特效存活) * 1.05f);
             }
 
-            Vector3 爆点 = 命中特效贴地
+            Vector3 爆点 = 环境?环境点:命中特效贴地
                 ? 锁定.transform.position
                 : 锁定.transform.position + Vector3.up * 命中特效抬高;
 
@@ -329,7 +337,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
         }
 
         // 2) 伤害：只打锁定的那一个（【特殊 + 主动神通】）
-        if (战斗属性 != null && 锁定 != null && !锁定.IsDead)
+        if (战斗属性 != null && 锁定 != null && !锁定.IsDead && !环境)
         {
             var 规则 = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);
             var 目标 = new NpcTarget(锁定);
@@ -342,6 +350,15 @@ public class HomingBoltSkillRunner : MonoBehaviour
                     + "（倍率 " + 神通.伤害倍率.ToString("0.##") + "｜" + 神通.伤害属性 + "）", 锁定);
         }
 
+        if(环境 && 战斗属性!=null)
+        {
+            var seen=new System.Collections.Generic.HashSet<NpcInstance>();
+            foreach(var col in Physics.OverlapSphere(环境点,环境破坏半径,敌人层,QueryTriggerInteraction.Ignore))
+            {
+                var npc=col.GetComponentInParent<NpcInstance>();
+                if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(战斗属性,new AttackSpec(神通.伤害属性,AttackKind.主动神通,false,神通.伤害倍率));
+            }
+        }
         收尾();
     }
 

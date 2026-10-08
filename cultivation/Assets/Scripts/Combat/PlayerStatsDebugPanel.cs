@@ -114,6 +114,7 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         // 无敌开关放在这里而不是面板底部 —— 面板内容很长，
         // 放底下会被挤出窗口下边缘（召唤按钮当初就踩过这个坑，见上面 GUILayout 高度的注释）
         画无敌开关();
+        画体素试点();
         GUILayout.Space(4f);
         画青山剑区();
         GUILayout.Space(4f);
@@ -223,6 +224,21 @@ public class PlayerStatsDebugPanel : MonoBehaviour
         GUILayout.Label(玩家气血.无敌
             ? "当前：无敌（调试开关 " + (开 ? "开" : "关") + " ｜ 重生保护 " + (玩家气血.保护中 ? "开" : "关") + "）"
             : "当前：正常受伤", 行样式);
+    }
+
+    void 画体素试点()
+    {
+        var pilot=FindObjectOfType<VoxelMapPilot>();
+        if(!pilot)return;
+        GUILayout.Space(4f);
+        GUILayout.Label("—— 野外体素环境（登记 "+pilot.替换数量+"，加载 "+pilot.已激活数量+"）——",行样式);
+        GUILayout.BeginHorizontal();
+        if(GUILayout.Button(pilot.正在替换?"切回原模型":"启用体素环境"))pilot.切换试点(!pilot.正在替换);
+        if(GUILayout.Button("还原环境"))pilot.还原岩石();
+        GUILayout.EndHorizontal();
+        pilot.测试挖掘=GUILayout.Toggle(pilot.测试挖掘,"测试挖掘：关面板后 Alt + 左键点击环境");
+        if(pilot.地面)GUILayout.Label("地面分区："+pilot.地面.活动地块数+"，正在准备："+pilot.地面.待建地块数,行样式);
+        GUILayout.Label("当前为环境破坏测试；尚未接入正式攻击。",行样式);
     }
 
     /// <summary>第一次打开面板时，把当前实际值灌进调试数值，避免从 0 开始</summary>

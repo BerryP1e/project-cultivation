@@ -43,6 +43,13 @@ public class WeaponCarryAnim : MonoBehaviour
     public bool 打印日志 = true;
 
     bool 太虚剑 => 面板 != null && 面板.当前功法 != null && 面板.当前功法.功法id == "gongfa_taixu_jianjue";
+    bool 灵虚剑 => 面板 != null && 面板.当前功法 != null && 面板.当前功法.功法id == "gongfa_lingxu_jianjue";
+    static readonly List<替换项> 灵虚替换 = new List<替换项>
+    {
+        new 替换项 { 原片段="Armature|Idle_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Idle" },
+        new 替换项 { 原片段="Armature|Walk_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Run" },
+        new 替换项 { 原片段="Armature|Sprint_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Run" },
+    };
     string 已应用功法;
     static readonly List<替换项> 太虚替换 = new List<替换项>
     {
@@ -94,7 +101,7 @@ public class WeaponCarryAnim : MonoBehaviour
         get
         {
             if (string.IsNullOrEmpty(显示条件功法id)) return true;
-            return 面板 != null && 面板.当前功法 != null && (面板.当前功法.功法id == 显示条件功法id || 太虚剑);
+            return 面板 != null && 面板.当前功法 != null && (面板.当前功法.功法id == 显示条件功法id || 太虚剑 || 灵虚剑);
         }
     }
 
@@ -108,13 +115,13 @@ public class WeaponCarryAnim : MonoBehaviour
 
     void 应用()
     {
-        string profile = 太虚剑 ? "gongfa_taixu_jianjue" : 显示条件功法id;
+        string profile = 灵虚剑 ? "gongfa_lingxu_jianjue" : 太虚剑 ? "gongfa_taixu_jianjue" : 显示条件功法id;
         if (覆盖 == null || 覆盖.runtimeAnimatorController != 原始控制器 || 已应用功法 != profile)
         {
             覆盖 = new AnimatorOverrideController(原始控制器);
             已应用功法 = profile;
             int 换了 = 0;
-            foreach (var 项 in 太虚剑 ? 太虚替换 : 替换)
+            foreach (var 项 in 灵虚剑 ? 灵虚替换 : 太虚剑 ? 太虚替换 : 替换)
             {
                 if (项 == null || string.IsNullOrEmpty(项.原片段) || string.IsNullOrEmpty(项.新片段路径)) continue;
                 var 新 = Resources.Load<AnimationClip>(项.新片段路径);

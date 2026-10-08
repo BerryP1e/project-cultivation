@@ -193,7 +193,7 @@ public class StationInteractor : MonoBehaviour
         找最近设施();
         更新头顶提示();
 
-        if (最近设施 != null && Input.GetKeyDown(最近设施.取按键(交互键)))
+        if (最近设施 != null && !PlayerManualAim.AltHeld && Input.GetKeyDown(最近设施.取按键(交互键)))
         {
             本次右键已被占用 = true;          // 告诉 NpcTargeting：这帧别锁 NPC
             打开界面(最近设施);

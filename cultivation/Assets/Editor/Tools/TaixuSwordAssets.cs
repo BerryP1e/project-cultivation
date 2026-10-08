@@ -82,7 +82,7 @@ public static class TaixuSwordAssets
             var settings=AnimationUtility.GetAnimationClipSettings(result);settings.loopTime=true;
             settings.loopBlendPositionY=true;settings.keepOriginalPositionY=true;
             settings.loopBlendOrientation=true;settings.keepOriginalOrientation=true;
-            AnimationUtility.SetAnimationClipSettings(result,settings);SetGrip(result,result.length);
+            AnimationUtility.SetAnimationClipSettings(result,settings);LimitHandJoints(result);
             result.name="持剑_前进";Save(result,"持剑_前进");AssetDatabase.SaveAssets();
             Debug.Log("[太虚剑决] 移动改回锦衣卫 FightRun，修正左手挡脸、右臂握剑与身体侧倾；未修改待机和攻击");
         }
@@ -254,7 +254,7 @@ public static class TaixuSwordAssets
                     ("UpperLeg","Thigh"),("LowerLeg","Calf"),("Foot","Foot"),("Toes","Toe0")}) mapping[side+pair.Item1]=prefix+pair.Item2;
                 // 源手只有三条两节手指；不强行映射缺失的末节和无名/小指。
                 foreach (var finger in new[]{("Thumb",0),("Index",1),("Middle",2)})
-                { mapping[side+finger.Item1+"Proximal"]=prefix+"Finger"+finger.Item2; mapping[side+finger.Item1+"Intermediate"]=prefix+"Finger"+finger.Item2+"1"; }
+                { mapping[side+" "+finger.Item1+" Proximal"]=prefix+"Finger"+finger.Item2; mapping[side+" "+finger.Item1+" Intermediate"]=prefix+"Finger"+finger.Item2+"1"; }
             }
             var desc = new HumanDescription {
                 human = mapping.Where(p=>bones.Any(t=>t.name==p.Value)).Select(p=>new HumanBone {humanName=p.Key,boneName=p.Value,limit=new HumanLimit{useDefaultValues=true}}).ToArray(),
@@ -265,6 +265,10 @@ public static class TaixuSwordAssets
             if (!avatar.isValid || !avatar.isHuman) throw new InvalidOperationException("锦衣卫人形骨骼映射失败");
             var animator=rig.GetComponent<Animator>(); if(animator==null)animator=rig.AddComponent<Animator>();
             animator.runtimeAnimatorController=null; animator.avatar=avatar;
+            foreach(var pair in mapping.Where(p=>bones.Any(t=>t.name==p.Value))){
+                var bone=(HumanBodyBones)Enum.Parse(typeof(HumanBodyBones),pair.Key.Replace(" ",""));
+                if(!animator.GetBoneTransform(bone))throw new InvalidOperationException("Avatar 漏映射骨骼："+pair.Key);
+            }
             var positions=bones.Select(t=>t.localPosition).ToArray(); var rotations=bones.Select(t=>t.localRotation).ToArray();
             var raw=Clip(Jin+"A_JinYiWei001@"+motion+".fbx");
             var lookup=bones.Select((t,i)=>new {path=AnimationUtility.CalculateTransformPath(t,rig.transform),i}).ToDictionary(x=>x.path,x=>x.i);
@@ -289,6 +293,7 @@ public static class TaixuSwordAssets
                 Add(curves,time,pose,ref previous);
             }
             var result=Write(curves,motion,raw.length,false);
+            HandMotionRetargeting.Apply(result,avatar);
             Debug.Log("[太虚剑决] Generic → Humanoid "+motion+" "+raw.length.ToString("F3")+"s avatarScale="+animator.humanScale);
             return result;
         }
@@ -310,7 +315,7 @@ public static class TaixuSwordAssets
             int k=i-HumanTrait.MuscleCount;string prop=k<0?HumanTrait.MuscleName[i]:k<3?"RootT."+"xyz"[k]:"RootQ."+"xyzw"[k-3];
             AnimationUtility.SetEditorCurve(clip,EditorCurveBinding.FloatCurve("",typeof(Animator),prop),c);
         }
-        SetGrip(clip,duration);
+        LimitHandJoints(clip);
         clip.EnsureQuaternionContinuity();var settings=AnimationUtility.GetAnimationClipSettings(clip); settings.loopTime=loop;
         settings.loopBlendPositionY=true;settings.keepOriginalPositionY=true;settings.loopBlendOrientation=true;settings.keepOriginalOrientation=true;
         AnimationUtility.SetAnimationClipSettings(clip,settings);return clip;
@@ -320,15 +325,13 @@ public static class TaixuSwordAssets
         var result=new AnimationClip{name=name,frameRate=source.frameRate};
         foreach(var b in AnimationUtility.GetCurveBindings(source))if(b.type==typeof(Animator))AnimationUtility.SetEditorCurve(result,b,AnimationUtility.GetEditorCurve(source,b));
         var settings=AnimationUtility.GetAnimationClipSettings(source);settings.loopTime=loop; settings.loopBlendPositionY=true;settings.keepOriginalPositionY=true;
-        settings.loopBlendOrientation=true;settings.keepOriginalOrientation=true;AnimationUtility.SetAnimationClipSettings(result,settings);SetGrip(result,source.length);Save(result,name);
+        settings.loopBlendOrientation=true;settings.keepOriginalOrientation=true;AnimationUtility.SetAnimationClipSettings(result,settings);HandMotionRetargeting.Apply(result,HandMotionRetargeting.AvatarFor(source));Save(result,name);
     }
-    static void SetGrip(AnimationClip clip,float duration)
+    static void LimitHandJoints(AnimationClip clip)
     {
-        // 自动绑定的缺失手指不应被重定向成张手；握剑时给右手稳定的自然握柄姿态。
-        foreach(string muscle in HumanTrait.MuscleName)
-            if(muscle.StartsWith("Right ") && (muscle.Contains("Stretched") || muscle.Contains("Spread")))
-                AnimationUtility.SetEditorCurve(clip,EditorCurveBinding.FloatCurve("",typeof(Animator),muscle),
-                    AnimationCurve.Constant(0,duration,muscle.Contains("Spread") ? 0f : muscle.Contains("Thumb") ? -.25f : -.65f));
+        // Keep authored finger articulation. Missing joints are filled from the source Avatar
+        // during retargeting, rather than forcing every clip into one static right-hand fist.
+        HandMotionRetargeting.Apply(clip);
     }
     static void Save(AnimationClip clip,string name)
     {

@@ -40,6 +40,8 @@ using UnityEngine;
 /// </summary>
 public class BasicJiuba01 : MonoBehaviour
 {
+    /// <summary>独立提取、同节点单骨且 identity bindpose 的武器，直接使用本地网格，避免 BakeMesh 重复计入 Avatar 缩放。</summary>
+    public virtual bool 刚性本地网格 => false;
     [Tooltip("本普攻方法在功法表「普攻方法id」里的标识。境界页靠它反查提供这个普攻的功法")]
     public string 方法id = "basic_jiuba_01";
 
@@ -165,7 +167,19 @@ public class BasicJiuba01 : MonoBehaviour
     public float 冷却 => 实际冷却;
 
     /// <summary>现在能不能出手：锁定了目标（如果要求锁定）+ **距离够得着** + 冷却好了 + 没在做动作 + 没有过场演出在锁</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && (!需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && (手动请求 || !需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
+    bool 手动请求,手动攻击;
+    Vector3 手动点;
+    readonly HashSet<Vector3Int> 本轮挥砍采样=new HashSet<Vector3Int>();
+    readonly HashSet<NpcInstance> 本轮手动命中=new HashSet<NpcInstance>();
+    public bool 手动出手(Vector3 point)
+    {
+        if(GetComponent<PlayerVitals>()?.IsDead ?? false)return false;
+        // 鼠标提供朝向，不提供近战射程。退路判定点也必须留在实际挥砍范围内。
+        var offset=point-transform.position;offset.y=0;
+        手动请求=true;手动点=transform.position+Vector3.ClampMagnitude(offset,Mathf.Max(.5f,出手最大距离));
+        try{return 出手();}finally{手动请求=false;}
+    }
 
     /// <summary>锁定目标离玩家多远（没锁定返回 0）</summary>
     public float 到目标距离
@@ -265,6 +279,7 @@ public class BasicJiuba01 : MonoBehaviour
         int id = npc != null ? npc.GetInstanceID() : 0;
         if (id != 缓存目标id) { 缓存目标id = id; 缓存 = null; }
 
+        if(出手动作中 && 手动攻击)处理手动挥砍();
         if (出手动作中 && !本轮已结算) 推进判定();
 
         if (出手动作中 && (动画 == null || !动画.动作播放中))
@@ -284,6 +299,8 @@ public class BasicJiuba01 : MonoBehaviour
     public bool 出手()
     {
         if (!可以出手) return false;
+        手动攻击=手动请求;本轮挥砍采样.Clear();本轮手动命中.Clear();
+        if(手动攻击)GetComponent<PlayerController>()?.对准攻击方向(手动点-transform.position);
         if (刃光 == null) 刃光 = GetComponent<JiubaWeaponVfx>() ?? gameObject.AddComponent<JiubaWeaponVfx>();
 
         刃光.绑定(this);
@@ -329,6 +346,30 @@ public class BasicJiuba01 : MonoBehaviour
             结算伤害(Vector3.zero, 片段 == null ? "没有可用片段，立即结算" : "没有动画组件，立即结算");
         }
         return true;
+    }
+    void 处理手动挥砍()
+    {
+        float p=动画?动画.动作进度:1;
+        if(动画 && 动画.动作播放中 && (p<本次出手进度 || p>Mathf.Clamp01(出手进度+判定窗口)))return;
+        var renderers=取武器判定体();
+        if(renderers!=null && 取武器线段(renderers,out var a,out var b,out var radius))
+        {
+            int n=Mathf.Clamp(Mathf.CeilToInt(Vector3.Distance(a,b)/.4f),1,16);
+            for(int i=0;i<=n;i++)挥砍采样(Vector3.Lerp(a,b,(float)i/n),Mathf.Clamp(radius+.22f,.3f,.6f));
+        }
+        else if(手动攻击)挥砍采样(手动点,.65f);
+    }
+    void 挥砍采样(Vector3 point,float radius)
+    {
+        // 近战普攻只打生物，不破坏体素；仍按实际剑身扫描无锁定方向攻击。
+        if(!本轮挥砍采样.Add(Vector3Int.RoundToInt(point/.4f)))return;
+        if(!手动攻击 || 玩家战斗属性==null)return;
+        foreach(var c in Physics.OverlapSphere(point,radius,~0,QueryTriggerInteraction.Ignore))
+        {
+            var npc=c.GetComponentInParent<NpcInstance>();
+            if(npc && !npc.IsDead && npc.是敌对目标 && 本轮手动命中.Add(npc))
+                npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,伤害倍率));
+        }
     }
 
     /// <summary>
@@ -571,8 +612,8 @@ public class BasicJiuba01 : MonoBehaviour
         var 烘 = new Mesh();
         try
         {
-            smr.BakeMesh(烘);
-            var 界 = 烘.bounds;
+            if(!刚性本地网格)smr.BakeMesh(烘);
+            var 界 = 刚性本地网格 ? smr.sharedMesh.bounds : 烘.bounds;
             var 半 = 界.size * 0.5f;
             int 轴 = (半.x >= 半.y && 半.x >= 半.z) ? 0 : (半.y >= 半.z ? 1 : 2);
             var d = 轴 == 0 ? new Vector3(半.x, 0f, 0f) : (轴 == 1 ? new Vector3(0f, 半.y, 0f) : new Vector3(0f, 0f, 半.z));

@@ -39,7 +39,7 @@ public class TreasureCaster : MonoBehaviour
     void Update() {
         Resolve();
         bool allowed=!UiEscRegistry.SceneInputBlocked && !灵田摆放器.正在摆放 && !(GetComponent<演出锁>()?.正在锁 ?? false) && !(vitals != null && vitals.IsDead);
-        if(Input.GetKeyDown(KeyCode.E) && allowed) {
+        if(Input.GetKeyDown(KeyCode.E) && allowed && !PlayerManualAim.AltHeld) {
             if(CurrentPhase == Phase.Idle || data!=null && data.当前法宝!=null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id) TryCast();
             else if(CurrentPhase == Phase.Siphoning || CurrentPhase == Phase.Outbound) BeginReturn();
         }

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -35,6 +35,7 @@ public class BlinkSkillRunner : MonoBehaviour
 
     Vector3 起点;
     Vector3 落点;
+    public Vector3? 手动落点;
     float 起算时刻;
     float 描边半径;
     bool 已放终点特效;
@@ -149,6 +150,7 @@ public class BlinkSkillRunner : MonoBehaviour
     Vector3 算落点()
     {
         Vector3 方向 = 鼠标水平方向();
+        if(手动落点.HasValue){方向=手动落点.Value-玩家.position;方向.y=0;方向=方向.sqrMagnitude>.0001f?方向.normalized:玩家.forward;}
         float 神识距离 = 神识范围();
 
         // 玩家"想闪多远" = 鼠标所指的水平距离。取不到（鼠标在窗口外/打不到平面）时按神识满距闪
@@ -166,6 +168,7 @@ public class BlinkSkillRunner : MonoBehaviour
         }
 
         float 距离 = Mathf.Clamp(想要, 0f, Mathf.Min(神识距离, 最大闪烁距离));
+        if(手动落点.HasValue){var delta=手动落点.Value-玩家.position;delta.y=0;距离=Mathf.Min(delta.magnitude,Mathf.Min(神识距离,最大闪烁距离));}
         var 目标 = 玩家.position + 方向 * 距离;
 
         // 地面探测：落点上方往下打，打不到就原地不动（别闪进虚空）
@@ -316,6 +319,7 @@ public class BlinkSkillRunner : MonoBehaviour
     /// <summary>对起点和落点各结算一次（同一敌人只打一次）</summary>
     void 结算一次()
     {
+        VoxelCombatDamage.Sphere(起点,描边半径);VoxelCombatDamage.Sphere(落点,描边半径);
         if (战斗属性 == null) { 收尾(); return; }
 
         var 规则 = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);

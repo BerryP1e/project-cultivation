@@ -149,7 +149,15 @@ public class BasicRemoteAttack01 : MonoBehaviour
     public float 冷却剩余 => Mathf.Max(0f, 下次可出手时间 - Time.time);
 
     /// <summary>现在能不能出手</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && (手动请求 || 锁定单位 != null) && 冷却剩余 <= 0f && !出手动作中;
+    bool 手动请求,手动攻击;
+    Vector3 手动点;
+    public bool 手动出手(Vector3 point)
+    {
+        if((GetComponent<PlayerVitals>()?.IsDead ?? false) || (GetComponent<演出锁>()?.正在锁 ?? false))return false;
+        手动请求=true;手动点=transform.position+Vector3.ClampMagnitude(point-transform.position,神识范围);
+        try{return 出手();}finally{手动请求=false;}
+    }
 
     /// <summary>正在做攻击动作</summary>
     public bool 出手动作中 { get; private set; }
@@ -227,6 +235,8 @@ public class BasicRemoteAttack01 : MonoBehaviour
     public bool 出手()
     {
         if (!可以出手) return false;
+        手动攻击=手动请求;
+        if(手动攻击)GetComponent<PlayerController>()?.对准攻击方向(手动点-transform.position);
 
         出手动作中 = true;
         本轮已出弹 = false;
@@ -256,6 +266,7 @@ public class BasicRemoteAttack01 : MonoBehaviour
 
     void 生成飞弹()
     {
+        if(手动攻击){生成手动飞弹();return;}
         var 目标 = 当前锁定 ?? 锁定单位;
         if (目标 == null || 目标.已倒下) return;
         if (玩家战斗属性 == null)
@@ -277,16 +288,32 @@ public class BasicRemoteAttack01 : MonoBehaviour
         var 飞 = NpcProjectile.发射(弹道特效路径, 出膛点, 目标.判定点, 飞弹速度, 弹体缩放,
                                     0f, 拦截层, null);
         if (飞 == null) return;
+        飞.检测体素=true;
 
         飞.追踪终止距离 = 神识范围;        // 锁定单位超出神识范围 → 放弃
         飞.最长追踪时间 = 最长追踪时间;     // 超过 8 秒 → 放弃
         飞.设置追踪飞行(目标.根, 飞弹速度, 追踪转向速度);
-        飞.到达时 += () => 结算命中(目标, 飞);
+        飞.到达时 += () => {if(飞.击中体素)环境命中(飞.命中点,飞.飞行朝向);else {VoxelCombatDamage.Sphere(飞.命中点,.6f);结算命中(目标, 飞);}};
 
         if (打印战斗日志)
             Debug.Log("[basic_remoteattack_01] 对锁定单位「" + 目标.名字 + "」出弹"
                 + "（攻速 " + 攻速系数.ToString("0.##") + "｜冷却 " + 实际冷却.ToString("0.##") + "s"
                 + "｜神识范围 " + 神识范围.ToString("0.##") + "m）", this);
+    }
+    void 生成手动飞弹()
+    {
+        Vector3 from=取出生点(),point=手动点,dir=point-from;
+        生成装饰特效(闪光特效路径,from,dir,闪光特效存活,1);
+        var bolt=NpcProjectile.发射(弹道特效路径,from,point,飞弹速度,弹体缩放,0,拦截层,null);
+        if(!bolt)return;bolt.检测体素=true;bolt.到达时+=()=>环境命中(bolt.命中点,bolt.飞行朝向);
+    }
+    void 环境命中(Vector3 point,Vector3 direction)
+    {
+        VoxelCombatDamage.Sphere(point,.6f);
+        生成装饰特效(命中特效路径,point,-direction,命中特效存活,命中特效缩放);
+        var seen=new System.Collections.Generic.HashSet<NpcInstance>();
+        foreach(var c in Physics.OverlapSphere(point,.6f,~0,QueryTriggerInteraction.Ignore))
+        {var npc=c.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,技能倍率));}
     }
 
     /// <summary>飞弹到达 → 对锁定单位结算一次</summary>

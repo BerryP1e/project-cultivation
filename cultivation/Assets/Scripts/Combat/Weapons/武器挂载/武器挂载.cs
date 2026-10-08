@@ -81,7 +81,9 @@ public class 武器挂载 : MonoBehaviour
 
     bool 太虚剑 => 面板数据 != null && 面板数据.当前功法 != null
         && 面板数据.当前功法.功法id == "gongfa_taixu_jianjue";
-    string 当前武器路径 => 太虚剑 ? "Weapons/太虚剑决_神秘人剑" : 武器资源路径;
+    bool 灵虚剑 => 面板数据 != null && 面板数据.当前功法 != null && 面板数据.当前功法.功法id == "gongfa_lingxu_jianjue";
+    bool 独立剑 => 太虚剑 || 灵虚剑;
+    string 当前武器路径 => 灵虚剑 ? "Weapons/灵虚剑决/灵虚剑" : 太虚剑 ? "Weapons/太虚剑决_神秘人剑" : 武器资源路径;
     string 实例资源路径;
     Transform 挂点缓存;
     bool 报过找不到武器;
@@ -170,7 +172,15 @@ public class 武器挂载 : MonoBehaviour
         if (骨 == null) { 销毁实例(); return; }      // 找不到骨骼时不实例化（已经在 找挂点 里警告过）
 
         if (实例 != null && 实例资源路径 != 当前武器路径) 销毁实例();
-        if (实例 == null) { 实例 = 创建实例(骨); 实例资源路径 = 当前武器路径; }
+        if (实例 == null) {
+            实例 = 创建实例(骨); 实例资源路径 = 当前武器路径;
+            // Transform bindings are cached by Animator. The independent sword must be bound
+            // after its hierarchy exists, including when re-equipping the same technique.
+            if (实例 != null && 灵虚剑) {
+                var animator=骨.GetComponent<Animator>();
+                if (animator != null) 重绑独立剑(animator);
+            }
+        }
         if (实例 == null) return;
 
         应用本地TRS(实例.transform);
@@ -181,7 +191,34 @@ public class 武器挂载 : MonoBehaviour
     {
         if (string.IsNullOrEmpty(显示条件功法id)) return true;          // 留空 = 一直显示
         var 功法 = 面板数据 != null ? 面板数据.当前功法 : null;
-        return 功法 != null && (功法.功法id == 显示条件功法id || 太虚剑);
+        return 功法 != null && (功法.功法id == 显示条件功法id || 独立剑);
+    }
+
+    static void 重绑独立剑(Animator animator)
+    {
+        if (!animator.isInitialized) { animator.Rebind(); return; }
+        var parameters=animator.parameters;
+        var floats=new float[parameters.Length];var ints=new int[parameters.Length];var bools=new bool[parameters.Length];
+        for(int i=0;i<parameters.Length;i++) {
+            var p=parameters[i];
+            if(p.type==AnimatorControllerParameterType.Float)floats[i]=animator.GetFloat(p.nameHash);
+            else if(p.type==AnimatorControllerParameterType.Int)ints[i]=animator.GetInteger(p.nameHash);
+            else if(p.type==AnimatorControllerParameterType.Bool)bools[i]=animator.GetBool(p.nameHash);
+        }
+        var states=new AnimatorStateInfo[animator.layerCount];var weights=new float[states.Length];
+        for(int i=0;i<states.Length;i++){states[i]=animator.GetCurrentAnimatorStateInfo(i);weights[i]=animator.GetLayerWeight(i);}
+        animator.Rebind();
+        for(int i=0;i<parameters.Length;i++) {
+            var p=parameters[i];
+            if(p.type==AnimatorControllerParameterType.Float)animator.SetFloat(p.nameHash,floats[i]);
+            else if(p.type==AnimatorControllerParameterType.Int)animator.SetInteger(p.nameHash,ints[i]);
+            else if(p.type==AnimatorControllerParameterType.Bool)animator.SetBool(p.nameHash,bools[i]);
+        }
+        for(int i=0;i<states.Length;i++) {
+            animator.SetLayerWeight(i,weights[i]);
+            if(states[i].fullPathHash!=0)animator.Play(states[i].fullPathHash,i,states[i].normalizedTime);
+        }
+        animator.Update(0);
     }
 
     // ============================================================ 实例
@@ -215,16 +252,16 @@ public class 武器挂载 : MonoBehaviour
             smr.updateWhenOffscreen = true;
 
         if (打印日志)
-            Debug.Log("[武器挂载] 已把「" + go.name + "」挂到「" + 骨.name + "」（缩放 " + (太虚剑 ? 1f : 本地缩放).ToString("0.####") + "）", this);
+            Debug.Log("[武器挂载] 已把「" + go.name + "」挂到「" + 骨.name + "」（缩放 " + (独立剑 ? 1f : 本地缩放).ToString("0.####") + "）", this);
         return go;
     }
 
     void 应用本地TRS(Transform t)
     {
         if (t == null) return;
-        t.localPosition = 太虚剑 ? Vector3.zero : 本地位置;
-        t.localRotation = 太虚剑 ? Quaternion.identity : Quaternion.Euler(本地旋转欧拉);
-        t.localScale = Vector3.one * (太虚剑 ? 1f : Mathf.Max(0.0001f, 本地缩放));
+        t.localPosition = 独立剑 ? Vector3.zero : 本地位置;
+        t.localRotation = 独立剑 ? Quaternion.identity : Quaternion.Euler(本地旋转欧拉);
+        t.localScale = Vector3.one * (独立剑 ? 1f : Mathf.Max(0.0001f, 本地缩放));
     }
 
     void 销毁实例()
@@ -258,6 +295,10 @@ public class 武器挂载 : MonoBehaviour
     /// </summary>
     Transform 找挂点()
     {
+        if (灵虚剑) {
+            var animator=GetComponentInChildren<Animator>(true);
+            return animator != null ? animator.transform : null;
+        }
         if (挂点缓存 != null) return 挂点缓存;
         if (string.IsNullOrEmpty(挂点骨骼名)) return null;
 

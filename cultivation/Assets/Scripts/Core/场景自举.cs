@@ -39,6 +39,8 @@ public static class 场景自举
     static void 补当前场景(Scene 场景)
     {
         if (!场景.IsValid() || !场景.isLoaded) return;
+        // Isolated voxel experiments must not start game systems or alter story scene flags.
+        if (场景.path.StartsWith("Assets/Experiments/Voxel/", System.StringComparison.Ordinal)) return;
 
         // ★ 场景标记要在**任何提前返回之前**维护：它是"我现在在哪个场景"的唯一真相，
         //   连主菜单/过场也该把它翻过去（否则从洞府回主菜单，洞府那几段对话还开着）。

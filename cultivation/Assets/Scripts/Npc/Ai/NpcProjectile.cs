@@ -93,6 +93,13 @@ public class NpcProjectile : MonoBehaviour
     bool 直线模式;
     float 速度 = 15f;
     bool 已结束;
+    public bool 检测体素;
+    public bool 击中体素 {get;private set;}
+    bool 检查环境(Vector3 next)
+    {
+        if(!检测体素 || !VoxelCombatDamage.Ray(transform.position,next,out var hit))return false;
+        transform.position=hit.point;击中体素=true;到达();return true;
+    }
     float 已飞距离;
 
     /// <summary>已经飞了多远（米）</summary>
@@ -258,6 +265,7 @@ public class NpcProjectile : MonoBehaviour
                 { 消散消失(false); return; }
             }
 
+            if(检查环境(transform.position+飞行方向*本帧能走))return;
             transform.position += 飞行方向 * 本帧能走;
             // 朝向跟着飞行方向（不追踪时方向恒定，等于没变）
             if (飞行方向.sqrMagnitude > 0.0001f)
@@ -283,6 +291,7 @@ public class NpcProjectile : MonoBehaviour
 
         Vector3 差 = 目标点 - transform.position;
         float 距离 = 差.magnitude;
+        if(检查环境(transform.position+差.normalized*Mathf.Min(距离,本帧能走)))return;
 
         if (距离 <= Mathf.Max(0.08f, 本帧能走))
         {

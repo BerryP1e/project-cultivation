@@ -224,7 +224,7 @@ public class NpcDialogue : MonoBehaviour
         //   本脚本自己处理 F 只是"没有交互器"时的兜底，否则两边会同时响应同一个 F —— 实测就是这个 bug。
         if (找玩家交互器() != null) return;
 
-        if (Input.GetKeyDown(交互键) && 是最近的可对话目标()) 打开对话();
+        if (!PlayerManualAim.AltHeld && Input.GetKeyDown(交互键) && 是最近的可对话目标()) 打开对话();
     }
 
     static StationInteractor 缓存交互器;

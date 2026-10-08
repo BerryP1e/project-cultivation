@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,6 +30,8 @@ public class QingshanSwordTreasure : MonoBehaviour
     public float 万剑命中特效倍率=.22f,万剑消散时间=1.2f,巨剑贯穿时间=1.2f;
     UIPanelData 面板;
     NpcInstance 内部锁定,ultimateTarget;
+    Vector3? manualUltimatePoint;
+    public float 巨剑体素破坏半径=6f;
     Transform 剑体,giant;
     QingshanSwordParticles particles;
     float phaseAge,phaseDuration,cooldownUntil;
@@ -56,6 +58,9 @@ public class QingshanSwordTreasure : MonoBehaviour
     public float SpiritSense=>玩家战斗属性!=null?玩家战斗属性.当前神识:0;
     public float SenseRange=>Mathf.Min(索敌范围上限,基础索敌范围+SpiritSense*每点神识范围);
     public float UnlockRange=>SenseRange;
+    public float UltimateScale=>Mathf.Max(.1f,巨剑基础倍率)+Mathf.Max(0,SwordCount-3)*.15f;
+    public float UltimateVoxelRadius=>VoxelRadiusForScale(UltimateScale);
+    float VoxelRadiusForScale(float scale)=>巨剑体素破坏半径*Mathf.Max(1,scale/10.13f)*(2f/3f);
     public event Action<NpcInstance,AttackResult> OnHitLanded;
     void Awake(){Resolve();}
     void Resolve(){if(面板==null)面板=FindObjectOfType<UIPanelData>();if(玩家战斗属性==null)玩家战斗属性=GetComponent<PlayerCombatStats>();if(目标管理器==null)目标管理器=GetComponent<NpcTargeting>();}
@@ -165,26 +170,30 @@ public class QingshanSwordTreasure : MonoBehaviour
         var result=target.ReceiveAttack(玩家战斗属性,ultimate?new AttackSpec(DamageNature.物理,AttackKind.主动神通,true,万剑伤害倍率):AttackSpec.物理普通攻击);
         if(result.命中 && !ultimate)SwordHitEffect.Spawn(Aim(target),direction,result.暴击);OnHitLanded?.Invoke(target,result);
     }
-    public bool TryCastUltimate(){
+    public bool TryCastUltimate()=>CastUltimate(null);
+    public bool TryCastUltimateAt(Vector3 point)=>CastUltimate(point);
+    bool CastUltimate(Vector3? point){
         Resolve();if(!IsEquipped || UiEscRegistry.SceneInputBlocked || (GetComponent<PlayerVitals>()?.IsDead ?? false) || (GetComponent<演出锁>()?.正在锁 ?? false) || UltimateState!=UltimatePhase.Idle)return false;
         if(SwordCount<3){面板.ShowHint("三剑时解锁万剑归宗");return false;}
         if(UltimateCooldown>0){面板.ShowHint("万剑归宗尚在冷却");return false;}
-        var target=锁定目标;if(target==null || target.IsDead || Vector3.Distance(transform.position,target.transform.position)>SenseRange){面板.ShowHint("请锁定神识范围内的目标");return false;}
+        var target=point.HasValue?null:锁定目标;
+        if(point.HasValue?Vector3.Distance(transform.position,point.Value)>SenseRange+.01f:target==null || target.IsDead || Vector3.Distance(transform.position,target.transform.position)>SenseRange){面板.ShowHint("请选取神识范围内的落点或目标");return false;}
+        manualUltimatePoint=point;
         EnsureBlades();if(blades.Count!=SwordCount || 玩家战斗属性==null){面板.ShowHint("飞剑模型或战斗属性尚未就绪");return false;}ultimateTarget=target;cooldownUntil=Time.time+万剑冷却;攻击目标=null;状态=SwordState.悬浮;
         float distance=0;for(int i=0;i<blades.Count;i++)distance=Mathf.Max(distance,Vector3.Distance(blades[i].root.position,transform.TransformPoint(HoverLocal(i,blades.Count))));
         phaseDuration=Mathf.Max(.5f,distance/20+.1f);SetPhase(UltimatePhase.Recall);return true;
     }
     void SetPhase(UltimatePhase phase){UltimateState=phase;phaseAge=0;}
     void UpdateUltimate(){
-        if(UltimateState!=UltimatePhase.Recover && UltimateState!=UltimatePhase.Pierce && (ultimateTarget==null || ultimateTarget.IsDead)){CancelUltimate();return;}
+        if(UltimateState!=UltimatePhase.Recover && UltimateState!=UltimatePhase.Pierce && !manualUltimatePoint.HasValue && (ultimateTarget==null || ultimateTarget.IsDead)){CancelUltimate();return;}
         phaseAge+=Time.deltaTime;
         if(UltimateState==UltimatePhase.Recall){for(int i=0;i<blades.Count;i++){var b=blades[i];b.root.position=Vector3.MoveTowards(b.root.position,transform.TransformPoint(HoverLocal(i,blades.Count)),20*Time.deltaTime);b.root.rotation=Quaternion.Slerp(b.root.rotation,HoverRotation(i,blades.Count),Time.deltaTime*12);}
             if(phaseAge>=phaseDuration){var starts=new List<Vector3>();foreach(var b in blades){QingshanSwordParticles.SwordPoints(b.root,48,starts);b.root.gameObject.SetActive(false);}var ends=new Vector3[starts.Count];for(int i=0;i<ends.Length;i++)ends[i]=starts[i]+Vector3.up*20;
                 particles=QingshanSwordParticles.Play(starts.ToArray(),ends,.95f,true);SetPhase(UltimatePhase.Ascend);}}
         else if(UltimateState==UltimatePhase.Ascend && phaseAge>=1){
-            giant=CreateSword("万剑归宗_凝聚巨剑");giantScale=Mathf.Max(.1f,巨剑基础倍率)+Mathf.Max(0,SwordCount-3)*.15f;
+            giant=CreateSword("万剑归宗_凝聚巨剑");giantScale=UltimateScale;
             giantDirection=Vector3.down;giant.rotation=Quaternion.LookRotation(Vector3.down,transform.forward);giant.localScale=Vector3.one*giantScale;
-            giantImpactPoint=ultimateTarget.transform.position;giantContactHeight=TargetHeight(ultimateTarget);giantSpawnTipHeight=giantContactHeight+3;
+            giantImpactPoint=manualUltimatePoint ?? ultimateTarget.transform.position;giantContactHeight=ultimateTarget?TargetHeight(ultimateTarget):.25f;giantSpawnTipHeight=giantContactHeight+3;
             giantTipOffset=giant.TransformVector(QingshanSwordParticles.TipLocal());
             giant.position=giantImpactPoint+Vector3.up*giantSpawnTipHeight-giantTipOffset;
             var ends=new List<Vector3>();QingshanSwordParticles.SwordPoints(giant,800,ends);var starts=new Vector3[ends.Count];for(int i=0;i<starts.Length;i++)starts[i]=ends[i]+UnityEngine.Random.onUnitSphere*UnityEngine.Random.Range(3,6);
@@ -198,6 +207,14 @@ public class QingshanSwordTreasure : MonoBehaviour
             if(t>=1){
                 // 首次接触时结算一次伤害；目标死亡也继续完成整把剑的贯穿和消散。
                 SpawnImpact(giantImpactPoint,Vector3.down);Hit(ultimateTarget,Vector3.down,true);
+                float radius=巨剑体素破坏半径*Mathf.Max(1,giantScale/10.13f);
+                VoxelCombatDamage.Sphere(giantImpactPoint,VoxelRadiusForScale(giantScale));
+                if(manualUltimatePoint.HasValue)
+                {
+                    var seen=new HashSet<NpcInstance>();
+                    foreach(var c in Physics.OverlapSphere(giantImpactPoint,radius,~0,QueryTriggerInteraction.Ignore))
+                    {var npc=c.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))Hit(npc,Vector3.down,true);}
+                }
                 pierceStart=giant.position;giantPierceDistance=QingshanSwordParticles.BladeLength(giant)+giantContactHeight+.25f;
                 giantCut.UpdateCut(giantImpactPoint.y+.05f);SetPhase(UltimatePhase.Pierce);
             }
@@ -214,7 +231,7 @@ public class QingshanSwordTreasure : MonoBehaviour
     }
     void UpdateGiantAim(){
         // 始终以目标根节点定位，方向保持垂直；补偿真实模型剑尖的横向轴心偏移。
-        giantImpactPoint=Vector3.Lerp(giantImpactPoint,ultimateTarget.transform.position,1-Mathf.Exp(-12*Time.deltaTime));
+        giantImpactPoint=Vector3.Lerp(giantImpactPoint,manualUltimatePoint ?? ultimateTarget.transform.position,1-Mathf.Exp(-12*Time.deltaTime));
         giantDirection=Vector3.down;
         if(UltimateState==UltimatePhase.Gather)giant.position=giantImpactPoint+Vector3.up*giantSpawnTipHeight-giantTipOffset;
     }
@@ -225,7 +242,7 @@ public class QingshanSwordTreasure : MonoBehaviour
         foreach(var particle in fx.GetComponentsInChildren<ParticleSystem>(true)){var main=particle.main;main.simulationSpeed*=.55f;}
         Destroy(fx,8);
     }
-    void CancelUltimate(){if(giant!=null)Destroy(giant.gameObject);giant=null;giantCut=null;if(particles!=null)Destroy(particles.gameObject);particles=null;ultimateTarget=null;UltimateState=UltimatePhase.Idle;foreach(var b in blades)if(b.root!=null)b.root.gameObject.SetActive(true);攻击目标=null;}
+    void CancelUltimate(){if(giant!=null)Destroy(giant.gameObject);giant=null;giantCut=null;if(particles!=null)Destroy(particles.gameObject);particles=null;ultimateTarget=null;manualUltimatePoint=null;UltimateState=UltimatePhase.Idle;foreach(var b in blades)if(b.root!=null)b.root.gameObject.SetActive(true);攻击目标=null;}
     void Clear(){hoverInitialized=false;hoverAnchorVelocity=Vector3.zero;CancelUltimate();foreach(var b in blades)if(b.root!=null)Destroy(b.root.gameObject);blades.Clear();剑体=null;攻击目标=null;状态=SwordState.悬浮;}
     public bool BeginAttack(){Resolve();if(!IsEquipped || UiEscRegistry.SceneInputBlocked || 锁定目标==null)return false;攻击目标=锁定目标;for(int i=0;i<blades.Count;i++)ResetFlight(blades[i],i);return true;}
     public void 设置锁定目标(NpcInstance npc){if(目标管理器!=null)目标管理器.Lock(npc,true);else 内部锁定=npc;}

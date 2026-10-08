@@ -22,7 +22,7 @@ public static class YufengGlideBaker
         var moving=AnimationUtility.GetCurveBindings(old).Where(b=>b.type==typeof(Animator)).ToDictionary(b=>b.propertyName,b=>AnimationUtility.GetEditorCurve(old,b).Evaluate(0));
         var standing=AssetDatabase.LoadAllAssetsAtPath("Assets/resources/Animation Library/1/UAL1_Standard.fbx").OfType<AnimationClip>().First(c=>c.name=="Armature|Idle_Loop");
         var neutral=AnimationUtility.GetCurveBindings(standing).Where(b=>b.type==typeof(Animator)).ToDictionary(b=>b.propertyName,b=>AnimationUtility.GetEditorCurve(standing,b).Evaluate(0));
-        float Value(string name)=>source.TryGetValue(name,out var v)?v:0;
+        float Value(string name)=>source.TryGetValue(HandMotionRetargeting.CurveName(name),out var v)?v:0;
         var clip=new AnimationClip{name=old.name,frameRate=30};
         const int frames=96;
         var curves=new Dictionary<string,AnimationCurve>();
@@ -64,9 +64,9 @@ public static class YufengGlideBaker
         {
             var keys=pair.Value.keys;
             if(keys.Max(k=>k.value)-keys.Min(k=>k.value)<.000001f)
-            {AnimationUtility.SetEditorCurve(clip,EditorCurveBinding.FloatCurve("",typeof(Animator),pair.Key),AnimationCurve.Constant(0,Duration,keys[0].value));continue;}
+            {AnimationUtility.SetEditorCurve(clip,EditorCurveBinding.FloatCurve("",typeof(Animator),HandMotionRetargeting.CurveName(pair.Key)),AnimationCurve.Constant(0,Duration,keys[0].value));continue;}
             for(int i=0;i<keys.Length;i++){float slope=i==0||i==frames?(keys[1].value-keys[frames-1].value)/(2*Duration/frames):(keys[i+1].value-keys[i-1].value)/(2*Duration/frames);keys[i].inTangent=keys[i].outTangent=slope;}
-            pair.Value.keys=keys;AnimationUtility.SetEditorCurve(clip,EditorCurveBinding.FloatCurve("",typeof(Animator),pair.Key),pair.Value);
+            pair.Value.keys=keys;AnimationUtility.SetEditorCurve(clip,EditorCurveBinding.FloatCurve("",typeof(Animator),HandMotionRetargeting.CurveName(pair.Key)),pair.Value);
         }
         var settings=AnimationUtility.GetAnimationClipSettings(old);settings.loopTime=true;settings.stopTime=Duration;settings.keepOriginalPositionY=true;settings.loopBlendPositionY=true;AnimationUtility.SetAnimationClipSettings(clip,settings);clip.EnsureQuaternionContinuity();
         EditorUtility.CopySerialized(clip,old);EditorUtility.SetDirty(old);UnityEngine.Object.DestroyImmediate(clip);

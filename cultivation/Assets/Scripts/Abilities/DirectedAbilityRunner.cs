@@ -10,12 +10,13 @@ public class DirectedAbilityRunner : MonoBehaviour
     GameObject 特效;
     float 结束时间, 下次伤害;
     Vector3 中心;
+    bool 手动;
     public int 结算次数 { get; private set; }
 
-    public void 初始化(ActiveSkillCaster 施法者, ActiveDivineAbility 定义, NpcInstance 锁定)
+    public void 初始化(ActiveSkillCaster 施法者, ActiveDivineAbility 定义, NpcInstance 锁定,Vector3? 落点=null)
     {
         玩家 = 施法者; 神通 = 定义; 目标 = 锁定;
-        中心 = 锁定 != null ? 锁定.transform.position : 玩家.transform.position;
+        手动=落点.HasValue;中心 = 落点 ?? (锁定 != null ? 锁定.transform.position : 玩家.transform.position);
         transform.position = 中心;
         特效 = AbilityVfxUtility.生成(神通.特效资源路径, transform,
             神通.结算方式 == ActiveSkillKind.小剑阵 ? Mathf.Max(.05f, 神通.范围 / 10f) : 1f);
@@ -30,15 +31,15 @@ public class DirectedAbilityRunner : MonoBehaviour
         bool 炮 = 神通.结算方式 == ActiveSkillKind.定向水炮;
         if (炮)
         {
-            if (目标 == null || 目标.IsDead || Vector3.Distance(玩家.transform.position, 目标.transform.position) > 神通.范围)
+            if (!手动 && (目标 == null || 目标.IsDead || Vector3.Distance(玩家.transform.position, 目标.transform.position) > 神通.范围))
             { Destroy(gameObject); return; }
             Vector3 起点 = AbilityVfxUtility.命中点(玩家.transform) + 玩家.transform.forward * .3f;
-            AbilityVfxUtility.对准光束(特效, 起点, AbilityVfxUtility.命中点(目标.transform));
+            AbilityVfxUtility.对准光束(特效, 起点, 手动?中心:AbilityVfxUtility.命中点(目标.transform));
         }
         if (Time.time < 下次伤害 || 玩家.战斗属性 == null) return;
         下次伤害 = Time.time + Mathf.Max(.05f, 神通.伤害间隔);
         var 规则 = new AttackSpec(神通.伤害属性, 神通.攻击类别, false, 神通.伤害倍率);
-        if (炮) { 目标.ReceiveAttack(玩家.战斗属性, 规则); 结算次数++; }
+        if (炮) { if(目标) {目标.ReceiveAttack(玩家.战斗属性, 规则); 结算次数++;}else VoxelCombatDamage.Sphere(中心,.65f); }
         else
         {
             var 已打 = new HashSet<NpcInstance>();

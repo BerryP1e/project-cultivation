@@ -303,7 +303,7 @@ public static class YufengClipBuilder
         if (!hasFly) return pose;
 
         float time = Mathf.Repeat(phase01, 1f) * flyLength;
-        float Eval(string prop) => flyCurves != null && flyCurves.TryGetValue(prop, out var c) && c != null ? c.Evaluate(time) : 0f;
+        float Eval(string prop) => flyCurves != null && flyCurves.TryGetValue(HandMotionRetargeting.CurveName(prop), out var c) && c != null ? c.Evaluate(time) : 0f;
 
         for (int i = 0; i < HumanTrait.MuscleCount; i++)
             pose.muscles[i] = Eval(HumanTrait.MuscleName[i]);
@@ -355,7 +355,7 @@ public static class YufengClipBuilder
             AddKey(curves, "RootQ.w", t, pose.bodyRotation.w);
 
             for (int i = 0; i < HumanTrait.MuscleCount && i < pose.muscles.Length; i++)
-                AddKey(curves, HumanTrait.MuscleName[i], t, pose.muscles[i]);
+                AddKey(curves, HandMotionRetargeting.CurveName(HumanTrait.MuscleName[i]), t, pose.muscles[i]);
         }
 
         foreach (var kv in curves)
@@ -430,7 +430,7 @@ public static class YufengClipBuilder
         var map = new Dictionary<string, AnimationCurve>();
         foreach (var b in binds) map[b.propertyName] = AnimationUtility.GetEditorCurve(clip, b);
 
-        float Eval(string prop) => map.TryGetValue(prop, out var c) && c != null ? c.Evaluate(0f) : 0f;
+        float Eval(string prop) => map.TryGetValue(HandMotionRetargeting.CurveName(prop), out var c) && c != null ? c.Evaluate(0f) : 0f;
 
         var pose = new HumanPose { muscles = new float[HumanTrait.MuscleCount] };
         for (int i = 0; i < HumanTrait.MuscleCount; i++)

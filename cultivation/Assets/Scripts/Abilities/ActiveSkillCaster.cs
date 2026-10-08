@@ -123,7 +123,7 @@ public class ActiveSkillCaster : MonoBehaviour
         }
     }
 
-    void Awake() => 解析引用();
+    void Awake() {解析引用();if(!GetComponent<PlayerManualAim>())gameObject.AddComponent<PlayerManualAim>();}
 
     void 解析引用()
     {
@@ -155,7 +155,7 @@ public class ActiveSkillCaster : MonoBehaviour
             if (充能数[i] < 上限) 冷却剩余[i] = 冷却总秒(i);
         }
 
-        if (!接收输入()) return;
+        if (!接收输入() || PlayerManualAim.AltHeld) return;
 
         int 上限2 = Mathf.Min(6, 快捷键 != null ? 快捷键.Length : 0);
         for (int i = 0; i < 上限2; i++)
@@ -177,10 +177,14 @@ public class ActiveSkillCaster : MonoBehaviour
     }
 
     /// <summary>按下技能栏第 N 格（0~5）。返回是否真的放出去了。</summary>
-    public bool 尝试施放(int 槽位)
+    public bool 尝试施放(int 槽位) => 尝试施放内部(槽位,null);
+    public bool 手动施放(int 槽位,Vector3 落点) => 尝试施放内部(槽位,落点);
+    bool 尝试施放内部(int 槽位,Vector3? 落点)
     {
         if(UiEscRegistry.SceneInputBlocked)return false;
         if (面板数据 == null) 解析引用();
+        if(生命==null || 生命.IsDead || (GetComponent<演出锁>()?.正在锁 ?? false))return false;
+        同步槽位内容();
         if (面板数据 == null || 面板数据.主动技能 == null) return false;
         if (槽位 < 0 || 槽位 >= 面板数据.主动技能.Count) return false;
 
@@ -228,12 +232,22 @@ public class ActiveSkillCaster : MonoBehaviour
 
         // ---- 需要锁定 ----
         var 锁定 = 目标管理器 != null ? 目标管理器.LockedNpc : null;
-        if (神通.需要锁定目标 && (锁定 == null || 锁定.IsDead))
+        if (神通.需要锁定目标 && !落点.HasValue && (锁定 == null || 锁定.IsDead))
         {
             提示("「" + 神通.神通名称 + "」需要先右键锁定一个敌人");
             return false;
         }
 
+        if(落点.HasValue)
+        {
+            float range=PlayerManualAim.SenseRange(gameObject);
+            if(神通.范围>0 && (神通.结算方式==ActiveSkillKind.追踪弹 || 神通.结算方式==ActiveSkillKind.定向水炮))range=Mathf.Min(range,神通.范围);
+            if((落点.Value-transform.position).sqrMagnitude>range*range+.01f)
+            {提示("落点超出神识范围");return false;}
+            if(神通.结算方式==ActiveSkillKind.持续禁锢){提示("此神通需要可禁锢的目标");return false;}
+            锁定=null;
+            GetComponent<PlayerController>()?.对准攻击方向(落点.Value-transform.position);
+        }
         // ---- 灵力 ----
         if (神通.结算方式 >= ActiveSkillKind.定向水炮)
         {
@@ -273,11 +287,11 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = 宿主.AddComponent<BindingChainSkillRunner>();
             持续锁链[槽位].初始化(this, 神通, 锁定, 槽位);
         }
-        else 施放(神通, 锁定);
+        else 施放(神通, 锁定,落点);
         return true;
     }
 
-    void 施放(ActiveDivineAbility 神通, NpcInstance 锁定)
+    void 施放(ActiveDivineAbility 神通, NpcInstance 锁定,Vector3? 落点=null)
     {
         // 【施法动作】表里「施法动作」列配了才播（例：焚天炎术 → 技能动作2）
         // 片段放在 Assets/resources/技能动作/ 下，所以能 Resources.Load。
@@ -296,7 +310,7 @@ public class ActiveSkillCaster : MonoBehaviour
         if (神通.结算方式 == ActiveSkillKind.定向水炮 || 神通.结算方式 == ActiveSkillKind.小剑阵)
         {
             var 宿主 = new GameObject("DirectedSkill_" + 神通.神通id);
-            宿主.AddComponent<DirectedAbilityRunner>().初始化(this, 神通, 锁定);
+            宿主.AddComponent<DirectedAbilityRunner>().初始化(this, 神通, 锁定,落点);
             return;
         }
 
@@ -304,7 +318,7 @@ public class ActiveSkillCaster : MonoBehaviour
         //   和"原地放一蓬范围伤害"是两套节奏，所以单独分流，别塞进下面那套。
         if (神通.结算方式 == ActiveSkillKind.闪烁位移)
         {
-            施放闪烁(神通);
+            施放闪烁(神通,落点);
             return;
         }
 
@@ -314,7 +328,7 @@ public class ActiveSkillCaster : MonoBehaviour
         {
             if (动画 == null) 动画 = GetComponent<PlayerAnimationController>();
             if (动画 == null) 动画 = GetComponentInChildren<PlayerAnimationController>();
-            施放追踪弹(神通, 锁定, 动画);
+            施放追踪弹(神通, 锁定, 动画,落点);
             return;
         }
 
@@ -322,12 +336,12 @@ public class ActiveSkillCaster : MonoBehaviour
         //   和"原地放一蓬范围伤害"是两套节奏，所以也单独分流。
         if (神通.结算方式 == ActiveSkillKind.向前冰柱)
         {
-            施放冰柱(神通);
+            施放冰柱(神通,落点);
             return;
         }
 
         // 以锁定的敌人为中心（不需要锁定的技能则以自己为中心）。取施放瞬间的位置。
-        Vector3 中心 = (神通.需要锁定目标 && 锁定 != null) ? 锁定.transform.position : transform.position;
+        Vector3 中心 = 落点 ?? ((神通.需要锁定目标 && 锁定 != null) ? 锁定.transform.position : transform.position);
 
         // 特效。就算没配特效也要结算伤害，所以结算体永远都建。
         GameObject 载体 = null;
@@ -381,7 +395,7 @@ public class ActiveSkillCaster : MonoBehaviour
     /// 二段 / 三段走新增的「命中特效路径」/「三段特效路径」列（`frost-ring` / `frost-spike`）。
     /// 「施法动作」列对这一档**可以留空**（留空 = 不播动作，不影响出招）。
     /// </summary>
-    void 施放冰柱(ActiveDivineAbility 神通)
+    void 施放冰柱(ActiveDivineAbility 神通,Vector3? 落点=null)
     {
         // 动作由 runner 按**普攻动作**播（和追踪弹同一套），所以要把它传进去
         if (动画 == null) 动画 = GetComponent<PlayerAnimationController>();
@@ -389,6 +403,7 @@ public class ActiveSkillCaster : MonoBehaviour
 
         var 宿主 = new GameObject("IcePillar_" + 神通.神通id);
         var runner = 宿主.AddComponent<IcePillarSkillRunner>();
+        if(落点.HasValue)runner.调试方向=落点.Value-transform.position;
         runner.初始化(神通, 战斗属性, transform, 敌人层, Camera.main, 动画);
 
         if (打印施法日志)
@@ -414,11 +429,11 @@ public class ActiveSkillCaster : MonoBehaviour
     /// 「施法动作」列对这一档**要留空** —— 动作由 runner 按普攻动作播，
     /// 留空才不会被上面那句 `播施法动作` 再插一个动作进来。
     /// </summary>
-    void 施放追踪弹(ActiveDivineAbility 神通, NpcInstance 锁定, PlayerAnimationController 动画组件)
+    void 施放追踪弹(ActiveDivineAbility 神通, NpcInstance 锁定, PlayerAnimationController 动画组件,Vector3? 落点=null)
     {
         var 宿主 = new GameObject("HomingBolt_" + 神通.神通id);
         var runner = 宿主.AddComponent<HomingBoltSkillRunner>();
-        runner.初始化(神通, 战斗属性, 锁定, 动画组件, transform, 敌人层);
+        runner.初始化(神通, 战斗属性, 锁定, 动画组件, transform, 敌人层,落点);
 
         // 表里那列是"球"；命中特效 runner 自己有默认值（lightning-explode），
         // 神通自己配了「命中特效路径」就覆盖它（**冰暴术 = frost-frozen-tomb**，且要贴地）
@@ -448,7 +463,7 @@ public class ActiveSkillCaster : MonoBehaviour
     /// 用户 2026-09-28 把雷动千闪换成了 `lightning-impact`，它没有 `_01/_02` 后缀，
     /// 所以加了第 2 条规则 —— 起落用**同一套特效的不同部件**，观感才统一。
     /// </summary>
-    void 施放闪烁(ActiveDivineAbility 神通)
+    void 施放闪烁(ActiveDivineAbility 神通,Vector3? 落点=null)
     {
         var 相机 = Camera.main;
         string 终点特效 = 神通.特效资源路径;
@@ -456,6 +471,7 @@ public class ActiveSkillCaster : MonoBehaviour
 
         var 宿主 = new GameObject("BlinkSkill_" + 神通.神通id);
         var runner = 宿主.AddComponent<BlinkSkillRunner>();
+        runner.手动落点=落点;
         runner.初始化(神通, 战斗属性, 生命, 相机, transform, 敌人层, 起点特效, 终点特效, 一次性特效存活);
 
         if (打印施法日志)

@@ -15,10 +15,28 @@ public class DevilEyeAbility : MonoBehaviour
     PlayerCombatStats 属性;
     PlayerVitals 生命;
     GameObject 激光;
+    const float 激光尺寸=.12f/5f;
     AbilityPreciseShotVfx 射击;
     float 下次攻击, 光束结束;
     Vector3 挂点偏移, 跟随位置;
     float 跟随限幅;
+    Vector3? 手动光束点;
+    public bool 跟随普攻瞄准(Vector3 point)
+    {
+        if(!isActiveAndEnabled || !法环 || 神通==null || 生命==null || 生命.IsDead || 属性==null || Time.time<下次攻击 || UiEscRegistry.SceneInputBlocked)return false;
+        if(Vector3.Distance(transform.position,point)>PlayerManualAim.SenseRange(gameObject) || !生命.扣灵气(Mathf.Max(0,神通.消耗灵力)))return false;
+        var from=法环.transform.position;
+        if(VoxelCombatDamage.Ray(from,point,out var hit,false,transform))point=hit.point;
+        下次攻击=Time.time+Mathf.Max(.1f,神通.攻击间隔);
+        if(激光)Destroy(激光);
+        激光=AbilityVfxUtility.生成("Abilities/DevilEyeLaser",null,激光尺寸);
+        if(激光){射击=激光.AddComponent<AbilityPreciseShotVfx>();射击.对准(from,point);}
+        手动光束点=point;光束结束=Time.time+2.4f;VoxelCombatDamage.Sphere(point,.5f);
+        var seen=new System.Collections.Generic.HashSet<NpcInstance>();
+        foreach(var col in Physics.OverlapSphere(point,.5f,~0,QueryTriggerInteraction.Ignore))
+        {var npc=col.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(属性,new AttackSpec(DamageNature.特殊,AttackKind.被动神通,false,神通.伤害倍率));}
+        return true;
+    }
 
     void Awake()
     {
@@ -65,21 +83,29 @@ public class DevilEyeAbility : MonoBehaviour
             && Vector3.Distance(transform.position, 目标.transform.position) <= 神通.范围;
         if (激光 != null)
         {
-            if (!有目标 || Time.time >= 光束结束) { Destroy(激光); 激光 = null; }
-            else if (射击 != null) 射击.对准(法环.transform.position, AbilityVfxUtility.命中点(目标.transform));
+            if (Time.time >= 光束结束 || !手动光束点.HasValue && !有目标) { Destroy(激光); 激光 = null;手动光束点=null; }
+            else if(手动光束点.HasValue && 射击!=null)射击.对准(法环.transform.position,手动光束点.Value);
+            else if (射击 != null) 射击.对准(法环.transform.position, 光束落点(目标));
         }
         if (!有目标 || 属性 == null || Time.time < 下次攻击) return;
+        手动光束点=null;
         下次攻击 = Time.time + Mathf.Max(.1f, 神通.攻击间隔);
         if (!生命.扣灵气(Mathf.Max(0f, 神通.消耗灵力))) return;
-        目标.ReceiveAttack(属性, new AttackSpec(DamageNature.特殊, AttackKind.被动神通, false, 神通.伤害倍率));
-        激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, .12f);
+        var end=AbilityVfxUtility.命中点(目标.transform);
+        bool blocked=VoxelCombatDamage.Ray(法环.transform.position,end,out var contact);
+        if(blocked)end=contact.point;
+        else 目标.ReceiveAttack(属性, new AttackSpec(DamageNature.特殊, AttackKind.被动神通, false, 神通.伤害倍率));
+        VoxelCombatDamage.Sphere(end,.5f);
+        激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, 激光尺寸);
         if (激光 != null)
         {
             射击 = 激光.AddComponent<AbilityPreciseShotVfx>();
-            射击.对准(法环.transform.position, AbilityVfxUtility.命中点(目标.transform));
+            射击.对准(法环.transform.position, end);
         }
         光束结束 = Time.time + 2.4f;
     }
+    Vector3 光束落点(NpcInstance target)
+    {var point=AbilityVfxUtility.命中点(target.transform);return VoxelCombatDamage.Ray(法环.transform.position,point,out var hit)?hit.point:point;}
     void 清理()
     {
         if (法环 != null) Destroy(法环);

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -48,6 +48,7 @@ public class AreaSkillRunner : MonoBehaviour
     float 下次结算时间;
     float 已结算总伤害;
     int 已结算次数;
+    bool 环境已结算;
 
     /// <summary>累计结算出的总伤害（调试 / 测试用）</summary>
     public float 累计伤害 => 已结算总伤害;
@@ -120,6 +121,10 @@ public class AreaSkillRunner : MonoBehaviour
     public int 结算一次()
     {
         if (神通 == null || 攻击方 == null) return 0;
+        if(!环境已结算){
+            环境已结算=true;
+            VoxelCombatDamage.Sphere(中心,VoxelCombatDamage.AreaRadius(神通));
+        }
 
         var spec = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);
 

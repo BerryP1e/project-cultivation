@@ -73,11 +73,12 @@ public sealed class JiubaWeaponVfx : MonoBehaviour
         var mesh = new Mesh();
         try
         {
-            weapon.BakeMesh(mesh); mesh.RecalculateBounds();
-            var b = mesh.bounds; var e = b.extents;
+            if(!attack.刚性本地网格){weapon.BakeMesh(mesh);mesh.RecalculateBounds();}
+            var geometry=attack.刚性本地网格?weapon.sharedMesh:mesh;
+            var b = geometry.bounds; var e = b.extents;
             int axis = e.x >= e.y && e.x >= e.z ? 0 : e.y >= e.z ? 1 : 2;
             float low = 0, high = 0;
-            foreach (var v in mesh.vertices)
+            foreach (var v in geometry.vertices)
             {
                 var d = v - b.center; float radial = 0;
                 for (int i = 0; i < 3; i++) if (i != axis) radial += d[i] * d[i];
@@ -85,6 +86,7 @@ public sealed class JiubaWeaponVfx : MonoBehaviour
                 if (d[axis] > e[axis] * .55f) high = Mathf.Max(high, radial);
             }
             localTip = b.center; localTip[axis] += (high >= low ? 1 : -1) * e[axis] * .96f;
+            if(attack.刚性本地网格){localTip=Vector3.zero;foreach(var v in geometry.vertices)if(v.sqrMagnitude>localTip.sqrMagnitude)localTip=v;}
         }
         finally { Destroy(mesh); }
         emitter = new GameObject("八九玄功_刃光粒子") { layer = weapon.gameObject.layer };
