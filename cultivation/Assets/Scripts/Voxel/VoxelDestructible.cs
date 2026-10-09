@@ -86,8 +86,12 @@ public sealed class VoxelDestructible : MonoBehaviour
     internal int 准备破坏球(Vector3 worldCenter,float worldRadius)
         => 修改球(worldCenter,worldRadius,true);
     int 修改球(Vector3 worldCenter,float worldRadius,bool preparing)
+        => 修改椭球(worldCenter,worldRadius,worldRadius,preparing);
+    internal int 准备破坏椭球(Vector3 worldCenter,float worldRadius,float worldDepth)
+        => 修改椭球(worldCenter,worldRadius,worldDepth,true);
+    int 修改椭球(Vector3 worldCenter,float worldRadius,float worldDepth,bool preparing)
     {
-        if(cells == null || worldRadius <= 0 || (!preparing && !isActiveAndEnabled)) return 0;
+        if(cells == null || worldRadius <= 0 || worldDepth <= 0 || (!preparing && !isActiveAndEnabled)) return 0;
         var timer = System.Diagnostics.Stopwatch.StartNew();
         // Conservative local AABB, followed by exact world-space sphere test; supports scaled instances.
         Vector3 local = transform.InverseTransformPoint(worldCenter);
@@ -95,11 +99,12 @@ public sealed class VoxelDestructible : MonoBehaviour
         float band=数据.格子边长*4;
         var scale=transform.lossyScale;
         float maxScale=Mathf.Max(Mathf.Abs(scale.x),Mathf.Max(Mathf.Abs(scale.y),Mathf.Abs(scale.z)));
-        float radiusWithBand=worldRadius+(distances!=null?band*maxScale:0);
+        float halo=distances!=null?band*maxScale:0;
+        Vector3 worldExtent=new Vector3(worldRadius+halo,worldDepth+halo,worldRadius+halo);
         Vector3 extent = new Vector3(
-            new Vector3(inv.m00,inv.m01,inv.m02).magnitude,
-            new Vector3(inv.m10,inv.m11,inv.m12).magnitude,
-            new Vector3(inv.m20,inv.m21,inv.m22).magnitude) * radiusWithBand;
+            Mathf.Abs(inv.m00)*worldExtent.x+Mathf.Abs(inv.m01)*worldExtent.y+Mathf.Abs(inv.m02)*worldExtent.z,
+            Mathf.Abs(inv.m10)*worldExtent.x+Mathf.Abs(inv.m11)*worldExtent.y+Mathf.Abs(inv.m12)*worldExtent.z,
+            Mathf.Abs(inv.m20)*worldExtent.x+Mathf.Abs(inv.m21)*worldExtent.y+Mathf.Abs(inv.m22)*worldExtent.z);
         Vector3 a = (local-extent-数据.原点)/数据.格子边长;
         Vector3 b = (local+extent-数据.原点)/数据.格子边长;
         var min = Vector3Int.Max(Vector3Int.zero,Vector3Int.FloorToInt(a));
@@ -111,10 +116,18 @@ public sealed class VoxelDestructible : MonoBehaviour
             int index=数据.索引(x,y,z);
             var p=数据.原点+new Vector3(x+.5f,y+.5f,z+.5f)*数据.格子边长;
             if(数据.保护下界!=null && 数据.保护下界.Length==数据.尺寸.x*数据.尺寸.z && p.y<=数据.保护下界[x+数据.尺寸.x*z])continue;
-            float worldDistance=(transform.TransformPoint(p)-worldCenter).magnitude;
+            var delta=transform.TransformPoint(p)-worldCenter;
+            float toolDistance;
+            if(worldDepth==worldRadius)toolDistance=delta.magnitude-worldRadius;
+            else{
+                // Ellipsoid distance estimate: preserves horizontal radius and vertical depth independently.
+                var q=new Vector3(delta.x/worldRadius,delta.y/worldDepth,delta.z/worldRadius);
+                float k0=q.magnitude,k1=new Vector3(q.x/worldRadius,q.y/worldDepth,q.z/worldRadius).magnitude;
+                toolDistance=k1>1e-8f?k0*(k0-1)/k1:-Mathf.Min(worldRadius,worldDepth);
+            }
             if(distances!=null)
             {
-                float tool=Mathf.Clamp((worldDistance-worldRadius)/Mathf.Max(maxScale,.0001f),-band,band);
+                float tool=Mathf.Clamp(toolDistance/Mathf.Max(maxScale,.0001f),-band,band);
                 float next=Mathf.Min(distances[index],tool);
                 if(next>=distances[index]) continue;
                 distances[index]=next;
@@ -122,7 +135,7 @@ public sealed class VoxelDestructible : MonoBehaviour
             }
             else
             {
-                if(cells[index]==0 || worldDistance>worldRadius) continue;
+                if(cells[index]==0 || toolDistance>0) continue;
                 cells[index]=0;removed++;
             }
             if(数据.平滑表面)

@@ -53,7 +53,7 @@ public sealed class PlayerManualAim : MonoBehaviour
     {
         if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
-        if(!skill)return .6f;
+        if(!skill){var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
         if(skill.结算方式==ActiveSkillKind.追踪弹)return 2.5f;
         if(skill.结算方式==ActiveSkillKind.向前冰柱)return 1.3f;
         return VoxelCombatDamage.AreaRadius(skill);
@@ -68,6 +68,7 @@ public sealed class PlayerManualAim : MonoBehaviour
         {
             foreach(var melee in GetComponents<BasicJiuba01>())if(melee.enabled){cast=melee.手动出手(point);break;}
             if(!cast)foreach(var ranged in GetComponents<BasicRemoteAttack01>())if(ranged.enabled){cast=ranged.手动出手(point);break;}
+            if(!cast)foreach(var thunder in GetComponents<BasicThunder01>())if(thunder.enabled){cast=thunder.手动出手(point);break;}
             // 邪眼使用原始落点与自己的神识/冷却检查，不受近战射程和普攻冷却阻止。
             bool eye=GetComponent<DevilEyeAbility>()?.跟随普攻瞄准(point) ?? false;
             cast|=eye;

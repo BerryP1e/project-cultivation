@@ -8,7 +8,7 @@
 ///
 /// 一次施放的顺序：
 ///   冷却 → 结算方式是否实现 → 是否需要锁定 → 灵力够不够
-///   → 扣灵力、进冷却 → 生成特效 + 结算伤害
+///   → 起手、扣灵力、进冷却 → 召唤节点生成特效及伤害执行体
 ///
 /// 任何一步不过都只给玩家一句提示，**不会静默失败、也不会白扣灵力**。
 ///
@@ -79,6 +79,11 @@ public class ActiveSkillCaster : MonoBehaviour
 
     readonly float[] 冷却剩余 = new float[6];
     readonly BindingChainSkillRunner[] 持续锁链 = new BindingChainSkillRunner[6];
+    ActiveDivineAbility 焚天神通;
+    AnimationClip 焚天动作;
+    NpcInstance 焚天目标;
+    Vector3? 焚天落点;
+    bool 焚天施法中,焚天已召唤;
 
     /// <summary>每格当前**攒着几次**（充能式技能用；普通技能不走这里）</summary>
     readonly int[] 充能数 = new int[6];
@@ -131,10 +136,13 @@ public class ActiveSkillCaster : MonoBehaviour
         if (生命 == null) 生命 = GetComponent<PlayerVitals>();
         if (战斗属性 == null) 战斗属性 = GetComponent<PlayerCombatStats>();
         if (目标管理器 == null) 目标管理器 = GetComponent<NpcTargeting>();
+        if (动画 == null) 动画 = GetComponent<PlayerAnimationController>();
+        if (动画 == null) 动画 = GetComponentInChildren<PlayerAnimationController>();
     }
 
     void Update()
     {
+        维护焚天召唤();
         // 冷却一直走（暂停时 deltaTime 为 0，自然不会推进）
         for (int i = 0; i < 冷却剩余.Length; i++)
             if (冷却剩余[i] > 0f) 冷却剩余[i] -= Time.deltaTime;
@@ -201,6 +209,7 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = null;
             return true;
         }
+        if(动画!=null && 动画.施法占用中){提示("正在引导施法");return false;}
         int 上限 = 充能上限(槽位);
         if (上限 > 1)
         {
@@ -269,8 +278,16 @@ public class ActiveSkillCaster : MonoBehaviour
                      + "，当前 " + 生命.当前灵气.ToString("0.#"));
                 return false;
             }
-            生命.扣灵气(神通.消耗灵力);
         }
+
+        // 焚天先成功起手并占用动作，38%节点再生成特效及伤害执行体。
+        bool 焚天=神通.神通id=="ability_fentian_yanshu";
+        if(焚天){
+            if(!播施法动作(神通)||!动画.占用施法(this))return false;
+            焚天神通=神通;焚天动作=动画.当前动作;焚天目标=锁定;焚天落点=落点;
+            焚天施法中=true;焚天已召唤=false;
+        }
+        if(神通.消耗灵力>0f)生命.扣灵气(神通.消耗灵力);
 
         // ---- 扣次数 / 进冷却 ----
         if (上限 > 1)
@@ -287,17 +304,41 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = 宿主.AddComponent<BindingChainSkillRunner>();
             持续锁链[槽位].初始化(this, 神通, 锁定, 槽位);
         }
-        else 施放(神通, 锁定,落点);
+        else if(!焚天)施放(神通, 锁定,落点);
         return true;
     }
 
-    void 施放(ActiveDivineAbility 神通, NpcInstance 锁定,Vector3? 落点=null)
+    void 维护焚天召唤()
     {
+        if(!焚天施法中)return;
+        if(!动画||!生命||生命.IsDead||!焚天神通||!动画.动作播放中||动画.当前动作!=焚天动作
+            ||(!焚天已召唤&&!焚天落点.HasValue&&(!焚天目标||焚天目标.IsDead))){结束焚天动作();return;}
+        if(!焚天已召唤&&动画.动作进度>=.38f){
+            焚天已召唤=true;
+            施放(焚天神通,焚天目标,焚天落点,true);
+        }
+    }
+
+    void 结束焚天动作()
+    {
+        if(焚天施法中&&动画)动画.释放施法(this);
+        焚天施法中=false;焚天神通=null;焚天动作=null;焚天目标=null;焚天落点=null;
+    }
+
+    void 施放(ActiveDivineAbility 神通, NpcInstance 锁定,Vector3? 落点=null,bool 动作已播放=false)
+    {
+        if(神通.结算方式==ActiveSkillKind.定向水炮)
+        {
+            if(动画==null)动画=GetComponent<PlayerAnimationController>();
+            var 宿主=new GameObject("WaterDragon_"+神通.神通id);
+            宿主.AddComponent<WaterDragonSkillRunner>().初始化(this,神通,锁定,落点);
+            return;
+        }
         // 【施法动作】表里「施法动作」列配了才播（例：焚天炎术 → 技能动作2）
         // 片段放在 Assets/resources/技能动作/ 下，所以能 Resources.Load。
-        // 注意是"播动作"而不是"等它播完" —— 出手/结算的时机仍由表的「首次造成伤害时间」控制，
-        // 这样动画和伤害对齐是策划可调的，不会被动画长度绑架。
-        播施法动作(神通);
+        // 焚天由38%召唤节点调用此处；其他范围神通在这里起手。
+        // 表的「首次造成伤害时间」相对伤害执行体生成时刻起算。
+        if(!动作已播放)播施法动作(神通);
         if (战斗属性 == null) 解析引用();
 
         if (神通.结算方式 == ActiveSkillKind.四御护罩)
@@ -307,7 +348,7 @@ public class ActiveSkillCaster : MonoBehaviour
             return;
         }
 
-        if (神通.结算方式 == ActiveSkillKind.定向水炮 || 神通.结算方式 == ActiveSkillKind.小剑阵)
+        if (神通.结算方式 == ActiveSkillKind.小剑阵)
         {
             var 宿主 = new GameObject("DirectedSkill_" + 神通.神通id);
             宿主.AddComponent<DirectedAbilityRunner>().初始化(this, 神通, 锁定,落点);
@@ -377,6 +418,35 @@ public class ActiveSkillCaster : MonoBehaviour
             }
         }
 
+        if(神通.神通id=="ability_fentian_yanshu"){
+            var 粒子系统=载体.GetComponentsInChildren<ParticleSystem>(true);
+            // 先移除碰撞子发射器的引用，再删除旧爆炸层，避免落地时重新发射它。
+            foreach(var ps in 粒子系统){
+                var sub=ps.subEmitters;
+                for(int i=sub.subEmittersCount-1;i>=0;i--){
+                    var child=sub.GetSubEmitterSystem(i);
+                    if(child&&(child.name=="Effect_13_Explosion"||child.name=="Effect_13_Explosion_2"))sub.RemoveSubEmitter(i);
+                }
+            }
+            var 节点=载体.GetComponentsInChildren<Transform>(true);
+            for(int i=节点.Length-1;i>=0;i--){
+                var node=节点[i];if(node.name!="Effect_13_Explosion"&&node.name!="Effect_13_Explosion_2")continue;
+                // 包内同名容器还收纳扭曲，将保留的子层移出后删除爆炸层。
+                for(int c=node.childCount-1;c>=0;c--){
+                    var child=node.GetChild(c);
+                    if(child.name!="Effect_13_Explosion"&&child.name!="Effect_13_Explosion_2")child.SetParent(node.parent,true);
+                }
+                var ps=node.GetComponent<ParticleSystem>();
+                if(ps)ps.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
+                node.gameObject.SetActive(false);Destroy(node.gameObject);
+            }
+            foreach(var ps in 粒子系统)
+                if(ps.name=="Effect_13_Shell"){
+                    var impact=ps.gameObject.AddComponent<MeteorGroundImpact>();
+                    impact.缩放=Mathf.Clamp(神通.范围/6f,.5f,2f);
+                    impact.破坏半径=VoxelCombatDamage.AreaRadius(神通);impact.初始化();
+                }
+        }
         var runner = 载体.AddComponent<AreaSkillRunner>();
         runner.初始化(神通, 中心, 战斗属性, 敌人层, 锁定, 一次性特效存活);
 
@@ -526,6 +596,7 @@ public class ActiveSkillCaster : MonoBehaviour
 
     void OnDisable()
     {
+        结束焚天动作();
         foreach (var 链 in 持续锁链) if (链 != null) 链.取消();
     }
 
@@ -589,27 +660,28 @@ public class ActiveSkillCaster : MonoBehaviour
     /// 播这个神通配的施法动作。表里没配就什么都不做。
     /// 片段名对应 `Assets/resources/技能动作/&lt;名字&gt;.anim`。
     /// </summary>
-    void 播施法动作(ActiveDivineAbility 神通)
+    bool 播施法动作(ActiveDivineAbility 神通)
     {
-        if (神通 == null || string.IsNullOrEmpty(神通.施法动作)) return;
+        if (神通 == null || string.IsNullOrEmpty(神通.施法动作)) return false;
 
         if (动画 == null) 动画 = GetComponent<PlayerAnimationController>();
         if (动画 == null) 动画 = GetComponentInChildren<PlayerAnimationController>();
         if (动画 == null)
         {
             Debug.LogWarning("[主动神通] 找不到 PlayerAnimationController，播不了施法动作「" + 神通.施法动作 + "」", this);
-            return;
+            return false;
         }
 
         var 片段 = Resources.Load<AnimationClip>("技能动作/" + 神通.施法动作);
         if (片段 == null)
         {
             Debug.LogWarning("[主动神通] 找不到施法动作 Assets/resources/技能动作/" + 神通.施法动作 + ".anim", this);
-            return;
+            return false;
         }
 
         // 施法动作**不受攻速影响**（攻速只管普攻），固定原速
-        if (动画.播动作(片段, 1f) && 打印施法日志)
-            Debug.Log("[主动神通] 播施法动作「" + 神通.施法动作 + "」（" + 片段.length.ToString("0.##") + "s）", this);
+        if(!动画.播动作(片段,1f))return false;
+        if(打印施法日志)Debug.Log("[主动神通] 播施法动作「" + 神通.施法动作 + "」（" + 片段.length.ToString("0.##") + "s）", this);
+        return true;
     }
 }

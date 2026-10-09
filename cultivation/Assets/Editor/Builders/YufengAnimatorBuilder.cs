@@ -105,6 +105,8 @@ public static class YufengAnimatorBuilder
             t4.hasExitTime = true; t4.exitTime = 0.85f; t4.duration = 0.30f;
         }
 
+        // 已烘焙新素材时，重建四态也应保留八向移动树；保留原升空/落地。
+        YufengDirectionalBaker.InstallController(ctrl);
         EditorUtility.SetDirty(ctrl);
         AssetDatabase.SaveAssets();
 

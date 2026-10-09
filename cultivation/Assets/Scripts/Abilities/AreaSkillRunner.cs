@@ -123,7 +123,9 @@ public class AreaSkillRunner : MonoBehaviour
         if (神通 == null || 攻击方 == null) return 0;
         if(!环境已结算){
             环境已结算=true;
-            VoxelCombatDamage.Sphere(中心,VoxelCombatDamage.AreaRadius(神通));
+            // 焚天的环境破坏由每颗火球真实落地触发，持续伤害不另挖中心大坑。
+            if(神通.神通id!="ability_fentian_yanshu")
+                VoxelCombatDamage.Sphere(中心,VoxelCombatDamage.AreaRadius(神通));
         }
 
         var spec = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);

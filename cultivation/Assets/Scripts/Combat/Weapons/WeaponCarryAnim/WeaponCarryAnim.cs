@@ -2,7 +2,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 装备某门功法时，把玩家控制器里的几个**通用移动 / 御风片段**换成"带这门功法持械上半身"的版本。
+/// 装备功法时覆盖地面持械动作及九段御风动作；保留八向身体运动，离线校准手部/持刀右臂/脚下独立剑。
 ///
 /// 为什么需要它：`持刀_站 / 持刀_走 / 持刀_跑 / 持刀_御风Idle / 持刀_御风前进` 这五个片段是
 /// 站立和御风保留杨戬 Run 的持械上半身，地面移动直接使用杨戬 Run 全身动作。
@@ -121,9 +121,12 @@ public class WeaponCarryAnim : MonoBehaviour
             覆盖 = new AnimatorOverrideController(原始控制器);
             已应用功法 = profile;
             int 换了 = 0;
+            var 原片段名 = new HashSet<string>();
+            foreach (var clip in 原始控制器.animationClips) 原片段名.Add(clip.name);
             foreach (var 项 in 灵虚剑 ? 灵虚替换 : 太虚剑 ? 太虚替换 : 替换)
             {
                 if (项 == null || string.IsNullOrEmpty(项.原片段) || string.IsNullOrEmpty(项.新片段路径)) continue;
+                if (!原片段名.Contains(项.原片段)) continue;
                 var 新 = Resources.Load<AnimationClip>(项.新片段路径);
                 if (新 == null)
                 {
@@ -138,6 +141,15 @@ public class WeaponCarryAnim : MonoBehaviour
                 覆盖[项.原片段] = 新;
                 换了++;
             }
+            // 八向御风完整保留新动作，仅替换握持手指；灵虚剑另有随右手烘焙的独立剑轨迹。
+            string 御风目录 = 灵虚剑 ? "灵虚剑决" : 太虚剑 ? "太虚剑决" : profile == "gongfa_jiuba_xuangong" ? "八九玄功" : null;
+            if (御风目录 != null)
+                foreach (string 原 in 原片段名)
+                    if (原.StartsWith("御风八向_"))
+                    {
+                        var 新 = Resources.Load<AnimationClip>("技能动作/御风八向/"+御风目录+"/"+原);
+                        if (新 != null) { 覆盖[原] = 新; 换了++; }
+                    }
             if (打印日志)
                 Debug.Log("[WeaponCarryAnim] 已把 " + 换了 + " 条片段换成持械版（基=" + 原始控制器.name + "）", this);
         }

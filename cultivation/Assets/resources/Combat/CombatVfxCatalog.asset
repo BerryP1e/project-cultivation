@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 198f8fc54c3b70e42b07a662da59b711, type: 3}
+  m_Name: CombatVfxCatalog
+  m_EditorClassIdentifier: 
+  "\u7279\u6548":
+  - id: taixu_sword_hit
+    "\u9884\u5236\u4F53": {fileID: 100000, guid: fb0970486f03f4e40b9768df39fedffd, type: 3}
+    "\u7F29\u653E": 0.12
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 90, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 1
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 1.3
+  - id: fire_slash_hit
+    "\u9884\u5236\u4F53": {fileID: 100000, guid: 45489f78e68a25844be8d4c7fce7ea93, type: 3}
+    "\u7F29\u653E": 0.12
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 90, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 1
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 2
+  - id: remote_hit
+    "\u9884\u5236\u4F53": {fileID: 100004, guid: 079e5fe091b8d474884c7b52ed982390, type: 3}
+    "\u7F29\u653E": 0.2
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 1
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 2
+  - id: thunder_hit
+    "\u9884\u5236\u4F53": {fileID: 100000, guid: c933abb83bb6a714e842790c2f8d538e, type: 3}
+    "\u7F29\u653E": 0.12
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 0
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 1.5
+  - id: meteor_ground
+    "\u9884\u5236\u4F53": {fileID: 100012, guid: 64569e3c5ddea784bbd929ea31ca5795, type: 3}
+    "\u7F29\u653E": 0.05
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 0
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 7
+  - id: thunder_a1
+    "\u9884\u5236\u4F53": {fileID: 100000, guid: 8ff51bcbbe7974a47ab8d6122303aa79, type: 3}
+    "\u7F29\u653E": 0.6
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 0
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 12
+  - id: thunder_a2
+    "\u9884\u5236\u4F53": {fileID: 100000, guid: edea36c598b109245b78fef9aef6d7d7, type: 3}
+    "\u7F29\u653E": 0.6
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 0
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 12
+  - id: thunder_a3
+    "\u9884\u5236\u4F53": {fileID: 100018, guid: e0e47cd431e22c045baa73fa05a6839e, type: 3}
+    "\u7F29\u653E": 0.6
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 0
+    "\u6563\u5E03\u534A\u5F84": 0
+    "\u6700\u957F\u5B58\u6D3B": 12
+  - id: thunder_a4
+    "\u9884\u5236\u4F53": {fileID: 100000, guid: 3c0d69c6607bfe744b7da0ab6ff53b67, type: 3}
+    "\u7F29\u653E": 1
+    "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
+    "\u8DDF\u968F\u6765\u5411": 0
+    "\u6563\u5E03\u534A\u5F84": 5
+    "\u6700\u957F\u5B58\u6D3B": 12

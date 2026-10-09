@@ -76,12 +76,12 @@ public static class VoxelGameplayChecks
             }
             Debug.Log("MANUAL_MELEE_SEQUENCES_PASS");data.当前功法=null;loader.Refresh();
             // Small ranges keep this regression bounded; timing, animation, mana and charge rules stay real.
-            string[] ids={"ability_fentian_yanshu","ability_bingbao_shu","ability_hanxu","ability_xiao_jianzhen","ability_leidong_qianshan"};
+            string[] ids={"ability_fentian_yanshu","ability_bingbao_shu","ability_shunlei_tianshan","ability_hanxu","ability_xiao_jianzhen","ability_leidong_qianshan"};
             for(int i=0;i<ids.Length;i++)
             {
                 pilot.还原岩石();player.transform.position=home;animation?.停止动作();
                 var skill=Object.Instantiate(Asset<ActiveDivineAbility>(ids[i]));clones.Add(skill);
-                if(skill.结算方式!=ActiveSkillKind.追踪弹)skill.范围=skill.结算方式==ActiveSkillKind.向前冰柱?3:1.2f;
+                if(skill.神通id!="ability_fentian_yanshu"&&skill.结算方式!=ActiveSkillKind.追踪弹)skill.范围=skill.结算方式==ActiveSkillKind.向前冰柱?3:1.2f;
                 data.主动技能=new List<Object>{skill,null,null,null,null,null};vitals.当前灵气=vitals.灵气上限;
                 float before=vitals.当前灵气;Require(aim.确认施放(0,target),"Manual skill rejected: "+ids[i]);
                 Require(Mathf.Abs(vitals.当前灵气-(before-skill.消耗灵力))<.001f,"Mana cost did not use normal cast path");

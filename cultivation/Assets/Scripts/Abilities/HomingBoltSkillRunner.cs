@@ -3,10 +3,10 @@
 /// <summary>
 /// **追踪弹档**（`ActiveSkillKind.追踪弹`）的执行体 —— 现在服务两个神通：/// **瞬雷天闪**（球 lightning-sphere）与 **冰暴术**（球 frost-crystal、命中 frost-frozen-tomb 贴地）。
 ///
-/// 策划口径（用户 2026-09-28）：
+/// 全状态：Attack01_short连续播放，右手0~50%凝聚、58%放飞；动作/球均按本帧手骨同步。
+/// 伤害与追踪口径（动作时序已按2026-10-09要求替换）：
 /// ```
-/// 用太虚炼气诀的那个普攻动作（普攻_远程_01）
-/// 在动画的 40% 节点，对【锁定的敌人】放出一颗闪电球（特效 lightning-sphere）
+/// 用FlyingAtk01_short动作，在58%节点向锁定目标或鼠标落点放飞球
 /// 闪电球用比较快的速度飞过去，**带追踪**
 /// 命中后放命中特效（lightning-explode）
 /// 对锁定单位造成【特殊 + 主动神通】伤害
@@ -18,6 +18,7 @@
 /// 飞行器直接复用 <see cref="NpcProjectile"/> 的**追踪模式**（已经踩过坑调好：
 /// 三维方向追踪、按距离补发沿路粒子、目标死了也不会卡住）。
 /// </summary>
+[DefaultExecutionOrder(100)]
 public class HomingBoltSkillRunner : MonoBehaviour
 {
     ActiveDivineAbility 神通;
@@ -31,11 +32,16 @@ public class HomingBoltSkillRunner : MonoBehaviour
     float 起算时刻;
     bool 已发射;
     bool 已放飞;
-    float 放飞时刻;
     bool 已结算;
     NpcProjectile 弹;
     GameObject 球;
     Transform 挂点;              // 缓存住手部骨骼（别每帧遍历整棵角色树）
+    bool 占用动作;
+    Vector3 完整球缩放;
+    public const string 动作资源路径 = "技能动作/神通施法/追踪弹_施法";
+    public const float 凝聚完成进度 = .50f;
+    public const float 放飞进度 = .58f;
+    public GameObject 当前球 => 球;
 
     /// <summary>命中的敌人个数（0 或 1；调试用）</summary>
     public int 命中数 { get; private set; }
@@ -44,19 +50,9 @@ public class HomingBoltSkillRunner : MonoBehaviour
     /// <summary>是不是已经放出去了（还在手上长的时候是 false；调试用）</summary>
     public bool 已放弹 => 已放飞;
 
-    [Header("动作（对齐普攻）")]
-    [Tooltip("播哪个动作。`普攻_远程_01` 就是太虚炼气诀的普攻动作")]
-    public string 动作名 = "普攻_远程_01";
-
-    [Tooltip("★ 动作播到几成时生成雷球（0.4 = 40% 节点，和玄霄雷决的普攻同一个口径）")]
-    [Range(0.05f, 0.95f)] public float 出手进度 = 0.4f;
-
+    [Header("全状态施法动作（Attack01_short）")]
     [Tooltip("动作播放速度倍率。1 = 原速")]
     public float 动作速度 = 1f;
-
-    [Tooltip("★ 到节点后**把动作定住**这么久（秒），让雷球在手上把粒子长出来，再继续播、再飞出去。\n" +
-             "用户 2026-09-28 指定 1.5 秒。填 0 = 不停，立刻飞（球会偏淡，因为特效来不及长）")]
-    public float 长球停顿时长 = 1.5f;
 
     [Header("闪电球")]
     [Tooltip("闪电球特效。路径相对 Assets/resources、不带扩展名")]
@@ -150,49 +146,42 @@ public class HomingBoltSkillRunner : MonoBehaviour
         if (动画 == null) 动画 = 玩家.GetComponent<PlayerAnimationController>();
         if (动画 == null) 动画 = 玩家.GetComponentInChildren<PlayerAnimationController>();
 
-        // 动作片段和普攻同一个目录、同一个加载方式
-        if (!string.IsNullOrEmpty(动作名))
-            动作 = Resources.Load<AnimationClip>("技能动作/" + 动作名);
-
-        // 播动作。播不起来（没动画组件 / 找不到片段）就**立刻出弹**，
-        // 免得整个神通因为动画问题变成哑炮（和 BasicThunder01 一个口径）。
+        动作 = Resources.Load<AnimationClip>(动作资源路径);
         bool 播上了 = false;
         if (动画 != null && 动作 != null) 播上了 = 动画.播动作(动作, Mathf.Max(0.05f, 动作速度));
-        if (!播上了)
-        {
-            if (动画 == null)
-                Debug.LogWarning("[" + 名称 + "] 找不到 PlayerAnimationController，直接出弹", this);
-            else if (动作 == null)
-                Debug.LogWarning("[" + 名称 + "] 找不到动作 Assets/resources/技能动作/" + 动作名 + ".anim，直接出弹", this);
-            生成球();          // 没有动作可定时，照样走"球先在手上长一下再飞"的流程
-            return;
-        }
-
+        if (播上了) 占用动作 = 动画.占用施法(this);
+        if (!播上了 || !占用动作) { 收尾(); return; }
+        var animator = 动画.animator;
+        if (animator && animator.isHuman) 挂点 = animator.GetBoneTransform(HumanBodyBones.RightHand);
+        生成球();
         if (打印日志)
-            Debug.Log("[" + 名称 + "] 播动作「" + 动作名 + "」（" + 动作.length.ToString("0.##")
-                + "s），播到 " + (出手进度 * 100f).ToString("0") + "% 出弹", this);
+            Debug.Log("[" + 名称 + "] 播动作「" + 动作.name + "」，右手0~50%凝聚、58%放飞", this);
     }
 
     void Update()
     {
-        if (神通 == null) { 收尾(); return; }
-
-        // ---- 1) 等动作播到出手进度 → **定住动作** + 在手上生成雷球 ----
-        if (!已发射)
+        if (神通 == null || 玩家 == null) { 收尾(); return; }
+        var vitals = 玩家.GetComponent<PlayerVitals>();
+        if (!已放飞 && ((vitals && vitals.IsDead) || (!手动点.HasValue && (!锁定 || 锁定.IsDead))))
+        { 收尾(); return; }
+        if (占用动作 && (!动画 || !动画.动作播放中 || 动画.当前动作 != 动作))
         {
-            float 进度 = 动画 != null ? 动画.动作进度 : 1f;
-            bool 还在播 = 动画 != null && 动画.动作播放中;
-            // 进度到了，或者动作已经播完了（防呆，别因为进度的边界问题不出弹）
-            if (进度 >= 出手进度 || !还在播) 生成球();
+            释放动作();
+            if (!已放飞) { 收尾(); return; }
         }
+        if (已结算) { 收尾(); return; }
 
-        // ---- 2) 球在手上等的这段时间，**每帧贴着手**（跟着角色走）----
-        //   定住的是**动画**，不是人 —— 角色照样能走动；
-        //   球要是只在生成那一刻摆一次，人一走球就落在原地了（用户 2026-09-28 发现）。
-        if (已发射 && !已放飞 && 球 != null) 球.transform.position = 出弹点();
-
-        // ---- 3) 停够了 → 放开动作 + 把球放出去 ----
-        if (已发射 && !已放飞 && Time.time >= 放飞时刻) 放飞();
+        if (!已放飞)
+        {
+            float progress = 动画.动作进度;
+            if (球) 球.transform.localScale = 完整球缩放 * Mathf.Lerp(.02f, 1f,
+                Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress / 凝聚完成进度)));
+            if (progress >= 放飞进度)
+            {
+                if (球) { 球.transform.position = 出弹点(); 球.transform.localScale = 完整球缩放; }
+                放飞();
+            }
+        }
 
         // ---- 4) 弹没了但没结算（被打断 / 目标死了 / 超时消散）→ 收尾 ----
         if (已放飞 && !已结算 && 弹 == null) { 收尾(); return; }
@@ -201,15 +190,36 @@ public class HomingBoltSkillRunner : MonoBehaviour
         if (Time.time - 起算时刻 >= Mathf.Max(0.5f, 最长存活)) 收尾();
     }
 
+    void LateUpdate()
+    {
+        if (已发射 && !已放飞 && 球) 球.transform.position = 出弹点();
+    }
+
     /// <summary>收尾时**务必把动作放开**，否则玩家的动画会永远停在那一帧</summary>
     void OnDestroy()
     {
-        if (动画 != null && 动画.动作已定住) 动画.定住动作(false);
+        释放动作();
+        if (!已放飞 && 球) Destroy(球);
+    }
+
+    void OnDisable()
+    {
+        释放动作();
+        if (!已放飞 && 球) { Destroy(球); 球 = null; }
+    }
+
+    void 释放动作()
+    {
+        if (占用动作 && 动画) 动画.释放施法(this);
+        占用动作 = false;
     }
 
     void 收尾()
     {
-        if (动画 != null && 动画.动作已定住) 动画.定住动作(false);
+        // 弹先命中时仍让剩余收招自然播完，不被自动普攻截断。
+        if (已结算 && 占用动作 && 动画 && 动画.动作播放中 && 动画.当前动作 == 动作
+            && Time.time - 起算时刻 < Mathf.Max(.5f, 最长存活)) return;
+        释放动作();
         if (打印日志 && 已发射)
             Debug.Log("[" + 名称 + "] 结束：命中 " + 命中数 + " 个敌人，合计 " + 累计伤害.ToString("0.##"), this);
         Destroy(gameObject);
@@ -217,13 +227,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
 
     // ============================================================ 出弹
 
-    /// <summary>
-    /// ① 到节点：**把动作定住**，在主角手上生成雷球 —— 但**先不飞**。
-    ///
-    /// 停这一会儿（<see cref="长球停顿时长"/>）就是为了让球上的粒子长出来：
-    /// `lightning-sphere` 要零点几秒才成形，直接飞的话整个飞行过程只有 0.2 秒左右，
-    /// 球还是一片稀的（用户 2026-09-28 要的解决办法就是"停 1.5 秒让它长出来"）。
-    /// </summary>
+    /// <summary>起手在右手生成球，随动作进度凝聚；飞行器到58%才启用。</summary>
     void 生成球()
     {
         if (已发射) return;
@@ -242,6 +246,19 @@ public class HomingBoltSkillRunner : MonoBehaviour
         球.name = 名称 + "_球";
         球.transform.position = 起点;
         if (!Mathf.Approximately(球缩放, 1f)) 球.transform.localScale *= 球缩放;
+        完整球缩放 = 球.transform.localScale;
+        {
+            球.transform.localScale = 完整球缩放 * .02f;
+            foreach (var ps in 球.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = ps.main;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                // 源包将主体单独前移了1.64/1.01米，不能只把prefab根挂在手上。
+                // 其余辅助粒子原本在原点；凝聚时把主体中心也对齐右手。
+                if (ps.name == "sphere-main" || ps.name == "crystals") ps.transform.localPosition = Vector3.zero;
+            }
+        }
 
         // 先挂上飞行器但**关掉**：Awake 里的"起播粒子"要现在跑（有些包的粒子得外部启动），
         // 但 Update 绝不能跑 —— 否则它以为自己要飞向世界原点，一帧就"到达"了。
@@ -250,21 +267,12 @@ public class HomingBoltSkillRunner : MonoBehaviour
         弹.到达时 += 命中;
         弹.enabled = false;
 
-        // 定住动作，等球长出来
-        if (动画 != null) 动画.定住动作(true);
-        放飞时刻 = Time.time + Mathf.Max(0f, 长球停顿时长);
-
-        if (打印日志)
-            Debug.Log("[" + 名称 + "] 到节点：动作进度 " + (动画 != null ? 动画.动作进度.ToString("0.000") : "无")
-                + "，球已在手上 " + 起点.ToString("F2")
-                + "，定住动作 " + 长球停顿时长.ToString("0.##") + "s 等它长出来", this);
     }
 
-    /// <summary>② 停够了：放开动作 + 把球放出去追踪目标</summary>
+    /// <summary>58%节点：把球放出去追踪目标，动作自然继续收招。</summary>
     void 放飞()
     {
         已放飞 = true;
-        if (动画 != null) 动画.定住动作(false);
 
         if (球 == null || (锁定 == null && !手动点.HasValue)) { 收尾(); return; }
 
@@ -310,7 +318,9 @@ public class HomingBoltSkillRunner : MonoBehaviour
         已结算 = true;
         bool 环境=手动点.HasValue || 弹!=null && 弹.击中体素;
         Vector3 环境点=环境 && 弹!=null?弹.命中点:(锁定?锁定.transform.position:手动点.GetValueOrDefault());
-        VoxelCombatDamage.Sphere(环境点,环境破坏半径*Mathf.Max(.1f,命中特效缩放));
+        float 体素半径=环境破坏半径*Mathf.Max(.1f,命中特效缩放);
+        bool 浅坑=神通 && (神通.神通id=="ability_bingbao_shu"||神通.神通id=="ability_shunlei_tianshan");
+        VoxelCombatDamage.Ellipsoid(环境点,体素半径,浅坑?体素半径/8f:体素半径);
 
         // 1) 命中特效：放在锁定目标身上（**贴地**时放在敌人脚下 —— 冰暴术的 frost-frozen-tomb）
         if (!string.IsNullOrEmpty(命中特效路径) && (锁定 != null || 环境))

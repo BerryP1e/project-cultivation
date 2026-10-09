@@ -167,7 +167,7 @@ public class BasicJiuba01 : MonoBehaviour
     public float 冷却 => 实际冷却;
 
     /// <summary>现在能不能出手：锁定了目标（如果要求锁定）+ **距离够得着** + 冷却好了 + 没在做动作 + 没有过场演出在锁</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && (手动请求 || !需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求 || !需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
     bool 手动请求,手动攻击;
     Vector3 手动点;
     readonly HashSet<Vector3Int> 本轮挥砍采样=new HashSet<Vector3Int>();
@@ -367,8 +367,10 @@ public class BasicJiuba01 : MonoBehaviour
         foreach(var c in Physics.OverlapSphere(point,radius,~0,QueryTriggerInteraction.Ignore))
         {
             var npc=c.GetComponentInParent<NpcInstance>();
-            if(npc && !npc.IsDead && npc.是敌对目标 && 本轮手动命中.Add(npc))
-                npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,伤害倍率));
+            if(npc && !npc.IsDead && npc.是敌对目标 && 本轮手动命中.Add(npc)){
+                var result=npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,伤害倍率));
+                CombatVfxPipeline.命中(命中表现id,result,c.ClosestPoint(point),point-transform.position);
+            }
         }
     }
 
@@ -443,8 +445,7 @@ public class BasicJiuba01 : MonoBehaviour
         if (结果.命中)
         {
             var 位置 = 接触点 == Vector3.zero ? 取目标体积(目标).center : 接触点;
-            SwordHitEffect.Spawn(位置, 位置 - transform.position, 结果.暴击,
-                new Color(1f, 0.88f, 0.55f));
+            CombatVfxPipeline.命中(命中表现id,结果,位置,位置-transform.position);
         }
 
         if (打印战斗日志)
@@ -455,6 +456,7 @@ public class BasicJiuba01 : MonoBehaviour
     }
 
     // ============================================================ 武器判定体
+    string 命中表现id => 方法id=="basic_taixu_sword_01"?CombatVfxPipeline.太虚剑命中:CombatVfxPipeline.火斩命中;
 
     /// <summary>
     /// 取「武器判定体」这一堆渲染体（缓存）。

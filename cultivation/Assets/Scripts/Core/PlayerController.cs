@@ -32,10 +32,10 @@ public class PlayerController : MonoBehaviour
     public float gravity = -25f;
 
     [Header("模型朝向补偿")]
-    [Tooltip("模型视觉正面相对 transform.forward 的偏差（度）。\n" +
-             "本模型 Player_Visual 未做旋转时正面朝 -X，所以需要 90 来让「朝向移动方向」看起来正确。\n" +
-             "如果以后把 Player_Visual 的 Y 旋到 90（正面=forward），这里就改成 0。")]
-    public float visualYawOffset = 90f;
+    [Tooltip("播放动作后的视觉正面相对 transform.forward 的偏差（度）。\n" +
+             "当前各场景的 Humanoid 动作按 +Z 正面播放，使用 0。\n" +
+             "不要用未播放动画时的模型姿态判断补偿，否则会重复旋转90度。")]
+    public float visualYawOffset = 0f;
 
     [Header("引用")]
     [Tooltip("用于决定 WASD 方向的摄像机。留空则自动取 Camera.main")]
@@ -51,8 +51,8 @@ public class PlayerController : MonoBehaviour
     public NpcTargeting 目标管理器;
 
     [Header("锁定时的朝向")]
-    [Tooltip("锁定目标后，移动时朝向在「目标方向」与「移动方向」之间插值。\n" +
-             "0 = 永远正面朝向目标（这时左右移动就得靠平移动画，而动画库里没有平移片段）\n" +
+    [Tooltip("地面/坐骑锁定目标后，移动时朝向在「目标方向」与「移动方向」之间插值。御风已有八向动作，始终正面锁敌。\n" +
+             "0 = 永远正面朝向目标（地面左右移动需要平移动画）\n" +
              "1 = 完全朝移动方向（等于不锁定）\n" +
              "默认 0.5：更偏向正面锁敌，同时还能复用现有的向前行走动画")]
     [Range(0f, 1f)]
@@ -63,6 +63,8 @@ public class PlayerController : MonoBehaviour
     public Vector3 MoveDirection { get; private set; }
     /// <summary>当前水平速度大小 (m/s)</summary>
     public float CurrentSpeed { get; private set; }
+    /// <summary>实际水平运动速度；动画用它区分侧移、后退和减速过程。</summary>
+    public Vector3 水平速度 => horizontalVelocity;
     /// <summary>0=静止 1=全速奔跑，可直接喂给 Animator 的 Blend Tree</summary>
     public float Speed01 { get; private set; }
     /// <summary>本帧是否按住了 Shift</summary>
@@ -197,10 +199,7 @@ public class PlayerController : MonoBehaviour
     ///   · 站着不动 → 正面朝向目标；
     ///   · 移动中   → 在「目标方向」与「移动方向」之间插值，插值量随速度增长。
     ///
-    /// 为什么用插值而不是死盯目标：动画库里【没有任何平移/后退行走片段】，
-    /// 全是向前的。死盯目标的话，侧向移动只能播向前走的动画，看起来像贴地滑行。
-    /// 插值让角色在实际移动时把身体带过去大半，现有的向前走动画就对上了。
-    /// 如果以后补了平移素材，把 移动时转向移动方向 调到 0 即可改成严格正面锁敌。
+    /// 地面与坐骑仍沿用前进动画的转向插值；御风已有八方向动作，移动时保持正面锁敌。
     /// </summary>
     void FaceDirection(Vector3 moveDir)
     {
@@ -222,9 +221,10 @@ public class PlayerController : MonoBehaviour
             {
                 toTarget.Normalize();
 
-                if (moveDir.sqrMagnitude < 0.0001f)
+                if (moveDir.sqrMagnitude < 0.0001f ||
+                    (御风 != null && 御风.御风中 && (坐骑 == null || !坐骑.骑乘中)))
                 {
-                    // 站定 → 正面朝向目标
+                    // 站定或八向御风 → 正面朝向目标
                     face = toTarget;
                 }
                 else

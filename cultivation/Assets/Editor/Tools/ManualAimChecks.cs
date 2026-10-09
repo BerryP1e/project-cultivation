@@ -38,14 +38,14 @@ public static class ManualAimChecks
             var fire=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_fentian_yanshu.asset");
             var ice=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_bingbao_shu.asset");
             data.主动技能=new List<Object>{fire,ice,null,null,null,null};
-            Require(fire.范围==12&&VoxelCombatDamage.AreaRadius(fire)==3,"焚天结算配置错误");CheckRing(0,3);CheckRing(1,2.5f);
-            sword.巨剑体素破坏半径=6;sword.巨剑基础倍率=10.13f;data.青山剑有效击杀=100;CheckRing(-2,4);
-            data.青山剑有效击杀=400;CheckRing(-2,4*(11.03f/10.13f));
-            sword.巨剑基础倍率=20.26f;CheckRing(-2,4*(21.16f/10.13f));
+            Require(fire.范围==12&&VoxelCombatDamage.AreaRadius(fire)==1,"焚天结算配置错误");CheckRing(0,1);CheckRing(1,2.5f);
+            sword.巨剑体素破坏半径=6;sword.巨剑基础倍率=10.13f;data.青山剑有效击杀=100;CheckRing(-2,2);
+            data.青山剑有效击杀=400;CheckRing(-2,2*(11.03f/10.13f));
+            sword.巨剑基础倍率=20.26f;CheckRing(-2,2*(21.16f/10.13f));
             sword.基础索敌范围=7;
             Require(Mathf.Abs((float)getRange.Invoke(aim,null)-sword.SenseRange)<.0001f,"巨剑施放距离提示未使用法宝实际神识范围");
             Require(fire.范围==12,"引导检查修改了敌人伤害范围");
-            Debug.Log("MANUAL_AIM_RADIUS_PASS fire=3m ice=2.5m giant3=4m giant9+customScale=True actualLineVertices=True castRange=True");
+            Debug.Log("MANUAL_AIM_RADIUS_PASS fire=1m ice=2.5m giant3=2m giant9+customScale=True actualLineVertices=True castRange=True");
         }finally{
             data.主动技能=slots;data.青山剑有效击杀=kills;sword.巨剑基础倍率=scale;sword.巨剑体素破坏半径=radius;sword.基础索敌范围=sense;
             selected.SetValue(aim,selection);typeof(PlayerManualAim).GetMethod("Hide",flags).Invoke(aim,null);

@@ -42,8 +42,13 @@ public static class VoxelTerrainStreamingChecks
             Require(aim&&aim.可接收输入,"玩家当前不能操作");
             movement.enabled=false;cc.enabled=false;vitals.自动回复=false;pilot.enabled=false;pilot.切换试点(true);pilot.还原岩石();
             player.GetComponent<NpcTargeting>().ClearLock();data.当前功法=null;loader.Refresh();player.transform.position=point-Vector3.forward*8;
-            foreach(string id in new[]{"ability_fentian_yanshu","giant","overlap"}){
+            foreach(string id in new[]{"ability_fentian_yanshu","giant","overlap","continuous"}){
                 player.GetComponent<PlayerAnimationController>()?.停止动作();vitals.当前灵气=vitals.灵气上限;
+                bool continuous=id=="continuous";
+                int visibleBefore=Object.FindObjectsOfType<VoxelDestructible>().Count(b=>b.数据.地形源);
+                Vector3 continuousPoint=point+Vector3.right*14;
+                continuousPoint.y=source.GetInterpolatedHeight((continuousPoint.x-terrain.transform.position.x)/source.size.x,(continuousPoint.z-terrain.transform.position.z)/source.size.z)+terrain.transform.position.y;
+                float contactTime=-1,publishTime=-1,produceUntil=continuous?Time.realtimeSinceStartup+4:0,nextContact=0;
                 if(id=="ability_fentian_yanshu"){
                     var skill=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/"+id+".asset");
                     data.主动技能=new List<Object>{skill,null,null,null,null,null};Require(aim.确认施放(0,point),"焚天施放失败");
@@ -51,7 +56,7 @@ public static class VoxelTerrainStreamingChecks
                     data.当前法宝=AssetDatabase.LoadAssetAtPath<TreasureDefinition>("Assets/Data/Generated/TreasureDefinition/treasure_qingshan_sword.asset");
                     if(!data.已拥有法宝.Contains(QingshanSwordTreasure.法宝id))data.已拥有法宝.Add(QingshanSwordTreasure.法宝id);
                     data.青山剑有效击杀=100;yield return null;Require(aim.确认施放(-2,point),"巨剑施放失败");
-                }else{
+                }else if(!continuous){
                     // Add another cut after some meshes have already been prepared. Their
                     // stale versions must be discarded, never published over the newer SDF.
                     pilot.排队破坏球(point-Vector3.up,4);
@@ -64,12 +69,26 @@ public static class VoxelTerrainStreamingChecks
                 }
                 bool sawWork=false;int frames=0;double cpu=0,peak=0;float until=Time.realtimeSinceStartup+25;
                 do{
+                    if(continuous&&Time.realtimeSinceStartup<produceUntil&&Time.realtimeSinceStartup>=nextContact){
+                        pilot.排队破坏球(continuousPoint+Vector3.forward*Mathf.Min(2,(Time.realtimeSinceStartup-(produceUntil-4))*.5f),.6f);
+                        nextContact=Time.realtimeSinceStartup+.1f;if(contactTime<0)contactTime=Time.realtimeSinceStartup;
+                    }
+                    var meteor=id=="ability_fentian_yanshu"?Object.FindObjectOfType<MeteorGroundImpact>():null;
+                    if(meteor&&meteor.落地次数>0&&contactTime<0)contactTime=Time.realtimeSinceStartup;
                     int units=pilot.更新局部();Require(units<=32,"调度工作上限异常");cpu+=pilot.最近更新毫秒;peak=Math.Max(peak,pilot.最近更新毫秒);
                     sawWork|=pilot.等待更新||units>0;Physics.SyncTransforms();CheckFloor(point);frames++;
+                    if(continuous)CheckFloor(continuousPoint);
+                    if(contactTime>=0&&publishTime<0&&Object.FindObjectsOfType<VoxelDestructible>().Count(b=>b.数据.地形源)>visibleBefore){
+                        publishTime=Time.realtimeSinceStartup;
+                        if(meteor)Require(meteor.GetComponent<ParticleSystem>().isEmitting,"首坑等到整场火球结束才提交");
+                    }
                     yield return null;
-                }while((!sawWork||pilot.等待更新)&&Time.realtimeSinceStartup<until);
-                Require(sawWork&&!pilot.等待更新,"大范围破坏没有完成 "+id);
+                }while((!sawWork||pilot.等待更新||continuous&&Time.realtimeSinceStartup<produceUntil||id=="ability_fentian_yanshu"&&Object.FindObjectOfType<MeteorGroundImpact>())&&Time.realtimeSinceStartup<until);
+                Require(sawWork&&!pilot.等待更新&&!(id=="ability_fentian_yanshu"&&Object.FindObjectOfType<MeteorGroundImpact>()),"大范围破坏没有完成 "+id);
+                if(continuous)Require(publishTime>0&&publishTime<produceUntil,"连续接触阻塞首坑提交");
+                if(id=="ability_fentian_yanshu")Require(publishTime>0,"焚天没有在落地期间提交地面");
                 Debug.Log("TERRAIN_STREAM "+id+" frames="+frames+" cpu="+cpu+" peak="+peak+" missingGroundFrames=0 patches="+ground.活动地块数);
+                if(contactTime>=0)Debug.Log("TERRAIN_CONTACT "+id+" firstVisibleSeconds="+(publishTime-contactTime)+" publishedBeforeProducerEnded=True");
             }
             foreach(var body in Object.FindObjectsOfType<VoxelDestructible>().Where(b=>b.数据.地形源)){
                 Require(body.待提交块==0&&body.等待块==0,"有遗留待提交网格");

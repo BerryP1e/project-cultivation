@@ -58,6 +58,7 @@ public sealed class VoxelMapPilot : MonoBehaviour
     int nextBody,nextWorkStage;
     IEnumerator supportTask;
     readonly Queue<IEnumerator> attacks=new Queue<IEnumerator>();
+    bool attackRegistered;
     bool domainReady;
     static readonly HashSet<VoxelVolumeAsset> warmed=new HashSet<VoxelVolumeAsset>();
 
@@ -248,21 +249,25 @@ public sealed class VoxelMapPilot : MonoBehaviour
         return removed;
     }
     public void 排队破坏球(Vector3 center,float radius)
-    {if(正在替换 && radius>0)attacks.Enqueue(处理攻击(center,radius));}
-    IEnumerator 处理攻击(Vector3 center,float radius)
+        => 排队破坏椭球(center,radius,radius);
+    public void 排队破坏椭球(Vector3 center,float radius,float depth)
+    {if(正在替换 && radius>0 && depth>0)attacks.Enqueue(处理攻击(center,radius,depth));}
+    static bool 在椭球内(Vector3 delta,float radius,float depth)
+        => (delta.x*delta.x+delta.z*delta.z)/(radius*radius)+delta.y*delta.y/(depth*depth)<=1;
+    IEnumerator 处理攻击(Vector3 center,float radius,float depth)
     {
         foreach(var r in replacements)
         {
-            if(r.bounds.SqrDistance(center)>radius*radius)continue;
+            if(!在椭球内(r.bounds.ClosestPoint(center)-center,radius,depth))continue;
             if(准备实体(r))
             {
-                int count=r.body.准备破坏球(center,radius);
+                int count=r.body.准备破坏椭球(center,radius,depth);
                 if(r.tree && count>0)r.supportPending=true;
             }
             yield return null;
         }
-        if(地面){var task=地面.分步破坏球(center,radius);while(task.MoveNext())yield return null;}
-        foreach(var plant in plants)if((plant.anchor-center).sqrMagnitude<radius*radius)plant.removed=true;
+        if(地面){var task=地面.分步破坏椭球(center,radius,depth);while(task.MoveNext())yield return null;}
+        foreach(var plant in plants)if(在椭球内(plant.anchor-center,radius,depth))plant.removed=true;
         切换植被(true);
     }
     public bool 可破坏(Collider collider)
@@ -274,7 +279,7 @@ public sealed class VoxelMapPilot : MonoBehaviour
     }
     public void 还原岩石()
     {
-        supportTask=null;attacks.Clear();
+        supportTask=null;attacks.Clear();attackRegistered=false;
         foreach(var r in replacements)
         {
             if(r.debris){r.debris.gameObject.SetActive(false);Destroy(r.debris.gameObject);r.debris=null;}
@@ -310,8 +315,13 @@ public sealed class VoxelMapPilot : MonoBehaviour
         var timer=System.Diagnostics.Stopwatch.StartNew();int updated=0,idle=0;
         while(updated<32 && idle<4 && timer.Elapsed.TotalMilliseconds<4){
             int work=0;int stage=nextWorkStage;nextWorkStage=(nextWorkStage+1)%4;
-            if(stage==0 && attacks.Count>0){最近阶段="攻击范围";if(!attacks.Peek().MoveNext())attacks.Dequeue();work=1;}
-            else if(stage==1 && 地面){work=地面.更新局部(attacks.Count==0);if(work>0)最近阶段="地面/"+地面.最近阶段;}
+            if(stage==0 && attacks.Count>0){
+                // Finish and publish this contact before later hits can invalidate its meshes.
+                // Pending attacks must not hold the first visible crater until the skill ends.
+                if(!attackRegistered){最近阶段="攻击范围";attackRegistered=!attacks.Peek().MoveNext();work=1;}
+                else if(!地面 || !地面.等待更新){attacks.Dequeue();attackRegistered=false;work=1;}
+            }
+            else if(stage==1 && 地面){work=地面.更新局部(attackRegistered||attacks.Count==0);if(work>0)最近阶段="地面/"+地面.最近阶段;}
             else if(stage==2){
                 for(int visited=0;visited<bodies.Count;visited++){
                     var body=bodies[nextBody];nextBody=(nextBody+1)%bodies.Count;if(!body)continue;

@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>Whole-terrain coverage with lazy, thick solid patches. Original TerrainData is never modified.</summary>
 public sealed class VoxelTerrainReplacement : MonoBehaviour
 {
-    struct Cut {public Vector3 center;public float radius;}
+    struct Cut {public Vector3 center;public float radius,depth;}
     sealed class Patch
     {
         public Vector2Int key;
@@ -65,8 +65,10 @@ public sealed class VoxelTerrainReplacement : MonoBehaviour
         var task=分步破坏球(worldCenter,worldRadius);while(task.MoveNext()){}
     }
     public System.Collections.IEnumerator 分步破坏球(Vector3 worldCenter,float worldRadius)
+        => 分步破坏椭球(worldCenter,worldRadius,worldRadius);
+    public System.Collections.IEnumerator 分步破坏椭球(Vector3 worldCenter,float worldRadius,float worldDepth)
     {
-        if(!active || !original || worldRadius<=0)yield break;
+        if(!active || !original || worldRadius<=0 || worldDepth<=0)yield break;
         var local=terrain.transform.InverseTransformPoint(worldCenter);
         // Include the shared sampling halo so neighbouring patch normals receive the same cut.
         float extent=worldRadius+step*4;
@@ -76,7 +78,7 @@ public sealed class VoxelTerrainReplacement : MonoBehaviour
         for(int z=minZ;z<=maxZ;z++)for(int x=minX;x<=maxX;x++)
         {
             var key=new Vector2Int(x,z);
-            var cut=new Cut {center=worldCenter,radius=worldRadius};
+            var cut=new Cut {center=worldCenter,radius=worldRadius,depth=worldDepth};
             if(!history.TryGetValue(key,out var commands)){commands=new List<Cut>();history.Add(key,commands);}
             commands.Add(cut);
             bool created=false;
@@ -86,10 +88,10 @@ public sealed class VoxelTerrainReplacement : MonoBehaviour
                 float cx=Mathf.Clamp(local.x,x*width,(x+1)*width),cz=Mathf.Clamp(local.z,z*width,(z+1)*width);
                 if((new Vector2(cx,cz)-new Vector2(local.x,local.z)).sqrMagnitude>worldRadius*worldRadius)continue;
                 float height=original.GetInterpolatedHeight(cx/original.size.x,cz/original.size.z);
-                if(local.y-worldRadius>height+step || local.y+worldRadius<height-settings.实体厚度)continue;
+                if(local.y-worldDepth>height+step || local.y+worldDepth<height-settings.实体厚度)continue;
                 patch=new Patch {key=key};patch.cuts.AddRange(commands);patches.Add(key,patch);building.Enqueue(patch);created=true;
             }
-            if(patch.body)patch.body.准备破坏球(worldCenter,worldRadius);
+            if(patch.body)patch.body.准备破坏椭球(worldCenter,worldRadius,worldDepth);
             else if(!created)patch.cuts.Add(cut);
             yield return null;
         }
@@ -105,7 +107,7 @@ public sealed class VoxelTerrainReplacement : MonoBehaviour
             if(!patch.data){最近阶段="准备";准备(patch);}
             else if(patch.column<patch.data.尺寸.x*patch.data.尺寸.z){最近阶段="采样";采样(patch,64);}
             else if(!patch.body){最近阶段="创建对象";建立实体(patch);}
-            else if(patch.cutIndex<patch.cuts.Count){最近阶段="初次切削";var cut=patch.cuts[patch.cutIndex++];patch.body.准备破坏球(cut.center,cut.radius);}
+            else if(patch.cutIndex<patch.cuts.Count){最近阶段="初次切削";var cut=patch.cuts[patch.cutIndex++];patch.body.准备破坏椭球(cut.center,cut.radius,cut.depth);}
             else if(!patch.body.初始化完成){最近阶段="切削网格";patch.body.继续初始化();}
             else if(patch.body.等待块>0){最近阶段="破坏更新";patch.body.更新局部();}
             else {最近阶段="等待统一切换";prepared.Add(patch);building.Dequeue();}

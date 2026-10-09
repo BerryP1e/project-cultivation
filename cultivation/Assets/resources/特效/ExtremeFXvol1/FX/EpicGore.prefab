@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!1 &100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 400000}
+  - component: {fileID: 114188421249068692}
+  - component: {fileID: 114479516796758964}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: EpicGore
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &400000
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.27235004, y: 0.39281654, z: 7.9490347}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114188421249068692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ef41abcac96d144bb7b40ffad0a8f94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObjectSpawn: {fileID: 100006, guid: 08e88d02ad27e0746a6ee07f0aff92eb, type: 3}
+  SpawnRate: 0.02
+  LifeTimeObject: 5
+  LimitObject: 3
+  PositionRandomSize: {x: 2, y: 0, z: 2}
+  PositionOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &114479516796758964
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c2aff3e2429eca48aceb6600a020965, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LightIntensityMult: -0.5
+  LifeTime: 5
+  RandomRotation: 0
+  PositionOffset: {x: 0, y: 0, z: 0}
+  SpawnEnd: {fileID: 0}

@@ -256,7 +256,9 @@ public static class LingxuSwordAssets
             foreach(var entry in new[]{("AttackA","A1",false),("AttackB","A2",false),("SkillA","A3",false),("Ready","持剑_Idle",true),("Run","持剑_Run",true)})
                 Save(rig.Bake(entry.Item1,entry.Item2,entry.Item3),Folder+entry.Item2+".anim");
         }
-        BuildWeapon();安全导入配置表.ImportAssetsOnly("功法表","物品表");AssetDatabase.SaveAssets();
+        BuildWeapon();
+        YufengDirectionalBaker.ConfigureFlightSword(AssetDatabase.LoadAssetAtPath<AnimationClip>(Folder+"持剑_Idle.anim"));
+        安全导入配置表.ImportAssetsOnly("功法表","物品表");AssetDatabase.SaveAssets();
         Debug.Log("[灵虚剑决] 三式、Ready、Run、独立剑与秘籍已生成；源 FBX 与场景未修改");
     }
     static void Save(UnityEngine.Object value,string path)

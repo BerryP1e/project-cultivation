@@ -10,12 +10,14 @@ public static class VoxelCombatDamage
     }
     public static void Sphere(Vector3 point,float radius)
     {var pilot=Map;if(pilot)pilot.排队破坏球(point,radius);}
+    public static void Ellipsoid(Vector3 point,float radius,float depth)
+    {var pilot=Map;if(pilot)pilot.排队破坏椭球(point,radius,depth);}
     public static bool Active=>Map!=null;
     // Shared by actual area cuts and the cursor guide. Enemy damage keeps its own range.
     public static float AreaRadius(ActiveDivineAbility skill)
     {
         float radius=Mathf.Max(.4f,skill.范围);
-        return skill.神通id=="ability_fentian_yanshu"?radius*.25f:radius;
+        return skill.神通id=="ability_fentian_yanshu"?radius/12f:radius;
     }
     public static bool Ray(Vector3 from,Vector3 to,out RaycastHit hit,bool onlyVoxels=true,Transform owner=null)
     {

@@ -3,9 +3,10 @@
 /// <summary>
 /// 角色动画控制。
 /// 每帧把 PlayerController 的实时水平速度喂给 Animator 的 Speed 参数，
-/// 由 AnimatorController 里的 1D Blend Tree 自动在 idle / walk / run 之间过渡。
+/// 地面用1D速度树在 idle / walk / run 之间过渡；御风用 FlyX/FlyY 混合八方向动作。
 /// 本脚本只负责"喂参数"，不含任何位移逻辑。
 /// </summary>
+[DefaultExecutionOrder(50)]
 public class PlayerAnimationController : MonoBehaviour
 {
     [Header("引用（留空自动查找）")]
@@ -40,6 +41,15 @@ public class PlayerAnimationController : MonoBehaviour
     public string landTrigger = "Land";
 
     int flyingHash, flyMovingHash, takeOffHash, landHash;
+    public const string 御风横向参数 = "FlyX";
+    public const string 御风纵向参数 = "FlyY";
+    static readonly int flyXHash = Animator.StringToHash(御风横向参数);
+    static readonly int flyYHash = Animator.StringToHash(御风纵向参数);
+    [Tooltip("八方向御风动作的过渡时间；实际速度已包含角色的加减速。")]
+    public float 御风方向平滑时间 = 0.10f;
+    Vector2 御风方向, 御风方向速度;
+    RuntimeAnimatorController 已检查御风控制器;
+    bool 支持八向御风;
 
     [Header("技能动作（普攻 / 施法 共用这一套）")]
     [Tooltip("控制器里那个「动作」状态的触发参数名（PlayerLocomotion 里叫 Action）")]
@@ -191,6 +201,17 @@ public class PlayerAnimationController : MonoBehaviour
     public bool PlayAction(AnimationClip clip, float speedScale = 1f) => 播动作(clip, speedScale);
     public void StopAction() => 停止动作();
     public bool IsActionPlaying => 动作播放中;
+    UnityEngine.Object 施法占用者;
+    public bool 施法占用中 => 施法占用者 != null;
+    public bool 占用施法(UnityEngine.Object 发起者)
+    {
+        if(施法占用中 && 施法占用者!=发起者)return false;
+        施法占用者=发起者;return true;
+    }
+    public void 释放施法(UnityEngine.Object 发起者)
+    {
+        if(施法占用者==发起者)施法占用者=null;
+    }
     public float ActionProgress => 动作进度;
 
     // ============================================================ 技能动作（普攻 / 施法共用）
@@ -218,6 +239,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// <param name="速度倍率">播放速度倍数。**攻速传进来**，1 = 原速</param>
     public bool 播动作(AnimationClip 片段, float 速度倍率 = 1f)
     {
+        if(施法占用中)return false;
         if (animator == null || 片段 == null)
         {
             Debug.LogWarning("[动画] 播动作失败：片段为空或没有 Animator", this);
@@ -637,6 +659,44 @@ public class PlayerAnimationController : MonoBehaviour
             animator.SetBool(flyingHash, 御风.御风流程中);
             animator.SetBool(flyMovingHash, smoothSpeed > 0.15f);
         }
+        更新御风方向();
+    }
+
+    void 更新御风方向()
+    {
+        // 持械/施法会包装 AnimatorOverrideController，仅在包装变化时检查参数。
+        if (已检查御风控制器 != animator.runtimeAnimatorController)
+        {
+            已检查御风控制器 = animator.runtimeAnimatorController;
+            bool x = false, y = false;
+            foreach (var p in animator.parameters)
+            {
+                x |= p.nameHash == flyXHash && p.type == AnimatorControllerParameterType.Float;
+                y |= p.nameHash == flyYHash && p.type == AnimatorControllerParameterType.Float;
+            }
+            支持八向御风 = x && y;
+        }
+        if (!支持八向御风) return;
+        bool 飞行 = 外部驱动御风 ? 外部飞行中 : 御风 != null && 御风.御风流程中;
+        Vector2 目标 = Vector2.zero;
+        if (飞行 && playerController != null)
+        {
+            // 采用场景实例的视觉补偿（当前为0），兼容带额外模型旋转的角色。
+            var 朝向 = playerController.transform.rotation * Quaternion.Euler(0f, -playerController.visualYawOffset, 0f);
+            var 速度 = Quaternion.Inverse(朝向) * playerController.水平速度;
+            float 满速 = 御风 != null ? 御风.飞行速度 : playerController.runSpeed;
+            if (外部驱动御风 && playerController.坐骑 != null && playerController.坐骑.骑乘中)
+                满速 = playerController.坐骑.骑乘速度;
+            目标 = Vector2.ClampMagnitude(new Vector2(速度.x, 速度.z) / Mathf.Max(.01f, 满速), 1f);
+            if (外部驱动御风 && 外部移动中 && playerController.水平速度.sqrMagnitude < .0001f)
+                目标 = Vector2.up;
+        }
+        if (!飞行) { 御风方向 = 御风方向速度 = Vector2.zero; }
+        else 御风方向 = 御风方向平滑时间 > 0f
+            ? Vector2.SmoothDamp(御风方向, 目标, ref 御风方向速度, 御风方向平滑时间)
+            : 目标;
+        animator.SetFloat(flyXHash, 御风方向.x);
+        animator.SetFloat(flyYHash, 御风方向.y);
     }
 
     // ============================================================ 外部驱动（坐骑）

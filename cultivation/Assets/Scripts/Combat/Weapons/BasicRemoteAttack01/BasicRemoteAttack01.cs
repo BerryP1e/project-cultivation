@@ -60,7 +60,6 @@ public class BasicRemoteAttack01 : MonoBehaviour
     [Header("飞弹外观")]
     public string 弹道特效路径 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/Projectiles_Particles/VFX_Priest_Projectile_Only";
     public string 闪光特效路径 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/Flashes/VFX_Priest_Flash";
-    public string 命中特效路径 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/Impacts/VFX_Priest_Impact";
 
     [Tooltip("弹体缩放")]
     public float 弹体缩放 = 0.65f;
@@ -68,11 +67,8 @@ public class BasicRemoteAttack01 : MonoBehaviour
     [Tooltip("闪光存活（秒）")]
     public float 闪光特效存活 = 0.8f;
 
-    [Tooltip("命中特效缩放")]
+    [Tooltip("共享命中特效目录中的Impact_Spark缩放倍率")]
     public float 命中特效缩放 = 1.25f;
-
-    [Tooltip("命中特效存活（秒）")]
-    public float 命中特效存活 = 2f;
 
     [Header("飞弹飞行")]
     [Tooltip("飞行速度（米/秒）")]
@@ -149,7 +145,7 @@ public class BasicRemoteAttack01 : MonoBehaviour
     public float 冷却剩余 => Mathf.Max(0f, 下次可出手时间 - Time.time);
 
     /// <summary>现在能不能出手</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && (手动请求 || 锁定单位 != null) && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求 || 锁定单位 != null) && 冷却剩余 <= 0f && !出手动作中;
     bool 手动请求,手动攻击;
     Vector3 手动点;
     public bool 手动出手(Vector3 point)
@@ -310,7 +306,7 @@ public class BasicRemoteAttack01 : MonoBehaviour
     void 环境命中(Vector3 point,Vector3 direction)
     {
         VoxelCombatDamage.Sphere(point,.6f);
-        生成装饰特效(命中特效路径,point,-direction,命中特效存活,命中特效缩放);
+        CombatVfxPipeline.播放(CombatVfxPipeline.太虚炼气命中,point,-direction,命中特效缩放);
         var seen=new System.Collections.Generic.HashSet<NpcInstance>();
         foreach(var c in Physics.OverlapSphere(point,.6f,~0,QueryTriggerInteraction.Ignore))
         {var npc=c.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,技能倍率));}
@@ -329,11 +325,11 @@ public class BasicRemoteAttack01 : MonoBehaviour
             Debug.Log("[basic_remoteattack_01] 命中「" + 目标.名字 + "」 " + 结果, this);
 
         // 命中特效：放在**弹道的真实命中点**，朝向来向（和 NPC 那边同一套做法）
-        if (结果.命中 && !string.IsNullOrEmpty(命中特效路径))
+        if (结果.命中)
         {
             Vector3 命中点 = 飞 != null ? Vector3.Lerp(飞.命中点, 目标.判定点, 0.85f) : 目标.判定点;
             Vector3 朝向 = 飞 != null ? -飞.飞行朝向 : Vector3.forward;
-            生成装饰特效(命中特效路径, 命中点, 朝向, 命中特效存活, 命中特效缩放);
+            CombatVfxPipeline.命中(CombatVfxPipeline.太虚炼气命中,结果,命中点,朝向,命中特效缩放);
         }
 
         命中时?.Invoke(目标, 结果);

@@ -1,30 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 功法「玄霄雷决」提供的普攻方法（功法表 `普攻方法id = basic_thunder_01`）。
-///
-/// ## 和其它普攻方法的区别
-/// 按策划说明：**在动画的 40% 节点**对**已锁定的敌人**召一道雷下劈，
-/// 命中后**有概率**沿敌群蔓延成闪电链。
-///
-/// ★ **必须先用右键锁定一个目标**（和 <see cref="BasicRemoteAttack01"/> 同一套规矩）：
-///   没锁定就不出手、也不进冷却。闪电链的"找周边的人"是**锁定目标命中之后**才发生的蔓延，
-///   不是一开始就随便挑一个最近的打。
-///
-/// ## 两个伤害
-///   · 下劈的雷：`特殊 + 普通攻击`（吃会心 / 普攻加成）
-///   · 闪电链：同上，倍率可以单独配（一般比下劈低）
-///
-/// ## 特效缩放
-/// 雷按**敌人大小**等比缩放（大树/巨兽身上雷更大）。做法是改特效根的 localScale ——
-/// 实测 UnionAssetes 的 Electro_* prefab 整棵树的粒子都是 `simulationSpace = Local`，
-/// 所以缩放根节点是等比放大，不会像 World 空间那样只把粒子"摊开"。
-///
-/// ## 闪电链的"拉伸"
-/// 同样是 Local 空间的好处：把特效的**长度轴**拉到 ≈ 两个敌人的水平距离，
-/// 雷就被拉成一道横跨两者的链。长度轴**运行时按 prefab 的 shape 自动探测**（见 生成闪电链）。
-/// </summary>
+/// <summary>玄霄雷诀四式循环；前三式单体及概率闪电链，第四式范围群攻。命中表现走共享目录。</summary>
 public class BasicThunder01 : MonoBehaviour
 {
     [Tooltip("本普攻方法在功法表「普攻方法id」里的标识。境界页靠它反查提供这个普攻的功法")]
@@ -33,8 +10,11 @@ public class BasicThunder01 : MonoBehaviour
     // ============================================================ 动作
 
     [Header("出手动作")]
-    [Tooltip("普攻动作片段（Assets/resources/技能动作/ 下，不带扩展名）。留空 = 不播动作，直接出手")]
-    public string 普攻动作名 = "普攻_远程_01";
+    [Tooltip("四式顺序循环；A2为已修复A1的左右镜像")]
+    public string[] 动作序列={"技能动作/普攻_远程_01","技能动作/玄霄雷诀/A2","技能动作/玄霄雷诀/A3","技能动作/玄霄雷诀/A4"};
+    public float[] 出手节点={.4f,.4f,.43f,.5f};
+    [Tooltip("第四式EpicZeus群攻半径（米）")]
+    public float 第四式范围=5f;
 
     [Tooltip("动作播到百分之多少时召雷（0.4 = 动画 40% 处）")]
     [Range(0.05f, 0.95f)] public float 出手进度 = 0.4f;
@@ -81,54 +61,6 @@ public class BasicThunder01 : MonoBehaviour
 
     // ============================================================ 特效
 
-    [Header("下劈雷特效")]
-    [Tooltip("雷特效的 Resources 路径（相对 Assets/resources，不带扩展名）")]
-    public string 雷特效路径 = "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-ray";
-
-    [Tooltip("★ 雷特效的**生成旋转**（欧拉角）。\n\n" +
-             "**默认 (-90, 0, 0)** —— 用户 2026-09-28 实测确认：`lightning-ray` 原样生成是**躺平**的；\n" +
-             "转 +90 会**倒过来**，正确的是 **−90**。\n\n" +
-             "如果以后换特效又出现躺平/倒立，就改这个值（±90 互换即可）。")]
-    public Vector3 雷特效旋转欧拉 = new Vector3(-90f, 0f, 0f);
-
-    [Tooltip("【粒子对齐方式开关】把雷球/雷柱那几个部件从 `Billboard + alignment=View`" +
-             "（永远正对相机）改成 `alignment=World`（不随相机转）。\n\n" +
-             "用途：如果特效在 50° 俯视机位下看着歪斜，勾上它柱子会在世界里始终竖直；" +
-             "代价是俯视时贴图被斜看、可能更扁。**两种都试一下，哪个顺眼留哪个。**\n" +
-             "（旧特效 `Electro_Strike_01` 需要它；新特效 `lightning-ray` 未必要。）")]
-    public bool 雷特效不随相机 = false;
-
-    [Tooltip("雷特效播多久后销毁（秒）。\n" +
-             "⚠️ 注意这是**真实时间**：特效内部被 `雷特效速度` 加速后，这里的秒数也要跟着缩短，\n" +
-             "否则特效早就播完了还挂在那里（勾了 `存活随速度缩短` 就自动处理）。")]
-    public float 雷特效存活 = 1.2f;
-
-    [Tooltip("★ 雷特效的**整体播放速度倍率**。\n\n" +
-             "做法：把整棵树的 `main.simulationSpeed` 乘上这个值 —— 所有粒子的发射、\n" +
-             "生命周期、速度一起加速（存活也按 `存活随速度缩短` 一起缩短）。\n\n" +
-             "**默认 1.8**（用户 2026-09-29 要求）：原速太拖，缺「雷系干净利落」的感觉；\n" +
-             "而且普攻攻速一高，上一个雷还没散、下一个就来了。嫌快就往下调（1.2~1.5），\n" +
-             "嫌拖就往上调（2.0~2.5）。\n\n" +
-             "⚠️ 如果只是**某个部件起步慢**（例：`ground-flashes` 有个 startDelay），\n" +
-             "**直接去 prefab 里把那个 startDelay 改成 0**，别用这个整体加速 ——\n" +
-             "整体加速会把所有部件（含 ground-pebbles）一起改快，不是你要的。")]
-    public float 雷特效速度 = 1.8f;
-
-    [Tooltip("勾上（默认）：自动把 `雷特效存活` 按速度缩短（存活 ÷ 速度），\n" +
-             "这样加速后特效播完就消失、不会多挂一段空等。")]
-    public bool 存活随速度缩短 = true;
-
-    [Tooltip("★ 勾上（默认）：存活**至少**取 prefab 的自然总时长（× `存活倍率`）。\n\n" +
-             "为什么：`lightning-ray` 的自然总时长是 **4.50 秒**\n" +
-             "（ground-dust：duration 2.0 + startDelay 0.5 + life 2.0），\n" +
-             "而这里原来写死 1.2 秒 → 粒子还没落地、地面尘还没散就被 Destroy，\n" +
-             "表现就是「雷提前消失」（用户 2026-09-29 报的）。\n" +
-             "和冰刺 / 寒墟同一套口径（见 docs/guides/沧澜寒渊录.md §2.4）。")]
-    public bool 存活按特效自动 = true;
-
-    [Tooltip("自动存活再乘这个系数（留点余量让它彻底淡完）")]
-    public float 存活倍率 = 1.05f;
-
     [Tooltip("【基准敌人高度】(米)：敌人这么高时特效 scale = 1。\n" +
              "雷会按「敌人高度 ÷ 这个值」等比缩放，再夹进下面的上下限")]
     public float 基准敌人高度 = 1.8f;
@@ -138,9 +70,6 @@ public class BasicThunder01 : MonoBehaviour
 
     [Tooltip("特效缩放上限（巨兽身上别大到糊屏）")]
     public float 缩放上限 = 2.5f;
-
-    [Tooltip("雷特效相对敌人脚底的抬高（米），免得整道雷埋进地里")]
-    public float 雷抬高 = 0f;
 
     // ============================================================ 闪电链
 
@@ -186,18 +115,8 @@ public class BasicThunder01 : MonoBehaviour
     [Tooltip("特效沿【本地哪根轴】拉伸。留空/填错不要紧：运行时会按 prefab 的 shape 自动探测最长的那个轴")]
     public Vector3 闪电链拉伸轴 = new Vector3(0f, 0f, 1f);
 
-    [Tooltip("被闪电链打中时贴在敌人身上的命中特效（这个没删，还在用）\n" +
-             "★ 2026-09-29 起**主目标挨劈时也会挂它**（用户要求），但尺寸要压小 → 见 命中特效大小倍率")]
-    public string 命中特效路径 = "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-arc-flash";
-
-    [Tooltip("★ 命中特效的**大小倍率**（在「按体型缩放」之后再乘一道）。\n\n" +
-             "用户 2026-09-29：「把闪电链的命中特效调到比现在小一些，现在感觉有点主副颠倒了」\n" +
-             "—— 雷劈是**主**、命中闪是**副**，所以默认压到 **0.6**。嫌小/大就调这个。")]
-    public float 命中特效大小倍率 = 0.6f;
-
-    [Tooltip("命中特效存活（秒）。勾了 `存活按特效自动` 时它是**下限**\n" +
-             "（`lightning-arc-flash` 自然 2.10 秒，原来写死 0.8 秒也会被切）")]
-    public float 命中特效存活 = 0.8f;
+    [Tooltip("命中特效按体型缩放后的倍率") ]
+    public float 命中特效大小倍率=.6f;
 
     // ============================================================ 引用
 
@@ -242,13 +161,21 @@ public class BasicThunder01 : MonoBehaviour
     public float 索敌半径 => PlayerCombatStats.算神识范围(玩家战斗属性, 基础索敌范围, 每点神识范围, 索敌范围上限);
 
     /// <summary>现在能不能出手：**必须锁定了目标** + 冷却好了 + 没在做动作</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && 锁定单位 != null && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求||锁定单位 != null) && 冷却剩余 <= 0f && !出手动作中;
 
     public bool 出手动作中 { get; private set; }
 
     float 下次可出手时间;
     bool 本轮已出手;
-    AnimationClip 普攻动作;
+    AnimationClip 本次动作;
+    NpcInstance 本次目标;
+    bool 手动请求,手动攻击;
+    Vector3 手动点;
+    public int 出手序号 {get;private set;}
+    public int 当前式 {get;private set;}
+    public int 本次命中数 {get;private set;}
+    public float 下次范围=>出手序号%4==3?Mathf.Max(.1f,第四式范围):.6f;
+    public float 本次出手节点=>出手节点!=null&&出手节点.Length>当前式?出手节点[当前式]:出手进度;
 
     void Awake() => 解析引用();
 
@@ -260,16 +187,14 @@ public class BasicThunder01 : MonoBehaviour
         if (动画 == null) 动画 = GetComponentInChildren<PlayerAnimationController>();
     }
 
-    void OnEnable()
+    void OnEnable()=>解析引用();
+
+    void OnDisable(){出手动作中=false;本轮已出手=true;本次目标=null;手动攻击=false;}
+    public bool 手动出手(Vector3 point)
     {
-        解析引用();
-        if (动画 == null) return;
-        if (普攻动作 == null && !string.IsNullOrEmpty(普攻动作名))
-        {
-            普攻动作 = Resources.Load<AnimationClip>("技能动作/" + 普攻动作名);
-            if (普攻动作 == null)
-                Debug.LogWarning("[basic_thunder_01] 找不到动作 Assets/resources/技能动作/" + 普攻动作名 + ".anim", this);
-        }
+        if(目标管理器&&目标管理器.LockedNpc)return false;
+        if(Vector3.Distance(point,transform.position)>PlayerManualAim.SenseRange(gameObject))return false;
+        手动点=point;手动请求=true;try{return 出手();}finally{手动请求=false;}
     }
 
     void Update()
@@ -282,10 +207,11 @@ public class BasicThunder01 : MonoBehaviour
         if (id != 缓存目标id) { 缓存目标id = id; 缓存 = null; }
 
         // 动作播到 出手进度 → 召雷
+        if(出手动作中&&动画&&动画.当前动作!=本次动作){出手动作中=false;本轮已出手=true;}
         if (出手动作中 && !本轮已出手)
         {
             float 进度 = 动画 != null ? 动画.动作进度 : 1f;
-            if (进度 >= 出手进度 || !(动画 != null && 动画.动作播放中))
+            if (进度 >= 本次出手节点 || !(动画 != null && 动画.动作播放中))
             {
                 本轮已出手 = true;
                 召雷();
@@ -310,23 +236,14 @@ public class BasicThunder01 : MonoBehaviour
     {
         if (!可以出手) return false;
 
+        当前式=出手序号%4;
+        if(动作序列==null||动作序列.Length!=4)return false;
+        本次动作=Resources.Load<AnimationClip>(动作序列[当前式]);
+        if(!动画||!本次动作||!动画.播动作(本次动作,攻速系数))return false;
+        出手序号++;本次命中数=0;本次目标=目标管理器?目标管理器.LockedNpc:null;手动攻击=手动请求;
+
         出手动作中 = true;
         本轮已出手 = false;
-
-        if (动画 != null && 普攻动作 != null)
-        {
-            // 攻速直接决定动画播放速度（和 basic_remoteattack_01 一致）
-            if (!动画.播动作(普攻动作, 攻速系数))
-            {
-                本轮已出手 = true;
-                召雷();
-            }
-        }
-        else
-        {
-            本轮已出手 = true;
-            召雷();
-        }
         return true;
     }
 
@@ -348,22 +265,31 @@ public class BasicThunder01 : MonoBehaviour
             return;
         }
 
-        var 目标 = 锁定单位;
-        if (目标 == null)
+        var 目标 = 本次目标&&!本次目标.IsDead?new NpcTarget(本次目标):null;
+        if (目标 == null&&!手动攻击)
         {
             if (打印战斗日志) Debug.Log("[basic_thunder_01] 没有锁定目标 → 不召雷", this);
             return;
         }
 
-        float 缩放 = 按体型算缩放(目标);
-        生成雷(目标, 缩放);
-
-        // ★ 用户 2026-09-29：**主目标也要挂那个命中特效**（原来只有被链到的敌人才有），
-        //   但尺寸单独用一个倍率压小（见 命中特效大小倍率）—— 雷劈是主、命中闪是副。
-        生成命中特效(目标, 缩放);
+        Vector3 point=手动攻击?手动点:目标.根.position;
+        float 缩放=目标!=null?按体型算缩放(目标):1;
+        CombatVfxPipeline.播放(CombatVfxPipeline.雷四式[当前式],point,Vector3.down,当前式==3?第四式范围/5f:缩放);
+        VoxelCombatDamage.Sphere(point,当前式==3?第四式范围:.6f);
 
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 技能倍率);
+        if(当前式==3||手动攻击){
+            var seen=new HashSet<NpcInstance>();float radius=当前式==3?第四式范围:.6f;
+            foreach(var col in Physics.OverlapSphere(point,Mathf.Max(.1f,radius),敌人层,QueryTriggerInteraction.Ignore)){
+                var npc=col.GetComponentInParent<NpcInstance>();if(!npc||npc.IsDead||(!npc.是敌对目标&&npc!=本次目标)||!seen.Add(npc))continue;
+                var r=npc.ReceiveAttack(玩家战斗属性,规则);if(r.命中){本次命中数++;生成命中特效(new NpcTarget(npc),按体型算缩放(new NpcTarget(npc)));}
+            }
+            // 锁定目标没有物理碰撞体时仍按根节点距离纳入本次群攻。
+            if(目标!=null&&!seen.Contains(本次目标)&&Vector3.Distance(目标.根.position,point)<=radius){var r=目标.受到攻击(玩家战斗属性,规则,this);if(r.命中){本次命中数++;生成命中特效(目标,缩放);}}
+            return;
+        }
         var 结果 = 目标.受到攻击(玩家战斗属性, 规则, this);
+        if(结果.命中){本次命中数++;生成命中特效(目标,缩放);}
 
         if (打印战斗日志)
             Debug.Log("[basic_thunder_01] 雷劈锁定目标「" + 目标.名字 + "」 " + 结果
@@ -380,75 +306,6 @@ public class BasicThunder01 : MonoBehaviour
             var 首个Npc = 目标.取Npc();
             if (首个Npc != null) 已访问.Add(首个Npc);
             尝试闪电链(目标, 已访问, 1);
-        }
-    }
-
-    /// <summary>在目标身上放一道下劈的雷</summary>
-    void 生成雷(ICombatTarget 目标, float 缩放)
-    {
-        Vector3 位 = 目标.根 != null ? 目标.根.position : 目标.判定点;
-        位 += Vector3.up * 雷抬高;
-
-        // 统一走「特效摆放」：旋转 → 开等比缩放 → 只对齐水平
-        // （**竖直不做重定位** —— 用户明确要求对齐目标的"根部"、不是中部）
-        var go = 特效摆放.生成(雷特效路径, 位, 雷特效旋转欧拉,
-                              Mathf.Clamp(缩放, 缩放下限, 缩放上限),
-                              对齐到锚点: false, 存活秒: 0f, 名: "雷劈_" + 目标.名字);
-        if (go == null) return;
-
-        特效摆放.只对齐水平(go, 位);
-        开播放速度(go);                       // 整个特效按 雷特效速度 加速
-        if (雷特效不随相机) 改成不随相机(go);
-
-        // 存活时间要跟着速度缩短，否则加速后特效播完了还挂一段空等。
-        // ★ 默认再取一次「prefab 的自然总时长」当下限 —— 写死的 1.2 秒会把
-        //   lightning-ray 那 4.5 秒的"雷落地 + 地面尘散开"整段切掉（用户 2026-09-29 报的）。
-        float 存活 = Mathf.Max(0.1f, 雷特效存活);
-        if (存活按特效自动)
-        {
-            var 预制 = Resources.Load<GameObject>(雷特效路径);
-            存活 = Mathf.Max(存活, 特效摆放.量特效总时长(预制, 雷特效存活) * Mathf.Max(0.5f, 存活倍率));
-        }
-        if (存活随速度缩短) 存活 /= Mathf.Max(0.05f, 雷特效速度);
-        Destroy(go, 存活);
-    }
-
-    /// <summary>
-    /// 把整棵树的粒子系统按 `雷特效速度` 加速。
-    ///
-    /// 用 `main.simulationSpeed` —— 它会把粒子的**发射节奏、生命周期、速度**一起乘上倍率，
-    /// 是真正的"整个特效加速"。比逐个改 duration / startLifetime / startSpeed 可靠得多
-    /// （那种做法要改十几个部件，而且漏一个就不同步）。
-    /// </summary>
-    void 开播放速度(GameObject go)
-    {
-        float 速 = Mathf.Max(0.05f, 雷特效速度);
-        if (Mathf.Approximately(速, 1f)) return;
-
-        foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
-        {
-            if (ps == null) continue;
-            var m = ps.main;
-            m.simulationSpeed = 速;
-        }
-    }
-
-    /// <summary>
-    /// 把「雷球 / 雷柱」这几个部件从 `Billboard + View`（永远正对相机）
-    /// 改成 `alignment = World`（在世界里固定朝向，不随相机转）。
-    ///
-    /// 为什么只改这几个：环（`p6_rings_02`）本来就该面向相机（爆炸环要正对镜头才好看），
-    /// 而**竖直的雷柱和球**才是"随相机转就歪"的元凶。
-    /// </summary>
-    void 改成不随相机(GameObject go)
-    {
-        foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
-        {
-            string n = ps.name;
-            if (!(n.Contains("glow") || n.Contains("Lt") || n.Contains("spdrop") || n.Contains("sub_p")))
-                continue;
-            var r = ps.GetComponent<ParticleSystemRenderer>();
-            if (r != null) r.alignment = ParticleSystemRenderSpace.World;
         }
     }
 
@@ -486,7 +343,7 @@ public class BasicThunder01 : MonoBehaviour
                 + "（第 " + 已跳数 + " 跳｜缩放 " + 缩放.ToString("0.##") + "）", this);
 
         // 命中特效：贴在被链到的敌人身上
-        生成命中特效(下一个, 缩放);
+        if(结果.命中)生成命中特效(下一个, 缩放);
 
         if (结果.命中 && 结果.伤害 > 0f) 尝试闪电链(下一个, 已访问, 已跳数 + 1);
     }
@@ -601,24 +458,7 @@ public class BasicThunder01 : MonoBehaviour
     /// <summary>被链到 / 被劈中的敌人身上贴一个命中特效</summary>
     void 生成命中特效(ICombatTarget 目标, float 缩放)
     {
-        if (string.IsNullOrEmpty(命中特效路径)) return;
-        var prefab = Resources.Load<GameObject>(命中特效路径);
-        if (prefab == null) return;
-
-        Vector3 位 = 目标.根 != null ? 目标.根.position : 目标.判定点;
-        位 += Vector3.up * (基准敌人高度 * 0.5f);
-
-        var go = Instantiate(prefab, 位, Quaternion.identity);
-        go.name = "雷击命中_" + 目标.名字;
-        // ★ 命中特效是**副**效果：在「按体型缩放」之后再压一道 命中特效大小倍率
-        float 大小 = Mathf.Clamp(缩放, 缩放下限, 缩放上限) * Mathf.Max(0.05f, 命中特效大小倍率);
-        go.transform.localScale = Vector3.one * 大小;
-
-        // 同上：命中特效也别写死（lightning-arc-flash 自然 2.10 秒，0.8 秒会被切）
-        float 命中存活 = Mathf.Max(0.05f, 命中特效存活);
-        if (存活按特效自动)
-            命中存活 = Mathf.Max(命中存活, 特效摆放.量特效总时长(prefab, 命中特效存活) * Mathf.Max(0.5f, 存活倍率));
-        Destroy(go, 命中存活);
+        CombatVfxPipeline.播放(CombatVfxPipeline.雷命中,目标.判定点,Vector3.down,缩放*命中特效大小倍率);
     }
 
     // ============================================================ 工具
