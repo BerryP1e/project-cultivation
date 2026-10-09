@@ -1,0 +1,31 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using System.IO;
+if(EditorApplication.isPlaying)throw new System.Exception("Stop Play before scene audit");
+var original=SceneManager.GetActiveScene();var report=new System.Text.StringBuilder();int players=0;
+var openPreview=typeof(EditorSceneManager).GetMethod("OpenPreviewScene",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic,null,new[]{typeof(string)},null);
+foreach(var entry in EditorBuildSettings.scenes.Where(s=>s.enabled)){
+ var scene=(Scene)openPreview.Invoke(null,new object[]{entry.path});
+ try{
+  foreach(var root in scene.GetRootGameObjects()){
+   foreach(var data in root.GetComponentsInChildren<UIPanelData>(true)){
+    if(data.神通.Any(x=>x&&x.神通id=="ability_hanxu"))throw new System.Exception("Obsolete Hanxu in "+entry.path);
+   }
+   foreach(var pc in root.GetComponentsInChildren<PlayerController>(true)){
+    var player=pc.gameObject;var loader=player.GetComponent<PlayerAbilityLoader>();var driver=player.GetComponent<PlayerAnimationController>();if(!loader||!driver)throw new System.Exception("Missing shared player loadout "+entry.path);
+    players++;report.AppendLine(entry.path+" shared loader/animation OK");
+   }
+  }
+ }finally{EditorSceneManager.ClosePreviewScene(scene);}
+}
+foreach(string path in new[]{"技能动作/普攻_远程_01","技能动作/玄霄雷诀/A2","技能动作/玄霄雷诀/A3","技能动作/玄霄雷诀/A4"}){
+ var clip=Resources.Load<AnimationClip>(path);if(!clip||!clip.humanMotion||clip.isLooping)throw new System.Exception("Bad shared animation "+path);
+ var curves=AnimationUtility.GetCurveBindings(clip);report.AppendLine(path+" humanoid="+clip.humanMotion+" fingers="+curves.Count(b=>b.propertyName.Contains("Index")||b.propertyName.Contains("Middle")||b.propertyName.Contains("Thumb")));
+}
+var abilities=AssetDatabase.FindAssets("t:ActiveDivineAbility",new[]{"Assets/Data/Generated/ActiveDivineAbility"});report.AppendLine("active abilities="+abilities.Length);if(abilities.Length!=8)throw new System.Exception("Unexpected active count");
+var items=AssetDatabase.FindAssets("t:ItemDefinition",new[]{"Assets/Data/Generated/ItemDefinition"}).Select(g=>AssetDatabase.LoadAssetAtPath<ItemDefinition>(AssetDatabase.GUIDToAssetPath(g))).ToArray();
+report.AppendLine("teaching catalog="+items.Count(功德堂兑换.是传法物品)+" manuals="+items.Count(x=>x.使用效果 is 学功法效果));
+if(AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_hanxu.asset")||items.Any(x=>x.物品id=="item_active_ability_hanxu"))throw new System.Exception("Obsolete Hanxu asset");
+if(original!=SceneManager.GetActiveScene())throw new System.Exception("Scene audit changed active scene");
+report.AppendLine("CANGLAN_SCENE_AUDIT_PASS players="+players+" active="+original.path+" dirty="+original.isDirty);File.WriteAllText("../.local/diagnostics/canglan-scenes-report.txt",report.ToString());return report.ToString();

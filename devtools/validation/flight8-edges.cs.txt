@@ -1,0 +1,35 @@
+using System.Reflection;
+System.Collections.IEnumerator Run(){
+yield return null;Time.timeScale=1;DialogueUI.关闭();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"))q.enabled=false;
+var player=GameObject.Find("Player");var pc=player.GetComponent<PlayerController>();pc.enabled=false;
+var d=player.GetComponent<PlayerAnimationController>();var a=d.animator;a.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var vel=typeof(PlayerController).GetField("horizontalVelocity",BindingFlags.Instance|BindingFlags.NonPublic);
+var speed=typeof(PlayerController).GetField("<CurrentSpeed>k__BackingField",BindingFlags.Instance|BindingFlags.NonPublic);
+float full=d.御风.飞行速度;
+d.设置外部御风(true,true);d.触发升空();yield return new WaitForSecondsRealtime(1.6f);
+if(!a.GetCurrentAnimatorClipInfo(0).Any(c=>c.clip.name=="御风八向_前"&&c.weight>.99f))throw new System.Exception("External moving flight fallback failed");
+int yawCases=0;
+foreach(float yaw in new[]{0f,45f,90f,180f,270f}){
+player.transform.rotation=Quaternion.Euler(0,yaw,0);var facing=player.transform.rotation*Quaternion.Euler(0,-pc.visualYawOffset,0);
+foreach(var direction in new[]{Vector2.up,Vector2.right,Vector2.down,Vector2.left}){
+vel.SetValue(pc,facing*new Vector3(direction.x,0,direction.y)*full);speed.SetValue(pc,full);
+yield return new WaitForSecondsRealtime(.45f);
+if(Vector2.Distance(new Vector2(a.GetFloat("FlyX"),a.GetFloat("FlyY")),direction)>.025f)throw new System.Exception("Yaw compensation wrong "+yaw+" "+direction);
+yawCases++;
+}}
+player.transform.rotation=Quaternion.Euler(0,pc.visualYawOffset,0);
+var head=a.GetBoneTransform(HumanBodyBones.Head);Vector3 previous=head.position;float maxJump=0;int samples=0;
+for(float time=0;time<2.4f;time+=Time.unscaledDeltaTime){
+float angle=time*540f*Mathf.Deg2Rad;var v=new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle))*full;
+vel.SetValue(pc,v);speed.SetValue(pc,full);yield return null;
+var clips=a.GetCurrentAnimatorClipInfo(0);if(clips.Any(c=>float.IsNaN(c.weight))||Mathf.Abs(clips.Sum(c=>c.weight)-1)>.01f)throw new System.Exception("Continuous blend invalid");
+if(samples>0)maxJump=Mathf.Max(maxJump,Vector3.Distance(previous,head.position));previous=head.position;samples++;
+}
+vel.SetValue(pc,Vector3.zero);speed.SetValue(pc,0f);d.设置外部御风(true,false);yield return new WaitForSecondsRealtime(.6f);
+if(!a.GetCurrentAnimatorClipInfo(0).Any(c=>c.clip.name=="御风八向_悬停"&&c.weight>.99f))throw new System.Exception("External flight idle failed");
+d.触发落地();d.设置外部御风(false,false);yield return new WaitForSecondsRealtime(1.3f);
+if(a.GetBool("Flying")||Mathf.Abs(a.GetFloat("FlyX"))+Mathf.Abs(a.GetFloat("FlyY"))>.001f)throw new System.Exception("External landing parameter reset failed");
+Debug.Log("FLIGHT_EDGE_PASS yawCases="+yawCases+" continuousSamples="+samples+" headMaxStep="+maxJump.ToString("F4")+"m externalMount=PASS parameterReset=PASS");
+}
+return Run();

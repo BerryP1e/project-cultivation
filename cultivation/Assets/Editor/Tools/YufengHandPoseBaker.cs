@@ -50,7 +50,7 @@ public static class YufengHandPoseBaker
 
     public static void Carry(AnimationClip clip,AnimationClip reference)
     {
-        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/better_player_test/better_player_test.fbx"));
+        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
         target.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);target.transform.localScale=Vector3.one;
         var animator=target.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
         var graph=PlayableGraph.Create("YufengCarryBake");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);

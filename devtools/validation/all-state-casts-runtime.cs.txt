@@ -1,0 +1,52 @@
+using System.Collections;
+using System.Reflection;
+using System.IO;
+IEnumerator Run(){
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Namespace==null&&(c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器")))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var pc=player.GetComponent<PlayerController>();var flight=player.GetComponent<YufengFlight>();var driver=player.GetComponent<PlayerAnimationController>();var a=driver.animator;var panel=Object.FindObjectOfType<UIPanelData>();var caster=player.GetComponent<ActiveSkillCaster>();var vitals=player.GetComponent<PlayerVitals>();var targeting=player.GetComponent<NpcTargeting>();var cc=player.GetComponent<CharacterController>();var rider=player.GetComponent<MountRider>();
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var c in n.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+foreach(var component in player.GetComponents<MonoBehaviour>()){var field=component.GetType().GetField("自动出手");if(field!=null&&field.FieldType==typeof(bool))field.SetValue(component,false);}
+panel.当前功法=null;panel.RaiseChanged();targeting.enabled=false;targeting.受神识范围限制=false;targeting.ClearLock();pc.enabled=false;a.cullingMode=AnimatorCullingMode.AlwaysAnimate;caster.动画=driver;caster.快捷键=new KeyCode[0];caster.打印施法日志=false;caster.面板数据=panel;
+flight.强制御风=false;flight.强制落地();if(rider)rider.强制下坐骑();yield return new WaitForSecondsRealtime(1.3f);
+var origin=new Vector3(18000,30,18000);cc.enabled=false;player.transform.SetPositionAndRotation(origin,Quaternion.identity);cc.enabled=true;
+var npcgo=GameObject.CreatePrimitive(PrimitiveType.Capsule);npcgo.name="AllStateCastQA_Target";npcgo.SetActive(false);var def=ScriptableObject.CreateInstance<NpcDefinition>();def.名字="CastQA";def.id="qa_cast_all_states";def.境界=1;def.属性[AttributeType.MaxHealth]=100000;def.对主角好感度=-100;
+var npc=npcgo.AddComponent<NpcInstance>();npc.定义=def;npc.每次受击降好感=0;npcgo.SetActive(true);npc.ResetHealth();npc.enabled=false;
+var originals=new[]{"ability_shuilong_pao","ability_shunlei_tianshan","ability_bingbao_shu"}.Select(id=>UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/"+id+".asset")).ToArray();
+var passive=UnityEditor.AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/"+flight.神通id+".asset");
+var camera=Camera.main;foreach(var c in camera.GetComponents<MonoBehaviour>())c.enabled=false;camera.transform.position=origin+new Vector3(10,8,-10);camera.transform.LookAt(origin+new Vector3(0,3,4));
+var report=new System.Text.StringBuilder();int count=0;void Check(bool ok,string name){if(!ok)throw new System.Exception("FAIL "+name);count++;report.AppendLine("PASS "+name);File.WriteAllText("../.local/diagnostics/all-state-casts-runtime-report.txt",report.ToString());}
+void Shot(string name){var rt=new RenderTexture(1000,700,24);camera.targetTexture=rt;camera.Render();var previous=RenderTexture.active;RenderTexture.active=rt;var tex=new Texture2D(1000,700,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,1000,700),0,0);tex.Apply();File.WriteAllBytes("../.local/diagnostics/"+name+".png",tex.EncodeToPNG());RenderTexture.active=previous;camera.targetTexture=null;rt.Release();Object.Destroy(rt);Object.Destroy(tex);}
+var sampleFeet=typeof(PlayerAnimationController).GetMethod("取参照Y",BindingFlags.Instance|BindingFlags.NonPublic);MountDefinition mount=null;
+foreach(string state in new[]{"ground","flight","mount"}){
+if(state=="flight"){panel.获得被动(passive);panel.SetPassiveEnabled(passive,true);vitals.当前灵气=10000;flight.强制御风=true;yield return new WaitForSecondsRealtime(1.8f);Check(flight.御风中,"flight mode entered");}
+if(state=="mount"){
+flight.强制御风=false;flight.强制落地();yield return new WaitForSecondsRealtime(1.3f);mount=Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<MountDefinition>("Assets/Data/Generated/MountDefinition/mount_bishuishou_01.asset"));mount.修炼门槛=0;panel.已学坐骑.Add(mount.坐骑id);panel.设置当前坐骑(mount);if(!rider)rider=player.GetComponent<MountRider>();Check(rider,"rider component available");rider.上坐骑();float timeout=Time.time+8;while(!rider.已骑稳&&Time.time<timeout)yield return null;Check(rider.已骑稳,"actual mount settled");}
+var skills=originals.Select(x=>Object.Instantiate(x)).ToArray();panel.主动技能=new System.Collections.Generic.List<Object>{skills[0],skills[1],skills[2],null,null,null};yield return new WaitForSecondsRealtime(.25f);
+for(int slot=0;slot<3;slot++){
+vitals.当前灵气=10000;npcgo.transform.position=player.transform.position+Vector3.forward*12;targeting.Lock(npc,true);float hp=npc.CurrentHealth,rootY=player.transform.position.y;float feet=(float)sampleFeet.Invoke(driver,null);float minFeet=feet;float deadline=Time.time+7;
+Check(caster.TryCast(slot),state+" slot"+slot+" cast accepted");yield return null;
+if(slot==0){
+var water=Object.FindObjectOfType<WaterDragonSkillRunner>();Check(water&&driver.当前动作.name=="水龙炮_施法",state+" water Attack02");
+while(water&&!water.已释放&&Time.time<deadline){Check(!water.当前特效,state+" no beam before43");minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));yield return null;}
+Check(water&&water.已释放&&driver.动作进度>=.43f&&driver.动作进度<.49f,state+" water release43 "+driver.动作进度.ToString("F3"));yield return new WaitForEndOfFrame();
+Check(Vector3.Distance(water.当前特效.transform.position,a.GetBoneTransform(HumanBodyBones.LeftHand).position)<.015f,state+" exact left hand");Shot("cast-"+state+"-water");Check(driver.动作已定住&&driver.施法占用中,state+" water pose held");
+while(water&&!water.正在消散&&Time.time<deadline){minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));yield return null;}
+Check(water&&water.结算次数>0&&npc.CurrentHealth<hp,state+" water damage");Check(water.正在消散&&!driver.动作已定住,state+" water fades/unfreezes");yield return new WaitForSecondsRealtime(.3f);Check(water&&water.当前特效&&water.当前特效.transform.localScale.x<.05f,state+" soft fade");
+while(water&&Time.time<deadline)yield return null;Check(!water,state+" water complete");
+}else{
+var bolt=Object.FindObjectOfType<HomingBoltSkillRunner>();Check(bolt&&bolt.当前球&&!bolt.已放弹&&driver.当前动作.name=="追踪弹_施法",state+" ball at0 / Attack01_short slot"+slot);float gap=0,last=0;bool reachedHalf=false;bool grows=true;
+while(bolt&&!bolt.已放弹&&Time.time<deadline){yield return new WaitForEndOfFrame();if(bolt&&!bolt.已放弹&&bolt.当前球){float p=driver.动作进度;float size=bolt.当前球.transform.localScale.x;gap=Mathf.Max(gap,Vector3.Distance(bolt.当前球.transform.position,a.GetBoneTransform(HumanBodyBones.RightHand).position));if(p<.5f){grows&=size+.0001f>=last;last=size;}else if(!reachedHalf){reachedHalf=true;Check(Mathf.Abs(size-1)<.001f,state+" complete at50 slot"+slot);Shot("cast-"+state+"-ball-"+slot);}minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));}yield return null;}
+Check(bolt&&bolt.已放弹&&driver.动作进度>=.58f&&driver.动作进度<.64f,state+" release58 slot"+slot+" "+driver.动作进度.ToString("F3"));Check(gap<.015f&&grows&&reachedHalf,state+" right hand / continuous growth slot"+slot+" gap="+gap.ToString("F4"));Check(!driver.动作已定住,state+" no charge pause slot"+slot);
+while(bolt&&bolt.HitCount==0&&Time.time<deadline)yield return null;Check(bolt&&bolt.HitCount==1&&npc.CurrentHealth<hp,state+" tracking damage slot"+slot);
+var impact=GameObject.Find(skills[slot].神通名称+"_命中");Check(impact,state+" matching impact slot"+slot);if(slot==2)Check(Mathf.Abs(impact.transform.position.y-npcgo.transform.position.y)<.01f,state+" ice impact feet");
+while(bolt&&Time.time<deadline)yield return null;Check(!bolt,state+" bolt complete slot"+slot);
+}
+yield return new WaitForSecondsRealtime(1f);Check(!driver.施法占用中&&!driver.动作播放中,state+" natural recovery slot"+slot);Check(Mathf.Abs(player.transform.position.y-rootY)<.01f,state+" root height unchanged slot"+slot);if(state=="ground")Check(minFeet>=feet-.035f,state+" feet do not sink slot"+slot+" delta="+(minFeet-feet).ToString("F4"));
+}
+foreach(var skill in skills)Object.Destroy(skill);
+}
+rider.强制下坐骑();panel.取消装备坐骑();Object.Destroy(mount);Object.Destroy(npcgo);Object.Destroy(def);report.AppendLine("ALL_STATE_CAST_PASS count="+count+" ground=3 flight=3 mount=3");File.WriteAllText("../.local/diagnostics/all-state-casts-runtime-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

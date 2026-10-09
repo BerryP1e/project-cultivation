@@ -1,0 +1,57 @@
+using System.Reflection;
+System.Collections.IEnumerator Run(){
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Namespace==null && (c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器")))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var pc=player.GetComponent<PlayerController>();var flight=player.GetComponent<YufengFlight>();var driver=player.GetComponent<PlayerAnimationController>();var a=driver.animator;
+var pd=Object.FindObjectOfType<UIPanelData>();var targeting=player.GetComponent<NpcTargeting>();var cc=player.GetComponent<CharacterController>();
+var npc=new GameObject("FlightQA Target").AddComponent<NpcInstance>();npc.enabled=false;
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var c in n.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+targeting.enabled=false;targeting.ClearLock();
+var passive=UnityEditor.AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/"+flight.神通id+".asset");
+pd.获得被动(passive);pd.SetPassiveEnabled(passive,true);player.GetComponent<PlayerVitals>().回复灵气(10000);
+pc.enabled=false;flight.强制御风=true;
+yield return new WaitForSecondsRealtime(1.8f);
+if(!flight.御风中)throw new System.Exception("Flight did not start "+flight.状态);
+foreach(var component in player.GetComponents<MonoBehaviour>()){var field=component.GetType().GetField("自动出手");if(field!=null&&field.FieldType==typeof(bool))field.SetValue(component,false);}
+var origin=new Vector3(18000,30,18000);float height=origin.y;a.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+npc.transform.position=origin+Vector3.forward*15;targeting.Lock(npc,true);
+var velocity=typeof(PlayerController).GetField("horizontalVelocity",BindingFlags.Instance|BindingFlags.NonPublic);
+var speed=typeof(PlayerController).GetField("<CurrentSpeed>k__BackingField",BindingFlags.Instance|BindingFlags.NonPublic);
+var face=typeof(PlayerController).GetMethod("FaceDirection",BindingFlags.Instance|BindingFlags.NonPublic);
+var directions=new[]{Vector2.up,new Vector2(1,1).normalized,Vector2.right,new Vector2(1,-1).normalized,Vector2.down,new Vector2(-1,-1).normalized,Vector2.left,new Vector2(-1,1).normalized};
+var names=new[]{"前","右前","右","右后","后","左后","左","左前"};
+var report=new System.Text.StringBuilder();
+foreach(string profile in new[]{"gongfa_taixu_lianqi","gongfa_jiuba_xuangong","gongfa_taixu_jianjue","gongfa_lingxu_jianjue"}){
+var gf=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/"+profile+".asset");if(!gf)throw new System.Exception("Missing profile "+profile);
+pd.当前功法=gf;pd.RaiseChanged();yield return new WaitForSecondsRealtime(2f);
+foreach(var attack in player.GetComponents<BasicJiuba01>())attack.自动出手=false;
+if(player.GetComponent<BasicRemoteAttack01>()!=null)player.GetComponent<BasicRemoteAttack01>().enabled=false;
+for(int i=0;i<directions.Length;i++){
+cc.enabled=false;player.transform.SetPositionAndRotation(origin,Quaternion.Euler(0,pc.visualYawOffset,0));cc.enabled=true;
+for(float t=0;t<.65f;t+=Time.unscaledDeltaTime){
+var logical=player.transform.rotation*Quaternion.Euler(0,-pc.visualYawOffset,0);
+var v=logical*new Vector3(directions[i].x,0,directions[i].y)*flight.飞行速度;
+velocity.SetValue(pc,v);speed.SetValue(pc,v.magnitude);cc.Move(v*Time.deltaTime);face.Invoke(pc,new object[]{v.normalized});yield return null;
+}
+var info=a.GetCurrentAnimatorClipInfo(0);var main=info.OrderByDescending(c=>c.weight).First();
+if(main.clip.name!="御风八向_"+names[i]||main.weight<.80f)throw new System.Exception(profile+" direction="+names[i]+" got="+string.Join(",",info.Select(c=>c.clip.name+":"+c.weight.ToString("F2"))));
+var facing=player.transform.rotation*Quaternion.Euler(0,-pc.visualYawOffset,0);var to=npc.transform.position-player.transform.position;to.y=0;
+if(Vector3.Angle(facing*Vector3.forward,to)>1.5f)throw new System.Exception("Lock facing lost "+profile+"/"+names[i]);
+if(Mathf.Abs(player.transform.position.y-height)>.001f)throw new System.Exception("Flight root height drift");
+report.AppendLine(profile+" "+names[i]+" weight="+main.weight.ToString("F3")+" Fly="+a.GetFloat("FlyX").ToString("F2")+","+a.GetFloat("FlyY").ToString("F2"));
+}
+velocity.SetValue(pc,Vector3.zero);speed.SetValue(pc,0f);yield return new WaitForSecondsRealtime(.65f);
+if(!a.GetCurrentAnimatorClipInfo(0).Any(c=>c.clip.name=="御风八向_悬停"&&c.weight>.99f))throw new System.Exception("Flight idle did not return "+profile);
+}
+targeting.ClearLock();
+var melee=player.GetComponent<BasicLingxuSword01>();melee.自动出手=false;melee.需要锁定目标=false;
+if(!melee.出手())throw new System.Exception("Flight attack could not start");
+yield return new WaitForSecondsRealtime(4f);
+if(!a.GetCurrentAnimatorClipInfo(0).Any(c=>c.clip.name=="御风八向_悬停"&&c.weight>.99f))throw new System.Exception("Flight idle lost after action "+a.GetCurrentAnimatorStateInfo(0).shortNameHash);
+flight.强制御风=false;flight.强制落地();yield return new WaitForSecondsRealtime(1.3f);
+if(flight.御风流程中)throw new System.Exception("Did not land");
+report.AppendLine("FLIGHT_RUNTIME_PASS profiles=4 directions=32 targetFacing=PASS height=PASS idle=PASS actionReturn=PASS land=PASS");
+System.IO.File.WriteAllText("../.local/diagnostics/flight8-runtime-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

@@ -9,7 +9,7 @@ public static class ZhenyaohuAssetBuilder
     public static void Build() {
         const string folder="Assets/resources/法宝/镇妖葫";
         Directory.CreateDirectory(folder);
-        var source=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/镇妖葫/镇妖葫.fbx");
+        var source=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/镇妖葫/镇妖葫.fbx");
         if(source==null) throw new System.InvalidOperationException("缺少镇妖葫 FBX");
         var model=new GameObject("镇妖葫模型");
         var original=(GameObject)PrefabUtility.InstantiatePrefab(source);

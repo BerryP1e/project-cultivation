@@ -1,0 +1,18 @@
+using UnityEditor;
+using UnityEngine.Playables;
+using UnityEngine.Animations;
+var model=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx");var rigs=new[]{Object.Instantiate(model),Object.Instantiate(model)};var animators=rigs.Select(r=>r.GetComponent<Animator>()).ToArray();foreach(var a in animators){a.runtimeAnimatorController=null;a.applyRootMotion=false;a.cullingMode=AnimatorCullingMode.AlwaysAnimate;}
+var graphs=animators.Select(a=>PlayableGraph.Create("ThunderPoseQA")).ToArray();var source=Resources.Load<AnimationClip>("技能动作/普攻_远程_01");var mirror=Resources.Load<AnimationClip>("技能动作/玄霄雷诀/A2");
+var plays=new[]{AnimationClipPlayable.Create(graphs[0],source),AnimationClipPlayable.Create(graphs[1],mirror)};for(int i=0;i<2;i++){graphs[i].SetTimeUpdateMode(DirectorUpdateMode.Manual);plays[i].SetApplyFootIK(false);AnimationPlayableOutput.Create(graphs[i],"Pose",animators[i]).SetSourcePlayable(plays[i]);graphs[i].Play();}
+float error=0;try{
+for(int frame=0;frame<=60;frame++){
+for(int i=0;i<2;i++){plays[i].SetTime(source.length*frame/60d);graphs[i].Evaluate(0);}
+foreach(var pair in new[]{new[]{HumanBodyBones.LeftUpperArm,HumanBodyBones.RightUpperArm},new[]{HumanBodyBones.LeftLowerArm,HumanBodyBones.RightLowerArm},new[]{HumanBodyBones.LeftHand,HumanBodyBones.RightHand},new[]{HumanBodyBones.LeftFoot,HumanBodyBones.RightFoot}}){
+var original=animators[0].GetBoneTransform(pair[0]).position-animators[0].GetBoneTransform(HumanBodyBones.Hips).position;original.x=-original.x;var actual=animators[1].GetBoneTransform(pair[1]).position-animators[1].GetBoneTransform(HumanBodyBones.Hips).position;error=Mathf.Max(error,Vector3.Distance(original,actual));if(frame%30==0)Debug.Log("frame="+frame+" "+pair[0]+" expected="+original+" actual="+actual+" rig="+rigs[0].transform.rotation.eulerAngles);}
+}
+Debug.Log("Mirror reflected bone position maxError="+error);
+if(error>.02f)throw new System.Exception("Invalid mirror pose "+error);
+foreach(string name in new[]{"A2","A3","A4"}){
+var clip=Resources.Load<AnimationClip>("技能动作/玄霄雷诀/"+name);var bindings=AnimationUtility.GetCurveBindings(clip);var fingers=bindings.Count(b=>b.propertyName.Contains("Stretched")||b.propertyName.Contains("Spread"));var wrists=bindings.Count(b=>b.propertyName.Contains("Hand "));if(fingers!=40||wrists!=4)throw new System.Exception(name+" wrist/finger curves missing");Debug.Log(name+" fingerCurves="+fingers+" wristCurves="+wrists);}
+}finally{foreach(var graph in graphs)graph.Destroy();foreach(var rig in rigs)Object.DestroyImmediate(rig);}
+return "THUNDER_MIRROR_HANDS_PASS";

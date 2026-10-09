@@ -1,4 +1,4 @@
-// 镇妖塔地面贴图生成器
+﻿// 镇妖塔地面贴图生成器
 //
 // ## 为什么要生成贴图
 //
@@ -17,7 +17,7 @@
 //
 // ## 用法
 // 菜单「工具/画面/③ 生成塔地面贴图」。生成到
-// `Assets/resources/Environment1/Common/Textures/TowerFloor/`，然后手动挂到地面材质上
+// `Assets/Art/Environment/Imported/Environment1/Common/Textures/TowerFloor/`，然后手动挂到地面材质上
 // （或用「④ 应用地面贴图」一键挂 + 设 tiling）。
 
 using System.IO;
@@ -28,7 +28,7 @@ namespace Cultivation.EditorTools
 {
     public static class 塔地面贴图生成
     {
-        private const string 输出目录 = "Assets/resources/Environment1/Common/Textures/TowerFloor";
+        private const string 输出目录 = "Assets/Art/Environment/Imported/Environment1/Common/Textures/TowerFloor";
         private const string 贴图名 = "tower_floor_slab.png";
         private const int 尺寸 = 1024;
         private const int 每边石数 = 8;       // 8×8 = 64 块砧石

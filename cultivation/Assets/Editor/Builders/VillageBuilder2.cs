@@ -24,8 +24,8 @@ using UnityEngine;
 /// </summary>
 public static class VillageBuilder2
 {
-    const string Env1 = "Assets/resources/Environment1";
-    const string Env2 = "Assets/resources/Environment2";
+    const string Env1 = "Assets/Art/Environment/Imported/Environment1";
+    const string Env2 = "Assets/Art/Environment/Imported/Environment2";
     const string 根节点名 = "Village";
     const float 地面Y = 0f;
     const int 随机种子 = 20260921;
@@ -249,7 +249,7 @@ public static class VillageBuilder2
 
         if (全部模型.Count == 0)
         {
-            foreach (var g in AssetDatabase.FindAssets("t:GameObject", new[] { Env1, Env2, "Assets/resources/Environment3" }))
+            foreach (var g in AssetDatabase.FindAssets("t:GameObject", new[] { Env1, Env2, "Assets/Art/Environment/Imported/Environment3" }))
             {
                 var p = AssetDatabase.GUIDToAssetPath(g);
                 if (p.EndsWith(".prefab") || p.EndsWith(".FBX") || p.EndsWith(".fbx")) 全部模型.Add(p);
@@ -297,7 +297,7 @@ public static class VillageBuilder2
 
     static Material 找地面材质()
     {
-        foreach (var g in AssetDatabase.FindAssets("t:Material", new[] { "Assets/Environment", Env2 }))
+        foreach (var g in AssetDatabase.FindAssets("t:Material", new[] { "Assets/Art/Environment/World", Env2 }))
         {
             var p = AssetDatabase.GUIDToAssetPath(g);
             var n = System.IO.Path.GetFileNameWithoutExtension(p).ToLower();
@@ -309,7 +309,7 @@ public static class VillageBuilder2
 
     static Material 找水材质()
     {
-        foreach (var g in AssetDatabase.FindAssets("t:Material", new[] { Env1, Env2, "Assets/Environment" }))
+        foreach (var g in AssetDatabase.FindAssets("t:Material", new[] { Env1, Env2, "Assets/Art/Environment/World" }))
         {
             var p = AssetDatabase.GUIDToAssetPath(g);
             var n = System.IO.Path.GetFileNameWithoutExtension(p).ToLower();

@@ -1,0 +1,28 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using System.IO;
+if(EditorApplication.isPlaying)throw new System.Exception("Stop Play before scene audit");
+var original=SceneManager.GetActiveScene();var report=new System.Text.StringBuilder();int players=0;
+var openPreview=typeof(EditorSceneManager).GetMethod("OpenPreviewScene",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic,null,new[]{typeof(string)},null);
+foreach(var entry in EditorBuildSettings.scenes.Where(s=>s.enabled)){
+var scene=(Scene)openPreview.Invoke(null,new object[]{entry.path});
+try{
+var pcs=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlayerController>(true)).ToArray();
+if(pcs.Length==0){report.AppendLine(entry.path+" player=none (start/menu or bootstrap)");continue;}
+foreach(var pc in pcs){players++;var p=pc.gameObject;var caster=p.GetComponent<ActiveSkillCaster>();var driver=p.GetComponent<PlayerAnimationController>();var loader=p.GetComponent<PlayerAbilityLoader>();var flight=p.GetComponent<YufengFlight>();var anim=driver?driver.animator:null;if(!anim)anim=p.GetComponentInChildren<Animator>(true);
+var control=anim?anim.runtimeAnimatorController:null;
+while(control is AnimatorOverrideController)control=((AnimatorOverrideController)control).runtimeAnimatorController;
+report.AppendLine(entry.path+" player="+p.name+" caster="+(caster?"shared ActiveSkillCaster":"missing")+" animation="+(driver?"PlayerAnimationController":"missing")+" controller="+(control?AssetDatabase.GetAssetPath(control):"none")+" avatar="+(anim&&anim.avatar?anim.avatar.name:"none")+" flight="+(flight?"component":"via loader")+" loader="+(bool)loader+" visualYaw="+pc.visualYawOffset);
+if(!caster||!driver||!control||!anim.avatar||!anim.avatar.isValid||!anim.avatar.isHuman)throw new System.Exception("Scene wiring incomplete "+entry.path);
+}
+}finally{EditorSceneManager.ClosePreviewScene(scene);}
+}
+foreach(string name in new[]{"水龙炮_施法","追踪弹_施法"}){
+var clip=Resources.Load<AnimationClip>("技能动作/神通施法/"+name);
+if(!clip||!clip.humanMotion||clip.isLooping)throw new System.Exception("Missing shared casting asset "+name);
+report.AppendLine("Resources "+name+" length="+clip.length+" human="+clip.humanMotion+" loop="+clip.isLooping);
+}
+report.AppendLine("SCENE_AUDIT_PASS players="+players+" active="+original.path+" dirty="+original.isDirty);
+File.WriteAllText("../.local/diagnostics/flying-cast-scenes-audit-report.txt",report.ToString());Debug.Log(report.ToString());
+return "Shared scene wiring audited";

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **全局调色后处理**（Built-in 渲染管线，挂主相机）。
@@ -179,7 +179,7 @@ public class GameGlobalGrade : MonoBehaviour
         {
             材质不可用 = true;
             Debug.LogWarning("[全局调色] 找不到或不支持 shader「Cultivation/GlobalGrade」——"
-                             + "后处理不会生效。检查 Assets/Environment/CultivationGlobalGrade.shader 有没有编译错误");
+                             + "后处理不会生效。检查 Assets/Art/Environment/World/CultivationGlobalGrade.shader 有没有编译错误");
             return;
         }
 

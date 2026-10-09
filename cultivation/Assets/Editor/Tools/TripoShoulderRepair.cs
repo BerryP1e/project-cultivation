@@ -156,7 +156,7 @@ public static class TripoShoulderRepair
         var description = importer != null ? importer.humanDescription : new HumanDescription();
         if (description.human == null || description.human.Length == 0)
         {
-            var standard = AssetImporter.GetAtPath("Assets/TripoModels/better_player_test/better_player_test.fbx") as ModelImporter;
+            var standard = AssetImporter.GetAtPath("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx") as ModelImporter;
             if (standard == null) throw new InvalidOperationException("缺少Tripo标准Humanoid映射");
             description = standard.humanDescription;
             description.human = description.human.Where(h => bones.ContainsKey(h.boneName)).ToArray();

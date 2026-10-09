@@ -21,7 +21,7 @@ using UnityEngine;
 /// </summary>
 public static class VillageBuilder
 {
-    const string ArtRoot = "Assets/resources/Environment2";
+    const string ArtRoot = "Assets/Art/Environment/Imported/Environment2";
     const string 根节点名 = "Village";
     const float 地面Y = 0f;
     const int 随机种子 = 20260920;

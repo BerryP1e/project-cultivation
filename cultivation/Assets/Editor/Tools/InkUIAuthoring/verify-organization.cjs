@@ -15,4 +15,4 @@ for(const pack of ['ability-art-v1','dynamic-assets-v1'])for(const item of JSON.
 const images=walk(art).filter(f=>f.endsWith('.png'));
 const runtime=walk(path.join(repo,'cultivation/Assets/resources/UI/InkUI')).filter(f=>!f.endsWith('.meta'));
 const result={checks,errors,authoringPng:images.length,runtimeFiles:runtime.length,runtimeHashes:runtime.map(f=>({file:path.relative(repo,f).replaceAll('\\','/'),sha256:sha(f)}))};
-fs.mkdirSync(path.join(repo,'cultivation/screenshots'),{recursive:true});fs.writeFileSync(path.join(repo,'cultivation/screenshots/InkUI-organization-verification.json'),JSON.stringify(result,null,2));console.log(JSON.stringify({...result,runtimeHashes:undefined},null,2));if(errors.length)process.exitCode=1;
+fs.mkdirSync(path.join(repo,'.local/diagnostics'),{recursive:true});fs.writeFileSync(path.join(repo,'.local/diagnostics/InkUI-organization-verification.json'),JSON.stringify(result,null,2));console.log(JSON.stringify({...result,runtimeHashes:undefined},null,2));if(errors.length)process.exitCode=1;

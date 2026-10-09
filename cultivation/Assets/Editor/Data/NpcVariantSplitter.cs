@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -66,14 +66,14 @@ public static class NpcVariantSplitter
     const string 定义目录 = "Assets/Data/Generated/NpcDefinition";
 
     /// <summary>
-    /// 备份目录：**从 <c>Application.dataPath</c> 反推仓库根**，落到 `.dsh/_npc表备份/`。
+    /// 备份目录：**从 <c>Application.dataPath</c> 反推仓库根**，落到 `.local/backups/npc-tables/`。
     ///
     /// 【坑·改过两次】原来写死 `"D:/project：cultivation"`（第一台开发机的路径）。
     /// 换机器后那个目录不存在，`File.WriteAllBytes` 抛异常又被静默 catch，
     /// 于是**备份一直没生效**，而仓库根还堆着 8 个从原机器搬来的历史 `.bak`。
     /// 文档里 2026-09-27 写着"已修"，其实代码里**没改** —— 2026-09-30 才发现并真修。
     ///
-    /// 放 `.dsh/` 而不是 `Assets/` 里：`.bak` 在 Assets 下会被 Unity 当资产导入。
+    /// 放 `.local/` 而不是 `Assets/` 里：`.bak` 在 Assets 下会被 Unity 当资产导入。
     /// </summary>
     static string 备份目录
     {
@@ -82,7 +82,7 @@ public static class NpcVariantSplitter
             // Application.dataPath = <仓库根>/cultivation/Assets
             var 工程根 = Path.GetDirectoryName(Application.dataPath);      // <仓库根>/cultivation
             var 仓库根 = Path.GetDirectoryName(工程根);                      // <仓库根>
-            return Path.Combine(仓库根, ".dsh", "_npc表备份");
+            return Path.Combine(仓库根, ".local", "backups", "npc-tables");
         }
     }
 

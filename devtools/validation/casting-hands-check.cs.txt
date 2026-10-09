@@ -1,0 +1,29 @@
+using UnityEditor;
+using UnityEngine.Playables;
+using UnityEngine.Animations;
+var rig=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
+var animator=rig.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var bones=Enumerable.Range((int)HumanBodyBones.LeftThumbProximal,30).Select(x=>(HumanBodyBones)x).Concat(new[]{HumanBodyBones.LeftHand,HumanBodyBones.RightHand}).ToArray();
+var transforms=bones.Select(b=>animator.GetBoneTransform(b)).ToArray();if(transforms.Any(t=>!t))throw new System.Exception("Player wrist/finger mapping missing");
+var graph=PlayableGraph.Create("CastingHandsQA");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+Quaternion[] Sample(AnimationClip c,double time){animator.Rebind();var p=AnimationClipPlayable.Create(graph,c);p.SetApplyFootIK(false);var output=AnimationPlayableOutput.Create(graph,"Pose",animator);output.SetSourcePlayable(p);graph.Play();p.SetTime(time);graph.Evaluate(0);var rotations=transforms.Select(t=>t.localRotation).ToArray();graph.DestroyOutput(output);graph.DestroyPlayable(p);return rotations;}
+var report=new System.Text.StringBuilder();
+try{
+foreach(var pair in new[]{new[]{"attack_FlyingAtk02","水龙炮_施法"},new[]{"attack_FlyingAtk01_short","追踪弹_施法"}}){
+var source=AssetDatabase.LoadAllAssetsAtPath("Assets/resources/Animation Library/Flying_Mage_Volume2/Animations/Humanoid/"+pair[0]+".fbx").OfType<AnimationClip>().First(c=>!c.name.StartsWith("__preview"));
+var target=AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/resources/技能动作/神通施法/"+pair[1]+".anim");
+var limited=Object.Instantiate(source);HandMotionRetargeting.Apply(limited,HandMotionRetargeting.AvatarFor(source));
+var stripped=Object.Instantiate(target);foreach(var b in AnimationUtility.GetCurveBindings(stripped).Where(b=>b.type==typeof(Animator)&&(b.propertyName.Contains("Stretched")||b.propertyName.Contains("Spread")||b.propertyName.Contains("Hand "))).ToArray())AnimationUtility.SetEditorCurve(stripped,b,null);
+var range=new float[bones.Length];var bindingEffect=new float[bones.Length];var start=Sample(target,0);float maxError=0;
+for(int i=0;i<=60;i++){
+double time=source.length*i/60d;var actual=Sample(target,time);var expected=Sample(limited,time);var absent=Sample(stripped,time);
+for(int j=0;j<bones.Length;j++){maxError=Mathf.Max(maxError,Quaternion.Angle(actual[j],expected[j]));range[j]=Mathf.Max(range[j],Quaternion.Angle(start[j],actual[j]));bindingEffect[j]=Mathf.Max(bindingEffect[j],Quaternion.Angle(absent[j],actual[j]));}
+}
+if(maxError>.2f)throw new System.Exception(pair[1]+" differs from source wrist/fingers "+maxError);
+if(bindingEffect.Any(x=>x<.1f))throw new System.Exception(pair[1]+" inert binding: "+string.Join(",",bones.Where((b,j)=>bindingEffect[j]<.1f)));
+report.AppendLine(pair[1]+" mapped=32 sourcePoseMaxError="+maxError.ToString("F4")+" actualBinding=32 moving="+range.Count(x=>x>.2f));
+for(int j=0;j<bones.Length;j++)report.AppendLine(bones[j]+" movement="+range[j].ToString("F2")+" bindingEffect="+bindingEffect[j].ToString("F2"));
+Object.DestroyImmediate(limited);Object.DestroyImmediate(stripped);
+}
+}finally{graph.Destroy();Object.DestroyImmediate(rig);}
+System.IO.File.WriteAllText("../.local/diagnostics/casting-hands-report.txt",report.ToString());Debug.Log(report.ToString());return "CAST_HANDS_ACTUAL_BONES_PASS";

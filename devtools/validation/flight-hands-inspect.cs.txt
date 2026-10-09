@@ -1,0 +1,36 @@
+using UnityEngine.Playables;
+using UnityEngine.Animations;
+using UnityEditor;
+var rig=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
+rig.transform.localScale=Vector3.one*1.8f;
+var animator=rig.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var hand=animator.GetBoneTransform(HumanBodyBones.RightHand);
+var spear=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/Weapons/八九玄功_三尖两刃刀.prefab"),hand);
+spear.transform.localPosition=Vector3.zero;spear.transform.localRotation=Quaternion.Euler(2.328f,254.529f,263.733f);spear.transform.localScale=Vector3.one*.3173f;
+var sword=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/Weapons/灵虚剑决/灵虚剑.prefab"),rig.transform);sword.name="灵虚剑";
+animator.Rebind();rig.transform.position=new Vector3(18000,0,18000);
+foreach(var t in rig.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+var cg=new GameObject("Preview");var cam=cg.AddComponent<Camera>();cam.enabled=false;cam.cullingMask=1<<30;cam.orthographic=true;cam.orthographicSize=1.85f;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.18f,.21f,.24f);
+var lg=new GameObject("PreviewLight");var light=lg.AddComponent<Light>();light.type=LightType.Directional;light.cullingMask=1<<30;light.intensity=1.6f;lg.transform.rotation=Quaternion.Euler(35,-25,0);
+var rt=new RenderTexture(440,500,24);cam.targetTexture=rt;var sheet=new Texture2D(1320,1500,TextureFormat.RGB24,false);var close=new Texture2D(1320,1500,TextureFormat.RGB24,false);
+var graph=PlayableGraph.Create("WeaponCompare");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+var paths=new[]{"八九玄功/持刀_站","八九玄功/持刀_跑","御风八向/八九玄功/御风八向_悬停","御风八向/八九玄功/御风八向_前","御风八向/八九玄功/御风八向_右","御风八向/太虚剑决/御风八向_前","灵虚剑决/持剑_Idle","御风八向/灵虚剑决/御风八向_前","御风八向/灵虚剑决/御风八向_悬停"};
+try{
+for(int i=0;i<paths.Length;i++){
+var clip=AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/resources/技能动作/"+paths[i]+".anim");
+spear.SetActive(i<6);sword.SetActive(i>=6);
+var p=AnimationClipPlayable.Create(graph,clip);p.SetApplyFootIK(false);var o=AnimationPlayableOutput.Create(graph,"Pose",animator);o.SetSourcePlayable(p);graph.Play();p.SetTime(.4f);graph.Evaluate(0);
+var smrs=rig.GetComponentsInChildren<SkinnedMeshRenderer>().Where(s=>s.enabled).ToArray();var proxies=new System.Collections.Generic.List<GameObject>();var meshes=new System.Collections.Generic.List<Mesh>();
+foreach(var smr in smrs){var mesh=new Mesh();smr.BakeMesh(mesh);meshes.Add(mesh);var proxy=new GameObject("Baked");proxy.layer=30;proxy.transform.SetParent(smr.transform,false);proxy.transform.localScale=new Vector3(1/smr.transform.lossyScale.x,1/smr.transform.lossyScale.y,1/smr.transform.lossyScale.z);proxy.AddComponent<MeshFilter>().sharedMesh=mesh;proxy.AddComponent<MeshRenderer>().sharedMaterials=smr.sharedMaterials;proxies.Add(proxy);smr.forceRenderingOff=true;}
+cam.orthographicSize=1.85f;cam.transform.position=rig.transform.position+new Vector3(4,2.2f,5);cam.transform.LookAt(rig.transform.position+Vector3.up*.9f);
+cam.Render();var prev=RenderTexture.active;RenderTexture.active=rt;sheet.ReadPixels(new Rect(0,0,440,500),(i%3)*440,(2-i/3)*500);RenderTexture.active=prev;
+cam.orthographicSize=.19f;cam.transform.position=hand.position+new Vector3(1,.3f,1);cam.transform.LookAt(hand.position);
+cam.Render();prev=RenderTexture.active;RenderTexture.active=rt;close.ReadPixels(new Rect(0,0,440,500),(i%3)*440,(2-i/3)*500);RenderTexture.active=prev;
+using(var handler=new HumanPoseHandler(animator.avatar,rig.transform)){var pose=new HumanPose();handler.GetHumanPose(ref pose);Debug.Log(paths[i]+" handRotation="+hand.rotation.eulerAngles+" hand="+(hand.position-rig.transform.position)+" fingers="+string.Join(",",Enumerable.Range(0,HumanTrait.MuscleCount).Where(m=>HumanTrait.MuscleName[m].StartsWith("Right ")&&(HumanTrait.MuscleName[m].Contains("Hand")||HumanTrait.MuscleName[m].Contains("Thumb")||HumanTrait.MuscleName[m].Contains("Index"))).Select(m=>HumanTrait.MuscleName[m]+":"+pose.muscles[m].ToString("F2"))));}
+foreach(var smr in smrs)smr.forceRenderingOff=false;foreach(var proxy in proxies)Object.DestroyImmediate(proxy);foreach(var mesh in meshes)Object.DestroyImmediate(mesh);
+graph.DestroyOutput(o);graph.DestroyPlayable(p);
+}
+sheet.Apply();close.Apply();System.IO.File.WriteAllBytes("../.local/diagnostics/flight-hands-before.png",sheet.EncodeToPNG());System.IO.File.WriteAllBytes("../.local/diagnostics/flight-hands-close-before.png",close.EncodeToPNG());
+var blade=sword.transform.Find("LingxuSword");var raw=blade.GetComponent<SkinnedMeshRenderer>().sharedMesh;Debug.Log("SWORD RAW bounds="+raw.bounds+" childScale="+blade.localScale+" sample="+string.Join(";",raw.vertices.OrderBy(v=>v.y).Where((v,j)=>j%25==0).Select(v=>v.ToString("F4"))));
+}finally{graph.Destroy();Object.DestroyImmediate(rig);Object.DestroyImmediate(cg);Object.DestroyImmediate(lg);Object.DestroyImmediate(rt);Object.DestroyImmediate(sheet);Object.DestroyImmediate(close);}
+return "Weapon comparison: rows ground / flight / Lingxu, columns as logged";

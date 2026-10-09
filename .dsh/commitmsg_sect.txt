@@ -1,5 +1,0 @@
-Sect.scene：炼丹阁位置/旋转与交互距离（手改）+ Teleporter 新字段落盘
-
-- 炼丹阁（environment_Building_qingsangcheng_001_o）挪到 (-8.94, 2.97, 31.34)、朝向 -68°，StationInteractable.交互距离 6 → 11
-- Teleporter 新增的 需要等级 / 未开放原因 两个字段被 Unity 序列化进 3 个传送圈（值都是默认 0 / 空，无行为变化）
-- 顺带把 RectTransform 的一处 y 值写成当前布局值

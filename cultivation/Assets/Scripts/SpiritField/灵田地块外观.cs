@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,7 +7,7 @@ using UnityEngine;
 /// ## 素材来自哪里
 ///
 /// 作物模型和土质贴图取自 GitHub 上的开源项目 `henjicc/yipiantian`
-/// （一个 Godot 的江南水乡种田游戏），由 `tools/参考素材/` 那套脚本
+/// （一个 Godot 的江南水乡种田游戏），开发期转换后导入到 Assets/resources/灵田，原转换脚本已清理；
 /// 从 `.glb` 转成 Unity 能导入的 `.obj` + 贴图。来源逐条登记在
 /// `docs/reference/外部素材来源.md`。
 ///

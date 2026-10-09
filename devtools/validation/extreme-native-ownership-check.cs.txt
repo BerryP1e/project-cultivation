@@ -1,0 +1,16 @@
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+var go=CombatVfxPipeline.播放(CombatVfxPipeline.雷四式[1],new Vector3(34000,30,34000),Vector3.down);
+yield return null;yield return null;
+var motions=go.GetComponentsInChildren<EFX_Randommove>();if(motions.Length<2)throw new System.Exception("Need parent and emitted child lightning");
+if(motions.Any(m=>m.transform.parent!=go.transform))throw new System.Exception("Lightning still inherits emitter movement");
+var pos=motions[1].transform.position;motions[0].transform.position+=Vector3.right*2;
+if(Vector3.Distance(pos,motions[1].transform.position)>.001f)throw new System.Exception("Double movement inherited");
+var source=CombatVfxPipeline.配置.查找(CombatVfxPipeline.雷四式[1]).预制体;
+foreach(var ps in go.GetComponentsInChildren<ParticleSystem>())if(ps.main.simulationSpeed!=1||ps.main.scalingMode!=ParticleSystemScalingMode.Shape)throw new System.Exception("Native simulation changed");
+Object.Destroy(go);yield return null;yield return new WaitForSeconds(.3f);
+if(Object.FindObjectsOfType<ExtremeVfxAdapter>().Any())throw new System.Exception("Unowned decorative child survived");
+File.WriteAllText("../.local/diagnostics/extreme-native-ownership-report.txt","PASS spawned lightning is independent of emitter movement\nPASS native Shape and simulationSpeed retained\nPASS all owned descendants cleaned\n");yield break;
+}
+return Run();

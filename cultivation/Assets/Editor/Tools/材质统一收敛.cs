@@ -1,4 +1,4 @@
-// 全局材质收敛工具
+﻿// 全局材质收敛工具
 // 基准：玩家当前材质 —— Standard / 金属 0 / 光泽 0 / 白染色 + 反照率贴图
 // 目标：把全工程的"受光实体"材质统一到同一色彩与质感体系，消除自发光与受光两套割裂。
 // 明确不动：粒子/拖尾/贴花/天空盒/树/UI 以及所有第三方特效 shader（改了会直接坏）。
@@ -39,7 +39,7 @@ namespace Cultivation.EditorTools
         /// <summary>
         /// 永不动。
         /// - 树/植被：多为 billboard 片，转 Standard 会发暗成实心。
-        /// - 特效目录：`Assets/Effect/**`、`Assets/resources/特效/**` 里的 Legacy 材质
+        /// - 特效目录：`Assets/Art/VFX/CharacterEffects/**`、`Assets/resources/特效/**` 里的 Legacy 材质
         ///   常靠叠加混合发光，转成不透明会直接坏（试运行里有 10 个这种）。
         /// </summary>
         private static readonly string[] 排除目录 =
@@ -91,7 +91,7 @@ namespace Cultivation.EditorTools
             if (!EditorUtility.DisplayDialog("材质统一收敛",
                 $"将把 {统计.可收敛.Count} 个材质收敛到 Standard（金属0/光泽0）。\n\n" +
                 "粒子/树/特效已自动排除。\n" +
-                "备份位于 .dsh\\_材质备份_全局收敛。\n\n确认执行？", "执行", "取消"))
+                "备份位于 .local/backups/materials。\n\n确认执行？", "执行", "取消"))
                 return;
 
             var 明细 = new StringBuilder();
@@ -358,7 +358,7 @@ namespace Cultivation.EditorTools
             Debug.Log(内容);
             try
             {
-                var 目录 = Path.Combine(Directory.GetCurrentDirectory(), ".dsh", "_材质备份_全局收敛");
+                var 目录 = Path.GetFullPath(Path.Combine(Application.dataPath, "../../.local/backups/materials"));
                 Directory.CreateDirectory(目录);
                 var 文件 = Path.Combine(目录, "收敛报告_" + System.DateTime.Now.ToString("MMdd_HHmmss") + ".txt");
                 File.WriteAllText(文件, 内容, new UTF8Encoding(false));

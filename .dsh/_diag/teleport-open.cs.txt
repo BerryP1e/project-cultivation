@@ -1,5 +1,0 @@
-var character=Object.FindObjectOfType<CharacterPanelUI>();
-if(character!=null) character.gameObject.SetActive(false);
-var portal=Object.FindObjectsOfType<Teleporter>().First(t=>t.选项!=null && t.选项.Length>0);
-portal.开面板();
-return portal.name+" options="+portal.选项.Length;

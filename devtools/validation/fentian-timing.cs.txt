@@ -1,0 +1,46 @@
+using System.Collections;
+using System.IO;
+using System.Reflection;
+IEnumerator Run(){
+if(!GameObject.Find("Player")){var load=UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("3C_Testbed",UnityEngine.SceneManagement.LoadSceneMode.Additive);while(!load.isDone)yield return null;UnityEngine.SceneManagement.SceneManager.SetActiveScene(UnityEngine.SceneManagement.SceneManager.GetSceneByName("3C_Testbed"));}
+yield return null;
+foreach(var listener in Object.FindObjectsOfType<AudioListener>().Skip(1))listener.enabled=false;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Namespace==null&&(c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器")))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");if(!player)throw new System.Exception("Need loaded player scene");var driver=player.GetComponent<PlayerAnimationController>();var targeting=player.GetComponent<NpcTargeting>();var stats=player.GetComponent<PlayerCombatStats>();var pc=player.GetComponent<PlayerController>();
+foreach(var c in player.GetComponents<MonoBehaviour>()){var f=c.GetType().GetField("自动出手");if(f!=null&&f.FieldType==typeof(bool))f.SetValue(c,false);}
+foreach(var q in Object.FindObjectsOfType<NpcInstance>())foreach(var c in q.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+var panel=Object.FindObjectOfType<UIPanelData>();panel.当前功法=null;panel.RaiseChanged();targeting.enabled=false;targeting.受神识范围限制=false;pc.enabled=false;player.GetComponent<YufengFlight>()?.强制落地();player.GetComponent<MountRider>()?.强制下坐骑();
+var origin=new Vector3(18000,30,18000);var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.SetPositionAndRotation(origin,Quaternion.identity);cc.enabled=true;
+var report=new System.Text.StringBuilder();int checks=0;void Check(bool ok,string name){if(!ok)throw new System.Exception("FAIL "+name);checks++;report.AppendLine("PASS "+name);File.WriteAllText("../.local/diagnostics/fentian-timing-report.txt",report.ToString());}
+NpcInstance Npc(string name,Vector3 point,bool hostile=true){var go=GameObject.CreatePrimitive(PrimitiveType.Capsule);go.name=name;go.SetActive(false);var d=ScriptableObject.CreateInstance<NpcDefinition>();d.id=name;d.名字=name;d.属性[AttributeType.MaxHealth]=100000;d.对主角好感度=hostile?-100:100;var n=go.AddComponent<NpcInstance>();n.定义=d;n.每次受击降好感=0;go.transform.position=point;go.SetActive(true);n.ResetHealth();n.enabled=false;return n;}
+var center=origin+Vector3.forward*12;var target=Npc("FX_Target",center);var near=Npc("FX_Near",center+Vector3.right*3);var far=Npc("FX_Far",center+Vector3.right*8);var friend=Npc("FX_Friend",center+Vector3.left*2,false);var extra=target.gameObject.AddComponent<SphereCollider>();extra.radius=.5f;
+var ground=GameObject.CreatePrimitive(PrimitiveType.Cube);ground.name="FX_QA_Ground";ground.transform.position=center+Vector3.down*.6f;ground.transform.localScale=new Vector3(100,1,100);
+
+var caster=player.GetComponent<ActiveSkillCaster>();caster.动画=driver;caster.面板数据=panel;caster.快捷键=new KeyCode[0];caster.打印施法日志=false;
+var definition=UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_fentian_yanshu.asset");
+void Equip(){var skill=Object.Instantiate(definition);panel.主动技能=new System.Collections.Generic.List<Object>{skill,null,null,null,null,null};player.GetComponent<PlayerVitals>().当前灵气=10000;}
+IEnumerator ClearEffects(){foreach(var m in Object.FindObjectsOfType<MeteorGroundImpact>())Object.Destroy(m.transform.root.gameObject);foreach(var v in Object.FindObjectsOfType<ExtremeVfxAdapter>())if(v.transform.parent==null)Object.Destroy(v.gameObject);yield return null;}
+foreach(float speed in new[]{1f,.5f,1.8f}){
+yield return ClearEffects();Equip();driver.playbackScale=speed;targeting.Lock(target,true);float hp=target.CurrentHealth;
+Check(caster.TryCast(0),"cast accepted speed="+speed);Check(driver.施法占用中,"action held speed="+speed);Check(!Object.FindObjectOfType<MeteorGroundImpact>(),"no immediate summon speed="+speed);
+var motion=driver.当前动作;float deadline=Time.time+12;bool paused=false;MeteorGroundImpact meteor=null;
+while(!meteor&&Time.time<deadline){
+Check(target.CurrentHealth==hp,"no windup damage speed="+speed);
+if(speed==.5f&&!paused&&driver.动作进度>=.2f){var phase=driver.动作进度;Time.timeScale=0;yield return new WaitForSecondsRealtime(.2f);Check(Mathf.Abs(driver.动作进度-phase)<.01f&&!Object.FindObjectOfType<MeteorGroundImpact>(),"pause freezes summon");Time.timeScale=1;paused=true;}
+yield return null;meteor=Object.FindObjectOfType<MeteorGroundImpact>();
+}
+Check(meteor,"summon occurs speed="+speed);Check(driver.当前动作==motion&&driver.动作进度>=.38f&&driver.动作进度<.58f,"summon at actual 38 percent speed="+speed);float summon=Time.time;
+var root=meteor.transform.root;Check(!root.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="Effect_13_Explosion"||t.name=="Effect_13_Explosion_2"),"removed explosion layers stay removed");
+while(target.CurrentHealth==hp&&Time.time<deadline)yield return null;
+Check(target.CurrentHealth<hp&&Time.time-summon>=definition.首次造成伤害时间-.08f,"damage delay starts after summon speed="+speed);
+yield return new WaitForSecondsRealtime(1.2f);Check(meteor.落地次数>=3&&Object.FindObjectsOfType<ExtremeVfxAdapter>().Any(x=>x.name=="CombatVfx_meteor_ground"),"fireballs and lava remain speed="+speed);
+while(driver.动作播放中&&Time.time<deadline)yield return null;yield return null;Check(!driver.施法占用中,"action released after recovery speed="+speed);
+}
+yield return ClearEffects();driver.playbackScale=1;Equip();targeting.Lock(target,true);Check(caster.TryCast(0),"interruption cast accepted");while(driver.动作进度<.15f)yield return null;driver.StopAction();yield return null;yield return null;
+Check(!Object.FindObjectOfType<MeteorGroundImpact>()&&!driver.施法占用中,"interrupted before 38 cancels pending summon");
+Equip();Check(caster.TryCast(0),"disable cast accepted");caster.enabled=false;yield return null;Check(!Object.FindObjectOfType<MeteorGroundImpact>()&&!driver.施法占用中,"disable cancels and releases");caster.enabled=true;driver.StopAction();yield return null;
+Equip();targeting.ClearLock();Check(caster.手动施放(0,center),"manual cast accepted");float manualDeadline=Time.time+5;while(!Object.FindObjectOfType<MeteorGroundImpact>()&&Time.time<manualDeadline)yield return null;var manualMeteor=Object.FindObjectOfType<MeteorGroundImpact>();Check(manualMeteor&&driver.动作进度>=.38f&&Vector3.Distance(manualMeteor.transform.root.position,center)<.02f,"manual point waits for same node");
+report.AppendLine("FENTIAN_TIMING_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/fentian-timing-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

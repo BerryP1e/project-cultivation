@@ -1,7 +1,0 @@
-var actor=Object.FindObjectOfType<玩家外观>();
-var sect=AppearanceDatabase.取().取("app_player");
-actor.获得(sect);
-var data=new SaveData();SaveSystem.从角色采集(data);
-if(!data.已获得外观.Contains(sect.id)||data.外观id!=sect.id)throw new System.Exception("Real capture omitted appearance");
-var panel=Object.FindObjectOfType<CharacterPanelUI>();panel.SetOpen(true,true);panel.ShowTab(CharacterTab.外观);
-return "appearance="+actor.当前外观.id+" owned="+data.已获得外观.Count+" page="+panel.tabs[7].page.GetComponent<UIInkAppearancePage>().Selected.id;

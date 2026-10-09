@@ -1,33 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
 
-/// <summary>
-/// 被动神通【雷云】的运行时表现。
-///
-/// ## 策划说明（2026-09-28）
-/// ```
-/// 装备该被动神通后**持续消耗灵力**
-/// 在角色身边生成一朵雷云（特效 lightning-cloud）
-/// 当角色**锁定目标**时，雷云每隔一段时间召唤闪电
-///   · ⚠️ 那道闪电的特效**暂时空置待补**（`闪电特效路径 = ""`）：
-///     一端是**锁定目标**、一端是**雷云**。
-///     空置时**照样出手、照样掉血，只是看不到落雷**。
-///   · 然后在敌人那里生成**受击特效** lightning-arc-flash
-///   · 受击特效的大小取决于**敌人尺寸**
-///   · 敌人受到【特殊 + 被动神通】伤害
-/// ```
-///
-/// ## 怎么被装上
-/// 在 `PlayerAbilityLoader.被动神通表` 里登记
-/// `{神通id = ability_leiyun, 组件类名 = [LeiYun]}`
-/// （5 个场景都要加），启用被动就自动 AddComponent、停用就 enabled = false。
-///
-/// ## 和千劫雷狱的区别
-/// | | 千劫雷狱 | 雷云 |
-/// |---|---|---|
-/// | 触发 | 敌人在**范围**内自动挨打 | **锁定了目标**才劈 |
-/// | 表现 | 脚下常驻雷罚 + 一圈黑环 | 头顶一朵云 + 一道线连到目标 |
-/// | 伤害 | 特殊 + 被动神通 | 特殊 + 被动神通（同一套加成） |
-/// </summary>
+/// <summary>雷云跟随玩家，锁定目标时用细淡紫 lightning-ray 连到目标中部；命中才播放 lightning-arc-flash。由 PlayerAbilityLoader 内置注册。共享依赖位于 Art/VFX/Shared。</summary>
 [DisallowMultipleComponent]
 public class LeiYun : MonoBehaviour
 {
@@ -66,7 +39,7 @@ public class LeiYun : MonoBehaviour
     [Header("雷云")]
     [Tooltip("雷云特效。路径相对 Assets/resources、不带扩展名")]
     public string 雷云特效路径 =
-        "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-cloud";
+        "CombatVFX/CombatMagic/lightning-fx/lightning-cloud";
 
     [Tooltip("雷云相对角色根节点的偏移（米）。**往上挪到头顶**")]
     public Vector3 雷云偏移 = new Vector3(0f, 3.5f, 0f);
@@ -101,13 +74,11 @@ public class LeiYun : MonoBehaviour
     public float 朝向插值速度 = 240f;
 
     [Header("闪电（连到目标的线）")]
-    [Tooltip("★ 暂时空置（用户 2026-09-28 决定）：自制的「雷链」表现不合格已删除。\n" +
-             "留空 = 雷云照样出手、照样掉血，只是不放那道闪电，不会报错。\n" +
-             "以后找到合适的资源填这里；要求与踩过的坑见 docs/guides/闪电链特效.md")]
-    public string 闪电特效路径 = "";
+    [Tooltip("原生 lightning-ray；保留 Stretch 粒子生命周期，沿云到目标的三维方向拟合长度。") ]
+    public string 闪电特效路径 = LightningRayVfx.Path;
 
     [Tooltip("闪电的粗细")]
-    public float 闪电粗细 = 0.75f;
+    public float 闪电粗细 = 0.22f;
 
     [Tooltip("闪电基准长度（对应 prefab 的 shape scale）。拉伸系数 = 距离 ÷ 这个值")]
     public float 闪电基准长度 = 1f;
@@ -127,7 +98,7 @@ public class LeiYun : MonoBehaviour
     [Header("受击特效（贴在被劈的敌人身上）")]
     [Tooltip("受击特效")]
     public string 受击特效路径 =
-        "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-arc-flash";
+        "CombatVFX/CombatMagic/lightning-fx/lightning-arc-flash";
 
     [Tooltip("受击特效的生成旋转（欧拉角）")]
     public Vector3 受击旋转欧拉 = Vector3.zero;
@@ -398,12 +369,13 @@ public class LeiYun : MonoBehaviour
 
         // 受击特效贴在敌人身上，大小随敌人尺寸
         float 缩放 = 按体型算缩放(敌高);
-        生成受击特效(敌位, 缩放);
+        // Hit flash is emitted at the same damage event, only when the strike actually hits.
 
         var 规则 = new AttackSpec(伤害属性, AttackKind.被动神通, false, 技能倍率);
         var 结算目标 = new NpcTarget(目标);
         var 结果 = 结算目标.受到攻击(战斗属性, 规则, this);
         累计伤害 += 结果.伤害;
+        if (结果.命中) 生成受击特效(敌位, 缩放);
 
         if (打印日志)
             Debug.Log("[雷云] 落雷「" + 目标.DisplayName + "」 " + 结果
@@ -414,6 +386,12 @@ public class LeiYun : MonoBehaviour
     /// <summary>一道从雷云拉到目标中部的闪电（复用「拉伸链」工具）</summary>
     void 生成闪电(Vector3 起点, Vector3 终点)
     {
+        if (闪电特效路径 == LightningRayVfx.Path)
+        {
+            LightningRayVfx.Spawn(起点, 终点, 1f, 闪电粗细, "雷云闪电_" + name,
+                beamOnly: true, tint: new Color(.72f, .48f, 1f));
+            return;
+        }
         特效摆放.生成拉伸链(闪电特效路径, 起点, 终点,
                             闪电粗细, 闪电基准长度, 闪电最小长度,
                             闪电存活, 闪电兜底拉伸轴, 闪电长度补偿, "雷云闪电_" + name);
@@ -423,7 +401,7 @@ public class LeiYun : MonoBehaviour
     void 生成受击特效(Vector3 敌人脚下, float 缩放)
     {
         特效摆放.生成(受击特效路径, 敌人脚下 + Vector3.up * 受击抬高, 受击旋转欧拉,
-                      缩放, 对齐到锚点: true, 存活秒: 受击存活, 名: "雷云受击");
+                      缩放, 对齐到锚点: true, 存活秒: Mathf.Max(受击存活, 特效摆放.量特效总时长(Resources.Load<GameObject>(受击特效路径),受击存活)*1.05f), 名: "雷云受击");
     }
 
     /// <summary>受击特效缩放 = 敌人模型高度 ÷ 基准高度，夹进上下限</summary>

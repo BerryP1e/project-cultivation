@@ -11,7 +11,7 @@
 <h2>实机动效录像</h2><p class="note">展示开关、牵引、水痕、墨晕、八页切换及禁用路径。录像播放约为操作速度的一半。</p><video id="video" controls preload="metadata"></video>
 <h2>单件透明素材</h2><button onclick="document.body.className=''">透明棋盘</button><button onclick="document.body.className='paper'">纸白底</button><button onclick="document.body.className='dark'">深色底</button>
 <p class="note">八颗墨点与五张共用动效图已进工程。异形纸底保留为可选素材，父页面不使用它。每张图均可单独下载。</p><div id="assets"></div>
-<p><a href="../../../../UIResources/InkUI/Authoring/dynamic-assets-v1/manifest.json">尺寸与透明通道清单</a> · <a href="../../../../UIResources/InkUI/Authoring/dynamic-assets-v1/generation-map.json">完整生成提示词</a> · <a href="../../../../../../docs/ai/archive/UI重制/dynamic-assets-v1/施工记录.md">施工记录与剩余项目</a></p>
+<p><a href="../../../../Art/UI/Source/InkUI/Authoring/dynamic-assets-v1/manifest.json">尺寸与透明通道清单</a> · <a href="../../../../Art/UI/Source/InkUI/Authoring/dynamic-assets-v1/generation-map.json">完整生成提示词</a> · <a href="../../../../../../docs/ai/archive/UI重制/dynamic-assets-v1/施工记录.md">施工记录与剩余项目</a></p>
 <script>
 const pages=['背包','境界','神通','法宝','灵阵','战阵','坐骑','外观'];
 const page=document.querySelector('#page'),size=document.querySelector('#size');
@@ -19,5 +19,5 @@ pages.forEach(p=>page.add(new Option(p,p)));
 function show(){const root='../../../../../screenshots/';before.src=root+`UI_墨点导航_before_${page.value}_${size.value}.png`;after.src=root+`UI_墨点导航_after_${page.value}_${size.value}.png`;document.getElementById('parent').src=root+`UI_父导航_无底板_${size.value}.png`;video.src=root+`InkUI-navigation-dynamic-${size.value}-half-speed.mp4`}
 page.onchange=size.onchange=show;show();
 const assets=[...Array.from({length:8},(_,i)=>[`nav-ink-blot-${i+1}`,320,320]),['fx-water-streak',512,128],['fx-ink-blot',320,320],['fx-dry-brush-mask',512,512],['fx-brush-tip',256,128],['fx-corner-stroke',256,256],['panel-ink-blob',2048,1280]];
-assets.forEach(([id,w,h])=>{const card=document.createElement('div');card.className='asset';const source=`../../../../UIResources/InkUI/Authoring/dynamic-assets-v1/export/${id}.png`;card.innerHTML=`<div class="preview"><img src="${source}"></div><p>${id}<br>${w} × ${h} · RGBA</p><a href="${source}" download>下载单件 PNG</a>`;document.querySelector('#assets').append(card)});
+assets.forEach(([id,w,h])=>{const card=document.createElement('div');card.className='asset';const source=`../../../../Art/UI/Source/InkUI/Authoring/dynamic-assets-v1/export/${id}.png`;card.innerHTML=`<div class="preview"><img src="${source}"></div><p>${id}<br>${w} × ${h} · RGBA</p><a href="${source}" download>下载单件 PNG</a>`;document.querySelector('#assets').append(card)});
 </script></html>

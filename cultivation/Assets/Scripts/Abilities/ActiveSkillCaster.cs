@@ -373,14 +373,6 @@ public class ActiveSkillCaster : MonoBehaviour
             return;
         }
 
-        // ★ 向前冰柱（寒墟）：以**鼠标落点**为方向推进，自己管"铺冰柱 + 三段伤害"，
-        //   和"原地放一蓬范围伤害"是两套节奏，所以也单独分流。
-        if (神通.结算方式 == ActiveSkillKind.向前冰柱)
-        {
-            施放冰柱(神通,落点);
-            return;
-        }
-
         // 以锁定的敌人为中心（不需要锁定的技能则以自己为中心）。取施放瞬间的位置。
         Vector3 中心 = 落点 ?? ((神通.需要锁定目标 && 锁定 != null) ? 锁定.transform.position : transform.position);
 
@@ -455,36 +447,6 @@ public class ActiveSkillCaster : MonoBehaviour
                       + " 范围=" + 神通.范围 + " 倍率=" + 神通.伤害倍率
                       + " 属性=" + 神通.伤害属性
                       + " → 命中 " + runner.结算次数 + " 次，合计 " + runner.累计伤害.ToString("0.##"));
-    }
-
-    /// <summary>
-    /// 向前冰柱型神通（**寒墟**）的执行：以**鼠标落点**为方向，向前推出一道连续的冰柱，
-    /// 路径上的敌人吃三段伤害（冰柱 → 脚下 frost-ring → 脚下 frost-spike）。
-    ///
-    /// 表里那列「特效资源路径」= **第一段的冰柱**（`frost-wave`）；
-    /// 二段 / 三段走新增的「命中特效路径」/「三段特效路径」列（`frost-ring` / `frost-spike`）。
-    /// 「施法动作」列对这一档**可以留空**（留空 = 不播动作，不影响出招）。
-    /// </summary>
-    void 施放冰柱(ActiveDivineAbility 神通,Vector3? 落点=null)
-    {
-        // 动作由 runner 按**普攻动作**播（和追踪弹同一套），所以要把它传进去
-        if (动画 == null) 动画 = GetComponent<PlayerAnimationController>();
-        if (动画 == null) 动画 = GetComponentInChildren<PlayerAnimationController>();
-
-        var 宿主 = new GameObject("IcePillar_" + 神通.神通id);
-        var runner = 宿主.AddComponent<IcePillarSkillRunner>();
-        if(落点.HasValue)runner.调试方向=落点.Value-transform.position;
-        runner.初始化(神通, 战斗属性, transform, 敌人层, Camera.main, 动画);
-
-        if (打印施法日志)
-            Debug.Log("[ActiveSkillCaster] 施放向前冰柱「" + 神通.神通名称 + "」"
-                + " 长度=" + 神通.范围 + "m 时长=" + 神通.持续时长 + "s"
-                + " 倍率=" + 神通.伤害倍率 + " 属性=" + 神通.伤害属性
-                + " 间隔=" + 神通.伤害间隔 + "s"
-                + "（动作 40% 节点放冰柱：" + (动画 != null ? "有动画组件" : "★没有动画组件，会立刻放") + "）"
-                + "\n  冰柱=" + 神通.特效资源路径
-                + "\n  二段=" + 神通.命中特效路径 + (神通.命中特效贴地 ? "（贴地）" : "")
-                + "\n  三段=" + 神通.三段特效路径, this);
     }
 
     /// <summary>

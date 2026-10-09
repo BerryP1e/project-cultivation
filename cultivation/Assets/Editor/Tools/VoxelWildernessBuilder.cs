@@ -23,7 +23,7 @@ public static class VoxelWildernessBuilder
         var manifest=AssetDatabase.LoadAssetAtPath<VoxelMapPilotSettings>(VoxelMapPilotBuilder.SettingsPath);
         if(!root || !manifest || root.scene.path!=manifest.场景路径 || root.scene.isDirty)throw new InvalidOperationException("Open the unchanged formal wilderness scene first.");
         var existing=manifest.替换项.Where(e=>e.数据.烘焙版本>=BakeVersion || e.预先加载).GroupBy(e=>Key(e.源网格,e.源材质)).ToDictionary(g=>g.Key,g=>g.First().数据);
-        foreach(string guid in AssetDatabase.FindAssets("t:VoxelVolumeAsset",new[]{"Assets/Environment/Voxel/Bakes"}))
+        foreach(string guid in AssetDatabase.FindAssets("t:VoxelVolumeAsset",new[]{"Assets/Art/Environment/World/Voxel/Bakes"}))
         {
             var baked=AssetDatabase.LoadAssetAtPath<VoxelVolumeAsset>(AssetDatabase.GUIDToAssetPath(guid));
             if(baked && baked.烘焙版本>=BakeVersion && baked.原网格 && baked.实体数量>0 && baked.实体.Length<=160000)existing[Key(baked.原网格,baked.原材质)]=baked;

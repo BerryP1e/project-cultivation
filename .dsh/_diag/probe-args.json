@@ -1,5 +1,0 @@
-{
-  "script": "var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();\nvar roots = scene.GetRootGameObjects();\nvar names = new System.Collections.Generic.List<string>();\nforeach (var r in roots) names.Add(r.name);\nreturn $\"scene={scene.name} roots={roots.Length} timeScale={Time.timeScale} isPlaying={Application.isPlaying}\\nroots: {string.Join(\", \", names.ToArray())}\";",
-  "summary": "只读探针：当前场景名、根对象数、timeScale、根对象名列表",
-  "timeoutSeconds": 60
-}

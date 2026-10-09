@@ -1,7 +1,7 @@
 function Get-InkUIPaths([string]$ToolDirectory) {
     $toolkit = $PSScriptRoot
     $project = [IO.Path]::GetFullPath((Join-Path $toolkit '../../../..'))
-    $authoring = Join-Path $project 'Assets/UIResources/InkUI/Authoring'
+    $authoring = Join-Path $project 'Assets/Art/UI/Source/InkUI/Authoring'
     $relative = $ToolDirectory.Substring($toolkit.Length).TrimStart('\','/')
     [pscustomobject]@{
         Repository = Split-Path -Parent $project

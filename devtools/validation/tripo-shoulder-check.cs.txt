@@ -1,0 +1,12 @@
+var sb=new System.Text.StringBuilder();int count=0;
+foreach(var guid in UnityEditor.AssetDatabase.FindAssets("t:GameObject",new[]{"Assets/Art/Characters/Tripo"})){
+var path=UnityEditor.AssetDatabase.GUIDToAssetPath(guid);if(!path.EndsWith(".fbx",System.StringComparison.OrdinalIgnoreCase))continue;
+var source=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);if(!source.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="L_Upperarm"))continue;
+try{using(var original=TripoShoulderRepair.创建副本(source,0,0,0))using(var fixedRig=TripoShoulderRepair.创建副本(source,.25f,.25f,0)){
+var a=original.root.GetComponentsInChildren<SkinnedMeshRenderer>(true);var b=fixedRig.root.GetComponentsInChildren<SkinnedMeshRenderer>(true);float error=0;
+for(int i=0;i<a.Length;i++){var ma=new Mesh();var mb=new Mesh();try{a[i].BakeMesh(ma);b[i].BakeMesh(mb);var av=ma.vertices;var bv=mb.vertices;if(av.Length!=bv.Length)throw new System.Exception("Vertex count changed");for(int v=0;v<av.Length;v++){float d=(av[v]-bv[v]).magnitude;if(float.IsNaN(d)||float.IsInfinity(d))throw new System.Exception("Nonfinite skin");error=Mathf.Max(error,d);}}finally{Object.DestroyImmediate(ma);Object.DestroyImmediate(mb);}}
+if(error>.0001f||fixedRig.elbowDrift>.0001f||fixedRig.handDrift>.0001f)throw new System.Exception("Rest/limb drift too large "+error);
+sb.AppendLine(source.name+" shoulder="+fixedRig.shoulderBefore.ToString("F4")+" -> "+fixedRig.shoulderAfter.ToString("F4")+" restError="+error+" elbow="+fixedRig.elbowDrift+" hand="+fixedRig.handDrift+" avatar="+fixedRig.avatar.isValid);count++;
+}}catch(System.Exception e){sb.AppendLine("FAIL "+source.name+": "+e.Message);}
+}
+sb.AppendLine("verified="+count);return sb.ToString();

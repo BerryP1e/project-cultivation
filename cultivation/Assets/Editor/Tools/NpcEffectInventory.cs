@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// **特效资源清单工具** —— 导入或整理特效资产包之后跑它，把整个 `Assets/resources/特效` 一把生成一张可读的表。
+/// **特效资源清单工具** —— 导入或整理特效资产包之后跑它，把整个 `Assets/resources/CombatVFX` 一把生成一张可读的表。
 ///
 /// 为什么需要：特效包里动辄几百个 prefab、命名还是英文缩写，光看目录根本不知道哪个能当子弹、
 /// 哪个是命中爆炸、哪个是循环拖尾。这个工具把关键信息抠出来（路径 / 粒子数 / 尺寸 / 特征），
@@ -20,17 +20,17 @@ using UnityEngine;
 public static class NpcEffectInventory
 {
     /// <summary>特效总根（分类目录都在它下面）</summary>
-    const string 特效根 = "Assets/resources/特效";
+    const string 特效根 = "Assets/resources/CombatVFX";
 
     /// <summary>分类的展示顺序；不在这张表里的目录按名字排在后面</summary>
-    static readonly string[] 已知分类 = { "飞弹", "法术", "战斗法术", "传送", "命中" };
+    static readonly string[] 已知分类 = { "Projectiles", "LegacySpells", "CombatMagic", "ExtremeFX", "Teleport", "Hits" };
 
     [MenuItem("修仙/资源整理/生成特效资源清单（全部）")]
     public static void 生成全部菜单() => 生成全部();
 
     // ============================================================ 主流程
 
-    /// <summary>扫描 `Assets/resources/特效` 下所有分类目录，写成一份合并清单。</summary>
+    /// <summary>扫描 `Assets/resources/CombatVFX` 下所有分类目录，写成一份合并清单。</summary>
     public static void 生成全部()
     {
         if (!Directory.Exists(特效根))
@@ -67,7 +67,7 @@ public static class NpcEffectInventory
         var 文本 = new StringBuilder();
         文本.AppendLine("# 特效资源清单");
         文本.AppendLine();
-        文本.AppendLine("> **管什么**：`Assets/resources/特效/` 下**全部特效 prefab** 的路径、规模与特征，按分类分节，供挑特效 / 填路径用。");
+        文本.AppendLine("> **管什么**：`Assets/resources/CombatVFX/` 下**全部特效 prefab** 的路径、规模与特征，按分类分节，供挑特效 / 填路径用。");
         文本.AppendLine("> **不管什么**：目录约定、怎么加载、导入新包怎么整理 → [特效系统](特效系统.md)；某个特效怎么配到怪身上 → [飞弹与子弹](飞弹与子弹.md)。");
         文本.AppendLine("> **本文件怎么查**：先看「汇总」定位分类，再进对应小节按名字搜；每节开头有「统一前缀」，表里 `路径` = 前缀 + 表中值。");
         文本.AppendLine("> **来源**：由 `NpcEffectInventory` **自动生成**（菜单 **修仙 / 资源整理 / 生成特效资源清单（全部）**）。**改完资源重跑菜单，不要手改本文件。**");
@@ -86,9 +86,9 @@ public static class NpcEffectInventory
         文本.AppendLine(">   标记：`循环` = 有粒子勾了 loop，`动` = 有粒子带速度或挂了脚本（脚本名最多列 3 个，更多就写 `多脚本`）");
         文本.AppendLine(">");
         文本.AppendLine("> ⚠️ **`特征` 里的建议档位是按「粒子数 / 循环 / 会不会自己移动」猜的**：");
-        文本.AppendLine("> 对 `特效/飞弹` 这种「一个主题 = 一份单体飞弹」的包准；");
-        文本.AppendLine("> 对 `特效/法术`（一套法术 = 主 prefab + 一堆 Parts/Base 子件）**不准**");
-        文本.AppendLine("> （实测 312 个里 171 个被误判成「飞行道具」）。看那个包时只看路径和外径。");
+        文本.AppendLine("> 对 `CombatVFX/Projectiles` 这种「一个主题 = 一份单体飞弹」的包准；");
+        文本.AppendLine("> 对 `CombatVFX/LegacySpells`（一套法术 = 主 prefab + 一堆 Parts/Base 子件）**不准**");
+        文本.AppendLine("> 建议档位只作提示；旧包的 Parts/Base 子件应结合实际播放判断。");
         文本.AppendLine(">");
         文本.AppendLine("> 目录约定、怎么加载、怎么导入新包 → [特效系统](特效系统.md)。");
         文本.AppendLine();

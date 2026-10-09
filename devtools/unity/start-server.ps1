@@ -1,0 +1,47 @@
+﻿# Start the local Unity MCP HTTP endpoint; requires an open Tuanjie editor.
+# Usage: powershell -NoProfile -ExecutionPolicy Bypass -File devtools/unity/start-server.ps1 -Background
+
+param(
+    [int]$Port = 8765,
+    [string]$ProjectPath = (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'cultivation'),
+    [switch]$Background
+)
+
+$ErrorActionPreference = 'Stop'
+
+# Cowork CLI 的位置随机器而变（家里在 D:，这台在工作电脑的用户目录下）。
+$Cowork = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\Tuanjie Cowork\cli\bin\win32-x64'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Tuanjie Cowork\cli'),
+    'D:\Tuanjie Cowork\cli\bin\win32-x64',
+    'C:\Program Files\Tuanjie Cowork\cli\bin\win32-x64'
+) | Where-Object { Test-Path (Join-Path $_ 'codely.exe') } | Select-Object -First 1
+if (-not $Cowork) { throw "找不到 Tuanjie Cowork CLI（找过 LOCALAPPDATA\Programs\Tuanjie Cowork 与 D:\Tuanjie Cowork）" }
+$CodelyExe = Join-Path $Cowork 'codely.exe'
+
+if (-not (Test-Path $CodelyExe)) { throw "找不到 codely.exe: $CodelyExe" }
+if (-not (Test-Path (Join-Path $ProjectPath 'Assets'))) { throw "不像 Unity 工程（没有 Assets/）: $ProjectPath" }
+
+# 端口文件是服务器发现编辑器端口的唯一依据，先确认它存在
+$PortFile = Join-Path $ProjectPath 'Temp\.com-unity-codely.json'
+if (-not (Test-Path $PortFile)) {
+    Write-Warning "没有 $PortFile —— 编辑器可能没开，或 codely 桥没启动。服务器会一直重试连接。"
+} else {
+    $j = Get-Content $PortFile -Raw | ConvertFrom-Json
+    Write-Output ("编辑器桥端口: {0}  ({1})" -f $j.unity_port, $PortFile)
+}
+
+$cliArgs = @('serve', 'unity-mcp', '--http', '--http-port', "$Port", '--unity-project-path', $ProjectPath)
+
+Write-Output ("启动: codely {0}" -f ($cliArgs -join ' '))
+Write-Output ("MCP 端点: http://127.0.0.1:{0}/mcp" -f $Port)
+Write-Output ''
+
+if ($Background) {
+    Start-Process -FilePath $CodelyExe -ArgumentList @('serve', 'unity-mcp', '--http', '--http-port', "$Port", '--unity-project-path', ('"' + $ProjectPath + '"')) -WindowStyle Hidden
+    Write-Output '已在后台启动。用 node devtools/unity/mcp-call.mjs list 确认工具列表。'
+    Write-Output '停止: Get-Process codely | Stop-Process'
+} else {
+    Write-Output '前台运行，Ctrl+C 停止。'
+    & $CodelyExe @cliArgs
+}

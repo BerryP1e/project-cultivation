@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **飞弹妖魔通用基类** —— "会从某个部位吐飞弹"的怪共用它（白鹿精那一套的通用版）。
@@ -298,7 +298,7 @@ public class 飞弹妖魔Ai : NpcAiDemon
     }
 
     // ---- 常用前缀，子类直接拼 ----
-    protected const string 飞弹库 = "特效/飞弹/ProjectilesFX/VFX_Prefabs/";
+    protected const string 飞弹库 = "CombatVFX/Projectiles/ProjectilesFX/VFX_Prefabs/";
     protected const string 弹道子目录 = "Projectiles_Particles/VFX_";
     protected const string 命中的子目录 = "Impacts/VFX_";
     protected const string 闪光子目录 = "Flashes/VFX_";

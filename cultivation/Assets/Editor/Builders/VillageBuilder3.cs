@@ -19,9 +19,9 @@ using UnityEngine;
 /// </summary>
 public static class VillageBuilder3
 {
-    const string Env1 = "Assets/resources/Environment1";
-    const string Env2 = "Assets/resources/Environment2";
-    const string EnvNew = "Assets/Environment";
+    const string Env1 = "Assets/Art/Environment/Imported/Environment1";
+    const string Env2 = "Assets/Art/Environment/Imported/Environment2";
+    const string EnvNew = "Assets/Art/Environment/World";
     const string 根节点名 = "Village";
     const float 地面Y = 0f;
     const int 种子 = 20260922;
@@ -383,7 +383,7 @@ public static class VillageBuilder3
         if (模型缓存.TryGetValue(关键词, out var c)) return c;
         if (全部模型.Count == 0)
         {
-            foreach (var g in AssetDatabase.FindAssets("t:GameObject", new[] { Env1, Env2, EnvNew, "Assets/resources/Environment3" }))
+            foreach (var g in AssetDatabase.FindAssets("t:GameObject", new[] { Env1, Env2, EnvNew, "Assets/Art/Environment/Imported/Environment3" }))
             {
                 var p = AssetDatabase.GUIDToAssetPath(g);
                 if (p.EndsWith(".prefab") || p.EndsWith(".FBX") || p.EndsWith(".fbx")) 全部模型.Add(p);

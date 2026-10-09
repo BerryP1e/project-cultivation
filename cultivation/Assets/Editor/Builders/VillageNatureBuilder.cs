@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -170,12 +170,12 @@ public static class VillageNatureBuilder
     /// <summary>院门位置（原来那个 `S1_chengmen01_tf` 就在这儿，已被本工具删掉换成自己生成的）</summary>
     static readonly Vector2 院门 = new Vector2(-1.7f, 33f);
 
-    const string Env2 = "Assets/resources/Environment2";
-    const string Env1 = "Assets/resources/Environment1";
-    const string Env3 = "Assets/resources/Environment3";
-    const string 树目录 = "Assets/Environment/Tree/";
-    const string 地表贴图 = "Assets/Environment/Models/Materials/Scene/Textures/Dibiao/";
-    const string 草贴图目录 = "Assets/Environment/Models/Materials/Scene/Textures/Grass/";
+    const string Env2 = "Assets/Art/Environment/Imported/Environment2";
+    const string Env1 = "Assets/Art/Environment/Imported/Environment1";
+    const string Env3 = "Assets/Art/Environment/Imported/Environment3";
+    const string 树目录 = "Assets/Art/Environment/World/Tree/";
+    const string 地表贴图 = "Assets/Art/Environment/World/Models/Materials/Scene/Textures/Dibiao/";
+    const string 草贴图目录 = "Assets/Art/Environment/World/Models/Materials/Scene/Textures/Grass/";
     const int 种子 = 20260926;
 
     // ============================================================ 菜单
@@ -495,7 +495,7 @@ public static class VillageNatureBuilder
 
     static Material 建水材质(string 名, Color 色)
     {
-        var 贴 = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Environment/Terrain/Textures/terrain_water_002.dds");
+        var 贴 = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Environment/World/Terrain/Textures/terrain_water_002.dds");
         var m = new Material(Shader.Find("Standard"));
         m.SetFloat("_Mode", 3f);
         m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
@@ -927,7 +927,7 @@ public static class VillageNatureBuilder
         return n;
     }
 
-    const string S1材质目录 = "Assets/Environment/Models/Materials/Scene/Materials/";
+    const string S1材质目录 = "Assets/Art/Environment/World/Models/Materials/Scene/Materials/";
     static Material 载材质(string 文件)
         => AssetDatabase.LoadAssetAtPath<Material>(S1材质目录 + 文件);
 

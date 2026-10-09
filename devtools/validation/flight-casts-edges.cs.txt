@@ -1,0 +1,31 @@
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Namespace==null && (c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器")))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var pc=player.GetComponent<PlayerController>();var flight=player.GetComponent<YufengFlight>();var driver=player.GetComponent<PlayerAnimationController>();var panel=Object.FindObjectOfType<UIPanelData>();var caster=player.GetComponent<ActiveSkillCaster>();var targeting=player.GetComponent<NpcTargeting>();var vitals=player.GetComponent<PlayerVitals>();
+foreach(var component in player.GetComponents<MonoBehaviour>()){var field=component.GetType().GetField("自动出手");if(field!=null&&field.FieldType==typeof(bool))field.SetValue(component,false);}
+targeting.enabled=false;targeting.ClearLock();pc.enabled=false;driver.animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var passive=UnityEditor.AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/"+flight.神通id+".asset");panel.获得被动(passive);panel.SetPassiveEnabled(passive,true);vitals.当前灵气=10000;flight.强制御风=true;yield return new WaitForSecondsRealtime(1.8f);
+var water=UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_shuilong_pao.asset");var thunder=UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_shunlei_tianshan.asset");
+panel.主动技能=new System.Collections.Generic.List<Object>{water,thunder,null,null,null,null};caster.面板数据=panel;caster.动画=driver;caster.打印施法日志=false;caster.快捷键=new KeyCode[0];
+var report=new System.Text.StringBuilder();void Check(bool ok,string name){if(!ok)throw new System.Exception("FAIL "+name);report.AppendLine("PASS "+name);File.WriteAllText("../.local/diagnostics/flight-casts-edges-report.txt",report.ToString());}
+var point=player.transform.position+Vector3.forward*7;
+Check(caster.手动施放(1,point),"manual no-lock bolt accepted");yield return null;var bolt=Object.FindObjectOfType<HomingBoltSkillRunner>();Check(bolt&&bolt.当前球&&!bolt.已放弹,"manual ball appears");var ball=bolt.当前球;
+driver.停止动作();yield return null;yield return null;Check(!bolt&&!ball&&!driver.施法占用中&&!driver.动作已定住,"interrupted windup removes ball and releases");
+yield return new WaitForSecondsRealtime(.25f);
+Check(caster.手动施放(1,point),"second manual bolt accepted");yield return null;bolt=Object.FindObjectOfType<HomingBoltSkillRunner>();ball=bolt.当前球;bolt.enabled=false;yield return null;Check(!ball&&!driver.施法占用中,"disabled runner removes ball/releases");Object.Destroy(bolt.gameObject);driver.停止动作();yield return new WaitForSecondsRealtime(.25f);
+vitals.当前灵气=10000;Check(caster.手动施放(1,point),"third manual bolt accepted");yield return null;bolt=Object.FindObjectOfType<HomingBoltSkillRunner>();float deadline=Time.time+6;
+while(bolt&&!bolt.已放弹&&Time.time<deadline)yield return null;
+Check(bolt&&bolt.已放弹&&driver.动作进度>=.58f,"manual bolt launches58");
+while(bolt&&Time.time<deadline)yield return null;
+Check(!bolt&&!driver.施法占用中&&!driver.动作播放中,"manual projectile and recovery clean");
+var owner=new GameObject("CastOwnerQA");Check(driver.占用施法(owner),"owner acquired");float mana=vitals.当前灵气;Check(!caster.手动施放(0,point)&&Mathf.Approximately(mana,vitals.当前灵气),"blocked spell costs no mana");driver.释放施法(owner);Object.Destroy(owner);
+var waterHost=new GameObject("WaterCancelQA");var wr=waterHost.AddComponent<WaterDragonSkillRunner>();wr.初始化(caster,water,null,point);yield return null;driver.停止动作();yield return null;yield return null;Check(!wr&&!driver.施法占用中,"water before43 interruption clean");
+yield return new WaitForSecondsRealtime(.25f);waterHost=new GameObject("WaterDisabledCasterQA");wr=waterHost.AddComponent<WaterDragonSkillRunner>();wr.初始化(caster,water,null,point);deadline=Time.time+3;while(wr&&!wr.已释放&&Time.time<deadline)yield return null;
+Check(wr&&wr.当前特效,"water starts before disabling caster");foreach(var gate in player.GetComponents<MonoBehaviour>().Where(c=>c.GetType().Name=="主动神通开关"))gate.enabled=false;caster.enabled=false;yield return new WaitForSecondsRealtime(.1f);Check(wr&&wr.正在消散&&!driver.施法占用中&&!driver.动作已定住,"disabled caster soft fades and releases live="+(bool)wr+" fade="+(wr&&wr.正在消散)+" owner="+driver.施法占用中+" held="+driver.动作已定住+" caster="+caster.enabled);yield return new WaitForSecondsRealtime(1.8f);Check(!wr,"water cancel completes fade/tail");caster.enabled=true;
+Check(!Object.FindObjectsOfType<HomingBoltSkillRunner>().Any()&&!Object.FindObjectsOfType<WaterDragonSkillRunner>().Any(),"no stray runners");
+flight.强制御风=false;flight.强制落地();yield return new WaitForSecondsRealtime(1.3f);report.AppendLine("FLIGHT_CAST_EDGES_PASS");File.WriteAllText("../.local/diagnostics/flight-casts-edges-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

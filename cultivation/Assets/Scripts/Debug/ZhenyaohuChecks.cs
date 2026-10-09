@@ -115,7 +115,8 @@ public class ZhenyaohuChecks : MonoBehaviour
             targeter.ClearLock(); if(originalLocked!=null) targeter.LockNpc(originalLocked);
             if(cultivation!=null) JsonUtility.FromJsonOverwrite(cultivationJson,cultivation);
             foreach(var go in temps) if(go!=null) Destroy(go);
-            File.WriteAllText("../.dsh/_diag/gourd-checks.json",JsonUtility.ToJson(report,true));
+            Directory.CreateDirectory("../.local/diagnostics");
+            File.WriteAllText("../.local/diagnostics/gourd-checks.json",JsonUtility.ToJson(report,true));
             Debug.Log("[镇妖葫自检] 完成："+report.passed.Count+" 通过，"+report.failed.Count+" 失败；未写入用户存档。"); Destroy(gameObject);
         }
     }

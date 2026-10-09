@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 玄蜂（<c>NpcAiXuanFeng</c>）—— **从尾巴射箭**的怪。
 ///
-/// 弹体用「Object135」（烘成静态网格 → `特效/飞弹/专属/箭矢_Object135`），长轴已对准 **+Z**，
+/// 弹体用「Object135」（烘成静态网格 → `CombatVFX/Projectiles/专属/箭矢_Object135`），长轴已对准 **+Z**，
 /// 所以 `NpcProjectile` 让它朝飞行方向时**箭尖正对目标**。
 /// 用户口述：a1 动画 **46.5%** 从**尾部（模型末端）**发射（**物理**）；**没有 a2**。
 ///
@@ -30,8 +30,8 @@ public class NpcAiXuanFeng : 飞弹妖魔Ai
         拦截层 = 0;
 
         // ---- 弹体：箭（Object135 烘出来的静态网格，箭尖已朝 +Z）----
-        // 命中**留空** → 物理攻击自动兜基础命中特效（特效/命中/Hit_Physical）
-        弹道路径 = "特效/飞弹/专属/箭矢_Object135";
+        // 命中**留空** → 物理攻击自动兜基础命中特效（CombatVFX/Hits/Hit_Physical）
+        弹道路径 = "CombatVFX/Projectiles/专属/箭矢_Object135";
         命中路径 = "";
         闪光路径 = "";
 

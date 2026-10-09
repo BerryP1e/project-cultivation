@@ -49,7 +49,7 @@ public static class WindowsReleaseBuilder
             // Shader.Find-only effects must survive player shader stripping.
             var graphics = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset")[0]);
             var shaders = graphics.FindProperty("m_AlwaysIncludedShaders");
-            foreach (var guid in AssetDatabase.FindAssets("t:Shader", new[] { "Assets/Shaders", "Assets/Environment" }))
+            foreach (var guid in AssetDatabase.FindAssets("t:Shader", new[] { "Assets/Shaders", "Assets/Art/Environment/World" }))
             {
                 var shader = AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(guid));
                 bool present = Enumerable.Range(0, shaders.arraySize)

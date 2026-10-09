@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -42,7 +42,7 @@ using UnityEngine;
 public static class 师傅御风重定向
 {
     // ---- 师傅 ----
-    const string 师傅Fbx = "Assets/TripoModels/太虚宗掌门（师傅）/太虚宗掌门（师傅）.fbx";
+    const string 师傅Fbx = "Assets/Art/Characters/Tripo/太虚宗掌门（师傅）/太虚宗掌门（师傅）.fbx";
     const string 师傅Prefab = "Assets/resources/NPC/Human/太虚宗掌门/太虚宗掌门.prefab";
     const string 师傅输出前缀 = "太虚宗掌门_御风_";
 

@@ -62,19 +62,9 @@ cultivation/cultivation/screenshots/
 # 纯源文件请用网盘 / Git LFS 单独备份。
 somenews/
 
-# 本地快照（.dsh/_snapshot）是"备份的备份"，提交进仓库会让仓库自己翻倍
-.dsh/_snapshot/
-# 本地工具脚本（走代理推 GitHub 用的 node 脚本），不属于项目
-.dsh/_tools/
-.dsh/_scene_backup/
-# harness 的心跳文件，每几十秒就变一次，会把工作区一直弄脏
-.dsh/alive.txt
-# 历史快照类备份目录（例：.dsh/_npc表备份/，由编辑器工具自动备份，见 docs/ai/工程与工具链.md）
-# —— 当前数据的唯一真相源永远是 cultivation/Assets/Data/Tables/*.csv
-.dsh/_*备份*/
-.dsh/_backup*/
-# 旧工具在 Unity 工程根创建的同类快照备份。
-cultivation/.dsh/_*备份*/
+# Retired DSH work folders; active tools live in devtools/.
+.dsh/
+cultivation/.dsh/
 # 编辑器 / IDE 本机配置（Unity 的 VS Editor 包生成，各人机器不同）
 cultivation/.vsconfig
 
@@ -116,13 +106,8 @@ docs/**/_bak/
 # 跑验证时落在 Unity 工程根目录的截图（正式素材不放这儿）
 cultivation/*.png
 
-# ---------------------------------------------------------------- 参考素材管线的中间产物
-# tools/参考素材/ 是**开发期**工具（从 GitHub 拉作物/土质素材，转成 Unity 能导入的 .obj）。
-# _raw/ 里是原始 .glb 下载（约 16 MB），转换完就没用了，不进仓库；
-# 真正的产物在 cultivation/Assets/resources/灵田/ 下。
-tools/参考素材/_raw/
 __pycache__/
 
 # Local diagnostics and private account recovery document (never release).
-.dsh/_diag/
+.local/
 /proton邮箱恢复短语.pdf

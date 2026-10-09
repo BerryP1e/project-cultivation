@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **近战妖魔通用基类** —— 21 只"跟白熊精一样"的怪共用它，子类只填自己的数。
@@ -94,7 +94,7 @@ public class 近战妖魔Ai : NpcAiDemon
     public string 普攻命中特效 = "";
 
     [Tooltip("主动神通用的【更重的】命中特效")]
-    public string 重击命中特效 = "特效/命中/Hit_Physical_Heavy";
+    public string 重击命中特效 = "CombatVFX/Hits/Hit_Physical_Heavy";
 
     /// <summary>这一只怪是不是走网格判定</summary>
     protected bool 用武器网格 => !string.IsNullOrEmpty(武器节点名);

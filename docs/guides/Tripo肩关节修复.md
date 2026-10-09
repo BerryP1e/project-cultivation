@@ -52,4 +52,4 @@ Humanoid肌肉片段可以在新Avatar上预览；Generic或Transform曲线可�
 | 导出再读 | Avatar与Mesh为持久资产，原材质恢复、根位置恢复、Animator启用、纯模型无业务控制器 |
 | Console | 编辑模式验证报错0 |
 
-脚本：`.dsh/_diag/tripo-shoulder-check.cs.txt`、`tripo-shoulder-motion-check.cs.txt`、`tripo-shoulder-export-check.cs.txt`，用`exec_editor_script`执行，避免运行时脚本自动进入Play。截图在`cultivation/screenshots/tripo-shoulder-<模型>-<动作>.png`，左原始、右修后，不入库。有限顶点检查证明蒙皮可计算，不代表所有动作、武器握持与衣服穿模均已通过游戏内验收。
+脚本：`devtools/validation/tripo-shoulder-check.cs.txt`、`tripo-shoulder-motion-check.cs.txt`、`tripo-shoulder-export-check.cs.txt`，用`exec_editor_script`执行，避免运行时脚本自动进入Play。截图在`cultivation/screenshots/tripo-shoulder-<模型>-<动作>.png`，左原始、右修后，不入库。有限顶点检查证明蒙皮可计算，不代表所有动作、武器握持与衣服穿模均已通过游戏内验收。

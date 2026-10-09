@@ -103,7 +103,7 @@ public static class YufengDirectionalBaker
 
     static void BakeSword(AnimationClip clip,AnimationClip reference)
     {
-        var original=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/better_player_test/better_player_test.fbx");
+        var original=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx");
         var target=Object.Instantiate(original);target.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);target.transform.localScale=Vector3.one;
         var animator=target.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
         var sword=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/Weapons/灵虚剑决/灵虚剑.prefab"),target.transform);
@@ -140,7 +140,7 @@ public static class YufengDirectionalBaker
     internal static void ConfigureFlightSword(AnimationClip reference)
     {
         const string path="Assets/resources/Weapons/灵虚剑决/灵虚剑.prefab";
-        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/better_player_test/better_player_test.fbx"));
+        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
         target.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);target.transform.localScale=Vector3.one;
         var animator=target.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
         var sword=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path),target.transform);sword.name="灵虚剑";animator.Rebind();

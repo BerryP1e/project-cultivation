@@ -1,0 +1,52 @@
+using System.Collections;
+using System.IO;
+using System.Reflection;
+IEnumerator Run(){
+if(!GameObject.Find("Player")){var load=UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("3C_Testbed",UnityEngine.SceneManagement.LoadSceneMode.Additive);while(!load.isDone)yield return null;UnityEngine.SceneManagement.SceneManager.SetActiveScene(UnityEngine.SceneManagement.SceneManager.GetSceneByName("3C_Testbed"));}
+yield return null;
+foreach(var listener in Object.FindObjectsOfType<AudioListener>().Skip(1))listener.enabled=false;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Namespace==null&&(c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器")))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");if(!player)throw new System.Exception("Need loaded player scene");var driver=player.GetComponent<PlayerAnimationController>();var targeting=player.GetComponent<NpcTargeting>();var stats=player.GetComponent<PlayerCombatStats>();var pc=player.GetComponent<PlayerController>();
+foreach(var c in player.GetComponents<MonoBehaviour>()){var f=c.GetType().GetField("自动出手");if(f!=null&&f.FieldType==typeof(bool))f.SetValue(c,false);}
+foreach(var q in Object.FindObjectsOfType<NpcInstance>())foreach(var c in q.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+var panel=Object.FindObjectOfType<UIPanelData>();panel.当前功法=null;panel.RaiseChanged();targeting.enabled=false;targeting.受神识范围限制=false;pc.enabled=false;player.GetComponent<YufengFlight>()?.强制落地();player.GetComponent<MountRider>()?.强制下坐骑();
+var origin=new Vector3(18000,30,18000);var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.SetPositionAndRotation(origin,Quaternion.identity);cc.enabled=true;
+var report=new System.Text.StringBuilder();int checks=0;void Check(bool ok,string name){if(!ok)throw new System.Exception("FAIL "+name);checks++;report.AppendLine("PASS "+name);File.WriteAllText("../.local/diagnostics/extreme-pipeline-runtime-report.txt",report.ToString());}
+NpcInstance Npc(string name,Vector3 point,bool hostile=true){var go=GameObject.CreatePrimitive(PrimitiveType.Capsule);go.name=name;go.SetActive(false);var d=ScriptableObject.CreateInstance<NpcDefinition>();d.id=name;d.名字=name;d.属性[AttributeType.MaxHealth]=100000;d.对主角好感度=hostile?-100:100;var n=go.AddComponent<NpcInstance>();n.定义=d;n.每次受击降好感=0;go.transform.position=point;go.SetActive(true);n.ResetHealth();n.enabled=false;return n;}
+var center=origin+Vector3.forward*12;var target=Npc("FX_Target",center);var near=Npc("FX_Near",center+Vector3.right*3);var far=Npc("FX_Far",center+Vector3.right*8);var friend=Npc("FX_Friend",center+Vector3.left*2,false);var extra=target.gameObject.AddComponent<SphereCollider>();extra.radius=.5f;
+var attack=player.GetComponent<BasicThunder01>()??player.AddComponent<BasicThunder01>();attack.enabled=true;attack.自动出手=false;attack.按住连发=false;attack.攻击键=KeyCode.None;attack.基础冷却=0;attack.闪电链概率=0;attack.打印战斗日志=false;attack.动画=driver;attack.玩家战斗属性=stats;attack.目标管理器=targeting;
+targeting.Lock(target,true);yield return new WaitForSecondsRealtime(1.5f);
+for(int i=0;i<5;i++){
+float hp=target.CurrentHealth,nearHp=near.CurrentHealth,farHp=far.CurrentHealth,friendHp=friend.CurrentHealth;
+Check(Mathf.Approximately(attack.下次范围,i%4==3?5f:.6f),"manual guide matches next stroke "+i);Check(attack.出手(),"combo accepted "+i);Check(attack.当前式==i%4,"combo order "+i);float deadline=Time.time+5;
+while(attack.本次命中数==0&&Time.time<deadline)yield return null;
+Check(attack.本次命中数>0&&target.CurrentHealth<hp,"main target hit "+i);
+Check(driver.动作进度>=attack.本次出手节点,"animation timing "+i);
+Check(GameObject.Find("CombatVfx_"+CombatVfxPipeline.雷四式[i%4]),"correct attack VFX "+i);
+Check(GameObject.Find("CombatVfx_"+CombatVfxPipeline.雷命中),"ThunderHit "+i);
+if(i%4==3){Check(near.CurrentHealth<nearHp&&attack.本次命中数==2,"A4 AoE two unique hostiles");Check(Mathf.Abs((hp-target.CurrentHealth)-(nearHp-near.CurrentHealth))<.02f,"multiple colliders do not duplicate damage");}
+else Check(near.CurrentHealth==nearHp,"A1~A3 single target "+i);
+Check(far.CurrentHealth==farHp&&friend.CurrentHealth==friendHp,"outside/friendly not hit "+i);
+while(attack.出手动作中&&Time.time<deadline)yield return null;yield return new WaitForSecondsRealtime(.15f);
+}
+targeting.ClearLock();Check(!attack.出手(),"no lock no automatic attack");Check(attack.手动出手(center),"manual thunder aiming");yield return new WaitForSecondsRealtime(2.8f);
+var ground=GameObject.CreatePrimitive(PrimitiveType.Cube);ground.name="FX_QA_Ground";ground.transform.position=center+Vector3.down*.6f;ground.transform.localScale=new Vector3(100,1,100);
+var caster=player.GetComponent<ActiveSkillCaster>();var skill=Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_fentian_yanshu.asset"));panel.主动技能=new System.Collections.Generic.List<Object>{skill,null,null,null,null,null};caster.动画=driver;caster.面板数据=panel;caster.快捷键=new KeyCode[0];caster.打印施法日志=false;player.GetComponent<PlayerVitals>().当前灵气=10000;targeting.Lock(target,true);yield return new WaitForSecondsRealtime(.2f);
+Check(caster.TryCast(0),"actual Fentian cast");float summonDeadline=Time.time+10;while(!Object.FindObjectOfType<MeteorGroundImpact>()&&Time.time<summonDeadline)yield return null;var meteor=Object.FindObjectOfType<MeteorGroundImpact>();Check(meteor,"fireball collision listener attached");
+yield return new WaitForSecondsRealtime(4.2f);Check(meteor&&meteor.落地次数>=3,"per meteor ground impact count "+(meteor?meteor.落地次数:0));
+var lava=Object.FindObjectsOfType<ExtremeVfxAdapter>().Where(x=>x.name=="CombatVfx_meteor_ground").ToArray();Check(lava.Length>=3,"separate lava instances");Check(lava.All(x=>Mathf.Abs(x.transform.position.y-(center.y-.1f+.02f))<.2f),"lava projected onto real ground");
+Check(!Object.FindObjectsOfType<ExtremeVfxAdapter>().Any(x=>x.GetComponentsInChildren<Collider>(true).Any(c=>c.enabled)),"visual debris never blocks actors");
+// Melee callbacks: same real damage entry, one registered hit effect per successful target.
+attack.enabled=false;targeting.Lock(target,true);target.transform.position=player.transform.position+Vector3.forward*1.5f;near.transform.position=center+Vector3.right*15;
+foreach(var type in new[]{typeof(BasicTaixuSword01),typeof(BasicJiuba01),typeof(BasicLingxuSword01)}){
+var melee=player.GetComponents<BasicJiuba01>().FirstOrDefault(x=>x.GetType()==type)??(BasicJiuba01)player.AddComponent(type);melee.enabled=true;melee.自动出手=false;melee.按住连发=false;melee.基础冷却=0;melee.用武器网格判定=false;melee.动画=driver;melee.玩家战斗属性=stats;melee.目标管理器=targeting;
+float hp=target.CurrentHealth;Check(melee.出手(),type.Name+" accepted");float meleeDeadline=Time.time+5;while(target.CurrentHealth==hp&&Time.time<meleeDeadline)yield return null;Check(target.CurrentHealth<hp,type.Name+" damage");Check(GameObject.Find("CombatVfx_"+(type==typeof(BasicTaixuSword01)?CombatVfxPipeline.太虚剑命中:CombatVfxPipeline.火斩命中)),type.Name+" selected slash");while(driver.动作播放中&&Time.time<meleeDeadline)yield return null;yield return new WaitForSecondsRealtime(.2f);melee.enabled=false;
+}
+var remote=player.GetComponent<BasicRemoteAttack01>()??player.AddComponent<BasicRemoteAttack01>();remote.enabled=true;remote.自动出手=false;remote.按住连发=false;remote.基础冷却=0;remote.动画=driver;remote.玩家战斗属性=stats;remote.目标管理器=targeting;remote.打印战斗日志=false;
+float remoteHP=target.CurrentHealth;Check(remote.出手(),"remote accepted");float remoteDeadline=Time.time+5;while(target.CurrentHealth==remoteHP&&Time.time<remoteDeadline)yield return null;Check(target.CurrentHealth<remoteHP,"remote actual projectile hit");Check(GameObject.Find("CombatVfx_"+CombatVfxPipeline.太虚炼气命中),"remote Impact_Spark");remote.enabled=false;
+// Every visual is scoped to the root and must eventually clean up, including EpicZeus children.
+yield return new WaitForSecondsRealtime(12.5f);Check(!Object.FindObjectsOfType<ExtremeVfxAdapter>().Any(),"all VFX and spawned children cleaned");
+report.AppendLine("EXTREME_COMBAT_RUNTIME_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/extreme-pipeline-runtime-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

@@ -14,7 +14,7 @@ public static class YufengDirectionalChecks
     public static void Run()
     {
         if(EditorApplication.isPlaying)throw new InvalidOperationException("请先停止 Play");
-        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/better_player_test/better_player_test.fbx"));
+        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
         target.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);target.transform.localScale=Vector3.one;
         var animator=target.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
         var sword=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/Weapons/灵虚剑决/灵虚剑.prefab"),target.transform);sword.name="灵虚剑";animator.Rebind();

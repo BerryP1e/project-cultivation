@@ -1,0 +1,32 @@
+using System.Collections;
+using System.IO;
+using UnityEditor;
+IEnumerator Run(){
+var origin=new Vector3(31000,30,31000);var baseline=new System.Collections.Generic.HashSet<int>(Object.FindObjectsOfType<GameObject>().Select(x=>x.GetInstanceID()));
+var cameraGo=new GameObject("FX_Timeline_Camera");var cam=cameraGo.AddComponent<Camera>();cam.enabled=false;cam.cullingMask=1<<30;cam.orthographic=true;cam.orthographicSize=7;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.11f,.13f,.16f);cam.transform.position=origin+new Vector3(8,10,-12);cam.transform.LookAt(origin+Vector3.up*2);
+var lightGo=new GameObject("FX_Timeline_Light");var light=lightGo.AddComponent<Light>();light.type=LightType.Directional;light.intensity=1.4f;light.cullingMask=1<<30;lightGo.transform.rotation=Quaternion.Euler(55,-35,0);
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=origin+Vector3.down*.08f;floor.transform.localScale=new Vector3(200,.1f,200);floor.layer=30;var material=new Material(Shader.Find("Standard"));material.color=new Color(.28f,.3f,.32f);floor.GetComponent<Renderer>().sharedMaterial=material;
+var target=GameObject.CreatePrimitive(PrimitiveType.Capsule);target.layer=30;target.transform.position=origin+Vector3.up;var targetMat=new Material(Shader.Find("Standard"));targetMat.color=new Color(.5f,.56f,.6f);target.GetComponent<Renderer>().sharedMaterial=targetMat;
+var protectedIds=new System.Collections.Generic.HashSet<int>(Object.FindObjectsOfType<GameObject>().Select(x=>x.GetInstanceID()));
+var rt=new RenderTexture(360,360,24);cam.targetTexture=rt;string[] ids={CombatVfxPipeline.雷四式[0],CombatVfxPipeline.雷四式[2],CombatVfxPipeline.火球落地};float[] times={.04f,.12f,.3f,.7f};var report=new System.Text.StringBuilder();bool ignored=Physics.GetIgnoreLayerCollision(2,2);
+for(int variant=0;variant<2;variant++){
+var sheet=new Texture2D(1440,1080,TextureFormat.RGB24,false);
+for(int i=0;i<ids.Length;i++){
+Random.InitState(128+i);var entry=CombatVfxPipeline.配置.查找(ids[i]);GameObject go;
+if(variant==0){go=Object.Instantiate(entry.预制体,origin,entry.预制体.transform.localRotation);go.transform.localScale=entry.预制体.transform.localScale*entry.缩放;}
+else go=CombatVfxPipeline.播放(ids[i],origin,Vector3.down);
+float birth=Time.time;
+for(int frame=0;frame<times.Length;frame++){
+while(Time.time<birth+times[frame])yield return null;
+foreach(var t in Object.FindObjectsOfType<Transform>())if(Vector3.Distance(t.position,origin)<200)t.gameObject.layer=30;
+foreach(var ps in Object.FindObjectsOfType<ParticleSystem>().Where(p=>Vector3.Distance(p.transform.position,origin)<100))report.AppendLine((variant==0?"SOURCE":"ADAPTER")+" "+ids[i]+" t="+(Time.time-birth)+" ps="+ps.name+" count="+ps.particleCount+" size="+ps.main.startSizeMultiplier+" scale="+ps.transform.lossyScale);
+cam.Render();var previous=RenderTexture.active;RenderTexture.active=rt;sheet.ReadPixels(new Rect(0,0,360,360),frame*360,(2-i)*360);RenderTexture.active=previous;
+}
+foreach(var obj in Object.FindObjectsOfType<GameObject>())if(!protectedIds.Contains(obj.GetInstanceID()))Object.Destroy(obj);yield return null;
+}
+sheet.Apply();File.WriteAllBytes("../.local/diagnostics/extreme-timeline-"+(variant==0?"source":"adapted")+".png",sheet.EncodeToPNG());Object.Destroy(sheet);
+}
+Physics.IgnoreLayerCollision(2,2,ignored);File.WriteAllText("../.local/diagnostics/extreme-timeline-report.txt",report.ToString());cam.targetTexture=null;Object.Destroy(rt);Object.Destroy(material);Object.Destroy(targetMat);
+foreach(var obj in Object.FindObjectsOfType<GameObject>())if(!baseline.Contains(obj.GetInstanceID()))Object.Destroy(obj);yield break;
+}
+return Run();

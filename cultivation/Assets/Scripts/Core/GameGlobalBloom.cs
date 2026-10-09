@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **辉光（Bloom）后处理** —— Built-in 渲染管线，挂主相机。
@@ -94,7 +94,7 @@ public class GameGlobalBloom : MonoBehaviour
         {
             材质不可用 = true;
             Debug.LogWarning("[辉光] 找不到或不支持 shader「Cultivation/Bloom」——辉光不会生效。"
-                             + "检查 Assets/Environment/CultivationBloom.shader 有没有编译错误");
+                             + "检查 Assets/Art/Environment/World/CultivationBloom.shader 有没有编译错误");
             return;
         }
         材质 = new Material(找过的Shader) { hideFlags = HideFlags.HideAndDontSave };

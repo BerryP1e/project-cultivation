@@ -1,0 +1,27 @@
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+var load=UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Sect_Wilderness");while(!load.isDone)yield return null;yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=Object.FindObjectOfType<PlayerVitals>().gameObject;player.GetComponent<PlayerController>().enabled=false;player.GetComponent<CharacterController>().enabled=false;player.GetComponent<NpcTargeting>().enabled=false;player.GetComponent<NpcTargeting>().ClearLock();
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var m in n.GetComponentsInChildren<MonoBehaviour>())m.enabled=false;
+var panel=Object.FindObjectOfType<UIPanelData>();panel.当前功法=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_canglan_hanyuanlu.asset");player.GetComponent<PlayerAbilityLoader>().Refresh();
+var stats=player.GetComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试神识=20;stats.调试数值[AttributeType.AttackSpeed]=2;stats.Recalculate();
+var pilot=Object.FindObjectOfType<VoxelMapPilot>();var terrain=Terrain.activeTerrain;var home=new Vector3(4,0,75);home.y=terrain.SampleHeight(home)+terrain.transform.position.y;player.transform.position=home;
+var ice=player.GetComponent<BasicFrostSpike01>();ice.自动出手=false;ice.按住连发=false;ice.攻击键=KeyCode.None;ice.基础冷却=0;ice.打印战斗日志=false;var aim=player.GetComponent<PlayerManualAim>();
+var report=new System.Text.StringBuilder();void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/canglan-wilderness-report.txt",report.ToString());if(!ok)throw new System.Exception(name);}
+Check(pilot&&VoxelCombatDamage.Active,"actual wilderness voxel pilot ready");
+yield return new WaitForSecondsRealtime(.5f);
+for(int i=0;i<4;i++){
+ pilot.还原岩石();player.transform.position=home;player.GetComponent<PlayerAnimationController>().停止动作();
+ Check(aim.确认施放(-1,home+Vector3.forward*4),"actual unlocked basic A"+(i+1));float deadline=Time.time+8;
+ while((ice.出手动作中||Object.FindObjectOfType<FrostWaveAttackRunner>()||pilot.等待更新)&&Time.time<deadline)yield return null;
+ Check(pilot.地面.活动地块数>0,"A"+(i+1)+" modified terrain patches="+pilot.地面.活动地块数);
+ Check(!pilot.等待更新,"local mesh/collider queue drained");Physics.SyncTransforms();
+ var sample=home+(i==3?Vector3.right*2:Vector3.forward*4);bool hasSurface=Physics.Raycast(sample+Vector3.up*8,Vector3.down,out var hit,20);
+ Check(hasSurface,"A"+(i+1)+" terrain collision retained after cut");yield return new WaitForSecondsRealtime(.15f);
+}
+pilot.还原岩石();report.AppendLine("CANGLAN_WILDERNESS_PASS");File.WriteAllText("../.local/diagnostics/canglan-wilderness-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 public sealed class VoxelPrototypeBaker : EditorWindow
 {
     const string Folder="Assets/Experiments/Voxel";
-    const string DefaultModel="Assets/resources/Environment3/nature item/Rock_1.fbx";
+    const string DefaultModel="Assets/Art/Environment/Imported/Environment3/nature item/Rock_1.fbx";
     GameObject source;
     float cell=.15f;
     int chunk=8;
@@ -52,7 +52,7 @@ public sealed class VoxelPrototypeBaker : EditorWindow
         if(!model) throw new ArgumentException("Missing source model.");
         if(cellSize<(independentScene?.04f:1e-7f) || chunkSize<4 || chunkSize>16) throw new ArgumentOutOfRangeException("Invalid voxel settings.");
         if(SceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Current scene has unsaved edits. Save or cancel before generating the standalone scene.");
-        string rootFolder=independentScene?Folder:"Assets/Environment/Voxel/Bakes";
+        string rootFolder=independentScene?Folder:"Assets/Art/Environment/World/Voxel/Bakes";
         Directory.CreateDirectory(rootFolder);
         string folder=rootFolder+"/"+model.name+"_"+Guid.NewGuid().ToString("N").Substring(0,8);
         Directory.CreateDirectory(folder); AssetDatabase.Refresh();

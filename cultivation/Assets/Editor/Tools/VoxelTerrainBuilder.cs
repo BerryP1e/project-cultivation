@@ -15,7 +15,7 @@ public static class VoxelTerrainBuilder
         if(manifest.地面){Selection.activeObject=manifest.地面;return;}
         var data=terrain.terrainData;var layers=data.terrainLayers;
         if(layers.Length!=4 || data.alphamapTextures.Length!=1)throw new InvalidOperationException("Current ground shader expects four terrain layers.");
-        const string folder="Assets/Environment/Voxel/Terrain";Directory.CreateDirectory(folder);AssetDatabase.Refresh();
+        const string folder="Assets/Art/Environment/World/Voxel/Terrain";Directory.CreateDirectory(folder);AssetDatabase.Refresh();
         var shader=Shader.Find("Cultivation/VoxelTerrainSurface");if(!shader)throw new InvalidOperationException("Ground shader is not ready.");
         var mat=new Material(shader){name="WildernessVoxelGround"};
         mat.SetTexture("_Control",data.alphamapTextures[0]);var position=terrain.transform.position;

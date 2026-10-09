@@ -57,7 +57,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
     [Header("闪电球")]
     [Tooltip("闪电球特效。路径相对 Assets/resources、不带扩展名")]
     public string 球特效路径 =
-        "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-sphere";
+        "CombatVFX/CombatMagic/lightning-fx/lightning-sphere";
 
     [Tooltip("闪电球的生成旋转（欧拉角）。躺平/倒立就改这里")]
     public Vector3 球旋转欧拉 = Vector3.zero;
@@ -87,7 +87,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
     [Header("命中特效")]
     [Tooltip("命中特效。路径相对 Assets/resources、不带扩展名")]
     public string 命中特效路径 =
-        "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-explode";
+        "CombatVFX/CombatMagic/lightning-fx/lightning-explode";
 
     [Tooltip("命中特效的生成旋转（欧拉角）")]
     public Vector3 命中特效旋转欧拉 = Vector3.zero;

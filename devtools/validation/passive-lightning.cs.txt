@@ -1,0 +1,35 @@
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+ var report=new System.Text.StringBuilder();int checks=0;
+ void Check(bool ok,string label){report.AppendLine((ok?"PASS ":"FAIL ")+label);File.WriteAllText("../.local/diagnostics/passive-lightning-report.txt",report.ToString());if(!ok)throw new System.Exception(label);checks++;}
+ var player=GameObject.Find("Player");var stats=player.GetComponent<PlayerCombatStats>();var targeting=player.GetComponent<NpcTargeting>();
+ foreach(var c in player.GetComponents<MonoBehaviour>())if(c is BasicRemoteAttack01||c is BasicThunder01||c is BasicFrostSpike01||c is PlayerController||c is PlayerManualAim||c is QianJieLeiYu||c is LeiYun)c.enabled=false;
+ targeting.enabled=false;targeting.受神识范围限制=false;
+ var origin=new Vector3(24000,30,24000);var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.position=origin;cc.enabled=true;
+ var targetGo=GameObject.CreatePrimitive(PrimitiveType.Capsule);targetGo.SetActive(false);targetGo.name="Ray_Enemy";targetGo.transform.position=origin+Vector3.forward*6;
+ var def=ScriptableObject.CreateInstance<NpcDefinition>();def.id="Ray_Enemy";def.名字="Ray_Enemy";def.属性[AttributeType.MaxHealth]=100000;def.对主角好感度=-100;
+ var target=targetGo.AddComponent<NpcInstance>();target.定义=def;target.每次受击降好感=0;targetGo.SetActive(true);target.ResetHealth();target.enabled=false;
+ stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.IgnoreDodge]=100;stats.调试神识=20;stats.Recalculate();
+ var q=player.GetComponent<QianJieLeiYu>()??player.AddComponent<QianJieLeiYu>();q.enabled=false;q.伤害间隔=100;q.打印日志=false;q.雷罚特效路径=LightningRayVfx.Path;
+ var hp=target.CurrentHealth;q.enabled=true;Physics.SyncTransforms();yield return new WaitForSeconds(.2f);
+ var fx=GameObject.Find("千劫雷狱_落雷_Ray_Enemy");Check(fx&&target.CurrentHealth<hp,"Qian pulse damages and emits ray");
+ Check(Vector3.Distance(fx.transform.position,target.transform.position)<.01f,"Qian impact at target root");Check(Vector3.Dot(fx.transform.forward,Vector3.up)>.999f,"Qian ray vertical");
+ var beams=fx.GetComponentsInChildren<ParticleSystem>(true).Where(p=>p.name=="lightning-ray"||p.name=="lightning-glow").ToArray();Check(beams.Length==2,"native ray and glow retained");
+ foreach(var ps in beams){var renderer=ps.GetComponent<ParticleSystemRenderer>();Check(renderer.renderMode==ParticleSystemRenderMode.Stretch&&renderer.sharedMaterial,"native stretch renderer and material");ps.Simulate(.6f,false,true);ps.Play(false);Check(ps.particleCount>0,"native ray emits particles in offscreen deterministic sample");}
+ q.enabled=false;targeting.ClearLock();
+ var cloud=player.GetComponent<LeiYun>()??player.AddComponent<LeiYun>();cloud.enabled=false;cloud.出手间隔=.6f;cloud.打印日志=false;cloud.闪电特效路径=LightningRayVfx.Path;cloud.闪电粗细=.22f;cloud.enabled=true;
+ yield return new WaitForSeconds(.2f);Check(GameObject.Find("雷云")&&!GameObject.Find("雷云受击"),"cloud without lock does not hit");
+ targeting.Lock(target,true);hp=target.CurrentHealth;yield return new WaitForSeconds(.6f);
+ var ray=GameObject.Find("雷云闪电_"+player.name);Check(ray&&target.CurrentHealth<hp&&GameObject.Find("雷云受击"),"locked cloud ray and native arc flash at damage event");
+ Check(Vector3.Dot(ray.transform.forward,(cloud.云位置-ray.transform.position).normalized)>.99f,"cloud ray points to actual smoothed cloud");
+ foreach(var ps in ray.GetComponentsInChildren<ParticleSystem>(true)){
+  var rend=ps.GetComponent<ParticleSystemRenderer>();bool beam=ps.name=="lightning-ray"||ps.name=="lightning-glow";
+  if(beam){ps.Simulate(.6f,false,true);ps.Play(false);Check(rend.enabled&&ps.particleCount>0,"cloud beam emits in offscreen deterministic sample");Check(ps.main.startColor.colorMax.r>ps.main.startColor.colorMax.g,"cloud beam recolored purple");}
+  else if(rend)Check(!rend.enabled,"cloud ground ornament disabled without removing nested ray");
+ }
+ yield return new WaitForSeconds(.7f);Check(ray&&GameObject.Find("雷云受击"),"native effect lifetime not cut at old .4 second timeout");
+ cloud.enabled=false;yield return null;Check(!GameObject.Find("雷云"),"disabling passive removes cloud");
+ report.AppendLine("PASSIVE_LIGHTNING_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/passive-lightning-report.txt",report.ToString());Debug.Log("PASSIVE_LIGHTNING_PASS checks="+checks);
+}
+return Run();

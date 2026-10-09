@@ -1,6 +1,0 @@
-foreach(var t in Object.FindObjectsOfType<Teleporter>())t.关面板();
-var character=Object.FindObjectOfType<CharacterPanelUI>();if(character!=null)character.gameObject.SetActive(false);
-var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");
-var existing=Object.FindObjectOfType<炼丹界面>();
-if(existing==null)Object.Instantiate(prefab);
-return "alchemy opened; ingredients="+string.Join(";",炼丹炉.取().全部丹方().SelectMany(d=>炼丹炉.取().全部材料(d)).Select(k=>k.Key).Distinct().Select(id=>{var d=QuestDatabase.取().找物品(id);return id+":"+(d!=null&&d.图标!=null?d.图标.name:"no icon");}));

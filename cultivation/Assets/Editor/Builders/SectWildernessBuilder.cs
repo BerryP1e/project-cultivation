@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -168,11 +168,11 @@ public static class SectWildernessBuilder
     const float 谷底边 = 132f * 尺度;           // 这个半径以内是谷地，以外开始起山
     const float 山高 = 15f;                    // 最外圈抬多高（挡住地图边界，别让玩家看见虚空）
 
-    const string Env2 = "Assets/resources/Environment2";
-    const string Env1 = "Assets/resources/Environment1";
-    const string 树目录 = "Assets/Environment/Tree/";
-    const string 地表贴图 = "Assets/Environment/Models/Materials/Scene/Textures/Dibiao/";
-    const string 草贴图目录 = "Assets/Environment/Models/Materials/Scene/Textures/Grass/";
+    const string Env2 = "Assets/Art/Environment/Imported/Environment2";
+    const string Env1 = "Assets/Art/Environment/Imported/Environment1";
+    const string 树目录 = "Assets/Art/Environment/World/Tree/";
+    const string 地表贴图 = "Assets/Art/Environment/World/Models/Materials/Scene/Textures/Dibiao/";
+    const string 草贴图目录 = "Assets/Art/Environment/World/Models/Materials/Scene/Textures/Grass/";
 
     // ============================================================ 运行时准备的数据
 

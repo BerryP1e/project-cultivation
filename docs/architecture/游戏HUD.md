@@ -60,11 +60,11 @@ P 面板整页可滚动；“添加丹方”区位于无敌开关之后，支持
 
 摄像机滚轮缩放与旋转、玩家水平移动、新普攻与主动施放、NPC 点击及设施交互、御风/坐骑切换均读此入口。UI 的 ScrollRect、拖拽、按钮与关闭操作照常工作。新界面应成对登记/释放，新场景输入入口应在接收输入前检查。已经开始的演出、重力与状态维护继续运行。
 
-`.dsh/_diag/ui-scene-input-lock-check.cs.txt` 验证摄像机阻断、同一滚轮滚动药材、移动速度清零、施放拒绝、多界面关闭顺序、关闭当帧及销毁释放。诊断恢复临时背包和界面状态，不写存档或场景。
+`devtools/validation/ui-scene-input-lock-check.cs.txt` 验证摄像机阻断、同一滚轮滚动药材、移动速度清零、施放拒绝、多界面关闭顺序、关闭当帧及销毁释放。诊断恢复临时背包和界面状态，不写存档或场景。
 
 ## 4. 验证与维护
 
-仓库根`.dsh/_diag/hud-dialogue-ink-check.cs.txt`使用独立UIPanelData与禁用的ActiveSkillCaster，临时替换HUD引用，结束恢复；不改真实玩家功法/装备/冷却，不施放技能。
+仓库根`devtools/validation/hud-dialogue-ink-check.cs.txt`使用独立UIPanelData与禁用的ActiveSkillCaster，临时替换HUD引用，结束恢复；不改真实玩家功法/装备/冷却，不施放技能。
 
 | 检查 | 实测 |
 |---|---|
@@ -79,4 +79,4 @@ P 面板整页可滚动；“添加丹方”区位于无敌开关之后，支持
 
 维护脚本在`Assets/Scripts/UI/`：PlayerHud、UIInkHudSkin、UIInkHudSkill、UIInkVitalBranch。Shader在`Assets/resources/UI/InkUI/Dynamic/InkCooldown.shader`。不能为换皮重跑生成器或保存场景，不能把Filled改Simple。
 
-`.dsh/_diag/hud-guidance-ink-check.cs.txt` 在 1920×1080 与 1280×720 检查纪年单行、任务左侧位置与淡墨底、感叹号颜色与描边、F 提示屏幕层与边界；打开真实丹房、显示对话、打开传送与任意界面输入锁，验证提示立即隐藏且关闭后能恢复。另查任务范围模型隐藏及半径不变、传送无冗余小字且未开放原因保留。用独立任务与设施展示样本，结束恢复原画布；不投料、不改真实任务进度、背包或存档。截图为 `cultivation/screenshots/hud-guidance-{分辨率}.png`、`teleport-clean-{分辨率}.png`，报告为 `hud-guidance-check-{分辨率}.txt`，截图不入库。
+`devtools/validation/hud-guidance-ink-check.cs.txt` 在 1920×1080 与 1280×720 检查纪年单行、任务左侧位置与淡墨底、感叹号颜色与描边、F 提示屏幕层与边界；打开真实丹房、显示对话、打开传送与任意界面输入锁，验证提示立即隐藏且关闭后能恢复。另查任务范围模型隐藏及半径不变、传送无冗余小字且未开放原因保留。用独立任务与设施展示样本，结束恢复原画布；不投料、不改真实任务进度、背包或存档。截图为 `cultivation/screenshots/hud-guidance-{分辨率}.png`、`teleport-clean-{分辨率}.png`，报告为 `hud-guidance-check-{分辨率}.txt`，截图不入库。

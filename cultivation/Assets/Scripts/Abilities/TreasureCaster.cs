@@ -156,7 +156,7 @@ public class TreasureCaster : MonoBehaviour
         return root;
     }
     void CreateEffect() {
-        var prefab=Resources.Load<GameObject>("特效/传送/Prefab/Teleport_3");
+        var prefab=Resources.Load<GameObject>("CombatVFX/Teleport/Prefab/Teleport_3");
         if(prefab == null) return;
         effect=Instantiate(prefab); effect.name="镇妖葫_Teleport_3_大端到小端";
         ringMesh=new Mesh { name="收服粒子环平面" };

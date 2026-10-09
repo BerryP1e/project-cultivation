@@ -15,7 +15,7 @@
 // 改的是**场景里序列化的值**，立刻保存生效，可反复执行（幂等：按倍率乘，已应用过会继续变小，故记录原值备份）。
 //
 // ## 备份
-// 首次执行会把每个灯的原始 强度/range 写进 `.dsh/_灯光备份/塔内灯光原值.txt`。
+// 首次执行会把每个灯的原始 强度/range 写进 `.local/backups/tower-lighting/塔内灯光原值.txt`。
 
 using System.Collections.Generic;
 using System.IO;
@@ -30,7 +30,7 @@ namespace Cultivation.EditorTools
     public static class 塔灯光收敛
     {
         private const string 场景路径 = "Assets/Scenes/Demon-Suppressing Tower.scene";
-        private static readonly string 备份目录 = Path.Combine(Directory.GetCurrentDirectory(), ".dsh", "_灯光备份");
+        private static readonly string 备份目录 = Path.GetFullPath(Path.Combine(Application.dataPath, "../../.local/backups/tower-lighting"));
 
         /// <summary>
         /// 按**灯名**定收敛系数：名字 → (强度倍率, 半径倍率)。

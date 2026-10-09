@@ -237,7 +237,7 @@ public class QingshanSwordTreasure : MonoBehaviour
         if(UltimateState==UltimatePhase.Gather)giant.position=giantImpactPoint+Vector3.up*giantSpawnTipHeight-giantTipOffset;
     }
     void SpawnImpact(Vector3 point,Vector3 direction){
-        var prefab=Resources.Load<GameObject>("特效/法术/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_07_OneHandSmash/Effect_07_OneHandSmash");if(prefab==null)return;
+        var prefab=Resources.Load<GameObject>("CombatVFX/LegacySpells/Effect_07_OneHandSmash/Effect_07_OneHandSmash");if(prefab==null)return;
         var fx=Instantiate(prefab,point,Quaternion.LookRotation(direction));fx.name="万剑归宗_剑尖砸地";
         fx.transform.localScale*=Mathf.Max(.001f,万剑命中特效倍率)*Mathf.Max(1,giantScale/10.13f);
         foreach(var particle in fx.GetComponentsInChildren<ParticleSystem>(true)){var main=particle.main;main.simulationSpeed*=.55f;}

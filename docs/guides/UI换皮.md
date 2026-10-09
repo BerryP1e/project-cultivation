@@ -24,7 +24,7 @@
 | UI Shader | cultivation/Assets/Shaders/ | 墨密度/边缘/裁剪、神通与战阵预览 |
 | Unity 导入与验收脚本 | cultivation/Assets/Editor/Tools/ | InkUI素材导入、InkUIQa、各子页 QA |
 | 游戏实际读取的图片 | cultivation/Assets/resources/UI/InkUI/ | Resources.Load 的 UI/InkUI 根；保持原路径及 GUID |
-| 制作原图、切图结果、原型、清单、旧素材包 | cultivation/Assets/UIResources/InkUI/Authoring/ | 制作来源，不在 Resources 中，不会仅因放在此处就进入游戏构建 |
+| 制作原图、切图结果、原型、清单、旧素材包 | cultivation/Assets/Art/UI/Source/InkUI/Authoring/ | 制作来源，不在 Resources 中，不会仅因放在此处就进入游戏构建 |
 | Node/PowerShell 制作与网页预览工具 | cultivation/Assets/Editor/Tools/InkUIAuthoring/ | 编辑器侧制作工具；Backups~/ 保存旧脚本副本且不编译 |
 | 用户设计要求 | [design/UI重制/](../design/UI重制/) | 八页总纲及施工单；最新用户澄清见本页完成范围 |
 | 素材规格与提示词 | [reference/UI素材/](../reference/UI素材/) | 素材规格与第二轮提示词 |
@@ -57,41 +57,25 @@
 
 正常打开工程、进 Play、按 I 即可；场景自举补 UIInkSkin，由它接入父导航与 UIInkBagPage / UIInkRealmPage / UIInkSkillsPage / UIInkFormationPage。基准生成器布局只用于理解原节点关系，不代表当前运行时排版。
 
-从仓库根使用已有文件桥：
-
-~~~powershell
-. './.dsh/uni.ps1'
-Uni 'play:off' 20
-Uni 'refresh' 30
-# 等待编译完成后再进 Play；同时检查 Library/Bee/tundra.log.json 的编译结果。
-Uni 'play:on' 25
-Uni 'inkqa:seed' 20
-Uni 'screen:1920x1080' 20
-Uni 'inkqa:role:5' 20
-Uni 'inkqa:formation:seed' 20
-Uni 'inkqa:formation:validate' 30
-Uni 'inkqa:validate' 30
-Uni 'console:errors' 20
-Uni 'play:off' 20
-~~~
+控制与启动见[工程与工具链 §3](../ai/工程与工具链.md)。当前使用 devtools/unity 的 HTTP MCP，通过现有 UI QA 类或回归配方验证；旧文件桥 inkqa 命令已经移除。
 
 role 的页号为背包0、境界1、神通2、法宝3、灵阵4、战阵5、坐骑6、外观7。独立验证命令为 inkqa:bag:validate、inkqa:realm:validate、inkqa:skills:validate、inkqa:formation:validate。再以 1280x720 验证排版、滚动和拖拽；检查返回的 Failures，而不是只看脚本是否执行。
 
-验收数据只在 Play 使用，不调用保存场景或存档。战阵 validate 会保存并恢复站位与选择；seed 刻意放入临时验收状态，退出 Play 恢复磁盘场景。截图命令 shot2:screenshots/文件名.png 异步保存，等保存完成后再切页。各页前后图及慢放录像留在 screenshots/。
+验收数据只在 Play 使用，不调用保存场景或存档。战阵 validate 会保存并恢复站位与选择；seed 刻意放入临时验收状态，退出 Play 恢复磁盘场景。截图通过 MCP 截图工具生成并写入 `.local/diagnostics`，旧 screenshots 已清理。
 
 已量测的双分辨率检查：背包22项、境界16项、神通43项、战阵26项；战阵实际真灵库231项，240项压力数据池只创建16个可见单元。具体校验以当前 QA 代码返回为准。神通预览是三维轨道和图标平面，战阵预览才是 NPC 模型；不要把它们描述成同一种完整角色动画。
 
 ## 4. 素材导入与制作工具
 
-背包的 UIInkWaterfall.AllowLoop=false；滚轮、拖拽惯性和滚动条都限制在 0～MaxScrollOffset，首尾不重复物品。总高度包含列间错位与底部余量，滚动条按可滚动距离映射；内容更新或窗口大小变化后重算并夹紧偏移。墨边渐隐与物品错列保持。共用的神通、战阵列表保留原滚动模式，不能把背包调整扩散到其他页。实机脚本 .dsh/_diag/jiuba-manual-bag-check.cs.txt 同时验证秘籍使用扣除、重复学习限制以及滚动首尾、可见项唯一性。
+背包的 UIInkWaterfall.AllowLoop=false；滚轮、拖拽惯性和滚动条都限制在 0～MaxScrollOffset，首尾不重复物品。总高度包含列间错位与底部余量，滚动条按可滚动距离映射；内容更新或窗口大小变化后重算并夹紧偏移。墨边渐隐与物品错列保持。共用的神通、战阵列表保留原滚动模式，不能把背包调整扩散到其他页。实机脚本 devtools/validation/jiuba-manual-bag-check.cs.txt 同时验证秘籍使用扣除、重复学习限制以及滚动首尾、可见项唯一性。
 
 现用 Sprite 已导入，日常运行无需重新导入。新增运行时成品放 resources/UI/InkUI 对应包；用“修仙 / UI / 导入 InkUI 素材（Sprite + 九宫格）”时检查日志与 border，尤其手填的 Parts / Skeleton / BigPieces。该菜单可覆盖导入参数，不要为了归档重跑它。
 
 换 sprite 时深色 Image.color 复位白；进度填充保留 Filled，不能改 Simple；2× 素材 pixelsPerUnitMultiplier=2，按钮包1×按现用2.6。纯边框与有底贴图不可混用，禁止把文本、图标与选中框烘焙成不可复用的大图。细节见 [素材规格](../reference/UI素材/素材规格与提示词.md)。
 
-网页原型入口在工具目录 index.html（早期意向预览，不是当前游戏画面）。paths.cjs / paths.ps1 统一定位 Assets 制作源和工程根。Node 工具需要 sharp、jszip、playwright；可通过 INKUI_NODE_MODULES 指定依赖目录，正常游戏运行不需要 Node。旧 build-spec 使用 Authoring/GeneratedSources 中按原生成文件名保存的42张输入，也可通过 INKUI_GENERATED_SOURCE 指定其他来源；缺少输入不能把导出成品当作原图二次生成。ability-art-v1、dynamic-assets-v1 的导出脚本已改为读取包内 source/，不依赖个人生成缓存。截图脚本从仓库根调用，输出仍在 screenshots/。
+网页原型入口在工具目录 index.html（早期意向预览，不是当前游戏画面）。paths.cjs / paths.ps1 统一定位 Assets 制作源和工程根。Node 工具需要 sharp、jszip、playwright；可通过 INKUI_NODE_MODULES 指定依赖目录，正常游戏运行不需要 Node。旧 build-spec 使用 Authoring/GeneratedSources 中按原生成文件名保存的42张输入，也可通过 INKUI_GENERATED_SOURCE 指定其他来源；缺少输入不能把导出成品当作原图二次生成。ability-art-v1、dynamic-assets-v1 的导出脚本已改为读取包内 source/，不依赖个人生成缓存。截图脚本从仓库根调用，输出应指定 `.local/diagnostics`。
 
-可从仓库根运行 Node 工具 cultivation/Assets/Editor/Tools/InkUIAuthoring/verify-organization.cjs；它只读检查文件校验和、脚本语法、预览路径、现状文档链接及生成来源，结果写入忽略的 screenshots/InkUI-organization-verification.json。
+可从仓库根运行 Node 工具 cultivation/Assets/Editor/Tools/InkUIAuthoring/verify-organization.cjs；它只读检查文件校验和、脚本语法、预览路径、现状文档链接及生成来源，结果写入忽略的 .local/diagnostics/InkUI-organization-verification.json。
 
 ## 5. 接手顺序与禁忌
 

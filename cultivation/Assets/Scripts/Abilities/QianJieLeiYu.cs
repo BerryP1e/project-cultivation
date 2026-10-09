@@ -1,30 +1,7 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 被动神通【千劫雷狱】的运行时表现。
-///
-/// ## 策划说明（2026-09-28）
-/// ```
-/// 以角色为中心，维持千劫雷狱（特效 lightning-arc-black-ring）
-///   范围内每个敌人脚下出现【雷罚】（特效 lightning-whirling-arc-zone）
-///   每过一段间隔，对范围内的敌人造成【特殊 + 被动神通】伤害
-///   装备该被动神通后**持续消耗灵力**
-/// 范围与玩家的**神识**属性相关；lightning-arc-black-ring 的大小随范围变化
-/// 雷罚的尺寸主要取决于**敌人的模型尺寸**
-/// ```
-///
-/// ## 怎么被装上
-/// 不用手工挂：在 `PlayerAbilityLoader.被动神通表` 里登记
-/// `{神通id = ability_qianjie_leiyu, 组件类名 = [QianJieLeiYu]}`
-/// （5 个场景都要加），启用被动就自动 AddComponent、停用就 enabled = false。
-///
-/// ## 三个特效各自的缩放置信度
-///   · 光环（lightning-arc-black-ring）→ 跟**范围**（= 神识范围）等比缩放
-///   · 雷罚（lightning-whirling-arc-zone）→ 跟**敌人模型尺寸**缩放
-///   · 两者都按"几何中心对齐到锚点 + 开 Hierarchy 等比缩放"处理
-///     （资源包的 prefab 部件常常不在原点，见踩坑 B22 / 玄霄雷决那几节）
-/// </summary>
+/// <summary>神识范围圈内按间隔结算特殊/被动伤害，在命中节点生成原生竖直 lightning-ray。由 PlayerAbilityLoader 内置注册。共享依赖位于 Art/VFX/Shared。</summary>
 [DisallowMultipleComponent]
 public class QianJieLeiYu : MonoBehaviour
 {
@@ -136,11 +113,11 @@ public class QianJieLeiYu : MonoBehaviour
     [Header("特效")]
     [Tooltip("光环特效（以角色为中心）。路径相对 Assets/resources、不带扩展名")]
     public string 光环特效路径 =
-        "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-arc-black-ring";
+        "CombatVFX/CombatMagic/lightning-fx/lightning-arc-black-ring";
 
     [Tooltip("雷罚特效（出现在每个敌人脚下）")]
     public string 雷罚特效路径 =
-        "特效/战斗法术/Combat Magic VFX Vol.1/resources/lightning-fx/lightning-whirling-arc-zone";
+        "CombatVFX/CombatMagic/lightning-fx/lightning-ray";
 
     [Tooltip("★ 两个特效的**生成旋转**（欧拉角）。\n\n" +
              "**默认 (-90, 0, 0)** —— 用户 2026-09-28 实测确认：不转是躺平的，" +
@@ -266,7 +243,7 @@ public class QianJieLeiYu : MonoBehaviour
         维护光环();
 
         // ---- 雷罚：常驻模式下每帧维护"谁脚下该有"（敌人会动，要跟着） ----
-        if (雷罚常驻) 维护雷罚();
+        if (雷罚常驻 && !使用落雷) 维护雷罚();
 
         // ---- 到点结算 ----
         if (Time.time >= 下次伤害时刻)
@@ -504,7 +481,7 @@ public class QianJieLeiYu : MonoBehaviour
             if (!去过重.Add(npc)) continue;
 
             // 雷罚：常驻模式下由 维护雷罚() 每帧负责，这里只在非常驻模式补一个
-            if (!雷罚常驻) 放一下雷罚(npc);
+            if (使用落雷 || !雷罚常驻) 放一下雷罚(npc);
 
             var 目标 = new NpcTarget(npc);
             var 结果 = 目标.受到攻击(战斗属性, 规则, this);
@@ -604,8 +581,18 @@ public class QianJieLeiYu : MonoBehaviour
     }
 
     /// <summary>非常驻模式：在敌人脚下现放一个（按重放间隔限频）</summary>
+    bool 使用落雷 => !string.IsNullOrEmpty(雷罚特效路径) && 雷罚特效路径.EndsWith("/lightning-ray");
+
     void 放一下雷罚(NpcInstance 敌人)
     {
+        if (使用落雷)
+        {
+            var impact = 敌人.transform.position;
+            float scale = 按体型算缩放(敌人);
+            LightningRayVfx.Spawn(impact + Vector3.up * Mathf.Max(5f, 8f * scale), impact,
+                scale, .65f, "千劫雷狱_落雷_" + 敌人.DisplayName);
+            return;
+        }
         if (雷罚重放间隔 > 0.01f)
         {
             float 上次;

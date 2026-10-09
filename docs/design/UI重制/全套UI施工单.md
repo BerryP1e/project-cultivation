@@ -7,7 +7,7 @@
 > 当前完成范围及最新用户澄清见 [UI接入与维护](../../guides/UI换皮.md)；此处规划不等于全部已实现。
 
 
-> **一句话任务**：把游戏里**所有界面**换成 `cultivation/Assets/UIResources/InkUI/Authoring/` 这套水墨 UI（素材已齐），
+> **一句话任务**：把游戏里**所有界面**换成 `cultivation/Assets/Art/UI/Source/InkUI/Authoring/` 这套水墨 UI（素材已齐），
 > **并保证每个界面的原有功能、数据与交互一个都不能丢**，改完交前后对照截图。
 > 工程根：仓库根，Unity 工程在子目录 `cultivation/`（团结 Tuanjie 2022.3 / Built-in RP）。
 

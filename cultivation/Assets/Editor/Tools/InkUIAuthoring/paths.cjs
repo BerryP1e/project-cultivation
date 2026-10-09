@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const toolkit = __dirname;
 const project = path.resolve(toolkit, '../../../..');
 const repository = path.dirname(project);
-const authoring = path.join(project, 'Assets/UIResources/InkUI/Authoring');
+const authoring = path.join(project, 'Assets/Art/UI/Source/InkUI/Authoring');
 function assetDirectory(toolDirectory) {
     return path.join(authoring, path.relative(toolkit, toolDirectory));
 }

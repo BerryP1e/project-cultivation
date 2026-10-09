@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -13,7 +13,7 @@ using UnityEngine;
 ///   3. 用过就没用的开发工具脚本
 ///
 /// 【保留】
-///   DshBridge.cs        —— 控制通道，项目还在早期，留着
+///   编辑器控制已迁至仓库 devtools/unity，旧 DshBridge 已移除
 ///   NpcAnimator.cs      —— 挂在 261 个 prefab 上
 ///   NpcPrefabBuilder / NpcCreatureSetup / FixNpcMaterials —— 可复用
 ///   各种 Builder（村庄/角色面板/主菜单/技能片段等）—— 生成资产的，将来还要用
@@ -125,7 +125,6 @@ public static class FinalCleanup
         // ---------- 4. 保留项核查 ----------
         报告.Append("=== 保留项核查 ===\n");
         foreach (var p in new[] {
-            "Assets/Editor/Tools/DshBridge.cs",
             "Assets/Scripts/Npc/NpcAnimator.cs",
             "Assets/Editor/Tools/NpcPrefabBuilder.cs",
             "Assets/Editor/Tools/NpcCreatureSetup.cs",

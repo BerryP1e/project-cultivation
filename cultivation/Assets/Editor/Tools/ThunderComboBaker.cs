@@ -43,7 +43,7 @@ public static class ThunderComboBaker
     static void Mirror(AnimationClip source)
     {
         if(!source)throw new InvalidOperationException("缺少已修复的太虚炼气诀普攻");
-        var rig=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/better_player_test/better_player_test.fbx"));
+        var rig=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
         var animator=rig.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
         var controller=new AnimatorController();controller.AddLayer("Mirror");var state=controller.layers[0].stateMachine.AddState("Pose");state.motion=source;state.mirror=true;controller.layers[0].stateMachine.defaultState=state;
         var graph=PlayableGraph.Create("ThunderMirror");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);

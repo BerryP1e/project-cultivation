@@ -1,0 +1,68 @@
+using System.Collections;
+using System.IO;
+using System.Reflection;
+IEnumerator Run(){
+var scene=UnityEngine.SceneManagement.SceneManager.GetSceneByName("Sect_Wilderness");
+if(!scene.isLoaded){var load=UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Sect_Wilderness",UnityEngine.SceneManagement.LoadSceneMode.Additive);while(!load.isDone)yield return null;scene=UnityEngine.SceneManagement.SceneManager.GetSceneByName("Sect_Wilderness");}
+yield return null;
+foreach(var listener in Object.FindObjectsOfType<AudioListener>().Skip(1))listener.enabled=false;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+foreach(var npc in Object.FindObjectsOfType<NpcInstance>())foreach(var c in npc.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+var player=Object.FindObjectOfType<PlayerVitals>().gameObject;var driver=player.GetComponent<PlayerAnimationController>();var caster=player.GetComponent<ActiveSkillCaster>();var panel=Object.FindObjectOfType<UIPanelData>();
+foreach(var c in player.GetComponents<MonoBehaviour>()){var f=c.GetType().GetField("自动出手");if(f!=null&&f.FieldType==typeof(bool))f.SetValue(c,false);}
+player.GetComponent<YufengFlight>()?.强制落地();player.GetComponent<MountRider>()?.强制下坐骑();player.GetComponent<PlayerController>().enabled=false;player.GetComponent<CharacterController>().enabled=false;
+var targeting=player.GetComponent<NpcTargeting>();targeting.ClearLock();targeting.enabled=false;
+var pilot=Object.FindObjectsOfType<VoxelMapPilot>().First(p=>p.gameObject.scene==scene);pilot.enabled=false;pilot.还原岩石();pilot.切换试点(true);
+var terrain=scene.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<Terrain>()).First();var original=pilot.地面.原地形;
+var center=terrain.transform.position+new Vector3(103.125f,0,175);center.y=original.GetInterpolatedHeight(103.125f/original.size.x,175/original.size.z)+terrain.transform.position.y;
+player.transform.SetPositionAndRotation(center-Vector3.forward*8,Quaternion.identity);Physics.SyncTransforms();
+caster.动画=driver;caster.面板数据=panel;caster.快捷键=new KeyCode[0];caster.打印施法日志=false;driver.playbackScale=1;
+var definition=UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_fentian_yanshu.asset");
+var queueField=typeof(VoxelMapPilot).GetField("attacks",BindingFlags.Instance|BindingFlags.NonPublic);
+var queue=(System.Collections.Generic.Queue<IEnumerator>)queueField.GetValue(pilot);
+var report=new System.Text.StringBuilder();int checks=0;void Check(bool ok,string why){if(!ok)throw new System.Exception("FAIL "+why);checks++;report.AppendLine("PASS "+why);File.WriteAllText("../.local/diagnostics/fentian-voxel-report.txt",report.ToString());}
+void Equip(){panel.主动技能=new System.Collections.Generic.List<Object>{Object.Instantiate(definition),null,null,null,null,null};player.GetComponent<PlayerVitals>().当前灵气=10000;}
+Vector3 QueuedPoint(IEnumerator task)=>(Vector3)task.GetType().GetField("center",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).GetValue(task);
+float QueuedRadius(IEnumerator task)=>(float)task.GetType().GetField("radius",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).GetValue(task);
+void Floor(Vector3 point){for(int z=-3;z<=3;z++)for(int x=-3;x<=3;x++){
+bool hit=Physics.RaycastAll(point+new Vector3(x*.8f,8,z*.8f),Vector3.down,20,~0,QueryTriggerInteraction.Ignore).Any(h=>h.collider is TerrainCollider||h.collider.GetComponentInParent<VoxelDestructible>()?.数据.地形源);
+if(!hit)throw new System.Exception("FAIL missing floor "+point+" "+x+","+z);
+}}
+Equip();Check(caster.手动施放(0,center),"wilderness actual manual cast accepted");float deadline=Time.realtimeSinceStartup+10;
+while(!Object.FindObjectOfType<MeteorGroundImpact>()&&Time.realtimeSinceStartup<deadline){Check(queue.Count==0,"no windup terrain cuts");yield return null;}
+var meteor=Object.FindObjectOfType<MeteorGroundImpact>();Check(meteor&&driver.动作进度>=.38f,"38 percent summon in wilderness");var root=meteor.transform.root;var shell=meteor.GetComponent<ParticleSystem>();
+Check(shell.collision.type==ParticleSystemCollisionType.World,"fireballs collide with actual terrain not fixed plane");Check(Mathf.Abs(meteor.破坏半径-1)<.001f,"per fireball one metre radius");
+var runner=root.GetComponent<AreaSkillRunner>();runner.ApplyOnce();Check(queue.Count==0&&pilot.地面.活动地块数==0,"range damage never requests center excavation");
+int previous=0;var points=new System.Collections.Generic.List<Vector3>();deadline=Time.realtimeSinceStartup+8;
+while(meteor&&Time.realtimeSinceStartup<deadline){
+Check(queue.Count==meteor.落地次数,"one terrain request per fireball landing");
+if(queue.Count>previous){var tasks=queue.ToArray();for(int i=previous;i<tasks.Length;i++){
+var point=QueuedPoint(tasks[i]);points.Add(point);Check(Mathf.Abs(QueuedRadius(tasks[i])-1)<.001f,"landing crater radius");
+float sourceY=original.GetInterpolatedHeight((point.x-terrain.transform.position.x)/original.size.x,(point.z-terrain.transform.position.z)/original.size.z)+terrain.transform.position.y;
+Check(Mathf.Abs(point.y-sourceY)<.25f,"landing point follows wilderness terrain height");
+Check(Object.FindObjectsOfType<ExtremeVfxAdapter>().Any(v=>v.name=="CombatVfx_meteor_ground"&&Vector3.Distance(v.transform.position,point+Vector3.up*.02f)<.08f),"cut and lava share actual landing point");
+}previous=tasks.Length;}
+yield return null;
+}
+Check(points.Count>=3,"multiple real fireballs landed count="+points.Count);Check(points.Any(p=>Vector3.Distance(p,points[0])>1),"landings spread rather than repeated center cuts");
+deadline=Time.realtimeSinceStartup+55;int frames=0;double peak=0;
+while(pilot.等待更新&&Time.realtimeSinceStartup<deadline){pilot.更新局部();peak=System.Math.Max(peak,pilot.最近更新毫秒);Physics.SyncTransforms();Floor(center);foreach(var p in points)Floor(p);frames++;yield return null;}
+Check(!pilot.等待更新&&pilot.地面.活动地块数>0,"per landing terrain jobs completed frames="+frames+" peakMs="+peak);
+Vector3 pit=default;bool found=false;foreach(var p in points){foreach(var h in Physics.RaycastAll(p+Vector3.up*8,Vector3.down,20,~0,QueryTriggerInteraction.Ignore).OrderBy(h=>h.distance)){
+if(!h.collider.GetComponentInParent<VoxelDestructible>()?.数据.地形源)continue;
+if(p.y-h.point.y>.4f){pit=h.point;found=true;break;}}
+if(found)break;}
+Check(found,"landing craters have solid pit floors");
+driver.StopAction();yield return null;Equip();Check(caster.手动施放(0,pit),"second cast over existing pit");deadline=Time.realtimeSinceStartup+8;
+while(!Object.FindObjectOfType<MeteorGroundImpact>()&&Time.realtimeSinceStartup<deadline)yield return null;
+meteor=Object.FindObjectOfType<MeteorGroundImpact>();Check(meteor,"second meteor listener created");shell=meteor.GetComponent<ParticleSystem>();
+foreach(var ps in meteor.transform.root.GetComponentsInChildren<ParticleSystem>())ps.Stop(false,ParticleSystemStopBehavior.StopEmittingAndClear);
+var emission=shell.emission;emission.enabled=false;shell.Play(false);
+var emit=new ParticleSystem.EmitParams();emit.position=shell.transform.InverseTransformPoint(pit+Vector3.up*1.2f);emit.velocity=shell.transform.InverseTransformVector(Vector3.down*8);emit.startLifetime=4;emit.startSize=.1f;shell.Emit(emit,1);
+deadline=Time.realtimeSinceStartup+3;while(queue.Count==0&&Time.realtimeSinceStartup<deadline)yield return null;
+Check(queue.Count==1&&meteor.落地次数==1,"single fireball produces single pit cut");var pitCut=QueuedPoint(queue.Peek());Check(Vector3.Distance(pitCut,pit)<.3f,"new fireball hits actual pit floor rather than old terrain plane");
+pilot.还原岩石();Check(queue.Count==0&&!pilot.等待更新,"restore cancels remaining cuts");
+report.AppendLine("FENTIAN_VOXEL_PASS landings="+points.Count+" checks="+checks);File.WriteAllText("../.local/diagnostics/fentian-voxel-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

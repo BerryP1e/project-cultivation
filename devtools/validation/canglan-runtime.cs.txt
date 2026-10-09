@@ -1,0 +1,55 @@
+using System.Collections;
+using System.IO;
+using System.Reflection;
+IEnumerator Run() {
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var driver=player.GetComponent<PlayerAnimationController>();var targeting=player.GetComponent<NpcTargeting>();var stats=player.GetComponent<PlayerCombatStats>();
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var m in n.GetComponentsInChildren<MonoBehaviour>())m.enabled=false;
+var panel=Object.FindObjectOfType<UIPanelData>();panel.当前功法=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_canglan_hanyuanlu.asset");panel.RaiseChanged();player.GetComponent<PlayerAbilityLoader>().Refresh();
+player.GetComponent<PlayerController>().enabled=false;player.GetComponent<YufengFlight>()?.强制落地();player.GetComponent<MountRider>()?.强制下坐骑();targeting.enabled=false;targeting.受神识范围限制=false;
+var origin=new Vector3(18000,30,18000);var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.SetPositionAndRotation(origin,Quaternion.identity);cc.enabled=true;
+var report=new System.Text.StringBuilder();int count=0;void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/canglan-runtime-report.txt",report.ToString());if(!ok)throw new System.Exception(name);count++;}
+stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.AttackSpeed]=2;stats.调试数值[AttributeType.BasicAttackBonus]=.5f;stats.调试数值[AttributeType.ActiveSpellBonus]=7;stats.调试数值[AttributeType.InsightDamage]=3;stats.调试数值[AttributeType.CritChance]=100;stats.调试数值[AttributeType.CritDamage]=50;stats.调试数值[AttributeType.IgnoreDodge]=100;stats.调试神识=20;stats.Recalculate();
+NpcInstance Npc(string name,Vector3 p,bool hostile=true){var go=GameObject.CreatePrimitive(PrimitiveType.Capsule);go.name=name;go.SetActive(false);var d=ScriptableObject.CreateInstance<NpcDefinition>();d.id=name;d.名字=name;d.属性[AttributeType.MaxHealth]=100000;d.属性[AttributeType.InsightResist]=1;d.属性[AttributeType.BasicAttackReduction]=.2f;d.属性[AttributeType.ActiveSpellReduction]=.8f;d.对主角好感度=hostile?-100:100;var n=go.AddComponent<NpcInstance>();n.定义=d;n.每次受击降好感=0;go.transform.position=p;go.SetActive(true);n.ResetHealth();n.enabled=false;return n;}
+var target=Npc("Ice_Target",origin+Vector3.forward*8);var near=Npc("Ice_Near",origin+Vector3.forward*2);var end=Npc("Ice_End",origin+Vector3.forward*11);var side=Npc("Ice_Side",origin+Vector3.right*3);var outside=Npc("Ice_Outside",origin+Vector3.right*8);var friend=Npc("Ice_Friend",origin+Vector3.forward*3,false);var initial=Npc("Ice_Initial",origin+Vector3.forward*.8f);
+target.gameObject.AddComponent<SphereCollider>();near.gameObject.AddComponent<SphereCollider>();
+var all=new[]{target,near,end,side,outside,friend,initial};
+var ice=player.GetComponent<BasicFrostSpike01>();Check(ice&&ice.enabled,"actual gongfa loader enables four-stroke basic");Check(!player.GetComponents<BasicRemoteAttack01>().Any(x=>x.enabled)&&!player.GetComponents<BasicThunder01>().Any(x=>x.enabled),"other basic methods disabled");
+ice.自动出手=false;ice.按住连发=false;ice.攻击键=KeyCode.None;ice.基础冷却=0;ice.打印战斗日志=false;
+Check(ice.普攻规则.伤害属性==DamageNature.特殊&&ice.普攻规则.攻击类别==AttackKind.普通攻击,"special/basic spec");
+var thunder=player.GetComponent<BasicThunder01>()??player.AddComponent<BasicThunder01>();thunder.enabled=false;Check(ice.动作序列.SequenceEqual(thunder.动作序列)&&ice.出手节点.SequenceEqual(thunder.出手节点),"exact same four clips and release nodes as thunder");
+Check(!panel.神通.Any(x=>x&&x.神通id=="ability_hanxu")&&!panel.物品.Any(x=>x&&x.name=="item_active_ability_hanxu"),"no independent Hanxu in runtime catalog");
+yield return new WaitForSecondsRealtime(.5f);
+for(int round=0;round<3;round++){
+ if(round==1)stats.调试数值[AttributeType.ActiveSpellBonus]=1000;
+ if(round==2)stats.调试数值[AttributeType.BasicAttackBonus]=1;
+ stats.Recalculate();float expected=round==2?180:130;
+ for(int stroke=0;stroke<4;stroke++){
+  player.transform.position=origin;targeting.Lock(target,true);yield return null;
+  float[] hp=all.Select(n=>n.CurrentHealth).ToArray();Check(ice.出手(),"accepted r"+round+" A"+(stroke+1));Check(ice.当前式==stroke,"cyclic stroke index");Check(driver.当前动作==Resources.Load<AnimationClip>(ice.动作序列[stroke]),"actual shared clip");
+  float deadline=Time.time+5;while(ice.本次命中数==0&&Time.time<deadline)yield return null;
+  Check(ice.本次命中数>0&&driver.动作进度>=ice.本次出手节点,"release after specified animation node");
+  if(stroke==2){player.transform.position=origin+Vector3.right*20;yield return new WaitForSecondsRealtime(.6f);}
+  string fxName="沧澜寒渊录_A"+(stroke+1)+new[]{"_冰震","_冰刺","_冰波","_冰环"}[stroke];var fx=GameObject.Find(fxName);Check(fx,"correct frost VFX "+fxName);
+  if(stroke==2)Check(Vector3.Dot(fx.transform.right,Vector3.forward)>.999f,"wave source +X faces path direction");
+  if(stroke==3)Check(Vector3.Distance(fx.transform.position,origin)<.02f,"ring centered on player instead of locked target");
+  for(int j=0;j<all.Length;j++){bool hit=stroke<2?j==0:stroke==2?(j==0||j==1||j==2||j==6):(j==1||j==3||j==6);float damage=hp[j]-all[j].CurrentHealth;Check(Mathf.Abs(damage-(hit?expected:0))<.03f,"r"+round+" A"+(stroke+1)+" "+all[j].name+" damage="+damage+" expected="+(hit?expected:0));}
+  Check(ice.本次命中数==(stroke<2?1:stroke==2?4:3),"unique targets including initial wave hit");
+  while(ice.出手动作中&&Time.time<deadline)yield return null;yield return new WaitForSecondsRealtime(.08f);
+ }
+}
+player.transform.position=origin;targeting.ClearLock();var aim=player.GetComponent<PlayerManualAim>();
+Check(!ice.出手(),"no lock prevents automatic cast");
+var draw=typeof(PlayerManualAim).GetMethod("Draw",BindingFlags.NonPublic|BindingFlags.Instance);var ringField=typeof(PlayerManualAim).GetField("ring",BindingFlags.NonPublic|BindingFlags.Instance);
+for(int s=0;s<4;s++){
+ draw.Invoke(aim,new object[]{origin+Vector3.forward*8,ice.下次范围,true,Vector3.up});var ring=(LineRenderer)ringField.GetValue(aim);
+ if(s==2){Check(ring.positionCount==5,"A3 corridor guide");Check(Mathf.Abs(Vector3.Distance(ring.GetPosition(1),ring.GetPosition(2))-12)<.01f,"A3 guide 12m");}
+ if(s==3){var center=(ring.GetPosition(0)+ring.GetPosition(32))*.5f;Check(Vector3.Distance(center,origin+Vector3.up*.08f)<.01f,"A4 guide centered on player");}
+ Check(aim.确认施放(-1,origin+Vector3.forward*8),"manual aim dispatch A"+(s+1));float deadline=Time.time+5;while(ice.出手动作中&&Time.time<deadline)yield return null;yield return new WaitForSecondsRealtime(.08f);
+}
+targeting.Lock(target,true);float old=target.CurrentHealth;Check(ice.出手(),"start then cancel");ice.enabled=false;yield return new WaitForSecondsRealtime(1.2f);Check(target.CurrentHealth==old,"switching method cancels pending hit");
+report.AppendLine("CANGLAN_RUNTIME_PASS checks="+count);File.WriteAllText("../.local/diagnostics/canglan-runtime-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

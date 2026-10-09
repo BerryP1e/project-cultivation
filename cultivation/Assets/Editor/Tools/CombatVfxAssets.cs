@@ -14,7 +14,7 @@ public static class CombatVfxAssets
         var path=folder+"/CombatVfxCatalog.asset";var catalog=AssetDatabase.LoadAssetAtPath<CombatVfxCatalog>(path);
         if(!catalog){catalog=ScriptableObject.CreateInstance<CombatVfxCatalog>();AssetDatabase.CreateAsset(catalog,path);}
         CombatVfxCatalog.Entry Entry(string id,string name,float size,bool direction=false,Vector3 rotation=default,float life=12)
-        {var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/特效/ExtremeFXvol1/FX/"+name+".prefab");if(!prefab)throw new InvalidOperationException("缺少ExtremeFX："+name);return new CombatVfxCatalog.Entry{id=id,预制体=prefab,缩放=size,跟随来向=direction,旋转欧拉=rotation,最长存活=life};}
+        {var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/CombatVFX/ExtremeFX/"+name+".prefab");if(!prefab)throw new InvalidOperationException("缺少ExtremeFX："+name);return new CombatVfxCatalog.Entry{id=id,预制体=prefab,缩放=size,跟随来向=direction,旋转欧拉=rotation,最长存活=life};}
         catalog.特效=new[]{
             Entry(CombatVfxPipeline.太虚剑命中,"Slash_Normal",.12f,true,new Vector3(90,0,0),1.3f),
             Entry(CombatVfxPipeline.火斩命中,"Slash_Fire",.12f,true,new Vector3(90,0,0),2),

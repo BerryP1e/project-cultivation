@@ -53,9 +53,8 @@ public sealed class PlayerManualAim : MonoBehaviour
     {
         if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
-        if(!skill){var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
+        if(!skill){var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
         if(skill.结算方式==ActiveSkillKind.追踪弹)return 2.5f;
-        if(skill.结算方式==ActiveSkillKind.向前冰柱)return 1.3f;
         return VoxelCombatDamage.AreaRadius(skill);
     }
     public bool 确认施放(int slot,Vector3 point)
@@ -69,6 +68,7 @@ public sealed class PlayerManualAim : MonoBehaviour
             foreach(var melee in GetComponents<BasicJiuba01>())if(melee.enabled){cast=melee.手动出手(point);break;}
             if(!cast)foreach(var ranged in GetComponents<BasicRemoteAttack01>())if(ranged.enabled){cast=ranged.手动出手(point);break;}
             if(!cast)foreach(var thunder in GetComponents<BasicThunder01>())if(thunder.enabled){cast=thunder.手动出手(point);break;}
+            if(!cast)foreach(var frost in GetComponents<BasicFrostSpike01>())if(frost.enabled){cast=frost.手动出手(point);break;}
             // 邪眼使用原始落点与自己的神识/冷却检查，不受近战射程和普攻冷却阻止。
             bool eye=GetComponent<DevilEyeAbility>()?.跟随普攻瞄准(point) ?? false;
             cast|=eye;
@@ -87,14 +87,15 @@ public sealed class PlayerManualAim : MonoBehaviour
         if(!material){material=new Material(Shader.Find("Sprites/Default"));ring=CreateLine("技能落点",65);direction=CreateLine("施放指向",2);}
         ring.enabled=direction.enabled=true;Color color=inRange?new Color(.7f,.85f,.8f,.85f):new Color(.8f,.55f,.4f,.8f);
         ring.startColor=ring.endColor=direction.startColor=direction.endColor=color;
-        var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
-        if(skill && skill.结算方式==ActiveSkillKind.向前冰柱)
+        var frost=选择槽位==-1?GetComponent<BasicFrostSpike01>():null;
+        if(frost&&frost.enabled&&frost.下次式==2)
         {
             var forward=point-transform.position;forward.y=0;forward=forward.sqrMagnitude>.0001f?forward.normalized:transform.forward;
-            var start=transform.position+Vector3.up*.1f;var end=start+forward*skill.范围;var side=Vector3.Cross(Vector3.up,forward)*radius;
+            var start=transform.position+Vector3.up*.1f;var end=start+forward*frost.冰波长度;var side=Vector3.Cross(Vector3.up,forward)*radius;
             ring.positionCount=5;ring.SetPositions(new[]{start-side,start+side,end+side,end-side,start-side});direction.SetPositions(new[]{start,end});return;
         }
         ring.positionCount=65;
+        if(frost&&frost.enabled&&frost.下次式==3){point=transform.position;normal=Vector3.up;}
         var rotation=Quaternion.FromToRotation(Vector3.up,normal);
         for(int i=0;i<65;i++){float angle=i*Mathf.PI*2/64;ring.SetPosition(i,point+rotation*new Vector3(Mathf.Cos(angle)*radius,.08f,Mathf.Sin(angle)*radius));}
         direction.SetPosition(0,transform.position+Vector3.up*.12f);direction.SetPosition(1,point+Vector3.up*.12f);

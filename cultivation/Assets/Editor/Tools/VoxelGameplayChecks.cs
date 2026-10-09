@@ -75,13 +75,32 @@ public static class VoxelGameplayChecks
                 Require(melee.出手序号==sequence+1,"Melee sequence did not advance once");Drain(pilot);
             }
             Debug.Log("MANUAL_MELEE_SEQUENCES_PASS");data.当前功法=null;loader.Refresh();
+            // Hanxu now belongs to Canglan's basic sequence, including the self-centred ring.
+            data.当前功法=Asset<GongFaDefinition>("gongfa_canglan_hanyuanlu");loader.Refresh();yield return null;
+            var frost=player.GetComponent<BasicFrostSpike01>();Require(frost && frost.enabled,"Canglan basic was not equipped");
+            bool autoFrost=frost.自动出手;frost.自动出手=false;
+            try
+            {
+                for(int stroke=0;stroke<4;stroke++)
+                {
+                    pilot.还原岩石();player.transform.position=home;animation?.停止动作();
+                    until=Time.time+3;while(!frost.可以出手 && frost.冷却剩余>0 && Time.time<until)yield return null;
+                    Require(aim.确认施放(-1,target),"Manual Canglan rejected: A"+(stroke+1));
+                    until=Time.time+8;while((frost.出手动作中 || Object.FindObjectOfType<FrostWaveAttackRunner>() || pilot.等待更新) && Time.time<until)yield return null;
+                    Require(pilot.地面.活动地块数>0 && !pilot.等待更新,"Canglan basic failed to update terrain: A"+(stroke+1));
+                    Require(frost.普攻规则.伤害属性==DamageNature.特殊 && frost.普攻规则.攻击类别==AttackKind.普通攻击,"Canglan no longer uses special basic damage");
+                    Debug.Log("MANUAL_CANGLAN_VOXEL_PASS A"+(stroke+1));
+                }
+            }
+            finally { frost.自动出手=autoFrost; }
+            data.当前功法=null;loader.Refresh();
             // Small ranges keep this regression bounded; timing, animation, mana and charge rules stay real.
-            string[] ids={"ability_fentian_yanshu","ability_bingbao_shu","ability_shunlei_tianshan","ability_hanxu","ability_xiao_jianzhen","ability_leidong_qianshan"};
+            string[] ids={"ability_fentian_yanshu","ability_bingbao_shu","ability_shunlei_tianshan","ability_xiao_jianzhen","ability_leidong_qianshan"};
             for(int i=0;i<ids.Length;i++)
             {
                 pilot.还原岩石();player.transform.position=home;animation?.停止动作();
                 var skill=Object.Instantiate(Asset<ActiveDivineAbility>(ids[i]));clones.Add(skill);
-                if(skill.神通id!="ability_fentian_yanshu"&&skill.结算方式!=ActiveSkillKind.追踪弹)skill.范围=skill.结算方式==ActiveSkillKind.向前冰柱?3:1.2f;
+                if(skill.神通id!="ability_fentian_yanshu"&&skill.结算方式!=ActiveSkillKind.追踪弹)skill.范围=1.2f;
                 data.主动技能=new List<Object>{skill,null,null,null,null,null};vitals.当前灵气=vitals.灵气上限;
                 float before=vitals.当前灵气;Require(aim.确认施放(0,target),"Manual skill rejected: "+ids[i]);
                 Require(Mathf.Abs(vitals.当前灵气-(before-skill.消耗灵力))<.001f,"Mana cost did not use normal cast path");
@@ -89,7 +108,7 @@ public static class VoxelGameplayChecks
                 until=Time.time+7;while(pilot.地面.活动地块数==0 && Time.time<until)yield return null;
                 Require(pilot.地面.活动地块数>0,"Skill did not reach voxel damage timing: "+ids[i]);
                 Drain(pilot);Debug.Log("MANUAL_SKILL_PASS "+ids[i]);
-                until=Time.time+7;while(Object.FindObjectsOfType<HomingBoltSkillRunner>().Length+Object.FindObjectsOfType<IcePillarSkillRunner>().Length+Object.FindObjectsOfType<DirectedAbilityRunner>().Length+Object.FindObjectsOfType<AreaSkillRunner>().Length+Object.FindObjectsOfType<BlinkSkillRunner>().Length>0 && Time.time<until)yield return null;
+                until=Time.time+7;while(Object.FindObjectsOfType<HomingBoltSkillRunner>().Length+Object.FindObjectsOfType<FrostWaveAttackRunner>().Length+Object.FindObjectsOfType<DirectedAbilityRunner>().Length+Object.FindObjectsOfType<AreaSkillRunner>().Length+Object.FindObjectsOfType<BlinkSkillRunner>().Length>0 && Time.time<until)yield return null;
             }
             // The giant must complete gathering, impact and piercing against a world point without a dummy NPC.
             pilot.还原岩石();player.transform.position=home;animation?.停止动作();

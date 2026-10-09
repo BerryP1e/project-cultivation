@@ -1,0 +1,21 @@
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+var origin=new Vector3(30000,30,30000);var cameraGo=new GameObject("FX_Gallery_Camera");var cam=cameraGo.AddComponent<Camera>();cam.enabled=false;cam.cullingMask=1<<30;cam.orthographic=true;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.11f,.13f,.16f);
+var lightGo=new GameObject("FX_Gallery_Light");var light=lightGo.AddComponent<Light>();light.type=LightType.Directional;light.intensity=1.4f;light.cullingMask=1<<30;lightGo.transform.rotation=Quaternion.Euler(55,-35,0);
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=origin+Vector3.down*.06f;floor.transform.localScale=new Vector3(40,.1f,40);floor.layer=30;var floorMat=new Material(Shader.Find("Standard"));floorMat.color=new Color(.2f,.23f,.25f);floor.GetComponent<Renderer>().sharedMaterial=floorMat;
+var target=GameObject.CreatePrimitive(PrimitiveType.Capsule);target.layer=30;target.transform.position=origin+Vector3.up;var targetMat=new Material(Shader.Find("Standard"));targetMat.color=new Color(.5f,.56f,.6f);target.GetComponent<Renderer>().sharedMaterial=targetMat;
+var rt=new RenderTexture(460,460,24);cam.targetTexture=rt;var sheet=new Texture2D(1380,1380,TextureFormat.RGB24,false);var report=new System.Text.StringBuilder();
+string[] ids={CombatVfxPipeline.太虚剑命中,CombatVfxPipeline.火斩命中,CombatVfxPipeline.太虚炼气命中,CombatVfxPipeline.雷四式[0],CombatVfxPipeline.雷四式[1],CombatVfxPipeline.雷四式[2],CombatVfxPipeline.雷四式[3],CombatVfxPipeline.雷命中,CombatVfxPipeline.火球落地};
+for(int i=0;i<ids.Length;i++){
+var pos=origin+Vector3.up*(i<3||i==7?1:0)+Vector3.back*(i<3||i==7?.65f:0);var go=CombatVfxPipeline.播放(ids[i],pos,Vector3.forward);yield return new WaitForSecondsRealtime(i==6?.35f:i<3||i==7?.06f:.15f);
+foreach(var t in go.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+var bounds=new Bounds(pos,Vector3.zero);foreach(var r in go.GetComponentsInChildren<Renderer>())if(r.enabled)bounds.Encapsulate(r.bounds);
+report.AppendLine(ids[i]+" bounds="+bounds+" components="+go.GetComponentsInChildren<Renderer>().Length);
+cam.orthographicSize=i<3||i==7?3f:i==6?7f:6f;cam.transform.position=origin+new Vector3(7,7,-10);cam.transform.LookAt(origin+Vector3.up*(i<3||i==7?1:2));cam.Render();var prev=RenderTexture.active;RenderTexture.active=rt;sheet.ReadPixels(new Rect(0,0,460,460),(i%3)*460,(2-i/3)*460);RenderTexture.active=prev;
+Object.Destroy(go);yield return null;
+}
+sheet.Apply();File.WriteAllBytes("../.local/diagnostics/extreme-fx-gallery.png",sheet.EncodeToPNG());File.WriteAllText("../.local/diagnostics/extreme-fx-gallery.txt",report.ToString());
+cam.targetTexture=null;Object.Destroy(rt);Object.Destroy(sheet);Object.Destroy(cameraGo);Object.Destroy(lightGo);Object.Destroy(floor);Object.Destroy(target);Object.Destroy(floorMat);Object.Destroy(targetMat);yield break;
+}
+return Run();

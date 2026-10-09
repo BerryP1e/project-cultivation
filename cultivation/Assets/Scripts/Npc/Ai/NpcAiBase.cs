@@ -287,7 +287,7 @@ public abstract class NpcAiBase : MonoBehaviour
              "策划要求：所有物理属性的攻击最起码要有一个基础命中特效 —— 所以\n" +
              "**只要是物理攻击、又没自己配 命中特效路径，就自动放这个**。\n" +
              "预制体由菜单「修仙 / 构建命中特效」生成（自绘贴图，不依赖第三方特效包）")]
-    public string 物理基础命中特效 = "特效/命中/Hit_Physical";
+    public string 物理基础命中特效 = "CombatVFX/Hits/Hit_Physical";
 
     [Header("调试")]
     [Tooltip("切换状态时打一条日志")]
