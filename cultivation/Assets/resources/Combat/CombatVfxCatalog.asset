@@ -18,6 +18,9 @@ MonoBehaviour:
     "\u7F29\u653E": 0.12
     "\u65CB\u8F6C\u6B27\u62C9": {x: 90, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 1
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 1.3
   - id: fire_slash_hit
@@ -25,6 +28,9 @@ MonoBehaviour:
     "\u7F29\u653E": 0.12
     "\u65CB\u8F6C\u6B27\u62C9": {x: 90, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 1
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 2
   - id: remote_hit
@@ -32,13 +38,19 @@ MonoBehaviour:
     "\u7F29\u653E": 0.2
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 1
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 2
   - id: thunder_hit
     "\u9884\u5236\u4F53": {fileID: 100000, guid: c933abb83bb6a714e842790c2f8d538e, type: 3}
-    "\u7F29\u653E": 0.12
+    "\u7F29\u653E": 0.3
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 1.5
   - id: meteor_ground
@@ -46,33 +58,48 @@ MonoBehaviour:
     "\u7F29\u653E": 0.05
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 0.04
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 1.5
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 7
   - id: thunder_a1
     "\u9884\u5236\u4F53": {fileID: 100000, guid: 8ff51bcbbe7974a47ab8d6122303aa79, type: 3}
-    "\u7F29\u653E": 0.6
+    "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 12
   - id: thunder_a2
     "\u9884\u5236\u4F53": {fileID: 100000, guid: edea36c598b109245b78fef9aef6d7d7, type: 3}
-    "\u7F29\u653E": 0.6
+    "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 12
   - id: thunder_a3
     "\u9884\u5236\u4F53": {fileID: 100018, guid: e0e47cd431e22c045baa73fa05a6839e, type: 3}
-    "\u7F29\u653E": 0.6
+    "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 12
   - id: thunder_a4
     "\u9884\u5236\u4F53": {fileID: 100000, guid: 3c0d69c6607bfe744b7da0ab6ff53b67, type: 3}
-    "\u7F29\u653E": 1
+    "\u7F29\u653E": 2.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
     "\u6563\u5E03\u534A\u5F84": 5
     "\u6700\u957F\u5B58\u6D3B": 12

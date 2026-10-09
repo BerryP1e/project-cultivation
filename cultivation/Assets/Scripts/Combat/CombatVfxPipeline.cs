@@ -18,7 +18,9 @@ public static class CombatVfxPipeline
         var go=Object.Instantiate(entry.预制体,point,rotation*entry.预制体.transform.localRotation);
         go.name="CombatVfx_"+id;
         go.transform.localScale=entry.预制体.transform.localScale*Mathf.Max(.001f,entry.缩放*size);
-        var adapter=go.AddComponent<ExtremeVfxAdapter>();adapter.散布半径=entry.散布半径;adapter.初始化(0,Mathf.Abs(go.transform.lossyScale.x));
+        var adapter=go.AddComponent<ExtremeVfxAdapter>();adapter.散布半径=entry.散布半径*size;adapter.关闭场景灯光=entry.关闭场景灯光;
+        adapter.灯光强度倍率=entry.灯光强度倍率;adapter.灯光最大半径=entry.灯光最大半径;
+        adapter.初始化(0,Mathf.Abs(go.transform.lossyScale.x));
         Object.Destroy(go,Mathf.Max(.1f,entry.最长存活));
         return go;
     }

@@ -19,14 +19,16 @@ public static class CombatVfxAssets
             Entry(CombatVfxPipeline.太虚剑命中,"Slash_Normal",.12f,true,new Vector3(90,0,0),1.3f),
             Entry(CombatVfxPipeline.火斩命中,"Slash_Fire",.12f,true,new Vector3(90,0,0),2),
             Entry(CombatVfxPipeline.太虚炼气命中,"Impact_Spark",.2f,true,Vector3.zero,2),
-            Entry(CombatVfxPipeline.雷命中,"ThunderHit",.12f,false,Vector3.zero,1.5f),
+            Entry(CombatVfxPipeline.雷命中,"ThunderHit",.3f,false,Vector3.zero,1.5f),
             Entry(CombatVfxPipeline.火球落地,"Break_Lava",.05f,false,Vector3.zero,7),
-            Entry(CombatVfxPipeline.雷四式[0],"ThunderStorm",.6f),
-            Entry(CombatVfxPipeline.雷四式[1],"Thunder",.6f),
-            Entry(CombatVfxPipeline.雷四式[2],"ThunderAttackGround",.6f),
-            Entry(CombatVfxPipeline.雷四式[3],"EpicZeus",1f)
+            Entry(CombatVfxPipeline.雷四式[0],"ThunderStorm",1.5f),
+            Entry(CombatVfxPipeline.雷四式[1],"Thunder",1.5f),
+            Entry(CombatVfxPipeline.雷四式[2],"ThunderAttackGround",1.5f),
+            Entry(CombatVfxPipeline.雷四式[3],"EpicZeus",2.5f)
         };
         catalog.查找(CombatVfxPipeline.雷四式[3]).散布半径=5f;
+        var lava=catalog.查找(CombatVfxPipeline.火球落地);
+        lava.灯光强度倍率=.04f;lava.灯光最大半径=1.5f;
         EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();Debug.Log("[战斗特效] 九项映射已生成；只配置表现，不改伤害公式");
     }
 }

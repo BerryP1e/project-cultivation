@@ -13,6 +13,11 @@ public sealed class CombatVfxCatalog : ScriptableObject
         public float 缩放=1f;
         public Vector3 旋转欧拉;
         public bool 跟随来向;
+        [Tooltip("关闭此效果及动态子效果对场景的照明，保留火焰等自身发光表现")]
+        public bool 关闭场景灯光;
+        [Min(0)] public float 灯光强度倍率=1f;
+        [Tooltip("场景灯光世界半径上限（米）；0表示不限制，不跟随视觉尺寸放大")]
+        [Min(0)] public float 灯光最大半径;
         public float 散布半径;
         public float 最长存活=12f;
     }

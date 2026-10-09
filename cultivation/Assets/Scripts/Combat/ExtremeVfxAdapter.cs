@@ -17,9 +17,16 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
     MaterialPropertyBlock block;
     float born,visualScale;int depth;Transform owner;
     public float 散布半径;
+    public bool 关闭场景灯光;
+    public float 灯光强度倍率=1f,灯光最大半径;
     public void 初始化(int 深度,float 表现缩放=1f,Transform 生命周期根=null)
     {
         block=new MaterialPropertyBlock();depth=深度;born=Time.time;visualScale=Mathf.Max(.001f,表现缩放);owner=生命周期根?生命周期根:transform;
+        foreach(var light in GetComponentsInChildren<Light>(true))light.intensity*=Mathf.Max(0,灯光强度倍率);
+        if(关闭场景灯光){
+            foreach(var light in GetComponentsInChildren<Light>(true))light.enabled=false;
+            foreach(var ps in GetComponentsInChildren<ParticleSystem>(true)){var lights=ps.lights;lights.enabled=false;}
+        }
         // 装饰碎片不参与角色碰撞；伤害与命中判定仍由战斗系统负责。
         foreach(var collider in GetComponentsInChildren<Collider>(true))collider.enabled=false;
         var explosions=GetComponentsInChildren<EFX_ExplosionObject>(true);
@@ -53,8 +60,10 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
             var rs=source.GetComponentsInChildren<Renderer>(true);
             var colors=new Color[rs.Length];for(int i=0;i<rs.Length;i++)colors[i]=Tint(rs[i]);
             var light=source.GetComponent<Light>();if(light)light.range*=visualScale;
-            endings.Add(new Ending{node=source.gameObject,end=Mathf.Max(.05f,source.LifeTime),renderers=rs,colors=colors,light=light,intensity=light?light.intensity:0,decay=source.LightIntensityMult});
+            endings.Add(new Ending{node=source.gameObject,end=Mathf.Max(.05f,source.LifeTime),renderers=rs,colors=colors,light=light,intensity=light?light.intensity:0,decay=source.LightIntensityMult*Mathf.Max(0,灯光强度倍率)});
         }
+        // Apply after native range scaling; large visual effects must not expand this world-space cap.
+        if(灯光最大半径>0)foreach(var light in GetComponentsInChildren<Light>(true))light.range=Mathf.Min(light.range,灯光最大半径);
         foreach(var source in GetComponentsInChildren<EFX_Explosion>(true))source.enabled=false;
         foreach(var source in explosions){
             source.enabled=false;
@@ -78,7 +87,8 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
         // 原脚本使用世界偏移和绝对缩放，不继承发射器的小缩放/随机旋转。
         var go=Instantiate(prefab,parent.position+offset,rotation);go.transform.localScale=(nativeScale??prefab.transform.localScale)*visualScale;
         // 挂到静止的生命周期根，避免移动雷光携带其子雷光产生双倍位移。
-        go.transform.SetParent(owner,true);go.AddComponent<ExtremeVfxAdapter>().初始化(depth+1,visualScale,owner);return go;
+        go.transform.SetParent(owner,true);var adapter=go.AddComponent<ExtremeVfxAdapter>();adapter.关闭场景灯光=关闭场景灯光;
+        adapter.灯光强度倍率=灯光强度倍率;adapter.灯光最大半径=灯光最大半径;adapter.初始化(depth+1,visualScale,owner);return go;
     }
     void Update()
     {
@@ -86,7 +96,7 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
         foreach(var slash in slashes){if(!slash.visual)continue;float grow=Mathf.SmoothStep(0,1,age/.1f),thin=1-Mathf.SmoothStep(0,1,age/.45f);slash.visual.localScale=new Vector3(Mathf.Lerp(1,slash.maxScale,grow),Mathf.Max(.015f,thin),1);}
         foreach(var spawn in spawns){var s=spawn.source;if(!s||spawn.count>=s.LimitObject||age<spawn.next)continue;
             var offset=(new Vector3(Random.Range(-s.PositionRandomSize.x,s.PositionRandomSize.x),Random.Range(-s.PositionRandomSize.y,s.PositionRandomSize.y),Random.Range(-s.PositionRandomSize.z,s.PositionRandomSize.z))+s.PositionOffset)*visualScale;
-            if(散布半径>0){var disk=Random.insideUnitCircle*散布半径*visualScale;offset=new Vector3(disk.x,offset.y,disk.y);}
+            if(散布半径>0){var disk=Random.insideUnitCircle*散布半径;offset=new Vector3(disk.x,offset.y,disk.y);}
             var go=Child(s.ObjectSpawn,s.transform,offset,s.transform.rotation);if(go)Destroy(go,Mathf.Max(.001f,s.LifeTimeObject));spawn.count++;spawn.next=age+Mathf.Max(0,s.SpawnRate);
         }
         foreach(var atlas in atlases){var s=atlas.source;var r=atlas.renderer;if(!s||!r||!s.play)continue;int total=Mathf.Max(1,s.uvAnimationTileX*s.uvAnimationTileY),frame=(int)(age*s.framesPerSecond);
