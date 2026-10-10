@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
@@ -421,23 +421,22 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     /// 物理/特殊 × 普通攻击/主动神通 四种组合都走这里。
     /// </summary>
     public AttackResult ReceiveAttack(ICombatStats attacker, AttackSpec spec)
+        => CombatDamagePipeline.命中(new NpcTarget(this), attacker, spec, attacker);
+
+    public CombatDamageApplication 应用战斗伤害(float amount, CombatHitContext context)
     {
-        var result = CombatCalculator.Resolve(attacker, this, spec);
-        if (result.命中 && result.伤害 > 0f)
-        {
-            var previousSource=damageSource;damageSource=attacker;
-            try { TakeDamage(result.伤害, alreadyMitigated: true); }
-            finally { damageSource=previousSource; }   // 伤害已按公式算完，别再减一次防御
-
-            // 挨打就掉好感（策划要求「极大程度降低」，默认每次 -20）。
-            // 注意这是【每次伤害结算】都掉：焚天炎术那种多段 AoE 会掉很多次。
-            if (每次受击降好感 != 0f) 改变好感度(-每次受击降好感);
-        }
-
-        // 广播完整结果（含暴击 / 会心），飘字之类的表现层用它
-        结算完成?.Invoke(this, result);
-        return result;
+        if (已死亡) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.InvalidTarget);
+        if (无敌) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.Immune);
+        float before = 当前气血, applied;
+        var previousSource = damageSource; damageSource = context.攻击属性;
+        try { applied = TakeDamage(amount, alreadyMitigated: true); }
+        finally { damageSource = previousSource; }
+        if (applied > 0f && 每次受击降好感 != 0f) 改变好感度(-每次受击降好感);
+        return new CombatDamageApplication(applied, 0, Mathf.Max(0, amount - applied), applied > 0 && applied >= before,
+            applied > 0 ? CombatHitState.Hit : CombatHitState.NoDamage);
     }
+
+    public void 通知战斗结算(AttackResult result) => 结算完成?.Invoke(this, result);
 
     void OnValidate()
     {

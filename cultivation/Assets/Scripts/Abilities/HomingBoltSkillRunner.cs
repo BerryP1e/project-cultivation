@@ -319,8 +319,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
         bool 环境=手动点.HasValue || 弹!=null && 弹.击中体素;
         Vector3 环境点=环境 && 弹!=null?弹.命中点:(锁定?锁定.transform.position:手动点.GetValueOrDefault());
         float 体素半径=环境破坏半径*Mathf.Max(.1f,命中特效缩放);
-        bool 浅坑=神通 && (神通.神通id=="ability_bingbao_shu"||神通.神通id=="ability_shunlei_tianshan");
-        VoxelCombatDamage.Ellipsoid(环境点,体素半径,浅坑?体素半径/8f:体素半径);
+        CombatImpactPipeline.接触(神通.神通id,环境点,体素半径,source:this);
 
         // 1) 命中特效：放在锁定目标身上（**贴地**时放在敌人脚下 —— 冰暴术的 frost-frozen-tomb）
         if (!string.IsNullOrEmpty(命中特效路径) && (锁定 != null || 环境))
@@ -349,9 +348,9 @@ public class HomingBoltSkillRunner : MonoBehaviour
         // 2) 伤害：只打锁定的那一个（【特殊 + 主动神通】）
         if (战斗属性 != null && 锁定 != null && !锁定.IsDead && !环境)
         {
-            var 规则 = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);
+            var 规则 = new AttackSpec(神通.伤害属性, 神通.攻击类别, false, 神通.伤害倍率);
             var 目标 = new NpcTarget(锁定);
-            var 结果 = 目标.受到攻击(战斗属性, 规则, this);
+            var 结果 = CombatDamagePipeline.命中(目标,new CombatHitContext(战斗属性,规则,this,神通.神通id,环境点,弹!=null?-弹.飞行朝向:Vector3.down));
             命中数++;
             累计伤害 += 结果.伤害;
 
@@ -366,7 +365,7 @@ public class HomingBoltSkillRunner : MonoBehaviour
             foreach(var col in Physics.OverlapSphere(环境点,环境破坏半径,敌人层,QueryTriggerInteraction.Ignore))
             {
                 var npc=col.GetComponentInParent<NpcInstance>();
-                if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(战斗属性,new AttackSpec(神通.伤害属性,AttackKind.主动神通,false,神通.伤害倍率));
+                if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))CombatDamagePipeline.命中(npc,new CombatHitContext(战斗属性,new AttackSpec(神通.伤害属性,神通.攻击类别,false,神通.伤害倍率),this,神通.神通id,环境点,Vector3.down));
             }
         }
         收尾();

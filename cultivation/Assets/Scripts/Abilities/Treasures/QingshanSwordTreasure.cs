@@ -60,8 +60,8 @@ public class QingshanSwordTreasure : MonoBehaviour
     public float UnlockRange=>SenseRange;
     public float UltimateScale=>Mathf.Max(.1f,巨剑基础倍率)+Mathf.Max(0,SwordCount-3)*.15f;
     public float UltimateVoxelRadius=>VoxelRadiusForScale(UltimateScale);
-    float VoxelDepthForScale(float scale)=>巨剑体素破坏半径*Mathf.Max(1,scale/10.13f)*(2f/3f);
-    float VoxelRadiusForScale(float scale)=>VoxelDepthForScale(scale)*.5f;
+    float VoxelDepthForScale(float scale)=>CombatImpactPipeline.规则("treasure_qingshan_sword_ultimate").破坏深度(巨剑体素破坏半径*Mathf.Max(1,scale/10.13f));
+    float VoxelRadiusForScale(float scale)=>CombatImpactPipeline.规则("treasure_qingshan_sword_ultimate").半径(巨剑体素破坏半径*Mathf.Max(1,scale/10.13f));
     public event Action<NpcInstance,AttackResult> OnHitLanded;
     void Awake(){Resolve();}
     void Resolve(){if(面板==null)面板=FindObjectOfType<UIPanelData>();if(玩家战斗属性==null)玩家战斗属性=GetComponent<PlayerCombatStats>();if(目标管理器==null)目标管理器=GetComponent<NpcTargeting>();}
@@ -168,7 +168,7 @@ public class QingshanSwordTreasure : MonoBehaviour
     static float SegmentDistance(Vector3 p,Vector3 a,Vector3 b){var d=b-a;float t=d.sqrMagnitude>0?Mathf.Clamp01(Vector3.Dot(p-a,d)/d.sqrMagnitude):0;return Vector3.Distance(p,a+d*t);}
     void Hit(NpcInstance target,Vector3 direction,bool ultimate){
         if(target==null || target.IsDead || 玩家战斗属性==null)return;
-        var result=target.ReceiveAttack(玩家战斗属性,ultimate?new AttackSpec(DamageNature.物理,AttackKind.主动神通,true,万剑伤害倍率):AttackSpec.物理普通攻击);
+        var result=CombatDamagePipeline.命中(target,new CombatHitContext(玩家战斗属性,ultimate?new AttackSpec(DamageNature.物理,AttackKind.主动神通,true,万剑伤害倍率):AttackSpec.物理普通攻击,this,ultimate?"treasure_qingshan_sword_ultimate":"treasure_qingshan_sword",Aim(target),direction));
         if(result.命中 && !ultimate)SwordHitEffect.Spawn(Aim(target),direction,result.暴击);OnHitLanded?.Invoke(target,result);
     }
     public bool TryCastUltimate()=>CastUltimate(null);
@@ -209,7 +209,7 @@ public class QingshanSwordTreasure : MonoBehaviour
                 // 首次接触时结算一次伤害；目标死亡也继续完成整把剑的贯穿和消散。
                 SpawnImpact(giantImpactPoint,Vector3.down);Hit(ultimateTarget,Vector3.down,true);
                 float radius=巨剑体素破坏半径*Mathf.Max(1,giantScale/10.13f);
-                VoxelCombatDamage.Ellipsoid(giantImpactPoint,VoxelRadiusForScale(giantScale),VoxelDepthForScale(giantScale));
+                CombatImpactPipeline.接触("treasure_qingshan_sword_ultimate",giantImpactPoint,radius,source:this);
                 if(manualUltimatePoint.HasValue)
                 {
                     var seen=new HashSet<NpcInstance>();

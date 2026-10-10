@@ -484,7 +484,7 @@ public class QianJieLeiYu : MonoBehaviour
             if (使用落雷 || !雷罚常驻) 放一下雷罚(npc);
 
             var 目标 = new NpcTarget(npc);
-            var 结果 = 目标.受到攻击(战斗属性, 规则, this);
+            var 结果 = CombatDamagePipeline.命中(目标,new CombatHitContext(战斗属性,规则,this,"ability_qianjie_leiyu",npc.transform.position,Vector3.down));
             命中次数++;
             累计伤害 += 结果.伤害;
 
@@ -589,8 +589,7 @@ public class QianJieLeiYu : MonoBehaviour
         {
             var impact = 敌人.transform.position;
             float scale = 按体型算缩放(敌人);
-            LightningRayVfx.Spawn(impact + Vector3.up * Mathf.Max(5f, 8f * scale), impact,
-                scale, .65f, "千劫雷狱_落雷_" + 敌人.DisplayName);
+            LightningRayVfx.SpawnVertical(impact, scale, .65f, "千劫雷狱_落雷_" + 敌人.DisplayName);
             return;
         }
         if (雷罚重放间隔 > 0.01f)

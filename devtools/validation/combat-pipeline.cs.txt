@@ -1,0 +1,57 @@
+using System;
+using System.IO;
+using System.Collections;
+IEnumerator Run() {
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭(); Time.timeScale=1;
+var report=new System.Text.StringBuilder(); int checks=0;
+void Check(bool ok,string text){report.AppendLine((ok?"PASS ":"FAIL ")+text);File.WriteAllText("../.local/diagnostics/combat-pipeline-report.txt",report.ToString());if(!ok)throw new Exception(text);checks++;}
+bool Near(float a,float b)=>Mathf.Abs(a-b)<.002f;
+var objects=new System.Collections.Generic.List<Object>();
+var values=new AttributeSet();values[AttributeType.Attack]=100;values[AttributeType.CritDamage]=2;values[AttributeType.InsightDamage]=3;
+values[AttributeType.BasicAttackBonus]=.5f;values[AttributeType.ActiveSpellBonus]=1;values[AttributeType.PassiveSpellBonus]=2;
+var attacker=new AttributeCombatStats(values);var source=new object();int completed=0,damaged=0,killed=0;CombatHitEvent last=default;
+Action<CombatHitEvent> onDone=h=>{completed++;last=h;},onDamage=h=>damaged++,onKill=h=>killed++;
+CombatDamagePipeline.结算完成+=onDone;CombatDamagePipeline.实际受伤+=onDamage;CombatDamagePipeline.击杀+=onKill;
+NpcInstance Make(string id){var go=new GameObject(id);objects.Add(go);go.SetActive(false);go.transform.position=new Vector3(28000,30,28000);var def=ScriptableObject.CreateInstance<NpcDefinition>();objects.Add(def);def.id=id;def.名字=id;def.属性[AttributeType.MaxHealth]=10000;def.对主角好感度=100;var npc=go.AddComponent<NpcInstance>();npc.定义=def;npc.每次受击降好感=20;go.SetActive(true);npc.ResetHealth();foreach(var c in go.GetComponents<MonoBehaviour>())c.enabled=false;return npc;}
+CombatHitContext Context(AttackSpec spec,string id="test",int segment=7)=>new CombatHitContext(attacker,spec,source,id,new Vector3(1,2,3),Vector3.forward,segment,visualScale:1,playHitVfx:false);
+try {
+var npc=Make("Pipeline_Target");int local=0;npc.结算完成+=(n,r)=>local++;
+foreach(var nature in new[]{DamageNature.物理,DamageNature.特殊})foreach(var kind in new[]{AttackKind.普通攻击,AttackKind.主动神通,AttackKind.被动神通}){
+ npc.ResetHealth();var spec=new AttackSpec(nature,kind,true,1.25f);var expected=(nature==DamageNature.物理?2:3)*100*(kind==AttackKind.普通攻击?1.5f:kind==AttackKind.主动神通?2:3)*1.25f;
+ var pure=CombatCalculator.Resolve(attacker,npc,spec);Check(!pure.已应用&&Near(pure.计算伤害,expected),"formula remains unapplied "+nature+kind);
+ var before=npc.CurrentHealth;var r=CombatDamagePipeline.命中(npc,Context(spec));Check(r.已应用&&r.状态==CombatHitState.Hit&&Near(r.计算伤害,expected)&&Near(r.伤害,before-npc.CurrentHealth),"applied damage "+nature+kind);
+ Check(last.上下文.来源==source&&last.上下文.来源id=="test"&&last.上下文.段数==7&&last.上下文.接触点==new Vector3(1,2,3),"contact context preserved");
+}
+Check(completed==6&&damaged==6&&local==6&&killed==0,"one local/global notification per applied hit");
+npc.TakeDamage(npc.CurrentHealth-50,true);var death=CombatDamagePipeline.命中(npc,Context(AttackSpec.物理普通攻击));Check(Near(death.计算伤害,300)&&Near(death.伤害,50)&&Near(death.过量伤害,250)&&death.致命,"overkill reports actual HP and lethal");
+int doneBefore=completed;var dead=CombatDamagePipeline.命中(npc,Context(AttackSpec.物理普通攻击));Check(dead.状态==CombatHitState.InvalidTarget&&completed==doneBefore&&killed==1,"dead target rejects repeat damage and kill");
+npc.ResetHealth();npc.无敌=true;float favor=npc.对主角好感度;var rng=UnityEngine.Random.state;var immune=CombatDamagePipeline.命中(npc,Context(AttackSpec.特殊主动神通));Check(immune.状态==CombatHitState.Immune&&immune.伤害==0&&!immune.有效接触&&npc.对主角好感度==favor,"immune target suppresses damage/favor/VFX");Check(UnityEngine.Random.state.Equals(rng),"immune contact consumes no random rolls");npc.无敌=false;
+var batch=new CombatHitBatch();doneBefore=completed;var ctx=Context(AttackSpec.物理普通攻击);var first=batch.命中(new NpcTarget(npc),ctx);var duplicate=batch.命中(new NpcTarget(npc),ctx);Check(first.伤害>0&&duplicate.状态==CombatHitState.Duplicate&&completed==doneBefore+1&&last.上下文.攻击序号==batch.攻击序号,"multi-collider batch applies once");Check(new CombatHitBatch().命中(new NpcTarget(npc),ctx).伤害>0,"next pulse can hit same target");
+var training=Make("Pipeline_Training");training.定义.死亡后立即重生=true;training.定义.重生延迟=0;training.TakeDamage(training.CurrentHealth-20,true);ICombatStats legacySource=null;int legacyKills=0;
+Action<NpcInstance,ICombatStats> legacy=(n,a)=>{if(n==training){legacySource=a;legacyKills++;}};NpcInstance.CombatKilled+=legacy;
+try{var r=CombatDamagePipeline.命中(training,ctx);Check(r.致命&&Near(r.伤害,20)&&!training.IsDead&&training.CurrentHealth==training.MaxHealth&&legacyKills==1&&legacySource==attacker,"training revival retains lethal and original attribution");}finally{NpcInstance.CombatKilled-=legacy;}
+// Real player adapter, shield filtering and death application on an isolated actor.
+var actor=new GameObject("Pipeline_Player");objects.Add(actor);actor.SetActive(false);var stats=actor.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.MaxHealth]=10000;stats.调试数值[AttributeType.MaxSpirit]=1000;stats.Recalculate();
+var vitals=actor.AddComponent<PlayerVitals>();vitals.属性=stats;vitals.自动回复=false;vitals.过场保护宽限=0;var shield=actor.AddComponent<PassiveShieldAbilities>();var panelGo=new GameObject("Pipeline_Panel");objects.Add(panelGo);var panel=panelGo.AddComponent<UIPanelData>();actor.SetActive(true);shield.面板数据=panel;vitals.复活();
+var player=new PlayerTarget(vitals);Check(!vitals.无敌,"isolated player is damageable");panel.四御已激活=true;panel.绝对护罩剩余次数=2;
+int injuryBefore=damaged;var shielded=CombatDamagePipeline.命中(player,ctx);Check(shielded.状态==CombatHitState.ShieldBlocked&&shielded.伤害==0&&Near(shielded.吸收伤害,300)&&panel.绝对护罩剩余次数==1&&damaged==injuryBefore,"absolute shield consumes one charge and publishes no injury");
+vitals.调试无敌=true;CombatDamagePipeline.命中(player,ctx);Check(panel.绝对护罩剩余次数==1,"immunity checked before shield consumption");vitals.调试无敌=false;
+panel.四御已激活=false;panel.绝对护罩剩余次数=0;
+var passive=ScriptableObject.CreateInstance<PassiveDivineAbility>();objects.Add(passive);passive.神通id="pipeline_shield";passive.结算方式=PassiveSkillKind.物理护罩;passive.减伤比例=.5f;panel.EnsureLists();panel.神通.Add(passive);panel.已获得被动神通.Add(passive);panel.已停用被动.Remove(passive);vitals.当前灵气=100;
+var reduced=CombatDamagePipeline.命中(player,ctx);Check(Near(reduced.伤害,150)&&Near(reduced.吸收伤害,150),"physical passive shield separates absorbed and applied: damage="+reduced.伤害+" absorbed="+reduced.吸收伤害+" calculated="+reduced.计算伤害+" enabled="+panel.GetEnabledPassives().Count);var special=CombatDamagePipeline.命中(player,Context(AttackSpec.特殊普通攻击));Check(Near(special.伤害,450)&&special.吸收伤害==0,"physical shield does not reduce special damage");
+panel.SetPassiveEnabled(passive,false);vitals.当前气血=25;var playerDeath=CombatDamagePipeline.命中(player,ctx);Check(vitals.IsDead&&playerDeath.致命&&Near(playerDeath.伤害,25)&&Near(playerDeath.过量伤害,275),"player death and overkill use same result model");
+// Miss must never consume a shield charge, even with a full visible contact.
+vitals.复活();stats.调试数值[AttributeType.Dodge]=10000;stats.Recalculate();panel.四御已激活=true;panel.绝对护罩剩余次数=2;
+var state=UnityEngine.Random.state;int seed=0;for(;seed<10000;seed++){UnityEngine.Random.InitState(seed);if(!CombatCalculator.Resolve(attacker,stats,AttackSpec.特殊普通攻击).Hit)break;}UnityEngine.Random.InitState(seed);
+var miss=CombatDamagePipeline.命中(player,Context(AttackSpec.特殊普通攻击));UnityEngine.Random.state=state;Check(miss.状态==CombatHitState.Miss&&!miss.有效接触&&miss.伤害==0&&panel.绝对护罩剩余次数==2,"miss leaves shield untouched");
+foreach(var id in new[]{"basic_taixu_sword_01","basic_jiuba_01","basic_lingxu_sword_01"}){var entry=CombatImpactPipeline.规则(id);Check(entry!=null&&entry.环境形状==CombatEnvironmentShape.None,"melee policy never destroys voxels "+id);var fx=CombatVfxPipeline.配置.查找(entry.生物命中特效id);Check(fx!=null&&fx.预制体&&fx.预制体.name==(id=="basic_taixu_sword_01"?"Slash_Normal":"Slash_Fire"),"melee prefab mapping "+id);}
+Check(Near(CombatImpactPipeline.规则("ability_bingbao_shu").破坏深度(8),1)&&Near(CombatImpactPipeline.规则("ability_shunlei_tianshan").破坏深度(8),1),"ice/lightning depth remains one eighth");
+Check(Near(CombatImpactPipeline.规则("meteor_ground").破坏深度(3),1)&&Near(CombatImpactPipeline.规则("frost_wave").破坏深度(4),1),"meteor/wave depth tuning retained");var giant=CombatImpactPipeline.规则("treasure_qingshan_sword_ultimate");Check(Near(giant.半径(6),2)&&Near(giant.破坏深度(6),4),"giant sword radius/depth tuning retained");
+int environmentEvents=0;Action<CombatEnvironmentContact> env=c=>{environmentEvents++;Check(c.来源==source&&c.来源id=="meteor_ground"&&Near(c.深度,1),"environment contact carries independent policy");};CombatImpactPipeline.环境接触+=env;
+try{doneBefore=completed;CombatImpactPipeline.接触("meteor_ground",new Vector3(29000,30,29000),3,playEffect:false,source:source);Check(environmentEvents==1&&completed==doneBefore,"environment contact does not deal biological damage");}finally{CombatImpactPipeline.环境接触-=env;}
+report.AppendLine("COMBAT_PIPELINE_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/combat-pipeline-report.txt",report.ToString());Debug.Log(report.ToString());
+}finally{CombatDamagePipeline.结算完成-=onDone;CombatDamagePipeline.实际受伤-=onDamage;CombatDamagePipeline.击杀-=onKill;foreach(var obj in objects)if(obj)Object.Destroy(obj);}
+}
+return Run();

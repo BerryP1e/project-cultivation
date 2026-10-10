@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **战阵真灵的行为。**
@@ -286,7 +286,7 @@ public class FormationSpirit : NpcAiCombatant
 
         // 其余（包括"勾了施法但没配弹道"）立即结算。
         // 注意不能调基类的 生成子弹 → 它没弹道时会退化成 立即命中() → 打到主人身上 ✗
-        var 结果 = 靶.受到攻击(自己, 规则, 自己);
+        var 结果 = CombatDamagePipeline.命中(靶,new CombatHitContext(自己,规则,自己,"formation:"+配置.动作名,靶.判定点,靶.判定点-transform.position));
         广播出手(配置, 结果);
 
         if (打印真灵日志)

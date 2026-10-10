@@ -319,7 +319,7 @@ public class BlinkSkillRunner : MonoBehaviour
     /// <summary>对起点和落点各结算一次（同一敌人只打一次）</summary>
     void 结算一次()
     {
-        VoxelCombatDamage.Sphere(起点,描边半径);VoxelCombatDamage.Sphere(落点,描边半径);
+        CombatImpactPipeline.接触(神通.神通id,起点,描边半径,source:this);CombatImpactPipeline.接触(神通.神通id,落点,描边半径,source:this);
         if (战斗属性 == null) { 收尾(); return; }
 
         var 规则 = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);
@@ -342,7 +342,7 @@ public class BlinkSkillRunner : MonoBehaviour
             if (!已打过的.Add(npc)) continue;          // 起落两处都覆盖到时只打一次
 
             var 目标 = new NpcTarget(npc);
-            var 结果 = 目标.受到攻击(战斗属性, 规则, this);
+            var 结果 = CombatDamagePipeline.命中(目标,new CombatHitContext(战斗属性,规则,this,神通.神通id,中心,Vector3.down));
             命中数++;
             累计伤害 += 结果.伤害;
 

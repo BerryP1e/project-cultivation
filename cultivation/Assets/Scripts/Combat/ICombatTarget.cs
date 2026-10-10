@@ -22,8 +22,8 @@
 /// var 结果 = 目标.受到攻击(攻击方属性, 规则);
 /// ```
 ///
-/// 这一层是**薄适配**，不改 <see cref="NpcInstance"/> / <see cref="PlayerVitals"/> 内部：
-/// NPC 侧转发给它们已有的 <c>ReceiveAttack</c>，玩家侧用 <see cref="CombatCalculator"/> 算完再扣。
+/// 这一层是薄适配：向 CombatDamagePipeline 提供属性、免疫状态与扣血入口。
+/// 新攻击使用 CombatHitContext；受到攻击保留为兼容入口，同样经过统一管线。
 /// </summary>
 public interface ICombatTarget
 {
@@ -41,9 +41,13 @@ public interface ICombatTarget
 
     /// <summary>显示名（日志用）</summary>
     string 名字 { get; }
+    ICombatStats 战斗属性 { get; }
+    bool 免疫伤害 { get; }
+    CombatDamageApplication 应用伤害(float amount, CombatHitContext context);
+    void 通知结算(AttackResult result);
 
     /// <summary>
-    /// **挨一次攻击。** 伤害公式由实现方内部走 <see cref="CombatCalculator"/>，
+    /// **挨一次攻击。** 伤害公式由统一管线走 <see cref="CombatCalculator"/>，
     /// 调用方只管把「攻击方属性 + 规则」递进来。
     /// </summary>
     /// <param name="攻击方属性">攻击方的战斗属性（<see cref="ICombatStats"/>）</param>
@@ -64,13 +68,17 @@ public sealed class NpcTarget : ICombatTarget
     public bool 已倒下 => 单位 == null || 单位.IsDead;
     public float 当前气血 => 单位 != null ? 单位.CurrentHealth : 0f;
     public string 名字 => 单位 != null ? 单位.DisplayName : "（无）";
+    public ICombatStats 战斗属性 => 单位;
+    public bool 免疫伤害 => 单位 == null || 单位.无敌;
+    public CombatDamageApplication 应用伤害(float amount, CombatHitContext context) => 单位.应用战斗伤害(amount, context);
+    public void 通知结算(AttackResult result) => 单位.通知战斗结算(result);
 
     /// <summary>瞄准高度（大致半身）</summary>
     public static float 判定高度 = 1.1f;
 
-    /// <summary>NPC 侧直接转发给它自己的结算入口（内部已经走了伤害公式）</summary>
+    /// <summary>兼容入口，同样返回统一管线的实际扣血结果。</summary>
     public AttackResult 受到攻击(ICombatStats 攻击方属性, AttackSpec 规则, object 攻击方 = null)
-        => 单位 != null ? 单位.ReceiveAttack(攻击方属性, 规则) : default;
+        => CombatDamagePipeline.命中(this, 攻击方属性, 规则, 攻击方);
 }
 
 /// <summary>把 <see cref="PlayerVitals"/> 当成锁定单位</summary>
@@ -85,21 +93,19 @@ public sealed class PlayerTarget : ICombatTarget
     public bool 已倒下 => 气血 == null || 气血.已死亡;
     public float 当前气血 => 气血 != null ? 气血.当前气血 : 0f;
     public string 名字 => 气血 != null ? 气血.name : "（无）";
+    public ICombatStats 战斗属性 => 气血 != null ? 气血.属性 : null;
+    public bool 免疫伤害 => 气血 == null || 气血.无敌;
+    public CombatDamageApplication 应用伤害(float amount, CombatHitContext context) => 气血.应用战斗伤害(amount, context.规则.伤害属性);
+    public void 通知结算(AttackResult result) => 气血.通知战斗结算(result);
 
     public static float 判定高度 = 1.1f;
 
     /// <summary>
-    /// 玩家侧：伤害公式在这里算完，再交给 <see cref="PlayerVitals.受到伤害"/> 扣。
-    /// （玩家没有 NPC 那种"自己结算"的入口，所以适配层替它算。
-    ///  <see cref="PlayerVitals.无敌"/> / 已死亡 由 <c>受到伤害</c> 内部挡掉。）
+    /// 玩家兼容入口：统一计算，再由 PlayerVitals 应用护盾、扣血和死亡。
     /// </summary>
     public AttackResult 受到攻击(ICombatStats 攻击方属性, AttackSpec 规则, object 攻击方 = null)
     {
-        if (气血 == null || 气血.属性 == null) return default;
-
-        var 结果 = CombatCalculator.Resolve(攻击方属性, 气血.属性, 规则);
-        if (结果.命中 && 结果.伤害 > 0f) 气血.受到伤害(结果.伤害, 规则.伤害属性);
-        return 结果;
+        return CombatDamagePipeline.命中(this, 攻击方属性, 规则, 攻击方);
     }
 }
 

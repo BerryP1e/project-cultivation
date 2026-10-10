@@ -184,7 +184,7 @@ docs/
 | **外部素材的授权 / 出处 / sha256（★ 必读授权状况）** | [reference/外部素材来源](reference/外部素材来源.md) | [guides/灵田 §7](guides/灵田.md) |
 | **时间 / 纪年 / 修炼机会** | [guides/时间系统](guides/时间系统.md) | [architecture/修炼与境界](architecture/修炼与境界.md) |
 | **炼丹 / 拖拽丹房 / 竹筒丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | [炼丹交互素材与提示词](reference/UI素材/炼丹交互素材.md) · `Assets/Scripts/Alchemy/炼丹炉.cs` |
-| **伤害公式 / 属性 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) | `Assets/Scripts/Combat/CombatCalculator.cs` |
+| **伤害公式 / 实际扣血 / 护盾 / 命中事件 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) · [战斗命中特效管线](guides/战斗命中特效管线.md) | `CombatDamagePipeline` / `CombatImpactCatalog` / `CombatCalculator` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
 | **水炮 / 持续锁链 / 主动键施放的被动伤害剑阵** | [水龙炮](guides/水龙炮.md) · [禁锢锁链](guides/禁锢锁链.md) · [小剑阵](guides/小剑阵.md) | [配置表字段](reference/配置表字段.md#31-神通运行效果字段) |
 | **邪眼攻击耗蓝 / 减伤护罩互斥耗蓝 / 主动四御与次数保存** | [邪眼](guides/邪眼.md) · [防护罩](guides/防护罩.md) | [神通图标](reference/UI素材/神通图标.md) |

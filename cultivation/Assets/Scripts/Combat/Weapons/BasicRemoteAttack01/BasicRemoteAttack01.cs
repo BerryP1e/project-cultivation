@@ -289,7 +289,7 @@ public class BasicRemoteAttack01 : MonoBehaviour
         飞.追踪终止距离 = 神识范围;        // 锁定单位超出神识范围 → 放弃
         飞.最长追踪时间 = 最长追踪时间;     // 超过 8 秒 → 放弃
         飞.设置追踪飞行(目标.根, 飞弹速度, 追踪转向速度);
-        飞.到达时 += () => {if(飞.击中体素)环境命中(飞.命中点,飞.飞行朝向);else {VoxelCombatDamage.Sphere(飞.命中点,.6f);结算命中(目标, 飞);}};
+        飞.到达时 += () => {if(飞.击中体素)环境命中(飞.命中点,飞.飞行朝向);else {CombatImpactPipeline.接触("basic_remoteattack_01",飞.命中点,playEffect:false,source:this);结算命中(目标, 飞);}};
 
         if (打印战斗日志)
             Debug.Log("[basic_remoteattack_01] 对锁定单位「" + 目标.名字 + "」出弹"
@@ -305,11 +305,10 @@ public class BasicRemoteAttack01 : MonoBehaviour
     }
     void 环境命中(Vector3 point,Vector3 direction)
     {
-        VoxelCombatDamage.Sphere(point,.6f);
-        CombatVfxPipeline.播放(CombatVfxPipeline.太虚炼气命中,point,-direction,命中特效缩放);
+        CombatImpactPipeline.接触("basic_remoteattack_01",point,visualScale:命中特效缩放,source:this,direction:-direction);
         var seen=new System.Collections.Generic.HashSet<NpcInstance>();
         foreach(var c in Physics.OverlapSphere(point,.6f,~0,QueryTriggerInteraction.Ignore))
-        {var npc=c.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,技能倍率));}
+        {var npc=c.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))CombatDamagePipeline.命中(npc,new CombatHitContext(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,技能倍率),this,"basic_remoteattack_01",point,-direction,playHitVfx:false));}
     }
 
     /// <summary>飞弹到达 → 对锁定单位结算一次</summary>
@@ -318,19 +317,14 @@ public class BasicRemoteAttack01 : MonoBehaviour
         if (目标 == null || 目标.已倒下) return;
 
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 技能倍率);
-        var 结果 = 目标.受到攻击(玩家战斗属性, 规则, this);
+        Vector3 命中点 = 飞 != null ? Vector3.Lerp(飞.命中点, 目标.判定点, 0.85f) : 目标.判定点;
+        Vector3 朝向 = 飞 != null ? -飞.飞行朝向 : Vector3.forward;
+        var 结果 = CombatDamagePipeline.命中(目标, new CombatHitContext(玩家战斗属性, 规则,
+            this, "basic_remoteattack_01", 命中点, 朝向, visualScale:命中特效缩放));
         上次结果 = 结果;
 
         if (打印战斗日志)
             Debug.Log("[basic_remoteattack_01] 命中「" + 目标.名字 + "」 " + 结果, this);
-
-        // 命中特效：放在**弹道的真实命中点**，朝向来向（和 NPC 那边同一套做法）
-        if (结果.命中)
-        {
-            Vector3 命中点 = 飞 != null ? Vector3.Lerp(飞.命中点, 目标.判定点, 0.85f) : 目标.判定点;
-            Vector3 朝向 = 飞 != null ? -飞.飞行朝向 : Vector3.forward;
-            CombatVfxPipeline.命中(CombatVfxPipeline.太虚炼气命中,结果,命中点,朝向,命中特效缩放);
-        }
 
         命中时?.Invoke(目标, 结果);
     }

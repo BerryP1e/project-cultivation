@@ -68,10 +68,10 @@ public sealed class WaterDragonSkillRunner : MonoBehaviour
         nextDamage=Time.time+Mathf.Max(.05f,ability.伤害间隔);
         if(target)
         {
-            target.ReceiveAttack(caster.战斗属性,new AttackSpec(ability.伤害属性,ability.攻击类别,false,ability.伤害倍率));
+            CombatDamagePipeline.命中(target,new CombatHitContext(caster.战斗属性,new AttackSpec(ability.伤害属性,ability.攻击类别,false,ability.伤害倍率),caster,ability.神通id,AbilityVfxUtility.命中点(target.transform),target.transform.position-caster.transform.position,结算次数));
             结算次数++;
         }
-        else if(manual.HasValue)VoxelCombatDamage.Sphere(manual.Value,.65f);
+        else if(manual.HasValue)CombatImpactPipeline.接触(ability.神通id,manual.Value,source:caster);
     }
 
     void LateUpdate()

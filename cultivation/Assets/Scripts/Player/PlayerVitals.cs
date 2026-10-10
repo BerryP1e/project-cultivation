@@ -256,12 +256,22 @@ public class PlayerVitals : MonoBehaviour
     /// 这里只管扣当前值。
     /// </summary>
     public float 受到伤害(float 伤害, DamageNature 属性类型 = DamageNature.物理)
-    {
-        if (伤害 <= 0f || 已死亡 || 无敌) return 0f;   // 已倒下 / 无敌期 都不受伤。要恢复请调 复活() 或 回满()
+        => 应用战斗伤害(伤害, 属性类型).实际伤害;
 
+    public event System.Action<PlayerVitals, AttackResult> 结算完成;
+    public void 通知战斗结算(AttackResult result) => 结算完成?.Invoke(this, result);
+
+    public CombatDamageApplication 应用战斗伤害(float 伤害, DamageNature 属性类型)
+    {
+        if (已死亡) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.InvalidTarget);
+        if (无敌) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.Immune);
+        if (伤害 <= 0f) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.NoDamage);
+
+        float 原伤害 = 伤害;
         var 护罩 = GetComponent<PassiveShieldAbilities>();
         if (护罩 != null && 护罩.isActiveAndEnabled) 伤害 = 护罩.过滤伤害(伤害, 属性类型);
-        if (伤害 <= 0f) return 0f;
+        float 吸收 = Mathf.Max(0, 原伤害 - 伤害);
+        if (伤害 <= 0f) return new CombatDamageApplication(0, 吸收, 0, false, CombatHitState.ShieldBlocked);
 
         float 实际 = Mathf.Min(伤害, 当前气血);
         当前气血 -= 实际;
@@ -275,7 +285,7 @@ public class PlayerVitals : MonoBehaviour
 
         气血变化?.Invoke(this, 实际, 致命);
         if (致命) 死亡?.Invoke(this);
-        return 实际;
+        return new CombatDamageApplication(实际, 吸收, Mathf.Max(0, 伤害 - 实际), 致命, CombatHitState.Hit);
     }
 
     /// <summary>满血复活并清除死亡标记</summary>

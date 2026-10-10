@@ -63,7 +63,7 @@ public class TreasureCaster : MonoBehaviour
             if(Time.time>=nextTick) {
                 nextTick=Time.time+1;
                 ticking=true;
-                try { target.ReceiveAttack(stats,new AttackSpec(DamageNature.特殊,AttackKind.主动神通,true,definition.伤害倍率)); }
+                try { CombatDamagePipeline.命中(target,new CombatHitContext(stats,new AttackSpec(DamageNature.特殊,AttackKind.主动神通,true,definition.伤害倍率),this,"treasure_zhenyaohu",target.transform.position,target.transform.position-transform.position)); }
                 finally { ticking=false; }
             }
         } else if(CurrentPhase == Phase.Absorbing) {

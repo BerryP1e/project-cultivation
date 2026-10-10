@@ -1570,17 +1570,16 @@ public abstract class NpcAiBase : MonoBehaviour
     /// <summary>立即结算一次，打到玩家身上</summary>
     protected void 立即命中(AttackSpec 规则, NpcAttackConfig 配置, Vector3? 网格接触点 = null)
     {
-        if (玩家生命 == null || 玩家战斗属性 == null) return;
-
-        var 结果 = CombatCalculator.Resolve(自己, 玩家战斗属性, 规则);
+        var 目标 = 锁定单位;
+        if (目标 == null || 目标.已倒下) return;
+        var 判定点 = 网格接触点 ?? 目标.判定点;
+        var 结果 = CombatDamagePipeline.命中(目标, new CombatHitContext(自己, 规则, 自己,
+            "npc:" + 配置.动作名, 判定点, transform.position - 判定点));
         if (结果.命中 && 结果.伤害 > 0f)
         {
-            玩家生命.受到伤害(结果.伤害, 规则.伤害属性);
-
             // 【命中特效】以前这条路径**一个特效都不放**，打上去光秃秃的。
             // 现在统一走 生成命中特效 → 物理攻击自动兜上基础特效。
             // 网格判定时用**接触点**，特效就贴在武器打到的那一块上。
-            var 判定点 = 网格接触点 ?? (玩家生命.transform.position + Vector3.up * PlayerTarget.判定高度);
             生成命中特效(配置, 判定点, transform.position - 判定点);
         }
 
@@ -1660,12 +1659,13 @@ public abstract class NpcAiBase : MonoBehaviour
     /// <summary>打中了目标点：按公式结算一次并广播</summary>
     void 在目标结算(AttackSpec 规则, NpcAttackConfig 配置, NpcProjectile 弹 = null)
     {
-        // **统一走「锁定单位」** —— 不再写死玩家。伤害公式由适配层内部走
-        // （玩家侧 PlayerTarget 会调 CombatCalculator 再扣血；NPC 侧 NpcTarget 转发给 ReceiveAttack）。
+        // 统一走锁定单位与接触管线，玩家/NPC使用相同的公式和实际扣血结果。
         var 目标 = 锁定单位;
         if (目标 == null || 目标.已倒下) return;
 
-        var 结果 = 目标.受到攻击(自己, 规则, 自己);
+        var 实际接触 = 弹 != null ? Vector3.Lerp(弹.命中点, 目标.判定点, .85f) : 目标.判定点;
+        var 结果 = CombatDamagePipeline.命中(目标, new CombatHitContext(自己, 规则, 自己,
+            "npc:" + 配置.动作名, 实际接触, 弹 != null ? -弹.飞行朝向 : transform.position - 实际接触));
 
         if (结果.命中 && 结果.伤害 > 0f)
         {

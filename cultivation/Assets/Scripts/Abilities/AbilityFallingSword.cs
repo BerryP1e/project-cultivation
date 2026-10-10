@@ -39,7 +39,7 @@ public class AbilityFallingSword : MonoBehaviour
             Vector3 命中 = hitSurface?surface.point:Vector3.Lerp(后, 前, t);
             transform.position = 命中;
             已落地 = true;
-            VoxelCombatDamage.Sphere(命中,Mathf.Clamp(transform.lossyScale.x*.7f,.45f,1.5f));
+            CombatImpactPipeline.接触("ability_xiao_jianzhen",命中,Mathf.Clamp(transform.lossyScale.x*.7f,.45f,1.5f),source:this);
             foreach (var 粒子 in GetComponentsInChildren<ParticleSystem>(true))
             {
                 if (粒子.name.Contains("SwordBody") || 粒子.name.Contains("SwordHead"))

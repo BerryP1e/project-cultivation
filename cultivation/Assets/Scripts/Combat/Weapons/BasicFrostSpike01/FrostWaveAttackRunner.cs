@@ -10,7 +10,7 @@ public sealed class FrostWaveAttackRunner : MonoBehaviour
     LayerMask layers;
     Vector3 origin, direction;
     float length, width, duration, born, scanned, voxelScanned;
-    readonly HashSet<NpcInstance> hit = new HashSet<NpcInstance>();
+    readonly CombatHitBatch hit = new CombatHitBatch();
     public int 命中数 { get; private set; }
     public System.Action<NpcInstance> 命中回调;
 
@@ -59,8 +59,8 @@ public sealed class FrostWaveAttackRunner : MonoBehaviour
             width * .5f, layers, QueryTriggerInteraction.Ignore))
         {
             var npc = c.GetComponentInParent<NpcInstance>();
-            if (!npc || npc.IsDead || (!npc.是敌对目标 && npc != locked) || !hit.Add(npc)) continue;
-            var result = new NpcTarget(npc).受到攻击(attacker, spec, this);
+            if (!npc || npc.IsDead || (!npc.是敌对目标 && npc != locked)) continue;
+            var result = hit.命中(new NpcTarget(npc),new CombatHitContext(attacker,spec,this,"frost_wave",c.ClosestPoint(origin+direction*end),direction));
             if (result.命中)
             {
                 命中数++;
@@ -71,7 +71,7 @@ public sealed class FrostWaveAttackRunner : MonoBehaviour
         float radius = Mathf.Max(.35f, width * .5f), step = Mathf.Max(.3f, radius);
         while (voxelScanned <= end)
         {
-            VoxelCombatDamage.Ellipsoid(origin + direction * voxelScanned, radius, radius / 4f);
+            CombatImpactPipeline.接触("frost_wave",origin + direction * voxelScanned,radius,source:this);
             voxelScanned += step;
         }
     }

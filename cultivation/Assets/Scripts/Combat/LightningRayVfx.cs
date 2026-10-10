@@ -4,6 +4,14 @@
 public static class LightningRayVfx
 {
     public const string Path = "CombatVFX/CombatMagic/lightning-fx/lightning-ray";
+    public const float PlaybackSpeed = 10f;
+
+    public static GameObject SpawnVertical(Vector3 impact, float scale, float width,
+        string name, Color? tint = null)
+    {
+        return Spawn(impact + Vector3.up * Mathf.Max(5f, 8f * scale), impact,
+            scale, width, name, tint: tint);
+    }
 
     public static GameObject Spawn(Vector3 source, Vector3 impact, float scale, float width,
         string name, bool beamOnly = false, Color? tint = null)
@@ -19,7 +27,7 @@ public static class LightningRayVfx
         go.name = name;
         scale = Mathf.Max(.05f, scale);
         go.transform.localScale = Vector3.one * scale;
-        float lifetime = 特效摆放.量特效总时长(prefab, 4f) * 1.05f;
+        float lifetime = 特效摆放.量特效总时长(prefab, 4f) * 1.05f / PlaybackSpeed;
 
         foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
         {
@@ -38,6 +46,8 @@ public static class LightningRayVfx
             var main = ps.main;
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             main.loop = false;
+            // Speed up the complete native sequence, including delayed ground flashes and fade-out.
+            main.simulationSpeed *= PlaybackSpeed;
             if (tint.HasValue)
             {
                 var color = main.startColor;
@@ -60,7 +70,7 @@ public static class LightningRayVfx
 
             if (!beam) continue;
             // Native Stretch quads extend along +Z by startSize * lengthScale.
-            // Adjust only their width and length; preserve native speed, lifetime and renderer mode.
+            // Preserve native motion/lifetime curves and Stretch mode; accelerate their simulation clock.
             main.startSizeMultiplier *= Mathf.Max(.05f, width);
             float worldSize = Mathf.Max(.01f, main.startSize.constantMax * scale);
             renderer.lengthScale = length / worldSize;

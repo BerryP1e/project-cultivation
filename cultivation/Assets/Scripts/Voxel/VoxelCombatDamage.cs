@@ -17,7 +17,8 @@ public static class VoxelCombatDamage
     public static float AreaRadius(ActiveDivineAbility skill)
     {
         float radius=Mathf.Max(.4f,skill.范围);
-        return skill.神通id=="ability_fentian_yanshu"?radius/12f:radius;
+        var rule = CombatImpactPipeline.规则(skill.神通id);
+        return radius * (rule != null ? rule.落点引导半径倍率 : 1f);
     }
     public static bool Ray(Vector3 from,Vector3 to,out RaycastHit hit,bool onlyVoxels=true,Transform owner=null)
     {

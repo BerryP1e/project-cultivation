@@ -39,7 +39,7 @@ public class DirectedAbilityRunner : MonoBehaviour
         if (Time.time < 下次伤害 || 玩家.战斗属性 == null) return;
         下次伤害 = Time.time + Mathf.Max(.05f, 神通.伤害间隔);
         var 规则 = new AttackSpec(神通.伤害属性, 神通.攻击类别, false, 神通.伤害倍率);
-        if (炮) { if(目标) {目标.ReceiveAttack(玩家.战斗属性, 规则); 结算次数++;}else VoxelCombatDamage.Sphere(中心,.65f); }
+        if (炮) { if(目标) {CombatDamagePipeline.命中(目标,new CombatHitContext(玩家.战斗属性,规则,玩家,神通.神通id,目标.transform.position,中心-玩家.transform.position,结算次数)); 结算次数++;}else CombatImpactPipeline.接触(神通.神通id,中心,source:玩家); }
         else
         {
             var 已打 = new HashSet<NpcInstance>();
@@ -47,7 +47,7 @@ public class DirectedAbilityRunner : MonoBehaviour
             {
                 var 怪 = 碰撞.GetComponentInParent<NpcInstance>();
                 if (怪 == null || 怪.IsDead || (!怪.是敌对目标 && 怪 != 目标) || !已打.Add(怪)) continue;
-                怪.ReceiveAttack(玩家.战斗属性, 规则); 结算次数++;
+                CombatDamagePipeline.命中(怪,new CombatHitContext(玩家.战斗属性,规则,玩家,神通.神通id,怪.transform.position,Vector3.down,结算次数)); 结算次数++;
             }
         }
     }

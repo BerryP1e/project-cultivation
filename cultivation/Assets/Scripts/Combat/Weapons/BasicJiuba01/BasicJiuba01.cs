@@ -368,8 +368,8 @@ public class BasicJiuba01 : MonoBehaviour
         {
             var npc=c.GetComponentInParent<NpcInstance>();
             if(npc && !npc.IsDead && npc.是敌对目标 && 本轮手动命中.Add(npc)){
-                var result=npc.ReceiveAttack(玩家战斗属性,new AttackSpec(伤害属性,攻击类别,false,伤害倍率));
-                CombatVfxPipeline.命中(命中表现id,result,c.ClosestPoint(point),point-transform.position);
+                CombatDamagePipeline.命中(npc, new CombatHitContext(玩家战斗属性,
+                    new AttackSpec(伤害属性,攻击类别,false,伤害倍率), this, 方法id, c.ClosestPoint(point), point-transform.position));
             }
         }
     }
@@ -439,14 +439,11 @@ public class BasicJiuba01 : MonoBehaviour
             return;
         }
 
-        // 伤害公式的唯一入口在 NpcInstance/PlayerVitals 内部的 CombatCalculator（见 ICombatTarget.受到攻击）
+        // 统一管线计算并应用伤害，按来源配置播放真实接触的命中表现。
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 伤害倍率);
-        var 结果 = 目标.受到攻击(玩家战斗属性, 规则, this);
-        if (结果.命中)
-        {
-            var 位置 = 接触点 == Vector3.zero ? 取目标体积(目标).center : 接触点;
-            CombatVfxPipeline.命中(命中表现id,结果,位置,位置-transform.position);
-        }
+        var 位置 = 接触点 == Vector3.zero ? 取目标体积(目标).center : 接触点;
+        var 结果 = CombatDamagePipeline.命中(目标, new CombatHitContext(玩家战斗属性, 规则,
+            this, 方法id, 位置, 位置-transform.position));
 
         if (打印战斗日志)
             Debug.Log("[" + 方法id + "] 砍「" + 目标.名字 + "」 " + 结果
@@ -456,7 +453,6 @@ public class BasicJiuba01 : MonoBehaviour
     }
 
     // ============================================================ 武器判定体
-    string 命中表现id => 方法id=="basic_taixu_sword_01"?CombatVfxPipeline.太虚剑命中:CombatVfxPipeline.火斩命中;
 
     /// <summary>
     /// 取「武器判定体」这一堆渲染体（缓存）。

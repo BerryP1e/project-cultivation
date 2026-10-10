@@ -31,10 +31,10 @@ public class DevilEyeAbility : MonoBehaviour
         if(激光)Destroy(激光);
         激光=AbilityVfxUtility.生成("Abilities/DevilEyeLaser",null,激光尺寸);
         if(激光){射击=激光.AddComponent<AbilityPreciseShotVfx>();射击.对准(from,point);}
-        手动光束点=point;光束结束=Time.time+2.4f;VoxelCombatDamage.Sphere(point,.5f);
+        手动光束点=point;光束结束=Time.time+2.4f;CombatImpactPipeline.接触("ability_devileye",point,source:this);
         var seen=new System.Collections.Generic.HashSet<NpcInstance>();
         foreach(var col in Physics.OverlapSphere(point,.5f,~0,QueryTriggerInteraction.Ignore))
-        {var npc=col.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))npc.ReceiveAttack(属性,new AttackSpec(DamageNature.特殊,AttackKind.被动神通,false,神通.伤害倍率));}
+        {var npc=col.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))CombatDamagePipeline.命中(npc,new CombatHitContext(属性,new AttackSpec(DamageNature.特殊,AttackKind.被动神通,false,神通.伤害倍率),this,神通.神通id,point,point-from));}
         return true;
     }
 
@@ -94,8 +94,8 @@ public class DevilEyeAbility : MonoBehaviour
         var end=AbilityVfxUtility.命中点(目标.transform);
         bool blocked=VoxelCombatDamage.Ray(法环.transform.position,end,out var contact);
         if(blocked)end=contact.point;
-        else 目标.ReceiveAttack(属性, new AttackSpec(DamageNature.特殊, AttackKind.被动神通, false, 神通.伤害倍率));
-        VoxelCombatDamage.Sphere(end,.5f);
+        else CombatDamagePipeline.命中(目标,new CombatHitContext(属性,new AttackSpec(DamageNature.特殊,AttackKind.被动神通,false,神通.伤害倍率),this,神通.神通id,end,end-法环.transform.position));
+        CombatImpactPipeline.接触("ability_devileye",end,source:this);
         激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, 激光尺寸);
         if (激光 != null)
         {

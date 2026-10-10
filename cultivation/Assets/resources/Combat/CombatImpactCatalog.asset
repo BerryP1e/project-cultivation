@@ -1,0 +1,191 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f67824b2b879a0e448f2f0581c81e19a, type: 3}
+  m_Name: CombatImpactCatalog
+  m_EditorClassIdentifier: 
+  "\u89C4\u5219":
+  - id: basic_taixu_sword_01
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": taixu_sword_hit
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 0
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: basic_jiuba_01
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": fire_slash_hit
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 0
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: basic_lingxu_sword_01
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": fire_slash_hit
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 0
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: basic_remoteattack_01
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": remote_hit
+    "\u5730\u8868\u7279\u6548id": remote_hit
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 1
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: basic_thunder_01
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": thunder_hit
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 1
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: basic_frostspike_01
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 2
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 1
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: frost_wave
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 2
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 0.25
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_fentian_yanshu
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 0
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 0.083333336
+  - id: meteor_ground
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": meteor_ground
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0.02, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 2
+    "\u9ED8\u8BA4\u534A\u5F84": 1
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 0.33333334
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_bingbao_shu
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 2
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 0.125
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_shunlei_tianshan
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 2
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 0.125
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_leidong_qianshan
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 1
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_shuilong_pao
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 1
+    "\u9ED8\u8BA4\u534A\u5F84": 0.65
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_xiao_jianzhen
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 1
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: ability_devileye
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 1
+    "\u9ED8\u8BA4\u534A\u5F84": 0.5
+    "\u534A\u5F84\u500D\u7387": 1
+    "\u6DF1\u5EA6\u500D\u7387": 1
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1
+  - id: treasure_qingshan_sword_ultimate
+    "\u751F\u7269\u547D\u4E2D\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548id": 
+    "\u5730\u8868\u7279\u6548\u504F\u79FB": {x: 0, y: 0, z: 0}
+    "\u73AF\u5883\u5F62\u72B6": 2
+    "\u9ED8\u8BA4\u534A\u5F84": 0.6
+    "\u534A\u5F84\u500D\u7387": 0.33333334
+    "\u6DF1\u5EA6\u500D\u7387": 0.6666667
+    "\u56FA\u5B9A\u6DF1\u5EA6": 0
+    "\u6DF1\u5EA6": 0.325
+    "\u843D\u70B9\u5F15\u5BFC\u534A\u5F84\u500D\u7387": 1

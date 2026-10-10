@@ -31,8 +31,7 @@ public sealed class MeteorGroundImpact : MonoBehaviour
             var hits=Physics.RaycastAll(point+Vector3.up*2,Vector3.down,6,~0,QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits,(a,b)=>a.distance.CompareTo(b.distance));
             foreach(var hit in hits){if(hit.collider.GetComponentInParent<NpcInstance>()||hit.collider.GetComponentInParent<PlayerController>())continue;point=hit.point;break;}
-            CombatVfxPipeline.播放(CombatVfxPipeline.火球落地,point+Vector3.up*.02f,Vector3.down,缩放);
-            VoxelCombatDamage.Ellipsoid(point,破坏半径,破坏半径/3f);落地次数++;
+            CombatImpactPipeline.接触("meteor_ground",point,破坏半径,缩放,source:this);落地次数++;
         }
     }
 }

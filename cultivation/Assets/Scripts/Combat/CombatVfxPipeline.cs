@@ -26,5 +26,5 @@ public static class CombatVfxPipeline
     }
 
     public static GameObject 命中(string id,AttackResult result,Vector3 point,Vector3 direction,float size=1f)
-        =>result.命中?播放(id,point,direction,size*(result.暴击?1.15f:1f)):null;
+        =>result.有效接触?播放(id,point,direction,size*(result.暴击?1.15f:1f)):null;
 }

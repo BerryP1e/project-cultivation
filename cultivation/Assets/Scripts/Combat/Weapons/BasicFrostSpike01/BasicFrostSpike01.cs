@@ -172,7 +172,7 @@ public class BasicFrostSpike01 : MonoBehaviour
         }
         if(当前式==3){
             point=transform.position;生成落地特效(冰环特效路径,point,Vector3.zero,第四式范围/冰环基准半径,"沧澜寒渊录_A4_冰环");
-            VoxelCombatDamage.Ellipsoid(point,第四式范围,.325f);
+            CombatImpactPipeline.接触("basic_frostspike_01",point,第四式范围,source:this);
             命中范围(point,第四式范围);return;
         }
         float scale=target!=null?按体型算缩放(target):1f;
@@ -180,7 +180,7 @@ public class BasicFrostSpike01 : MonoBehaviour
             var go=生成落地特效(冰刺特效路径,point+Vector3.up*冰刺抬高,冰刺特效旋转欧拉,scale,"沧澜寒渊录_A1_冰震");
             if(go&&!特效摆放.对齐子节点到(go,对齐参考子节点,point+Vector3.up*冰刺抬高))特效摆放.只对齐水平(go,point);
         }else 生成落地特效(第二式特效路径,point+Vector3.up*冰刺抬高,Vector3.zero,scale,"沧澜寒渊录_A2_冰刺");
-        VoxelCombatDamage.Ellipsoid(point,.6f,.325f);
+        CombatImpactPipeline.接触("basic_frostspike_01",point,.6f,source:this);
         if(手动攻击)命中范围(point,.6f);else 命中(target.取Npc());
     }
     void 命中范围(Vector3 center,float radius){
@@ -191,7 +191,7 @@ public class BasicFrostSpike01 : MonoBehaviour
         if(本次目标&&!本次目标.IsDead&&!seen.Contains(本次目标)&&Vector3.Distance(本次目标.transform.position,center)<=radius)命中(本次目标);
     }
     void 命中(NpcInstance npc){
-        if(!npc||npc.IsDead)return;var result=new NpcTarget(npc).受到攻击(玩家战斗属性,普攻规则,this);
+        if(!npc||npc.IsDead)return;var result=CombatDamagePipeline.命中(npc,new CombatHitContext(玩家战斗属性,普攻规则,this,"basic_frostspike_01",npc.transform.position,Vector3.down,当前式));
         if(result.命中)本次命中数++;if(打印战斗日志)Debug.Log("[沧澜寒渊录] A"+(当前式+1)+" "+npc.DisplayName+" "+result,this);
     }
     GameObject 生成落地特效(string path,Vector3 point,Vector3 rotation,float scale,string name){

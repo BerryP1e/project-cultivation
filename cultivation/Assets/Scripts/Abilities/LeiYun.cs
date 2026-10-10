@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-/// <summary>雷云跟随玩家，锁定目标时用细淡紫 lightning-ray 连到目标中部；命中才播放 lightning-arc-flash。由 PlayerAbilityLoader 内置注册。共享依赖位于 Art/VFX/Shared。</summary>
+/// <summary>雷云跟随玩家，锁定目标时在目标脚部生成细淡紫竖直落雷（lightning-ray，10倍速）；命中才播放 lightning-arc-flash。由 PlayerAbilityLoader 内置注册。共享依赖位于 Art/VFX/Shared。</summary>
 [DisallowMultipleComponent]
 public class LeiYun : MonoBehaviour
 {
@@ -73,8 +73,8 @@ public class LeiYun : MonoBehaviour
     [Tooltip("云**转向**的插值速度（度/秒）。只在 雷云跟随朝向 打开时有用。0 = 硬转")]
     public float 朝向插值速度 = 240f;
 
-    [Header("闪电（连到目标的线）")]
-    [Tooltip("原生 lightning-ray；保留 Stretch 粒子生命周期，沿云到目标的三维方向拟合长度。") ]
+    [Header("闪电（目标上方竖直落雷）")]
+    [Tooltip("原生 lightning-ray；与千劫雷狱同样的竖直落雷，保留地面粒子，整体10倍速。") ]
     public string 闪电特效路径 = LightningRayVfx.Path;
 
     [Tooltip("闪电的粗细")]
@@ -361,19 +361,16 @@ public class LeiYun : MonoBehaviour
         出手次数++;
 
         Vector3 敌位 = 目标.transform.position;
-        // 闪电连到敌人**中部**（和闪电链一个口径），不是脚下
         float 敌高 = 特效摆放.量高度(目标.transform, 受击基准敌人高度);
-        Vector3 敌中点 = 敌位 + Vector3.up * (敌高 * 0.5f);
-
-        生成闪电(云位置, 敌中点);
+        float 缩放 = 按体型算缩放(敌高);
+        生成闪电(敌位, 缩放);
 
         // 受击特效贴在敌人身上，大小随敌人尺寸
-        float 缩放 = 按体型算缩放(敌高);
         // Hit flash is emitted at the same damage event, only when the strike actually hits.
 
         var 规则 = new AttackSpec(伤害属性, AttackKind.被动神通, false, 技能倍率);
         var 结算目标 = new NpcTarget(目标);
-        var 结果 = 结算目标.受到攻击(战斗属性, 规则, this);
+        var 结果 = CombatDamagePipeline.命中(结算目标,new CombatHitContext(战斗属性,规则,this,"ability_leiyun",敌位,Vector3.down));
         累计伤害 += 结果.伤害;
         if (结果.命中) 生成受击特效(敌位, 缩放);
 
@@ -383,15 +380,16 @@ public class LeiYun : MonoBehaviour
                 + Vector3.Distance(云位置, 敌位).ToString("0.##") + "m）", 目标);
     }
 
-    /// <summary>一道从雷云拉到目标中部的闪电（复用「拉伸链」工具）</summary>
-    void 生成闪电(Vector3 起点, Vector3 终点)
+    /// <summary>与千劫雷狱共用竖直落雷，根在目标脚部；云的位置不参与雷束方向。</summary>
+    void 生成闪电(Vector3 终点, float 缩放)
     {
         if (闪电特效路径 == LightningRayVfx.Path)
         {
-            LightningRayVfx.Spawn(起点, 终点, 1f, 闪电粗细, "雷云闪电_" + name,
-                beamOnly: true, tint: new Color(.72f, .48f, 1f));
+            LightningRayVfx.SpawnVertical(终点, 缩放, 闪电粗细, "雷云闪电_" + name,
+                tint: new Color(.72f, .48f, 1f));
             return;
         }
+        Vector3 起点 = 终点 + Vector3.up * Mathf.Max(5f, 8f * 缩放);
         特效摆放.生成拉伸链(闪电特效路径, 起点, 终点,
                             闪电粗细, 闪电基准长度, 闪电最小长度,
                             闪电存活, 闪电兜底拉伸轴, 闪电长度补偿, "雷云闪电_" + name);

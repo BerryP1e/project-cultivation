@@ -125,23 +125,24 @@ public class AreaSkillRunner : MonoBehaviour
             环境已结算=true;
             // 焚天的环境破坏由每颗火球真实落地触发，持续伤害不另挖中心大坑。
             if(神通.神通id!="ability_fentian_yanshu")
-                VoxelCombatDamage.Sphere(中心,VoxelCombatDamage.AreaRadius(神通));
+                CombatImpactPipeline.接触(神通.神通id,中心,VoxelCombatDamage.AreaRadius(神通),source:this);
         }
 
-        var spec = new AttackSpec(神通.伤害属性, AttackKind.主动神通, false, 神通.伤害倍率);
+        var spec = new AttackSpec(神通.伤害属性, 神通.攻击类别, false, 神通.伤害倍率);
+        var batch = new CombatHitBatch();
+        var context = new CombatHitContext(攻击方,spec,this,神通.神通id,中心,Vector3.down,已结算次数);
 
         // 范围为 0 → 退化成只打锁定目标
         if (神通.范围 <= 0f)
         {
             if (单体目标 == null || 单体目标.IsDead) return 0;
-            var r1 = 单体目标.ReceiveAttack(攻击方, spec);
+            var r1 = batch.命中(new NpcTarget(单体目标), context);
             已结算次数++;
             已结算总伤害 += r1.伤害;
             return r1.命中 ? 1 : 0;
         }
 
         var cols = Physics.OverlapSphere(中心, 神通.范围, 敌人层, QueryTriggerInteraction.Ignore);
-        var 已打过 = new HashSet<NpcInstance>();
         int 命中数 = 0;
 
         foreach (var col in cols)
@@ -153,9 +154,8 @@ public class AreaSkillRunner : MonoBehaviour
             // 「范围内的敌人」都打；但【锁定目标】无视好感度 —— 玩家既然锁了它
             // 又按了技能，就该对它生效（和飞剑"手动锁定不看好感度"的规则一致）
             if (!npc.是敌对目标 && npc != 单体目标) continue;
-            if (!已打过.Add(npc)) continue;        // 一个 NPC 有多个碰撞体时只打一次
-
-            var r = npc.ReceiveAttack(攻击方, spec);
+            var r = batch.命中(new NpcTarget(npc), context);
+            if (r.状态 == CombatHitState.Duplicate) continue;
             已结算次数++;
             已结算总伤害 += r.伤害;
             if (r.命中) 命中数++;

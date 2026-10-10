@@ -275,21 +275,21 @@ public class BasicThunder01 : MonoBehaviour
         Vector3 point=手动攻击?手动点:目标.根.position;
         float 缩放=目标!=null?按体型算缩放(目标):1;
         CombatVfxPipeline.播放(CombatVfxPipeline.雷四式[当前式],point,Vector3.down,当前式==3?第四式范围/5f:缩放);
-        VoxelCombatDamage.Sphere(point,当前式==3?第四式范围:.6f);
+        CombatImpactPipeline.接触("basic_thunder_01",point,当前式==3?第四式范围:.6f,source:this);
 
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 技能倍率);
         if(当前式==3||手动攻击){
             var seen=new HashSet<NpcInstance>();float radius=当前式==3?第四式范围:.6f;
             foreach(var col in Physics.OverlapSphere(point,Mathf.Max(.1f,radius),敌人层,QueryTriggerInteraction.Ignore)){
                 var npc=col.GetComponentInParent<NpcInstance>();if(!npc||npc.IsDead||(!npc.是敌对目标&&npc!=本次目标)||!seen.Add(npc))continue;
-                var r=npc.ReceiveAttack(玩家战斗属性,规则);if(r.命中){本次命中数++;生成命中特效(new NpcTarget(npc),按体型算缩放(new NpcTarget(npc)));}
+                var t=new NpcTarget(npc);var r=结算雷击(t,规则,按体型算缩放(t));if(r.命中)本次命中数++;
             }
             // 锁定目标没有物理碰撞体时仍按根节点距离纳入本次群攻。
-            if(目标!=null&&!seen.Contains(本次目标)&&Vector3.Distance(目标.根.position,point)<=radius){var r=目标.受到攻击(玩家战斗属性,规则,this);if(r.命中){本次命中数++;生成命中特效(目标,缩放);}}
+            if(目标!=null&&!seen.Contains(本次目标)&&Vector3.Distance(目标.根.position,point)<=radius){var r=结算雷击(目标,规则,缩放);if(r.命中)本次命中数++;}
             return;
         }
-        var 结果 = 目标.受到攻击(玩家战斗属性, 规则, this);
-        if(结果.命中){本次命中数++;生成命中特效(目标,缩放);}
+        var 结果 = 结算雷击(目标, 规则, 缩放);
+        if(结果.命中)本次命中数++;
 
         if (打印战斗日志)
             Debug.Log("[basic_thunder_01] 雷劈锁定目标「" + 目标.名字 + "」 " + 结果
@@ -336,14 +336,11 @@ public class BasicThunder01 : MonoBehaviour
         生成闪电链(起点, 下一个, 缩放, 取敌人高度(来源) * 0.5f);
 
         var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 闪电链倍率);
-        var 结果 = 下一个.受到攻击(玩家战斗属性, 规则, this);
+        var 结果 = 结算雷击(下一个, 规则, 缩放, 已跳数);
 
         if (打印战斗日志)
             Debug.Log("[basic_thunder_01] 闪电链 →「" + 下一个.名字 + "」 " + 结果
                 + "（第 " + 已跳数 + " 跳｜缩放 " + 缩放.ToString("0.##") + "）", this);
-
-        // 命中特效：贴在被链到的敌人身上
-        if(结果.命中)生成命中特效(下一个, 缩放);
 
         if (结果.命中 && 结果.伤害 > 0f) 尝试闪电链(下一个, 已访问, 已跳数 + 1);
     }
@@ -456,10 +453,9 @@ public class BasicThunder01 : MonoBehaviour
     }
 
     /// <summary>被链到 / 被劈中的敌人身上贴一个命中特效</summary>
-    void 生成命中特效(ICombatTarget 目标, float 缩放)
-    {
-        CombatVfxPipeline.播放(CombatVfxPipeline.雷命中,目标.判定点,Vector3.down,缩放*命中特效大小倍率);
-    }
+    AttackResult 结算雷击(ICombatTarget 目标, AttackSpec 规则, float 缩放, int 链段 = 0)
+        => CombatDamagePipeline.命中(目标, new CombatHitContext(玩家战斗属性,规则,this,"basic_thunder_01",
+            目标.判定点,Vector3.down,当前式*100+链段,visualScale:缩放*命中特效大小倍率));
 
     // ============================================================ 工具
 

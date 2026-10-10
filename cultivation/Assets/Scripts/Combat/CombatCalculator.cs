@@ -27,8 +27,13 @@ public struct AttackResult
     /// <summary>本次的加成倍率（物理=暴击伤害，特殊=会心伤害；未触发=1）</summary>
     public float 加成倍率;
 
-    /// <summary>最终扣除的血量</summary>
+    /// <summary>纯公式结果为计算值；进入CombatDamagePipeline后为实际扣血。</summary>
     public float 伤害;
+
+    public float 计算伤害, 吸收伤害, 过量伤害;
+    public bool 已应用, 致命;
+    public CombatHitState 状态;
+    public bool 有效接触 => 命中 && (!已应用 || 状态 == CombatHitState.Hit || 状态 == CombatHitState.ShieldBlocked || 状态 == CombatHitState.NoDamage);
 
     /// <summary>本次结算用的伤害属性（物理 / 特殊）</summary>
     public DamageNature 伤害属性;
@@ -54,6 +59,14 @@ public struct AttackResult
 
     public override string ToString()
     {
+        if (已应用)
+        {
+            if (状态 == CombatHitState.Immune) return "目标免疫伤害";
+            if (状态 == CombatHitState.InvalidTarget) return "无效目标";
+            if (状态 == CombatHitState.InvalidAttack) return "无效攻击";
+            if (状态 == CombatHitState.Duplicate) return "重复接触";
+            if (状态 == CombatHitState.ShieldBlocked) return "护罩吸收 " + 吸收伤害.ToString("0.##");
+        }
         if (!命中) return "未命中（目标闪避，闪避率 " + 闪避率.ToString("P1") + "）";
 
         bool 特殊 = 伤害属性 == DamageNature.特殊;
@@ -306,6 +319,7 @@ public static class CombatCalculator
 
         // 第三步：伤害
         r.伤害 = CalcDamage(attacker, defender, spec, r.加成触发);
+        r.计算伤害 = r.伤害;
         return r;
     }
 
