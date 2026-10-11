@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections;
 IEnumerator Run(){
@@ -10,7 +10,7 @@ foreach(var npc in Object.FindObjectsOfType<NpcInstance>())foreach(var behaviour
 var origin=new Vector3(18000,30,18000);var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.SetPositionAndRotation(origin,Quaternion.identity);cc.enabled=true;
 var go=GameObject.CreatePrimitive(PrimitiveType.Capsule);go.name="Melee_Contact_Target";go.SetActive(false);go.transform.position=origin+Vector3.forward*1.4f+Vector3.up*.8f;go.transform.localScale=new Vector3(.8f,.8f,.8f);
 var def=ScriptableObject.CreateInstance<NpcDefinition>();def.id="melee_contact_test";def.名字="接触测试";def.属性[AttributeType.MaxHealth]=100000;def.对主角好感度=-100;var target=go.AddComponent<NpcInstance>();target.定义=def;target.每次受击降好感=0;go.SetActive(true);target.ResetHealth();foreach(var c in go.GetComponents<MonoBehaviour>())c.enabled=false;
-var cameraGo=new GameObject("Melee_Evidence_Camera");var camera=cameraGo.AddComponent<Camera>();camera.transform.position=origin+new Vector3(3,2.6f,-3.5f);camera.transform.LookAt(origin+new Vector3(0,.85f,.7f));camera.fieldOfView=48;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.1f,.13f,.15f);camera.enabled=false;var rt=new RenderTexture(800,450,24);camera.targetTexture=rt;
+var originalCamera=Camera.main;originalCamera.tag="Untagged";var cameraGo=new GameObject("Melee_Evidence_Camera");cameraGo.tag="MainCamera";var camera=cameraGo.AddComponent<Camera>();camera.transform.position=origin+new Vector3(3,2.6f,-3.5f);camera.transform.LookAt(origin+new Vector3(0,.85f,.7f));camera.fieldOfView=48;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.1f,.13f,.15f);camera.enabled=false;var rt=new RenderTexture(800,450,24);camera.targetTexture=rt;
 var report=new System.Text.StringBuilder();int count=0;int environmental=0;CombatHitEvent last=default;int contacts=0;
 void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/melee-impact-report.txt",report.ToString());if(!ok)throw new Exception(name);count++;}
 Action<CombatHitEvent> onHit=h=>{if(h.目标.根==target.transform){last=h;contacts++;}};Action<CombatEnvironmentContact> onEnvironment=h=>environmental++;
@@ -26,14 +26,14 @@ for(int stroke=0;stroke<3;stroke++){
 targeting.Lock(target,true);player.transform.rotation=Quaternion.identity;float hp=target.CurrentHealth;int before=contacts;
 Check(melee.出手(),"real attack accepted "+id+" A"+(stroke+1));float deadline=Time.time+6;while(target.CurrentHealth==hp&&Time.time<deadline)yield return null;
 Check(target.CurrentHealth<hp,"weapon mesh actually intersected target "+id+" A"+(stroke+1));Check(contacts==before+1&&last.上下文.来源==melee&&last.上下文.来源id==melee.方法id&&last.结果.伤害>0,"one contextual damage event "+id+" A"+(stroke+1));
-var entry=CombatImpactPipeline.规则(melee.方法id);var vfxEntry=CombatVfxPipeline.配置.查找(entry.生物命中特效id);var nativeEnd=vfxEntry.预制体.GetComponent<EFX_ParticleSetting>();var expected=last.上下文.接触点+(nativeEnd?nativeEnd.PositionOffset*Mathf.Abs(vfxEntry.预制体.transform.localScale.x)*vfxEntry.缩放*(last.结果.Crit?1.15f:1f):Vector3.zero);var effect=Object.FindObjectsOfType<ExtremeVfxAdapter>().Where(x=>x.name=="CombatVfx_"+entry.生物命中特效id).OrderBy(x=>Vector3.Distance(x.transform.position,expected)).FirstOrDefault();Check(effect,"configured impact spawned "+id+" A"+(stroke+1));Check(Vector3.Distance(effect.transform.position,expected)<.001f,"actual contact plus native visual offset "+id);
-if(stroke==0){Capture(id,0);for(int frame=1;frame<=12;frame++){yield return null;if(frame==3||frame==7||frame==12)Capture(id,frame);}Check(effect&&effect.GetComponentsInChildren<Renderer>().Any(r=>r.enabled&&r.gameObject.activeInHierarchy),"impact has active visual renderers "+id);}
+var entry=CombatImpactPipeline.规则(melee.方法id);var vfxEntry=CombatVfxPipeline.配置.查找(entry.生物命中特效id);var nativeEnd=vfxEntry.预制体.GetComponent<EFX_ParticleSetting>();var expected=vfxEntry.模型外侧显示?CombatVfxPipeline.模型外侧位置(last.上下文.接触点,target.transform,vfxEntry.外侧留白):last.上下文.接触点+(nativeEnd?nativeEnd.PositionOffset*Mathf.Abs(vfxEntry.预制体.transform.localScale.x)*vfxEntry.缩放*(last.结果.Crit?1.15f:1f):Vector3.zero);var effect=Object.FindObjectsOfType<ExtremeVfxAdapter>().Where(x=>x.name=="CombatVfx_"+entry.生物命中特效id).OrderBy(x=>Vector3.Distance(x.transform.position,expected)).FirstOrDefault();Check(effect,"configured impact spawned "+id+" A"+(stroke+1));Check(Vector3.Distance(effect.transform.position,expected)<.001f,"contact visual on camera-facing body surface "+id);
+Check(CombatHitStop.正在顿帧(player.transform)&&CombatHitStop.正在顿帧(target.transform),"actual weapon contact pauses attacker and receiver "+id);if(stroke==0){Capture(id,0);for(int frame=1;frame<=12;frame++){yield return null;if(frame==3||frame==7||frame==12)Capture(id,frame);}Check(effect&&effect.GetComponentsInChildren<Renderer>().Any(r=>r.enabled&&r.gameObject.activeInHierarchy),"impact has active visual renderers "+id);}
 while(driver.动作播放中&&Time.time<deadline)yield return null;yield return new WaitForSecondsRealtime(.1f);Check(contacts==before+1,"single swing cannot double hit "+id);
 }
 // A correctly animated swing outside actual contact range must not produce a damage event.
 target.transform.position=origin+Vector3.forward*8;int oldContacts=contacts;targeting.Lock(target,true);melee.出手最大距离=10;Check(melee.出手(),"out-of-contact swing accepted "+id);yield return new WaitForSecondsRealtime(3);Check(contacts==oldContacts,"no contact means no damage/impact "+id);target.transform.position=origin+Vector3.forward*1.4f+Vector3.up*.8f;
 }
 Check(environmental==0,"all melee impacts preserve no voxel damage");report.AppendLine("MELEE_IMPACT_PASS checks="+count);File.WriteAllText("../.local/diagnostics/melee-impact-report.txt",report.ToString());Debug.Log(report.ToString());
-}finally{CombatDamagePipeline.结算完成-=onHit;CombatImpactPipeline.环境接触-=onEnvironment;camera.targetTexture=null;rt.Release();Object.Destroy(rt);Object.Destroy(cameraGo);Object.Destroy(go);Object.Destroy(def);}
+}finally{CombatDamagePipeline.结算完成-=onHit;CombatImpactPipeline.环境接触-=onEnvironment;originalCamera.tag="MainCamera";camera.targetTexture=null;rt.Release();Object.Destroy(rt);Object.Destroy(cameraGo);Object.Destroy(go);Object.Destroy(def);}
 }
 return Run();

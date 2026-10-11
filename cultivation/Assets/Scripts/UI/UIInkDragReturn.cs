@@ -13,7 +13,7 @@ public class UIInkDragReturn : MonoBehaviour
     {
         ownsBudget = UIInkMotion.Acquire();
         if (!ownsBudget) { Destroy(gameObject); return; }
-        from = transform.position; group = gameObject.AddComponent<CanvasGroup>(); group.blocksRaycasts = false;
+        from = transform.position; group = GetComponent<CanvasGroup>(); if (!group) group = gameObject.AddComponent<CanvasGroup>(); group.blocksRaycasts = false;
         var font = GetComponentInChildren<Text>()?.font;
         var cross = UIBuildUtils.CreateText("InkRejected", transform, font, "×", 30, TextAnchor.MiddleCenter, new Color(.62f, .31f, .24f));
         UIBuildUtils.Stretch(cross.rectTransform); cross.raycastTarget = false;

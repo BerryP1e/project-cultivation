@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 玩家战斗属性的运行时来源。挂在 Player 上。
@@ -38,6 +38,8 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     [Tooltip("调试用的吐纳速度")]
     public float 调试吐纳速度 = 2.4f;
 
+    UIPanelData lawPanel;
+    int lawRevision = -1;
     AttributeSet 汇总;
     PlayerCultivation 修炼;
     玩家临时增益 临时增益;
@@ -67,6 +69,8 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     {
         if (修炼 == null) 修炼 = GetComponent<PlayerCultivation>();
         if (修炼 != null && (修炼.当前功法 != 当前功法 || 期望功法等级 != 功法等级)) 同步功法();
+        if (!lawPanel) lawPanel = 修炼 ? 修炼.面板数据 : FindObjectOfType<UIPanelData>();
+        if (lawPanel && lawRevision != lawPanel.变化序号) Recalculate();
     }
 
     /// <summary>
@@ -129,15 +133,21 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
         if (当前功法 != null && 功法等级 > 0)
             正常.Add(当前功法.GetTotalBonus(功法等级));
 
+        正常[AttributeType.Sense] = 玩家属性 ? 玩家属性.神识 : 0;
         汇总 = 使用调试数值 ? new AttributeSet(调试数值) : 正常;
 
         // ★ 临时增益（丹药之类）最后叠上去：加在汇总上，**不改任何数据资产**
         if (!使用调试数值)
         {
             if (临时增益 == null) 临时增益 = GetComponent<玩家临时增益>();
-            if (临时增益 != null) 临时增益.应用到(汇总);
+            var percent = new AttributeSet(); var flat = new AttributeSet();
+            if (临时增益 != null) 临时增益.汇总修正(percent, flat);
+            if (!lawPanel) lawPanel = 修炼 ? 修炼.面板数据 : FindObjectOfType<UIPanelData>();
+            LawFragmentSystem.汇总(lawPanel, percent, flat, 汇总);
+            LawFragmentSystem.结算(汇总, percent, flat);
         }
 
+        lawRevision = lawPanel ? lawPanel.变化序号 : -1;
         if (打印汇总结果)
             Debug.Log("[PlayerCombatStats] 汇总属性：" + 汇总.ToReadableString(), this);
     }
@@ -154,7 +164,7 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     }
 
     /// <summary>当前生效的神识（调试开启时取调试值）</summary>
-    public float 当前神识 => 使用调试数值 ? 调试神识 : (玩家属性 != null ? 玩家属性.神识 : 0f);
+    public float 当前神识 => 使用调试数值 ? 调试神识 : 当前属性[AttributeType.Sense];
 
     /// <summary>当前生效的吐纳速度（调试开启时取调试值）</summary>
     public float 当前吐纳速度 => 使用调试数值 ? 调试吐纳速度 : (玩家属性 != null ? 玩家属性.吐纳速度 : 0f);

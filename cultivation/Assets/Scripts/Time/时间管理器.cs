@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -20,14 +20,9 @@ using UnityEngine;
 /// > 应该做成**独立的"离线收益"结算**（按真实时间给一笔资源），
 /// > 而不是让游戏内时间疯跑。
 ///
-/// ## 修炼机会（两套，分开算）
-///
-/// | 来源 | 存量 | 会不会过期 |
-/// |---|---|---|
-/// | **每日**（每过一天 +1） | 一场最多同时留 3 天 | **会**，第 4 天作废 |
-/// | **打怪** | 小数累积，无上限 | 不会 |
-///
-/// 每天**总共最多修炼 10 次**（两边加起来，见 <see cref="还能修炼几次"/>）。
+/// ## 修炼机会
+/// 每日发放，按天记账，最多留三天；杀怪不再获得机会。
+/// 每日修炼次数仍受配置上限约束。
 ///
 /// 【为什么每日机会要"逐日存"】需求是"最多保存 3 天，3 天后消失" ——
 /// 存一个总数就没法知道哪一次是哪天发的、也就没法让它过期。
@@ -91,11 +86,10 @@ public class 时间管理器 : MonoBehaviour
     [Tooltip("每日机会**最多保存几天**。超过就作废")]
     [Min(1)] public int 机会保存天数 = 3;
 
-    [Tooltip("每天最多能修炼几次（日常 + 打怪 加在一起）")]
+    [Tooltip("每天最多能修炼几次")]
     [Min(1)] public int 每日修炼上限 = 10;
 
-    /// <summary>打怪获得的修炼机会（小数累积，不过期）</summary>
-    public float 打怪机会 { get; private set; } = 0f;
+
 
     /// <summary>逐日机会账本：天数 → 那一天发的还没用掉的次数</summary>
     readonly Dictionary<int, int> 日常机会 = new Dictionary<int, int>();
@@ -168,9 +162,9 @@ public class 时间管理器 : MonoBehaviour
         }
     }
 
-    /// <summary>总剩余 = 日常 + 打怪折算，并且不超今日上限</summary>
+    /// <summary>总剩余 = 日常机会，并且不超今日上限</summary>
     public int 还能修炼几次
-        => Mathf.Max(0, Mathf.Min(日常机会剩余 + Mathf.FloorToInt(打怪机会), 每日修炼上限 - 今日已修炼));
+        => Mathf.Max(0, Mathf.Min(日常机会剩余, 每日修炼上限 - 今日已修炼));
 
     /// <summary>今天已经修炼了几次</summary>
     public int 今日次数
@@ -187,8 +181,7 @@ public class 时间管理器 : MonoBehaviour
     /// <summary>
     /// **花掉一次修炼机会。** 返回是否成功。
     ///
-    /// 优先花**日常**的（因为它会过期，先花掉更划算），
-    /// 日常花完再花打怪的。
+    /// 优先花最早发放的日常机会。
     /// </summary>
     public bool 消耗一次修炼()
     {
@@ -204,10 +197,6 @@ public class 时间管理器 : MonoBehaviour
         {
             日常机会[最早] -= 1;
         }
-        else if (打怪机会 >= 1f)
-        {
-            打怪机会 -= 1f;
-        }
         else if (日常机会剩余 > 0)
         {
             // 兜底：正常情况下上面已经花掉了
@@ -222,7 +211,7 @@ public class 时间管理器 : MonoBehaviour
         // ★ 把这次机会**换成修炼系统认的"修炼次数"**（整数 1 次）。
         //
         //   为什么要这么绕一层：修炼小屋的 `PlayerCultivation.修炼一次()` 花的是
-        //   `修炼次数累积`，而那个值同时也是**打怪掉的那一份**（不过期）。
+        //   `修炼次数累积`，它只用于承接已扣除的日常机会。
         //   如果直接把每日机会塞进同一个池子，就**没法区分哪一份该过期**了。
         //   所以这里保持两套账：本类管"每日机会（会过期、每天上限 10）"，
         //   花掉的那一刻才转成修炼次数交给它。
@@ -230,14 +219,6 @@ public class 时间管理器 : MonoBehaviour
         if (修 != null) 修.设置修炼次数(修.修炼次数累积 + 1f);
 
         return true;
-    }
-
-    /// <summary>加打怪获得的修炼机会（不过期）</summary>
-    public void 加打怪机会(float 次数)
-    {
-        if (次数 <= 0f) return;
-        打怪机会 += 次数;
-        机会变化?.Invoke();
     }
 
     /// <summary>直接给日常机会（任务奖励用）</summary>
@@ -311,26 +292,24 @@ public class 时间管理器 : MonoBehaviour
     // ============================================================ 存档
 
     /// <summary>导出给存档</summary>
-    public void 导出(out int 天, out float 进度, out string 机会, out float 打怪, out int 今日)
+    public void 导出(out int 天, out float 进度, out string 机会, out int 今日)
     {
         清理过期机会();
         确保今日计数是今天的();
         天 = 天数;
         进度 = 日内进度;
-        打怪 = 打怪机会;
         今日 = 今日已修炼;
 
         var 项 = new List<string>();
-        foreach (var kv in 日常机会) if (kv.Value > 0) 项.Add(kv.Key + ":" + kv.Value);
+        foreach (var kv in 日常机会) 项.Add(kv.Key + ":" + kv.Value);
         机会 = string.Join(";", 项);
     }
 
     /// <summary>从存档恢复</summary>
-    public void 导入(int 天, float 进度, string 机会, float 打怪, int 今日已用)
+    public void 导入(int 天, float 进度, string 机会, int 今日已用)
     {
         天数 = Mathf.Max(0, 天);
         日内进度 = Mathf.Clamp01(进度);
-        打怪机会 = Mathf.Max(0f, 打怪);
         今日已修炼 = Mathf.Max(0, 今日已用);
         今日已修炼归属天数 = 天数;
 
@@ -343,7 +322,7 @@ public class 时间管理器 : MonoBehaviour
                 var kv = 段.Split(':');
                 if (kv.Length != 2) continue;
                 int d, n;
-                if (int.TryParse(kv[0], out d) && int.TryParse(kv[1], out n) && n > 0)
+                if (int.TryParse(kv[0], out d) && int.TryParse(kv[1], out n) && n >= 0 && d >= 0)
                     日常机会[d] = n;
             }
         }
@@ -363,7 +342,6 @@ public class 时间管理器 : MonoBehaviour
     {
         天数 = 0;
         日内进度 = 0f;
-        打怪机会 = 0f;
         今日已修炼 = 0;
         今日已修炼归属天数 = 0;
         日常机会.Clear();

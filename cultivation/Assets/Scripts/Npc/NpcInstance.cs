@@ -25,7 +25,7 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     [Header("无敌")]
     [Tooltip("勾上 = **打不死**：气血永远是满的、也不会死。\n" +
              "战阵真灵用这个（它是主人的灵体，被自己的 AoE 蹭一下就没法看了）。\n" +
-             "**注意**：它同时也免疫「击杀掉修炼次数」，不会刷经验")]
+             "不会死亡，因此也不会产生击杀宝箱")]
     public bool 无敌 = false;
 
     [Header("运行时状态（只读，方便调试查看）")]
@@ -63,11 +63,9 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     public float Defense => Get(AttributeType.Defense);
 
     /// <summary>
-    /// <summary>
     /// **当前补正等级**（保留 1 位小数）。0 = 没做补正（普通场景怪）。
     ///
-    /// 杀怪掉修炼次数**不按它算**（见 <see cref="击杀计入等级"/>）——
-    /// 小数等级用来调数值，玩家拿到的经验要是整数，不然等级差系数会乱跳。
+    /// 小数等级只调怪物数值；法则宝箱按整数 <see cref="击杀计入等级"/> 确定境界。
     /// </summary>
     public float 当前补正等级 => 当前等级;
 
@@ -77,7 +75,7 @@ public class NpcInstance : MonoBehaviour, ICombatStats
     ///
     /// 【为什么要和补正等级分开】用户 2026-10-01：
     /// > 补正等级精确到小数点后 1 位，玩家击杀获得的经验就不那么细致
-    /// 所以第 1~10 层的怪**数值逐层变强**（1.0→1.9），但击杀经验**都是"1 级怪"**。
+    /// 所以第 1~10 层的怪**数值逐层变强**（1.0→1.9），但宝箱境界**都按"1 级怪"**。
     /// </summary>
     public int 击杀计入等级 { get; private set; }
 
@@ -265,24 +263,6 @@ public class NpcInstance : MonoBehaviour, ICombatStats
             已死亡 = true;
             Died?.Invoke(this);
             if(damageSource!=null)CombatKilled?.Invoke(this,damageSource);
-
-            // 【杀怪 → 修炼次数】按设计文档：单只掉落 = 基础 1 次 × 等级差系数
-            //（等级差 = 怪物等级 − 玩家等级）。挂在这里而不是各 AI 里，
-            // 这样**所有** NPC（含以后新加的）都自动覆盖到。
-            // 死亡不频繁，FindObjectOfType 的开销可以接受。
-            if (定义 != null)
-            {
-                var 修炼 = FindObjectOfType<PlayerCultivation>();
-                // ★ 掉修炼次数按**整数**等级算（见 击杀计入等级 的注释）：
-                //   塔里的怪数值可能补正到 1.7 级，但对玩家来说它就是「1 级怪」，
-                //   给的经验不该随小数抖动。非塔里的怪（没做过补正）用定义里的境界。
-                if (修炼 != null)
-                {
-                    int 计入 = 击杀计入等级 > 0 ? 击杀计入等级
-                             : (当前等级 > 0 ? Mathf.RoundToInt(当前等级) : 定义.境界);
-                    修炼.记录击杀(计入);
-                }
-            }
 
             // 沙包类 NPC（练功木桩）：气血归零后自动满血，方便一直试招
             if (定义 != null && 定义.死亡后立即重生)

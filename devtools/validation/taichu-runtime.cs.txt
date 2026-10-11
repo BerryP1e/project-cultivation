@@ -1,0 +1,87 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+IEnumerator Run() {
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var animation=player.GetComponent<PlayerAnimationController>();var targeting=player.GetComponent<NpcTargeting>();var stats=player.GetComponent<PlayerCombatStats>();var panel=Object.FindObjectOfType<UIPanelData>();
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var c in n.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+player.GetComponent<YufengFlight>()?.强制落地();player.GetComponent<MountRider>()?.强制下坐骑();player.GetComponent<PlayerController>().enabled=false;
+var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.SetPositionAndRotation(new Vector3(18000,30,18000),Quaternion.identity);var origin=player.transform.position;targeting.enabled=false;targeting.受神识范围限制=false;
+var report=new System.Text.StringBuilder();int checks=0;
+void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/taichu-runtime-report.txt",report.ToString());if(!ok)throw new Exception(name);checks++;}
+var gongfa=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_taichu_longqijue.asset");
+Check(gongfa&&gongfa.难度等级==600,"highest designed cultivation difficulty 600");
+var book=QuestDatabase.取().物品库.FirstOrDefault(i=>i&&i.物品id=="item_gongfa_taichu_longqijue");Check(book,"manual present in runtime item catalog");
+panel.当前功法=gongfa;panel.RaiseChanged();player.GetComponent<PlayerAbilityLoader>().Refresh();yield return null;
+var dragon=player.GetComponent<BasicTaichuDragon01>();Check(dragon&&dragon.enabled,"all-scene builtin loader enables dragon basic");
+Check(!player.GetComponents<BasicJiuba01>().Any(m=>m.enabled)&&!player.GetComponents<BasicRemoteAttack01>().Any(m=>m.enabled)&&!player.GetComponents<BasicThunder01>().Any(m=>m.enabled)&&!player.GetComponents<BasicFrostSpike01>().Any(m=>m.enabled),"other ordinary attacks disabled");
+dragon.自动出手=false;dragon.基础冷却=0;
+var originalConfig=dragon.配置;dragon.配置=Object.Instantiate(originalConfig);
+Check(dragon.配置.五式.Take(2).All(m=>m.龙预制体.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh.isReadable),"physical dragon meshes retain CPU contact data");
+stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.AttackSpeed]=2;
+stats.调试数值[AttributeType.BasicAttackBonus]=.5f;stats.调试数值[AttributeType.ActiveSpellBonus]=1000;stats.调试数值[AttributeType.IgnoreDodge]=100;stats.调试数值[AttributeType.CritDamage]=1;stats.调试数值[AttributeType.InsightDamage]=1;stats.调试神识=20;stats.Recalculate();
+Check(Mathf.Approximately(dragon.配置.动作速度倍率,.6f)&&Mathf.Approximately(dragon.动作播放倍率,1.2f),"0.6 multiplier composes with attack-speed stat");
+NpcInstance Make(string id,Vector3 position,bool hostile=true){var go=new GameObject(id);go.SetActive(false);go.transform.position=position;var def=ScriptableObject.CreateInstance<NpcDefinition>();def.id=id;def.名字=id;def.属性[AttributeType.MaxHealth]=100000;def.对主角好感度=hostile?-100:100;var npc=go.AddComponent<NpcInstance>();npc.定义=def;npc.每次受击降好感=0;var c=go.AddComponent<CapsuleCollider>();c.center=Vector3.up;c.height=2;c.radius=.4f;go.SetActive(true);npc.ResetHealth();npc.enabled=false;return npc;}
+var target=Make("Dragon_TestTarget",origin+Vector3.forward*2);target.gameObject.AddComponent<SphereCollider>().center=Vector3.up;
+var friend=Make("Dragon_Friendly",origin+Vector3.forward*8+Vector3.right*.4f,false);
+var cameraGo=new GameObject("DragonValidationCamera");var camera=cameraGo.AddComponent<Camera>();camera.enabled=false;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.13f,.16f,.17f);camera.orthographic=true;camera.orthographicSize=3.1f;camera.transform.position=origin+new Vector3(5,3.5f,7);camera.transform.LookAt(origin+new Vector3(0,1.4f,0));var render=new RenderTexture(640,640,24);camera.targetTexture=render;
+var events=new List<CombatHitEvent>();Action<CombatHitEvent> onHit=h=>{if(h.上下文.来源==dragon)events.Add(h);};CombatDamagePipeline.结算完成+=onHit;
+try{
+targeting.Lock(target,true);yield return new WaitForSecondsRealtime(.25f);
+for(int stage=0;stage<5;stage++){
+target.transform.position=origin+Vector3.forward*2f;Physics.SyncTransforms();
+float hp=target.CurrentHealth;int before=events.Count;Check(dragon.出手(),"near A"+(stage+1)+" starts");Check(dragon.当前式==stage,"near full sequence index "+stage);
+Check(animation.当前动作==dragon.配置.五式[stage].玩家动作,"player motion matches configured stage");
+Check(Mathf.Approximately(animation.动作速度倍率,dragon.动作播放倍率),"player and sampled dragon share 0.6 attack multiplier");
+float deadline=Time.realtimeSinceStartup+5;bool captured=false;while(dragon.出手动作中&&Time.realtimeSinceStartup<deadline){yield return new WaitForEndOfFrame();if(!captured&&animation.动作进度>=(stage==1?.59f:stage==3?.26f:.4f)){camera.Render();RenderTexture.active=render;var image=new Texture2D(640,640,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,640,640),0,0);image.Apply();File.WriteAllBytes("../.local/diagnostics/taichu-runtime-a"+(stage+1)+".png",image.EncodeToPNG());Object.Destroy(image);RenderTexture.active=null;captured=true;}}yield return new WaitForSecondsRealtime(.7f);
+Check(!dragon.出手动作中,"attack completes within deadline");
+var hits=events.Skip(before).Where(h=>h.目标.根==target.transform).ToArray();
+report.AppendLine("MEASURE A"+(stage+1)+" target contacts="+hits.Length+" hpLoss="+(hp-target.CurrentHealth));File.WriteAllText("../.local/diagnostics/taichu-runtime-report.txt",report.ToString());
+Check(hits.Length==(stage==3?3:1),"one physical/thunder hit or three independent fire contacts A"+(stage+1));
+Check(hits.All(h=>h.上下文.规则.攻击类别==AttackKind.普通攻击&&h.上下文.规则.伤害属性==(stage<2?DamageNature.物理:DamageNature.特殊)),"all five use physical/special ordinary pipeline");
+Check(Mathf.Abs((hp-target.CurrentHealth)-(stage==3?450:150))<.1f,"basic bonus applies; active 1000 bonus excluded");
+Check(friend.CurrentHealth==100000,"friendly excluded from untargeted collision");
+}
+target.transform.position=origin+Vector3.forward*8;Physics.SyncTransforms();targeting.Lock(target,true);
+for(int step=0;step<6;step++){
+Check(dragon.出手(),"far attack begins "+step);Check(dragon.当前式==2+step%3,"far loop A3/A4/A5 "+step);float deadline=Time.realtimeSinceStartup+5;bool visited=false;while(dragon.出手动作中&&Time.realtimeSinceStartup<deadline){yield return new WaitForEndOfFrame();if(dragon.当前式==2&&animation.动作进度>=.69f&&animation.动作进度<=.77f&&!visited){visited=true;var crystal=Object.FindObjectsOfType<MeshRenderer>().First(r=>r.name=="太初冰晶合批"&&r.enabled);Check(crystal.bounds.max.z>=target.transform.position.z-.5f&&crystal.bounds.center.z<target.transform.position.z-.2f,"A3 glacier front reaches target without sending center onto it");Check(dragon.当前旅程偏移.magnitude>1,"A3 dragon actually travels away from player");}}if(step%3==0)Check(visited&&dragon.当前旅程偏移==Vector3.zero,"A3 finishes return journey");yield return new WaitForSecondsRealtime(.7f);
+}
+target.transform.position=origin+Vector3.forward*2;Physics.SyncTransforms();Check(dragon.出手()&&dragon.当前式==0,"return to near restarts at A1");
+animation.停止动作();yield return new WaitForSecondsRealtime(.1f);Check(!dragon.出手动作中,"explicit animation cancellation terminates strike");
+targeting.ClearLock();Check(dragon.手动出手(origin+Vector3.forward*8)&&dragon.当前式==2,"unlocked point aim enters A3");float end=Time.realtimeSinceStartup+5;while((dragon.出手动作中||animation.动作播放中)&&Time.realtimeSinceStartup<end)yield return null;
+Check(dragon.手动出手(origin+Vector3.forward*8)&&dragon.当前式==3,"unlocked point aim advances A4");
+float hpBefore=target.CurrentHealth;animation.停止动作();yield return new WaitForSecondsRealtime(.9f);Check(target.CurrentHealth==hpBefore&&!Object.FindObjectsOfType<TaichuFireProjectile>().Any(),"cancel before release spawns no delayed projectiles");
+Check(!dragon.手动出手(origin+Vector3.forward*100),"far manual spell obeys sense range");
+Check(dragon.引导式(origin+Vector3.forward*2)==0&&Mathf.Approximately(dragon.引导范围(origin+Vector3.forward*2),3),"near point guide chooses physical opener");
+var guide=player.GetComponent<PlayerManualAim>();var aimPoint=origin+Vector3.forward*2;
+typeof(PlayerManualAim).GetMethod("Draw",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(guide,new object[]{aimPoint,3f,true,Vector3.up});
+var line=(LineRenderer)typeof(PlayerManualAim).GetField("direction",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(guide);
+Check(Vector3.Distance(line.GetPosition(1),aimPoint+Vector3.up*.12f)<.001f,"near guide preserves mouse direction while ring centers on player");
+Check(dragon.引导式(origin+Vector3.forward*8)==2&&Mathf.Approximately(dragon.引导范围(origin+Vector3.forward*8),1f),"far point guide chooses crystal radius");
+target.transform.position=origin+Vector3.forward*2;targeting.Lock(target,true);Physics.SyncTransforms();float emptyHp=target.CurrentHealth;int emptyEvents=events.Count;
+Check(dragon.出手()&&dragon.当前式==0,"physical sweep starts before target escapes");target.transform.position=origin+Vector3.right*20+Vector3.forward*20;Physics.SyncTransforms();
+float missEnd=Time.realtimeSinceStartup+5;while(dragon.出手动作中&&Time.realtimeSinceStartup<missEnd)yield return null;
+Check(target.CurrentHealth==emptyHp&&events.Count==emptyEvents,"locked target escaping actual dragon mesh receives no phantom damage");
+targeting.ClearLock();dragon.配置.特殊待机等待=1;dragon.配置.特殊待机检查间隔=1;dragon.配置.特殊待机概率=1;
+yield return new WaitForSecondsRealtime(1.5f);
+Check(dragon.特殊待机中&&animation.可打断待机中&&!animation.动作播放中,"special idle starts without occupying attack gate");
+Check(animation.当前动作==dragon.配置.特殊待机.玩家动作&&dragon.当前伴龙动作.Contains("guard03"),"special idle synchronizes player upper body and dragon");
+Check(Mathf.Approximately(animation.动作速度倍率,.6f),"interruptible idle also plays at 0.6 speed");
+for(int moveFrame=0;moveFrame<6;moveFrame++){player.transform.position+=Vector3.right*.05f;yield return new WaitForEndOfFrame();}
+Check(!dragon.特殊待机中&&!animation.可打断待机中,"movement immediately interrupts special idle");
+Check(dragon.当前伴龙动作.Contains("run_ren"),"moving dragon selects source run motion");
+yield return new WaitForSecondsRealtime(1.5f);
+Check(dragon.特殊待机中,"prolonged rest can trigger special idle again");
+Check(dragon.手动出手(player.transform.position+Vector3.forward*2)&&!dragon.特殊待机中&&animation.动作播放中,"ordinary attack immediately replaces special idle");
+animation.停止动作();yield return new WaitForSecondsRealtime(1.5f);
+Check(dragon.特殊待机中,"idle available before spell interruption");
+var replacement=dragon.配置.五式[4].玩家动作;Check(animation.播动作(replacement),"spell-style action replaces interruptible idle");yield return null;
+Check(!dragon.特殊待机中&&!animation.可打断待机中&&animation.当前动作==replacement,"dragon idle cleanup preserves incoming spell animation");
+animation.停止动作();dragon.enabled=false;dragon.配置=originalConfig;yield return new WaitForSecondsRealtime(.1f);Check(!Object.FindObjectsOfType<Animator>().Any(a=>a.name.StartsWith("太初伴龙_")),"unequip cleans independent dragon rigs");
+report.AppendLine("TAICHU_RUNTIME_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/taichu-runtime-report.txt",report.ToString());Debug.Log(report.ToString());
+}finally{CombatDamagePipeline.结算完成-=onHit;camera.targetTexture=null;Object.Destroy(render);Object.Destroy(cameraGo);}
+}
+return Run();

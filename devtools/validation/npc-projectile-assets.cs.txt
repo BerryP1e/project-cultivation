@@ -1,0 +1,36 @@
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
+using UnityEditor;
+var root="Assets/resources/CombatVFX/Projectiles/ProjectilesFX/VFX_Prefabs/";
+var report=new System.Text.StringBuilder();int activeMissing=0;
+foreach(var theme in new[]{"Ares","Curse","Dark_Magic","Demon","Nature","StarlightFairy","Winter","Priest"}){
+foreach(var suffix in new[]{"Projectiles_Particles/VFX_"+theme+"_Projectile_Only","Flashes/VFX_"+theme+"_Flash","Impacts/VFX_"+theme+"_Impact"}){
+if(theme=="Priest"&&suffix.StartsWith("Impacts"))continue;
+var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(root+suffix+".prefab");
+if(!prefab){activeMissing++;report.AppendLine("MISSING_PREFAB "+suffix);continue;}
+foreach(var renderer in prefab.GetComponentsInChildren<ParticleSystemRenderer>(true)){
+if(renderer.renderMode==ParticleSystemRenderMode.Mesh&&!renderer.mesh){activeMissing++;report.AppendLine("MISSING_ACTIVE_MESH "+suffix+"/"+renderer.name);}
+var materials=renderer.sharedMaterials;for(int mi=0;mi<materials.Length;mi++){var mat=materials[mi];
+if(mi>0&&!renderer.GetComponent<ParticleSystem>().trails.enabled)continue;
+if(!mat||!mat.shader||!mat.shader.isSupported){activeMissing++;report.AppendLine("MISSING_MATERIAL_SHADER "+suffix+"/"+renderer.name);continue;}
+for(int i=0;i<ShaderUtil.GetPropertyCount(mat.shader);i++){
+if(ShaderUtil.GetPropertyType(mat.shader,i)!=ShaderUtil.ShaderPropertyType.TexEnv)continue;
+var prop=ShaderUtil.GetPropertyName(mat.shader,i);var serialized=new SerializedObject(mat);
+var textures=serialized.FindProperty("m_SavedProperties.m_TexEnvs");
+for(int j=0;j<textures.arraySize;j++){var item=textures.GetArrayElementAtIndex(j);if(item.FindPropertyRelative("first").stringValue!=prop)continue;
+var tex=item.FindPropertyRelative("second.m_Texture");
+if(tex.objectReferenceValue==null&&tex.objectReferenceInstanceIDValue!=0){activeMissing++;report.AppendLine("MISSING_ACTIVE_TEXTURE "+suffix+"/"+renderer.name+"/"+prop);}}
+}
+}
+}
+report.AppendLine("AUDIT "+suffix+" particles="+prefab.GetComponentsInChildren<ParticleSystem>(true).Length);
+}}
+var arrow=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/CombatVFX/Projectiles/专属/箭矢_Object135.prefab");
+foreach(var r in arrow.GetComponentsInChildren<Renderer>(true)){if(!r.sharedMaterial)activeMissing++;report.AppendLine("ARROW "+r.name+" mat="+(r.sharedMaterial?AssetDatabase.GetAssetPath(r.sharedMaterial):"MISSING"));}
+var bee=Resources.Load<GameObject>("NPC/Demon/XuanFeng/XuanFeng_01");
+if(bee)foreach(var r in bee.GetComponentsInChildren<SkinnedMeshRenderer>(true))report.AppendLine("BEE "+r.name+" mat="+(r.sharedMaterial?AssetDatabase.GetAssetPath(r.sharedMaterial):"MISSING"));
+File.WriteAllText("../.local/diagnostics/npc-projectile-editor-audit.txt",report.ToString());
+if(activeMissing>0)throw new Exception("Active projectile dependencies missing: "+activeMissing);
+Debug.Log("NPC_PROJECTILE_ASSET_AUDIT_PASS");
+return report.ToString();

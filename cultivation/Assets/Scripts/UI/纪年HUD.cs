@@ -45,6 +45,7 @@ public class 纪年HUD : MonoBehaviour
     Canvas 画布;
     Text 日期文本;
     float 高亮到期时刻 = -1f;
+    时间管理器 订阅的时间;
 
     void Awake()
     {
@@ -64,19 +65,22 @@ public class 纪年HUD : MonoBehaviour
     //
     // 修法：① 放 OnEnable/OnDisable（Unity 保证成对）
     //       ② **先 `-=` 再 `+=`**（即使万一 OnEnable 被重复调用也不会叠加）
-    //       ③ 用 `时间管理器.取()` 而不是 `FindObjectOfType`（取不到会自建，语义一致）
+    //       ③ 订阅时取时间实例，退订只使用原引用，避免退出时重建单例。
     void OnEnable()
     {
         var t = 时间管理器.取();
         if (t == null) return;
+        if (订阅的时间 != null) 订阅的时间.过了一天 -= 处理跨天;
+        订阅的时间 = t;
         t.过了一天 -= 处理跨天;
         t.过了一天 += 处理跨天;
     }
 
     void OnDisable()
     {
-        var t = 时间管理器.取();
+        var t = 订阅的时间;
         if (t != null) t.过了一天 -= 处理跨天;
+        订阅的时间 = null;
     }
 
     void Start()

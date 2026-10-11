@@ -31,6 +31,7 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class 灵田地块界面 : MonoBehaviour
 {
+    灵田 订阅的田;
     // ============================================================ 配色
 
     static readonly Color 幕布色 = new Color(0f, 0f, 0f, 0.55f);
@@ -173,13 +174,15 @@ public class 灵田地块界面 : MonoBehaviour
     {
         var 田 = 灵田.取();
         if (田 == null) return;
+        if (订阅的田 != null) 订阅的田.变化 -= 刷新;
+        订阅的田 = 田;
         田.变化 -= 刷新;
         田.变化 += 刷新;
     }
 
     void OnDestroy()
     {
-        var 田 = 灵田.取();
+        var 田 = 订阅的田;
         if (田 != null) 田.变化 -= 刷新;
     }
 

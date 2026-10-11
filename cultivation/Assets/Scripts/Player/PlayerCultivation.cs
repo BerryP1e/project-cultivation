@@ -9,16 +9,9 @@ using UnityEngine;
 /// · **总灵气是角色通用积累，与功法无关** —— 功法只决定「灵气值对应什么境界」的换算比例。
 /// · **等效基准灵气 S = 总灵气 ÷ 难度系数 K**，K = 功法难度等级 ÷ 100。
 ///   拿 S 去对照境界表的累计灵气阈值，就是当前境界。
-/// · **杀怪给「修炼次数」**（次数 = 基础 1 次 × 等级差系数），
-///   回修炼小屋消耗次数一次性转成灵气。
-/// · 单次修炼产出的灵气**只随大境界提升、且不乘 K** ——
-///   所以难度越高的功法，同样一次修炼推不动境界，需要更多怪 ✓（这正是设计意图）
-///
-/// ## 为什么 修炼次数 内部存 float
-///
-/// 等级差系数有 0.2 / 0.5 / 0.8 这种小数（打低级怪只给 0.2 次），
-/// 用 int 存会直接抹成 0。所以内部累积 float，对外给整数值 ——
-/// 打 5 只低级怪 = 攒够 1 次 ✓
+/// · 修炼机会仅由游戏内日常获得；修炼小屋消耗日常机会兑换一次灵气。
+/// · 单次灵气只随大境界提升，不乘功法难度系数。
+/// · 修炼次数累积是已兑换、待执行的次数，保留 float 存储，不接受击杀奖励。
 ///
 /// 挂在 **Player** 上。
 /// </summary>
@@ -41,13 +34,6 @@ public class PlayerCultivation : MonoBehaviour
 
     [Tooltip("修炼次数的**小数累积**。对外看 修炼次数（整数）")]
     public float 修炼次数累积;
-
-    [Header("杀怪掉落修炼次数")]
-    [Tooltip("同级怪物的基础掉落次数")]
-    public float 同级基础次数 = 1f;
-
-    [Tooltip("等级差系数（按「怪物等级 − 玩家等级」分段）：≤−5 / −4~−3 / −2~−1 / 0 / +1~+2 / +3~+4 / ≥+5")]
-    public float[] 等级差系数 = { 0.2f, 0.5f, 0.8f, 1.0f, 1.5f, 2.0f, 3.0f };
 
     [Header("调试")]
     public bool 打印修为日志 = true;
@@ -242,9 +228,6 @@ public class PlayerCultivation : MonoBehaviour
 
     /// <summary>境界等级变了（参数：旧等级、新等级）</summary>
     public event Action<PlayerCultivation, int, int> 等级变化;
-
-    /// <summary>杀了怪拿到修炼次数（参数：怪物等级、本次次数）</summary>
-    public event Action<PlayerCultivation, int, float> 击杀获得次数;
 
     void Awake()
     {
@@ -476,44 +459,6 @@ public class PlayerCultivation : MonoBehaviour
         if (板 == null) return;
         板.EnsureLists();
         if (板.移除物品(定义, 数量)) 板.RaiseChanged();
-    }
-
-    // ============================================================ 杀怪 → 修炼次数
-
-    /// <summary>
-    /// **杀掉一只怪 → 掉落修炼次数。**
-    /// 单只 = 基础 1 次 × 等级差系数（等级差 = 怪物等级 − 玩家等级）。
-    /// 用「修炼次数累积」做小数累积，打 5 只低级怪（各 0.2）能攒够 1 次。
-    /// </summary>
-    public float 记录击杀(int 怪物等级)
-    {
-        int 差 = 怪物等级 - 等级;
-        float 次 = 同级基础次数 * 取等级差系数(差);
-        修炼次数累积 += 次;
-
-        if (打印修为日志)
-            Debug.Log("[修炼] 击杀 " + 怪物等级 + " 级怪（差 " + (差 >= 0 ? "+" : "") + 差
-                + "）→ +" + 次.ToString("0.##") + " 次（现有 " + 修炼次数 + " 次）", this);
-
-        击杀获得次数?.Invoke(this, 怪物等级, 次);
-        修为变化?.Invoke(this);
-        return 次;
-    }
-
-    /// <summary>等级差系数（按设计文档的分段）</summary>
-    public float 取等级差系数(int 等级差)
-    {
-        int i;
-        if (等级差 <= -5) i = 0;
-        else if (等级差 <= -3) i = 1;
-        else if (等级差 <= -1) i = 2;
-        else if (等级差 == 0) i = 3;
-        else if (等级差 <= 2) i = 4;
-        else if (等级差 <= 4) i = 5;
-        else i = 6;
-
-        if (等级差系数 == null || 等级差系数.Length <= i) return 1f;
-        return 等级差系数[i];
     }
 
     // ============================================================ 功法转换
@@ -754,7 +699,6 @@ public class PlayerCultivation : MonoBehaviour
     }
 
     // ---- ASCII 别名 ----
-    public float GainKillCharge(int monsterLevel) => 记录击杀(monsterLevel);
     public float CultivateOnce() => 修炼一次();
     public bool SwitchGongFa(GongFaDefinition next) => 转修功法(next);
     public string PreviewRealmAfterSwitch(GongFaDefinition next) => 预估转修后境界(next);

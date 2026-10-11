@@ -167,7 +167,7 @@ public class BasicJiuba01 : MonoBehaviour
     public float 冷却 => 实际冷却;
 
     /// <summary>现在能不能出手：锁定了目标（如果要求锁定）+ **距离够得着** + 冷却好了 + 没在做动作 + 没有过场演出在锁</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求 || !需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => !CombatHitStop.正在顿帧(transform) && !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求 || !需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
     bool 手动请求,手动攻击;
     Vector3 手动点;
     readonly HashSet<Vector3Int> 本轮挥砍采样=new HashSet<Vector3Int>();
@@ -272,6 +272,7 @@ public class BasicJiuba01 : MonoBehaviour
 
     protected virtual void Update()
     {
+        if(CombatHitStop.正在顿帧(transform))return;
         解析引用();
 
         // 目标换了就丢掉缓存的适配器（保证 锁定单位 跟着走，和 basic_frostspike_01 一样）

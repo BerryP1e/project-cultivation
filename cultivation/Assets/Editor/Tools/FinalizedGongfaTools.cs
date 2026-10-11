@@ -4,6 +4,9 @@ using UnityEngine;
 /// <summary>Debug access to finalized manuals; no source-model or rebaking dependency.</summary>
 public static class FinalizedGongfaTools
 {
+    [MenuItem("修仙/调试/给予太初龙栖诀秘籍（仅当前 Play 背包）")]
+    public static void GiveDragon() => Give("item_gongfa_taichu_longqijue");
+
     [MenuItem("修仙/调试/给予灵虚剑决秘籍（仅当前 Play 背包）")]
     public static void GiveLingxu() => Give("item_gongfa_lingxu_jianjue");
 

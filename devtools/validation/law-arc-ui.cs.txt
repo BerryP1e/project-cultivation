@@ -1,0 +1,30 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+IEnumerator Run(){
+int checks=0;var report=new System.Text.StringBuilder();void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/law-arc-ui-report.txt",report.ToString());if(!ok)throw new Exception(name);checks++;}
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;DialogueUI.关闭();foreach(var debug in Object.FindObjectsOfType<PlayerStatsDebugPanel>())debug.Visible=false;
+var panel=Object.FindObjectOfType<UIPanelData>();panel.清空玩法数据();for(int i=0;i<36;i++)LawFragmentSystem.获得(panel,LawFragmentSystem.生成(i%9,new System.Random(542+i)));
+var ui=panel.GetComponent<CharacterPanelUI>();ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();yield return new WaitForSecondsRealtime(.16f);
+var stage=page.预览相机.transform.parent;var ps=stage.GetComponentInChildren<ParticleSystem>();var particles=new ParticleSystem.Particle[192];int n=ps.GetParticles(particles);var ring=stage.Find("LawRing");
+Check(ps.name=="AmbientToLawMotes"&&n>0&&particles.Take(n).Any(x=>{var p=ring.InverseTransformPoint(x.position);return new Vector2(p.x/2.05f,p.z/1.28f).magnitude>1.12f;}),"particles emerge around orbit rather than from hand");
+yield return new WaitForSecondsRealtime(1);var arc=page.收获弧带;Check(arc&&arc.收藏数量==36&&arc.卡片池数<=12,"arc virtualizes large collection into bounded visible card pool");Check(arc.滚动条.gameObject.activeInHierarchy,"arc exposes scrollbar for overflow");Check(((RectTransform)page.transform.Find("LawOrbit")).anchorMin.y>=.29f,"equipment preview moved upwards");
+var backing=page.transform.Find("LawWorkspace").GetComponent<Image>();Check(backing.sprite.name.EndsWith("panel-inner")&&backing.color.a<.5f&&backing.rectTransform.anchorMax.x>.79f,"shared translucent workspace covers preview and curved collection");Check(page.transform.Find("LawInventory").GetComponent<Image>().color.a==0,"collection has no separate ink backing");
+Check(page.GetComponentsInChildren<UIInkLawItemDrag>().All(x=>x.GetComponent<UIInkFluid>()&&x.GetComponentsInChildren<Text>().All(t=>!t.text.Contains("评分"))),"each visible law has animated ink and name without score");
+var cards=page.GetComponentsInChildren<UIInkLawItemDrag>();Check(cards.Length>=6&&cards.Select(x=>((RectTransform)x.transform).anchoredPosition.y).Max()-cards.Select(x=>((RectTransform)x.transform).anchoredPosition.y).Min()>250,"cards follow curved lower-to-upper band");
+arc.OnScroll(new PointerEventData(EventSystem.current){scrollDelta=new Vector2(0,-3)});yield return null;Check(arc.滚动位置>100,"wheel scrolls arc");arc.滚动条.value=0;yield return null;Check(Math.Abs(arc.滚动位置-arc.最大滚动)<.01,"scrollbar reaches final fragment without wrap duplicates");arc.滚动条.value=1;yield return null;
+var item=page.GetComponentsInChildren<UIInkLawItemDrag>().First(x=>x.GetComponent<CanvasGroup>().alpha>.9f);var law=item.法则;var point=RectTransformUtility.WorldToScreenPoint(null,item.transform.position);var tangent=arc.切线(point,null);var normal=new Vector2(-tangent.y,tangent.x);
+var e=new PointerEventData(EventSystem.current){button=PointerEventData.InputButton.Left,pressPosition=point,position=point+normal*100,delta=normal*100};item.OnBeginDrag(e);Check(page.拖拽法则==law,"drag towards orbit starts equipment ghost");
+var slots=page.GetComponentsInChildren<UIInkLawSlot>();slots[5].OnDrop(e);item.OnEndDrag(e);yield return null;Check(page.取槽(5)==law&&arc.收藏数量==35,"equip sixth slot removes law from collection");
+var hits=new List<RaycastResult>();e.position=RectTransformUtility.WorldToScreenPoint(null,slots[2].transform.position);EventSystem.current.RaycastAll(e,hits);Check(hits.Any(x=>x.gameObject.GetComponent<UIInkLawSlot>())&&hits[0].gameObject.GetComponent<UIInkLawSlot>(),"arc background does not steal pointer hits from equipment slots");
+slots[5].OnBeginDrag(e);page.GetComponentInChildren<UIInkLawInventoryDrop>().OnDrop(e);slots[5].OnEndDrag(e);yield return null;Check(page.取槽(5)==null&&arc.收藏数量==36,"drop back on curved collection unequips");
+item=page.GetComponentsInChildren<UIInkLawItemDrag>().First(x=>x.GetComponent<CanvasGroup>().alpha>.9f);point=RectTransformUtility.WorldToScreenPoint(null,item.transform.position);tangent=arc.切线(point,null);e.pressPosition=point;e.position=point+tangent*100;e.delta=tangent*100;item.OnBeginDrag(e);Check(!UIDragContext.Dragging&&page.拖拽法则==null,"drag along tangent scrolls instead of equipping");item.OnDrag(e);item.OnEndDrag(e);
+for(int i=0;i<6;i++)LawFragmentSystem.装备(panel,panel.法则碎片[i].id,i);yield return new WaitForSecondsRealtime(1.5f);
+yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-arc-ui.png");yield return new WaitForSecondsRealtime(.3f);
+ui.SetOpen(false,true);Check(!stage.gameObject.activeInHierarchy&&!UIDragContext.Dragging,"closing pauses preview and clears drag state");ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);yield return new WaitForSecondsRealtime(.5f);Check(arc.收藏数量==30,"reopen preserves filtered collection and six equipped laws");
+report.AppendLine("LAW_ARC_UI_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/law-arc-ui-report.txt",report.ToString());Debug.Log("LAW_ARC_UI_PASS checks="+checks);
+}
+return Run();

@@ -1,11 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// **玩家身上的临时增益**（丹药、buff 之类）。挂在 Player 上，没有就按需自建。
 ///
 /// 结算路线：<c>PlayerCombatStats.Recalculate()</c> 先算「基础属性 + 当前功法」，
-/// 最后调 <see cref="应用到"/> 把这里的增益叠上去 —— 所以增益**不会写进任何数据资产**，
+/// 汇总本组件与法则的百分比/固定值，先计算大增幅再加小固定值 —— 所以增益**不会写进任何数据资产**，
 /// 到期自动消失，属性回到原样。
 ///
 /// 同名同属性的增益会**叠加数值、刷新时长**（吃两颗回春丹 = +10%，时长取较长的那个）。
@@ -73,16 +73,16 @@ public class 玩家临时增益 : MonoBehaviour
         重算();
     }
 
-    /// <summary>把当前所有增益叠到一份属性表上：先加固定值，再按"加完固定值之后的量"算百分比</summary>
+    /// <summary>先汇总增幅与固定值，再按统一顺序结算，不依赖增益添加顺序。</summary>
+    public void 汇总修正(AttributeSet percent, AttributeSet flat)
+    {
+        foreach (var b in 列表) { percent[b.属性] += b.百分比; flat[b.属性] += b.固定值; }
+    }
     public void 应用到(AttributeSet 表)
     {
         if (表 == null) return;
-        for (int i = 0; i < 列表.Count; i++)
-        {
-            var b = 列表[i];
-            float 加后 = 表[b.属性] + b.固定值;
-            表[b.属性] = 加后 + 加后 * b.百分比;
-        }
+        var percent = new AttributeSet(); var flat = new AttributeSet(); 汇总修正(percent, flat);
+        LawFragmentSystem.结算(表, percent, flat);
     }
 
     void Update()

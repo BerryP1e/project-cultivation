@@ -27,8 +27,9 @@ public static class CombatImpactPipeline
         var context = hit.上下文;
         if (!context.播放命中表现 || !hit.结果.有效接触) return;
         var profile = 规则(context.来源id);
+        CombatHitStop.成功接触(hit, 配置, profile);
         if (profile != null && !string.IsNullOrEmpty(profile.生物命中特效id))
-            CombatVfxPipeline.命中(profile.生物命中特效id, hit.结果, context.接触点, context.来向, context.表现缩放);
+            CombatVfxPipeline.命中(profile.生物命中特效id, hit.结果, context.接触点, context.来向, context.表现缩放,hit.目标.根);
     }
 
     public static void 接触(string id, Vector3 point, float basis = -1f, float visualScale = 1f,

@@ -1,0 +1,15 @@
+﻿using System;
+using System.IO;
+var cfg=LawFragmentCatalog.取();int checks=0;var report=new System.Text.StringBuilder();
+void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/law-chest-drop-report.txt",report.ToString());if(!ok)throw new Exception(name);checks++;}
+Check(Math.Abs(cfg.宝箱掉率-.1f)<.000001&&Math.Abs(cfg.高一境界概率-.05f)<.000001,"persisted asset is ten-percent drop and five-percent conditional upgrade");
+Check(LawFragmentSystem.掉落境界(21,cfg.宝箱掉率,0,cfg)==-1,"failed drop never grants chest even if upgrade roll succeeds");
+Check(LawFragmentSystem.掉落境界(21,cfg.宝箱掉率-.000001,0,cfg)==3,"successful drop then successful upgrade grants one higher tier");
+Check(LawFragmentSystem.掉落境界(21,0,cfg.高一境界概率,cfg)==2,"upgrade threshold is exclusive");
+for(int tier=0;tier<9;tier++){Check(LawFragmentSystem.掉落境界(1+tier*10,0,.99,cfg)==tier,"never drop below monster realm "+tier);Check(LawFragmentSystem.掉落境界(1+tier*10,0,0,cfg)==Math.Min(8,tier+1),"upgrade and maximum realm cap "+tier);}
+var rng=new System.Random(91824);int drops=0,upgrades=0;
+for(int i=0;i<1000000;i++){int tier=LawFragmentSystem.掉落境界(21,rng.NextDouble(),rng.NextDouble(),cfg);if(tier>=0)drops++;if(tier==3)upgrades++;}
+Check(drops>99000&&drops<101000,"one million kills produce ten percent chests: "+drops);
+Check(upgrades>4700&&upgrades<5300,"one million kills produce half-percent higher chests: "+upgrades);
+Check(Math.Abs((double)upgrades/drops-.05)<.003,"five percent is conditional on dropped chests");
+report.AppendLine("LAW_CHEST_DROP_PASS checks="+checks+" drops="+drops+" upgrades="+upgrades);File.WriteAllText("../.local/diagnostics/law-chest-drop-report.txt",report.ToString());Debug.Log("LAW_CHEST_DROP_PASS checks="+checks);

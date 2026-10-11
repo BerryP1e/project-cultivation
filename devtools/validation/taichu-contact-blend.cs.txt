@@ -1,0 +1,39 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+IEnumerator Run(){
+yield return null;Time.timeScale=1;DialogueUI.关闭();
+var player=GameObject.Find("Player");var panel=Object.FindObjectOfType<UIPanelData>();var ac=player.GetComponent<PlayerAnimationController>();var stats=player.GetComponent<PlayerCombatStats>();var targeting=player.GetComponent<NpcTargeting>();
+player.GetComponent<PlayerController>().enabled=false;targeting.enabled=false;var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.transform.SetPositionAndRotation(new Vector3(18500,30,18500),Quaternion.identity);
+var cfg=Resources.Load<TaichuDragonDefinition>("Weapons/TaichuDragon/Definition");var report=new System.Text.StringBuilder();int checks=0;
+void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/taichu-contact-blend-report.txt",report.ToString());if(!ok)throw new Exception(name);checks++;}
+Check(cfg.五式[0].判定开始==.37f&&cfg.五式[0].判定结束==.64f,"persisted exact A1 window 37%-64%");
+var motions=cfg.五式.Concat(new[]{cfg.待机,cfg.移动,cfg.特殊待机}).ToArray();
+TaichuDragonRig old=null;
+try{
+for(int index=0;index<motions.Length;index++){
+ var current=new TaichuDragonRig(motions[index],ac.animator,cfg,old);current.透明度(1);
+ if(old!=null){
+  var before=old.龙网格.bones.GroupBy(b=>b.name).ToDictionary(g=>g.Key,g=>g.First());float delta=0,angle=0;int matched=0;
+  foreach(var bone in current.龙网格.bones)if(before.TryGetValue(bone.name,out var b)){delta=Mathf.Max(delta,Vector3.Distance(b.position,bone.position));angle=Mathf.Max(angle,Quaternion.Angle(b.rotation,bone.rotation));matched++;}
+  Check(matched==current.龙网格.bones.Length&&delta<.006f&&angle<.1f,"continuous bones on segment switch "+index+" delta="+delta+" angle="+angle);old.Dispose();
+ }
+ current.推进过渡(cfg.姿势过渡秒数/2);current.采样(.4f);var halfway=current.龙网格.bones.Select(b=>b.position).ToArray();
+ current.采样(.4f);Check(current.龙网格.bones.Select((b,i)=>Vector3.Distance(b.position,halfway[i])).Max()<.006f,"re-sampling blend is idempotent "+index);
+ current.推进过渡(cfg.姿势过渡秒数);current.采样(.9f);var expected=new TaichuDragonRig(motions[index],ac.animator,cfg);expected.采样(.9f);
+ float residual=current.龙网格.bones.Zip(expected.龙网格.bones,(a,b)=>Vector3.Distance(a.position,b.position)).Max();Check(residual<.006f,"blend ends on original authored pose "+index+" residual="+residual);expected.Dispose();old=current;
+}
+}finally{old?.Dispose();}
+panel.当前功法=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_taichu_longqijue.asset");panel.RaiseChanged();player.GetComponent<PlayerAbilityLoader>().Refresh();yield return null;
+var dragon=player.GetComponent<BasicTaichuDragon01>();dragon.自动出手=false;dragon.基础冷却=0;dragon.enabled=false;dragon.enabled=true;stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.AttackSpeed]=1;stats.调试数值[AttributeType.IgnoreDodge]=100;stats.Recalculate();
+var go=new GameObject("TailWindowTarget");go.SetActive(false);go.transform.position=player.transform.position+Vector3.forward*2;
+var def=ScriptableObject.CreateInstance<NpcDefinition>();def.属性[AttributeType.MaxHealth]=10000;def.对主角好感度=-100;var npc=go.AddComponent<NpcInstance>();npc.定义=def;var c=go.AddComponent<CapsuleCollider>();c.height=2;c.center=Vector3.up;c.radius=.45f;go.SetActive(true);npc.ResetHealth();npc.enabled=false;
+var frames=new List<float>();Action<CombatHitEvent> onHit=h=>{if(h.上下文.来源==dragon)frames.Add(ac.动作进度);};CombatDamagePipeline.实际受伤+=onHit;
+try{targeting.Lock(npc,true);yield return new WaitForSecondsRealtime(.4f);Check(dragon.出手()&&dragon.当前式==0,"A1 starts for actual tail-window test");float deadline=Time.realtimeSinceStartup+10;
+ while(dragon.出手动作中&&Time.realtimeSinceStartup<deadline){if(ac.动作进度<.37f)Check(npc.CurrentHealth==10000,"no pre-tail damage at "+ac.动作进度);yield return null;}
+ Check(frames.Count==1&&frames[0]>=.37f&&frames[0]<=.68f,"single contact during tail window, observed "+string.Join(",",frames));
+}finally{CombatDamagePipeline.实际受伤-=onHit;Object.Destroy(go);Object.Destroy(def);}
+report.AppendLine("TAICHU_CONTACT_BLEND_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/taichu-contact-blend-report.txt",report.ToString());Debug.Log(report.ToString());}
+return Run();

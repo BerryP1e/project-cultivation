@@ -92,6 +92,11 @@ public static class DataTableImporter
             if (最新资产 == DateTime.MinValue || csv时间 > 最新资产.AddSeconds(2)) 结果.Add(spec.Csv);
         }
 
+        foreach (string table in new[] { "法则称呼表", "法则境界表" })
+        {
+            string csv = TableDir + "/" + table + ".csv", asset = "Assets/resources/Laws/Catalog.asset";
+            if (File.Exists(csv) && (!File.Exists(asset) || File.GetLastWriteTimeUtc(csv) > File.GetLastWriteTimeUtc(asset).AddSeconds(2))) 结果.Add(table);
+        }
         return 结果;
     }
 
@@ -103,6 +108,7 @@ public static class DataTableImporter
     public static void ImportAll()
     {
         ImportTables(true, null);
+        LawFragmentAssets.构建();
     }
 
     /// <summary>资产导入与场景回填分开；指定表时只生成选中的表，仍解析学习物品的引用。</summary>

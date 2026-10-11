@@ -13,6 +13,10 @@ public sealed class CombatVfxCatalog : ScriptableObject
         public float 缩放=1f;
         public Vector3 旋转欧拉;
         public bool 跟随来向;
+        public bool 模型外侧显示;
+        public bool 朝向镜头;
+        [Min(0)] public float 外侧留白 = .12f;
+        [Min(.1f)] public float 刀光最大宽度 = 3f;
         [Tooltip("关闭此效果及动态子效果对场景的照明，保留火焰等自身发光表现")]
         public bool 关闭场景灯光;
         [Min(0)] public float 灯光强度倍率=1f;

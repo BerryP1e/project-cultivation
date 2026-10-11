@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ed51e8445f2bb84da3da54190cfb4f7, type: 3}
   m_Name: "NPC\u52A8\u4F5C\u6620\u5C04"
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   controllers:
   - controller: {fileID: 9100000, guid: 74fc37b97d4541842b027bfa13d08d2c, type: 2}
     usesActionParameter: 1
@@ -1010,17 +1010,6 @@ MonoBehaviour:
       index: 8
       clip: {fileID: 7400000, guid: d07964a1bd0b65d4ba50e8ad6284f520, type: 3}
       statePath: Base Layer.Wound
-  - controller: {fileID: 9100000, guid: 7da5410f30a71a34980eec97a3942529, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Idle
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: 5048176d951515041acc48f83e5e5449, type: 3}
-      statePath: Base Layer.Idle
-    - name: Specialidle
-      index: 1
-      clip: {fileID: 1827226128182048838, guid: bd7ace88f823884438dcc8ae40f3d2e8, type: 3}
-      statePath: Base Layer.Specialidle
   - controller: {fileID: 9100000, guid: 50cc88c796537514787323c93488d1f5, type: 2}
     usesActionParameter: 1
     actions:

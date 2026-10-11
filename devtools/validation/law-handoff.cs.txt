@@ -1,0 +1,41 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine.UI;
+IEnumerator Run() {
+yield return null;
+int count=0;var report=new System.Text.StringBuilder();
+void Check(bool ok,string msg){report.AppendLine((ok?"PASS ":"FAIL ")+msg);if(!ok){File.WriteAllText("../.local/diagnostics/law-handoff-report.txt",report.ToString());throw new Exception(msg);}count++;}
+var player=GameObject.Find("Player");var panel=Object.FindObjectOfType<UIPanelData>();var stats=player.GetComponent<PlayerCombatStats>();var cfg=LawFragmentCatalog.取();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var oldSave=new SaveData();SaveSystem.从角色采集(oldSave);
+var law=LawFragmentSystem.生成(6,new System.Random(87));LawFragmentSystem.获得(panel,law);LawFragmentSystem.装备(panel,law.id,3);panel.给物品(cfg.境界[7].宝箱,2);
+var nested=typeof(跨场景数据).GetNestedType("快照",BindingFlags.NonPublic);var snap=nested.GetMethod("拍下",BindingFlags.Public|BindingFlags.Static);var restore=nested.GetMethod("灌回",BindingFlags.Public|BindingFlags.Static);
+snap.Invoke(null,new object[]{panel});var receiver=new GameObject("LawNewScenePanel");var next=receiver.AddComponent<UIPanelData>();restore.Invoke(null,new object[]{next});
+Check(next.法则碎片.Any(x=>x.id==law.id)&&next.法则装备[3]==law.id,"fresh scene panel receives newest fragment and equipped UUID");
+Check(next.物品.All(x=>x.物品id!=law.id)&&next.物品数量(cfg.境界[7].宝箱)==2,"fresh scene inventory receives independent collection and chests");
+bool handoff=跨场景数据.正在接力;try{跨场景数据.正在接力=true;typeof(SaveSystem).GetMethod("恢复面板",BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,new object[]{oldSave,next});Check(next.法则碎片.Any(x=>x.id==law.id)&&next.法则装备[3]==law.id&&next.物品数量(cfg.境界[7].宝箱)==2,"older disk data cannot overwrite new law/chest during handoff");}finally{跨场景数据.正在接力=handoff;}
+Object.Destroy(receiver);yield return null;
+// Reset snapshot after the test's extra panel OnDestroy has finished.
+跨场景数据.ClearSnapshot();
+var moveLaw=LawFragmentSystem.生成(2,new System.Random(53));moveLaw.属性=new List<LawFragment.Roll>{new LawFragment.Roll{属性=AttributeType.MoveSpeed,主属性=true,大增幅=true,数值=1}};
+panel.法则装备=Enumerable.Repeat("",cfg.装备槽数).ToList();stats.使用调试数值=false;panel.RaiseChanged();yield return null;float moveBefore=player.GetComponent<PlayerController>().移动速度倍率;
+LawFragmentSystem.获得(panel,moveLaw);LawFragmentSystem.装备(panel,moveLaw.id,0);yield return null;Check(Mathf.Abs(player.GetComponent<PlayerController>().移动速度倍率-2*moveBefore)<.001f,"movement controller consumes actual equipped movement attribute");
+float chance=cfg.宝箱掉率,upgrade=cfg.高一境界概率;cfg.宝箱掉率=1;cfg.高一境界概率=0;
+GameObject monster=null,ally=null;NpcDefinition def=null;
+try{
+ monster=new GameObject("LawSpiritVictim");monster.SetActive(false);def=ScriptableObject.CreateInstance<NpcDefinition>();def.类型=NpcKind.妖魔;def.境界=21;def.对主角好感度=-100;def.属性[AttributeType.MaxHealth]=10;var npc=monster.AddComponent<NpcInstance>();npc.定义=def;monster.SetActive(true);npc.enabled=false;npc.ResetHealth();
+ ally=new GameObject("LawPlayerSpirit");ally.SetActive(false);var source=ally.AddComponent<NpcInstance>();source.定义=def;var spirit=ally.AddComponent<FormationSpirit>();spirit.enabled=false;spirit.管理器=player.GetComponent<SpiritFormationManager>();Check(spirit.管理器&&spirit.管理器.主人==player.transform,"formation spirit ownership resolves actual player");
+ var attack=source.定义.属性;attack[AttributeType.Attack]=10000;attack[AttributeType.IgnoreDodge]=100;
+ int before=panel.物品数量(cfg.境界[2].宝箱);var hit=CombatDamagePipeline.命中(npc,new CombatHitContext(source,AttackSpec.物理普通攻击,source,"law_ally_test",monster.transform.position,Vector3.forward));Check(hit.致命&&panel.物品数量(cfg.境界[2].宝箱)==before+1,"player spirit actual pipeline kill grants same-realm chest to player");
+ npc.ResetHealth();spirit.管理器=null;CombatDamagePipeline.命中(npc,new CombatHitContext(source,AttackSpec.物理普通攻击,source,"law_no_owner",monster.transform.position,Vector3.forward));Check(panel.物品数量(cfg.境界[2].宝箱)==before+1,"unowned NPC kill does not grant chest");
+}finally{cfg.宝箱掉率=chance;cfg.高一境界概率=upgrade;if(monster)Object.Destroy(monster);if(ally)Object.Destroy(ally);if(def)Object.Destroy(def);}
+var ui=panel.GetComponent<CharacterPanelUI>();ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);yield return null;var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();page.选择(law);page.选择槽(2);
+yield return new WaitForSecondsRealtime(4);yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-ui-final.png");yield return new WaitForSecondsRealtime(.3f);
+Check(ui.tabs[4].button.transform.Find("InkIcon").GetComponent<Image>().sprite!=null,"law navigation has a real icon");
+report.AppendLine("LAW_HANDOFF_PASS checks="+count);File.WriteAllText("../.local/diagnostics/law-handoff-report.txt",report.ToString());Debug.Log("LAW_HANDOFF_PASS checks="+count);
+}
+return Run();

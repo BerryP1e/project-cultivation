@@ -87,6 +87,10 @@ public class 跨场景数据 : MonoBehaviour
         public static bool 有数据;
 
         public static List<ItemDefinition> 物品;
+        public static List<LawFragment> 法则碎片;
+        public static List<string> 法则装备;
+        public static List<string> 炉中法则;
+        public static long 法则精粹;
         public static List<GongFaDefinition> 已学功法;
         public static List<ActiveDivineAbility> 已获得主动;
         public static List<PassiveDivineAbility> 已获得被动;
@@ -108,6 +112,8 @@ public class 跨场景数据 : MonoBehaviour
         {
             面板.EnsureLists();
             物品 = new List<ItemDefinition>(面板.物品);
+            法则碎片 = new List<LawFragment>(面板.法则碎片); 法则装备 = new List<string>(面板.法则装备);
+            炉中法则 = new List<string>(面板.炉中法则); 法则精粹 = 面板.法则精粹;
             已学功法 = new List<GongFaDefinition>(面板.已学功法);
             已获得主动 = new List<ActiveDivineAbility>(面板.已获得主动神通);
             已获得被动 = new List<PassiveDivineAbility>(面板.已获得被动神通);
@@ -131,6 +137,8 @@ public class 跨场景数据 : MonoBehaviour
         {
             面板.EnsureLists();
             面板.物品 = new List<ItemDefinition>(物品);
+            LawFragmentSystem.恢复(面板, 法则碎片, 法则装备);
+            面板.炉中法则 = new List<string>(炉中法则 ?? new List<string>()); 面板.法则精粹 = 法则精粹;
             面板.已学功法 = new List<GongFaDefinition>(已学功法);
             面板.已获得主动神通 = new List<ActiveDivineAbility>(已获得主动);
             面板.已获得被动神通 = new List<PassiveDivineAbility>(已获得被动);
@@ -159,6 +167,8 @@ public class 跨场景数据 : MonoBehaviour
 
         public static void 清空()
         {
+            法则碎片 = null; 法则装备 = null;
+            炉中法则 = null; 法则精粹 = 0;
             物品 = null; 已学功法 = null; 已获得主动 = null; 已获得被动 = null;
             已停用被动 = null; 主动技能 = null; 当前功法 = null; 当前坐骑 = null;
             青山剑有效击杀=0; 已学坐骑 = null; 已拥有法宝=null; 当前法宝=null; 已获得真灵=null; 战阵站位=null; 收服系统已初始化=false;

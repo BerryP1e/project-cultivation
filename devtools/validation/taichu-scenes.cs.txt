@@ -1,0 +1,79 @@
+﻿using UnityEngine.Playables;
+using UnityEngine.Animations;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using System.IO;
+if(EditorApplication.isPlaying)throw new System.Exception("Stop Play before scene audit");
+var original=SceneManager.GetActiveScene();var report=new System.Text.StringBuilder();int players=0,checks=0;
+void Check(bool ok,string name){if(!ok)throw new System.Exception(name);checks++;report.AppendLine("PASS "+name);}
+Check(PlayerAbilityLoader.内置登记.Any(r=>r[0]==BasicTaichuDragon01.方法id&&r[1]==nameof(BasicTaichuDragon01)),"shared all-scene registration");
+var openPreview=typeof(EditorSceneManager).GetMethod("OpenPreviewScene",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic,null,new[]{typeof(string)},null);
+foreach(var entry in EditorBuildSettings.scenes.Where(s=>s.enabled)){
+ var scene=(Scene)openPreview.Invoke(null,new object[]{entry.path});
+ try{foreach(var root in scene.GetRootGameObjects())foreach(var pc in root.GetComponentsInChildren<PlayerController>(true)){
+ var player=pc.gameObject;var loader=player.GetComponent<PlayerAbilityLoader>();var driver=player.GetComponent<PlayerAnimationController>();
+ Check(loader&&driver,entry.path+" shared loadout and motion driver");var a=driver.animator?driver.animator:player.GetComponentInChildren<Animator>(true);
+ Check(a&&a.isHuman&&a.avatar&&a.avatar.isValid,entry.path+" valid humanoid avatar");
+ Check(a.GetBoneTransform(HumanBodyBones.LeftHand)&&a.GetBoneTransform(HumanBodyBones.RightHand),entry.path+" both wrists");
+ var fingers=System.Enum.GetValues(typeof(HumanBodyBones)).Cast<HumanBodyBones>().Where(b=>b>=HumanBodyBones.LeftThumbProximal&&b<=HumanBodyBones.RightLittleDistal).ToArray();
+ Check(fingers.Count(b=>a.GetBoneTransform(b))==30,entry.path+" thirty finger joints");players++;
+ }}finally{EditorSceneManager.ClosePreviewScene(scene);}}
+Check(players>=5,"all gameplay scene players checked");
+var cfg=Resources.Load<TaichuDragonDefinition>("Weapons/TaichuDragon/Definition");Check(cfg&&cfg.五式.Length==5&&cfg.冰刺.Length==3,"five stages and three authored fire launch nodes");
+Check(Mathf.Approximately(cfg.动作速度倍率,.6f),"shared 0.6 animation multiplier");
+var motions=cfg.五式.Concat(new[]{cfg.待机,cfg.移动,cfg.特殊待机}).ToArray();
+foreach(var motion in motions){Check(motion.龙预制体&&motion.龙动作&&!motion.龙动作.humanMotion,"generic dragon source "+motion.龙动作.name);var a=motion.龙预制体.GetComponent<Animator>();Check(a&&a.avatar&&a.avatar.isValid,"matching generic avatar "+motion.龙动作.name);var renderers=motion.龙预制体.GetComponentsInChildren<Renderer>();Check(renderers.Length==(motion==cfg.五式[3]?4:motion==cfg.五式[2]?169:1),"only dragon and authored ice render "+motion.龙动作.name);Check(renderers.All(r=>r.sharedMaterials.All(m=>m&&m.shader)),"valid shared materials "+motion.龙动作.name);}
+foreach(var motion in cfg.五式.Concat(new[]{cfg.特殊待机})){var clip=motion.玩家动作;Check(clip&&clip.humanMotion&&!clip.isLooping,"nonloop humanoid player motion "+clip.name);var bindings=AnimationUtility.GetCurveBindings(clip);Check(bindings.Count(b=>b.type==typeof(Animator)&&(b.propertyName.StartsWith("LeftHand.")||b.propertyName.StartsWith("RightHand.")))==40,"complete wrist/finger muscle tracks "+clip.name);}
+Check(cfg.五式.Take(2).All(m=>m.龙预制体.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh.isReadable),"physical source meshes readable");
+Check(cfg.五式.Skip(2).Concat(new[]{cfg.待机,cfg.移动,cfg.特殊待机}).All(m=>!m.龙预制体.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh.isReadable),"nonphysical dragon meshes remain GPU-only");
+foreach(var ice in cfg.冰刺){var node=cfg.五式[3].龙预制体.transform.Find(ice.节点路径);Check(node&&node.GetComponent<MeshFilter>()&&node.GetComponent<MeshRenderer>(),"authored ice node "+ice.节点路径);Check(ice.释放进度>0&&ice.释放进度<1,"authored launch timing "+ice.节点路径);}
+var crystals=cfg.五式[2].龙预制体.GetComponentsInChildren<MeshFilter>().Where(f=>f.name.StartsWith("Pyramid")).ToArray();
+Check(crystals.Length==168&&crystals.Select(f=>f.sharedMesh).Distinct().Count()==1&&crystals[0].sharedMesh.isReadable,"168 crystals share one readable template");
+Check(cfg.火弹特效&&cfg.火弹特效.GetComponentsInChildren<ParticleSystem>().Length>0,"same particle projectile as Taixu basic");
+var idleBindings=AnimationUtility.GetCurveBindings(cfg.特殊待机.玩家动作);
+Check(idleBindings.Where(b=>b.propertyName.StartsWith("Root")||b.propertyName.StartsWith("Left Upper Leg")||b.propertyName.StartsWith("Right Upper Leg")||b.propertyName.StartsWith("Left Lower Leg")||b.propertyName.StartsWith("Right Lower Leg")).All(b=>{var keys=AnimationUtility.GetEditorCurve(cfg.特殊待机.玩家动作,b).keys;return keys.All(k=>Mathf.Abs(k.value-keys[0].value)<.0001f);}),"guard03 lower body and root remain stable");
+var preview=EditorSceneManager.NewPreviewScene();
+var originalAnimator=GameObject.Find("Player").GetComponentInChildren<Animator>(true);
+var posePlayer=Object.Instantiate(originalAnimator.gameObject);SceneManager.MoveGameObjectToScene(posePlayer,preview);
+foreach(var behaviour in posePlayer.GetComponentsInChildren<MonoBehaviour>(true))behaviour.enabled=false;
+posePlayer.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);posePlayer.transform.localScale=Vector3.one;
+var poseAnimator=posePlayer.GetComponent<Animator>();poseAnimator.runtimeAnimatorController=null;poseAnimator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var graph=UnityEngine.Playables.PlayableGraph.Create("GuardPoseAudit");graph.SetTimeUpdateMode(UnityEngine.Playables.DirectorUpdateMode.Manual);
+var play=UnityEngine.Animations.AnimationClipPlayable.Create(graph,cfg.特殊待机.玩家动作);play.SetApplyFootIK(false);
+UnityEngine.Animations.AnimationPlayableOutput.Create(graph,"Guard",poseAnimator).SetSourcePlayable(play);graph.Play();
+try{
+float facing=1, wrist=0; int worstFrame=0;
+for(int frame=0;frame<=120;frame++){
+ play.SetTime(frame/120f*cfg.特殊待机.玩家动作.length);graph.Evaluate(0);
+ Transform B(HumanBodyBones bone)=>poseAnimator.GetBoneTransform(bone);
+ var right=B(HumanBodyBones.RightUpperArm).position-B(HumanBodyBones.LeftUpperArm).position;
+ var up=B(HumanBodyBones.Head).position-B(HumanBodyBones.Hips).position;
+ var currentFacing=Vector3.Dot(Vector3.Cross(right,up).normalized,Vector3.forward);if(currentFacing<facing){facing=currentFacing;worstFrame=frame;}
+ foreach(string side in new[]{"Left","Right"}){HumanBodyBones H(string part)=>(HumanBodyBones)System.Enum.Parse(typeof(HumanBodyBones),side+part);wrist=Mathf.Max(wrist,Vector3.Angle(B(H("Hand")).position-B(H("LowerArm")).position,B(H("MiddleProximal")).position-B(H("Hand")).position));}
+}
+report.AppendLine("MEASURE guard facing="+facing+" worstFrame="+worstFrame+" maxWristDegrees="+wrist);File.WriteAllText("../.local/diagnostics/taichu-scenes-report.txt",report.ToString());
+Check(facing>.75f,"guard03 keeps torso forward throughout animation "+facing+" frame "+worstFrame);
+Check(wrist<100,"guard03 avoids backward folded wrists");
+report.AppendLine("MEASURE guard facing="+facing+" maxWristDegrees="+wrist);
+var attackPlay=AnimationClipPlayable.Create(graph,cfg.五式[1].玩家动作);attackPlay.SetApplyFootIK(false);
+var attackOutput=AnimationPlayableOutput.Create(graph,"A2",poseAnimator);attackOutput.SetSourcePlayable(attackPlay);
+float attackFacing=1;
+for(int frame=0;frame<=120;frame++){
+ attackPlay.SetTime(frame/120f*cfg.五式[1].玩家动作.length);graph.Evaluate(0);
+ var right=poseAnimator.GetBoneTransform(HumanBodyBones.RightUpperArm).position-poseAnimator.GetBoneTransform(HumanBodyBones.LeftUpperArm).position;
+ var up=poseAnimator.GetBoneTransform(HumanBodyBones.Head).position-poseAnimator.GetBoneTransform(HumanBodyBones.Hips).position;
+ var forward=Vector3.ProjectOnPlane(Vector3.Cross(right,up),Vector3.up).normalized;
+ attackFacing=Mathf.Min(attackFacing,Vector3.Dot(forward,Vector3.forward));
+}
+Check(attackFacing>.95f,"A2 does not inherit source actor leftward yaw "+attackFacing);
+}finally{graph.Destroy();EditorSceneManager.ClosePreviewScene(preview);}
+var database=QuestDatabase.取();var manual=database.物品库.FirstOrDefault(i=>i&&i.物品id=="item_gongfa_taichu_longqijue");Check(manual&&manual.使用效果 is 学功法效果&&功德堂兑换.是传法物品(manual),"runtime manual and teaching catalog");
+var dependencies=AssetDatabase.GetDependencies("Assets/resources/Weapons/TaichuDragon/Definition.asset",true);
+Check(!dependencies.Any(p=>p.EndsWith(".fbx")&&p.Contains("DragonPriest")),"final dragon assets do not depend on original FBX");
+Check(dependencies.Count(p=>p.StartsWith("Assets/Art/Characters/DragonPriest/Animations/")&&p.EndsWith(".anim"))==8,"eight independent native dragon clips");
+Check(dependencies.Count(p=>p.StartsWith("Assets/Art/Characters/DragonPriest/Avatars/")&&p.EndsWith(".asset"))==8,"eight matching independent generic avatars");
+Check(!AssetDatabase.IsValidFolder("Assets/Art/Characters/Imported/DragonPriest"),"unused source library removed");
+Check(!File.Exists("Assets/Editor/Tools/TaichuDragonAssets.cs"),"obsolete source rebuilder removed");
+Check(SceneManager.GetActiveScene()==original&&!original.isDirty,"active scene and dirty state preserved");
+report.AppendLine("TAICHU_SCENE_PASS players="+players+" checks="+checks);File.WriteAllText("../.local/diagnostics/taichu-scenes-report.txt",report.ToString());return report.ToString();

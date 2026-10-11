@@ -1,0 +1,82 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+IEnumerator Run(){
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var ai in n.GetComponents<NpcAiBase>())ai.enabled=false;
+var player=GameObject.Find("Player");var driver=player.GetComponent<PlayerAnimationController>();var animator=driver.animator;
+player.GetComponent<PlayerController>().enabled=false;player.GetComponent<NpcTargeting>().enabled=false;
+player.GetComponent<YufengFlight>()?.强制落地();player.GetComponent<MountRider>()?.强制下坐骑();
+var origin=new Vector3(18000,30,18000);player.transform.position=origin;
+var go=Object.Instantiate(NpcPrefabs.加载("NPC/Demon/YeZhu/YeZhu"));go.SetActive(false);
+go.transform.position=origin+Vector3.forward*1.4f;var npc=go.GetComponent<NpcInstance>();var def=Object.Instantiate(npc.定义);
+def.属性[AttributeType.MaxHealth]=1000000;def.对主角好感度=-100;npc.定义=def;go.SetActive(true);npc.ResetHealth();
+foreach(var ai in go.GetComponents<NpcAiBase>())ai.enabled=false;
+var na=go.GetComponent<Animator>();na.cullingMode=AnimatorCullingMode.AlwaysAnimate;na.speed=1.7f;
+var stats=player.GetComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.MaxHealth]=100000;stats.调试数值[AttributeType.MaxSpirit]=1000;stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.CritDamage]=1;stats.调试数值[AttributeType.InsightDamage]=1;stats.Recalculate();
+var camera=Camera.main;var oldCameraPosition=camera.transform.position;var oldCameraRotation=camera.transform.rotation;
+camera.transform.position=origin+new Vector3(0,2.5f,-5);camera.transform.LookAt(go.transform.position+Vector3.up*.8f);
+var settings=CombatImpactPipeline.配置;float physical=settings.物理顿帧,critical=settings.暴击顿帧,special=settings.特殊顿帧,interval=settings.顿帧触发间隔;
+var rules=CombatImpactPipeline.规则("basic_jiuba_01");var mode=rules.顿帧方式;
+var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);File.WriteAllText("../.local/diagnostics/combat-hit-feedback-report.txt",report.ToString());if(!ok)throw new Exception(name);count++;}
+CombatHitContext Context(AttackSpec spec,bool show=true,long attack=0)=>new CombatHitContext(stats,spec,stats,"basic_jiuba_01",go.transform.position+Vector3.up*.8f,Vector3.forward,attackId:attack,playHitVfx:show);
+var target=new NpcTarget(npc);
+try{
+ Check(Mathf.Approximately(physical,.055f)&&Mathf.Approximately(critical,.075f)&&Mathf.Approximately(special,.035f)&&Mathf.Approximately(interval,.12f),"shipping contact durations and repeat interval");
+ foreach(var id in new[]{CombatVfxPipeline.太虚剑命中,CombatVfxPipeline.火斩命中}){var entry=CombatVfxPipeline.配置.查找(id);Check(Mathf.Approximately(entry.缩放,.3f)&&entry.模型外侧显示&&entry.朝向镜头&&entry.刀光最大宽度==4.5f,"large camera-facing physical profile "+id);}
+ // Enlarge only the runtime test window so at least two frames can be sampled on a slow Editor.
+ settings.物理顿帧=settings.暴击顿帧=.12f;settings.特殊顿帧=.1f;settings.顿帧触发间隔=.2f;
+ var clip=Resources.Load<AnimationClip>("技能动作/普攻_远程_01");Check(driver.播动作(clip,1.2f),"actual humanoid action starts");yield return new WaitForSecondsRealtime(.25f);
+ var result=CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));
+ var attackerStop=player.GetComponent<CombatHitStop>();var targetStop=go.GetComponent<CombatHitStop>();
+ Check(result.有效接触&&attackerStop&&targetStop&&attackerStop.正在暂停&&targetStop.正在暂停,"successful physical contact pauses both actual units");
+ Check(animator.speed==0&&na.speed==0&&Time.timeScale==1,"both animators stopped without world pause");
+ var movement=player.GetComponent<PlayerController>();var beforePosition=player.transform.position;
+ var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+ typeof(PlayerController).GetField("horizontalVelocity",flags).SetValue(movement,Vector3.right*4);
+ typeof(PlayerController).GetMethod("Update",flags).Invoke(movement,null);
+ Check(player.transform.position==beforePosition,"moving player controller cannot slide during stop");
+ var ai=go.GetComponent<NpcAiBase>();var timer=typeof(NpcAiBase).GetField("动作开始时间",flags);float stamp=(float)timer.GetValue(ai);
+ typeof(NpcAiBase).GetMethod("Update",flags).Invoke(ai,null);
+ Check(Mathf.Abs((float)timer.GetValue(ai)-stamp-Time.deltaTime)<.00001f,"paused NPC advances absolute attack timestamp instead of movement");
+ var context=Context(AttackSpec.物理普通攻击);var effect=Object.FindObjectsOfType<ExtremeVfxAdapter>().Last(x=>x.name=="CombatVfx_fire_slash_hit");
+ var shown=CombatVfxPipeline.模型外侧位置(context.接触点,npc.transform,.12f);
+ Check(Vector3.Distance(effect.transform.position,shown)<.002f,"impact root moved outside body despite native offset");
+ Check(camera.WorldToScreenPoint(shown).z<camera.WorldToScreenPoint(context.接触点).z,"physical flash is on camera-facing side");
+ var screen=camera.WorldToViewportPoint(shown);var raw=camera.WorldToViewportPoint(context.接触点);
+ Check(Vector2.Distance(screen,raw)<.002f,"camera-side projection retains screen contact location");
+ yield return new WaitForEndOfFrame();float playerTime=animator.GetCurrentAnimatorStateInfo(0).normalizedTime,npcTime=na.GetCurrentAnimatorStateInfo(0).normalizedTime;
+ float before=Time.unscaledTime;yield return null;yield return new WaitForEndOfFrame();
+ Check(attackerStop.正在暂停&&targetStop.正在暂停&&Mathf.Abs(animator.GetCurrentAnimatorStateInfo(0).normalizedTime-playerTime)<.00001f&&Mathf.Abs(na.GetCurrentAnimatorStateInfo(0).normalizedTime-npcTime)<.00001f,"held humanoid and NPC frames do not advance");
+ Check(driver.播动作(clip,.9f)&&animator.speed==0,"explicit action replacement accepted without releasing local stop");
+ yield return new WaitForSecondsRealtime(.22f);
+ Check(!attackerStop.正在暂停&&!targetStop.正在暂停&&Mathf.Approximately(na.speed,1.7f)&&animator.speed>0,"automatic resume preserves NPC speed and player action");
+ int attackerCount=attackerStop.触发次数,targetCount=targetStop.触发次数;var batch=new CombatHitBatch();
+ batch.命中(target,Context(AttackSpec.物理普通攻击));var duplicate=batch.命中(target,Context(AttackSpec.物理普通攻击));
+ CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));
+ Check(duplicate.状态==CombatHitState.Duplicate&&attackerStop.触发次数==attackerCount+1&&targetStop.触发次数==targetCount+1,"duplicate colliders and rapid pulses cannot stack or extend stop");
+ yield return new WaitForSecondsRealtime(.22f);attackerCount=attackerStop.触发次数;
+ CombatDamagePipeline.命中(target,Context(AttackSpec.特殊普通攻击));
+ Check(targetStop.正在暂停&&!attackerStop.正在暂停&&attackerStop.触发次数==attackerCount,"special damage pauses only receiver");
+ yield return new WaitForSecondsRealtime(.22f);go.transform.position=origin+Vector3.forward*9;attackerCount=attackerStop.触发次数;
+ CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));
+ Check(targetStop.正在暂停&&!attackerStop.正在暂停&&attackerStop.触发次数==attackerCount,"distant physical hit pauses only receiver");
+ yield return new WaitForSecondsRealtime(.22f);go.transform.position=origin+Vector3.forward*1.4f;
+ targetCount=targetStop.触发次数;attackerCount=attackerStop.触发次数;npc.无敌=true;
+ var immune=CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));npc.无敌=false;
+ Check(immune.状态==CombatHitState.Immune&&targetStop.触发次数==targetCount&&attackerStop.触发次数==attackerCount,"immune contact has no hit-stop");
+ CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击,false));
+ Check(targetStop.触发次数==targetCount&&attackerStop.触发次数==attackerCount,"disabled hit presentation skips hit-stop");
+ rules.顿帧方式=CombatHitStopMode.关闭;CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));
+ Check(!targetStop.正在暂停&&!attackerStop.正在暂停,"per-source opt-out works independently of damage");rules.顿帧方式=mode;
+ driver.定住动作(true);CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));yield return new WaitForSecondsRealtime(.22f);
+ Check(driver.动作已定住&&animator.speed==0,"resume never releases an existing spell animation hold");driver.定住动作(false);
+ yield return new WaitForSecondsRealtime(.22f);na.speed=.8f;CombatDamagePipeline.命中(target,Context(AttackSpec.物理普通攻击));targetStop.enabled=false;
+ Check(Mathf.Approximately(na.speed,.8f),"disabling receiver component immediately restores speed");
+ report.AppendLine("COMBAT_HIT_FEEDBACK_PASS checks="+count);File.WriteAllText("../.local/diagnostics/combat-hit-feedback-report.txt",report.ToString());Debug.Log(report.ToString());
+}finally{settings.物理顿帧=physical;settings.暴击顿帧=critical;settings.特殊顿帧=special;settings.顿帧触发间隔=interval;rules.顿帧方式=mode;driver.定住动作(false);driver.停止动作();camera.transform.SetPositionAndRotation(oldCameraPosition,oldCameraRotation);Object.Destroy(go);Object.Destroy(def);}
+}
+return Run();

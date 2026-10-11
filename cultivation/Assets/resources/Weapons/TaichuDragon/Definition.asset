@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d65c79fda46d3304185387e224d4c084, type: 3}
+  m_Name: Definition
+  m_EditorClassIdentifier:
+  "\u52A8\u4F5C\u901F\u5EA6\u500D\u7387": 0.6
+  "\u59FF\u52BF\u8FC7\u6E21\u79D2\u6570": 0.28
+  "\u5F85\u673A":
+    "\u9F99\u9884\u5236\u4F53": {fileID: 2433936896608283925, guid: b77d494836c3bd746b3c47159274451e, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 75b2973240fd2ae478eab2f3e0997124, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 0}
+    "\u5224\u5B9A\u5F00\u59CB": 0.15
+    "\u5224\u5B9A\u7ED3\u675F": 0.9
+  "\u79FB\u52A8":
+    "\u9F99\u9884\u5236\u4F53": {fileID: 4240060554180558587, guid: 8f982b9930d86f1419a2ba03958f58a0, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 69e5aaac8f622294b8477a7ac2f88c53, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 0}
+    "\u5224\u5B9A\u5F00\u59CB": 0.15
+    "\u5224\u5B9A\u7ED3\u675F": 0.9
+  "\u7279\u6B8A\u5F85\u673A":
+    "\u9F99\u9884\u5236\u4F53": {fileID: 5925508201833459442, guid: 9a4fd94217eda3943b4835c902fb3287, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 9b3ae417b5743bc458976168ae280581, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 7400000, guid: 01deedf312c9fee448fb584ffe910c25, type: 2}
+    "\u5224\u5B9A\u5F00\u59CB": 0.15
+    "\u5224\u5B9A\u7ED3\u675F": 0.9
+  "\u4E94\u5F0F":
+  - "\u9F99\u9884\u5236\u4F53": {fileID: 1354188784001354245, guid: 456b2e53a02fec543a19e57e561f9c51, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 9ba948762196ea44d9deb6b5d659ee1f, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 7400000, guid: 36c43c7e2465f5c4590a43dca2507540, type: 2}
+    "\u5224\u5B9A\u5F00\u59CB": 0.37
+    "\u5224\u5B9A\u7ED3\u675F": 0.64
+  - "\u9F99\u9884\u5236\u4F53": {fileID: 8060656714241045179, guid: 67202098bda90b84b9272ba6c6ae8077, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 073f006ff845eb245ae31f210a5ebd6f, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 7400000, guid: 1fc65435abe7ece47a779a032e9ab3f4, type: 2}
+    "\u5224\u5B9A\u5F00\u59CB": 0.5
+    "\u5224\u5B9A\u7ED3\u675F": 0.83
+  - "\u9F99\u9884\u5236\u4F53": {fileID: 7147901143773918330, guid: 0e8787c57bc537947a6c480db0786a39, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: bb0b11da80ccd604fbd6b644fc0403ad, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 7400000, guid: 12696a6a6bfe0494fa0df49dfb564c84, type: 2}
+    "\u5224\u5B9A\u5F00\u59CB": 0.64
+    "\u5224\u5B9A\u7ED3\u675F": 0.9
+  - "\u9F99\u9884\u5236\u4F53": {fileID: 8527900519621553932, guid: f84656e9d50c09b49a7f1f41da58cf97, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 20884b9993cdd564d848e2d00d424162, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 7400000, guid: 368039e5dbebba540915274d1865978e, type: 2}
+    "\u5224\u5B9A\u5F00\u59CB": 0.15
+    "\u5224\u5B9A\u7ED3\u675F": 0.9
+  - "\u9F99\u9884\u5236\u4F53": {fileID: 7979951478912384044, guid: 71525babec55058418058d1f79fc66cc, type: 3}
+    "\u9F99\u52A8\u4F5C": {fileID: 1, guid: 28bb066e3bfafa748823dd9ff4d57fea, type: 2}
+    "\u73A9\u5BB6\u52A8\u4F5C": {fileID: 7400000, guid: 368039e5dbebba540915274d1865978e, type: 2}
+    "\u5224\u5B9A\u5F00\u59CB": 0.15
+    "\u5224\u5B9A\u7ED3\u675F": 0.9
+  "\u7279\u6B8A\u5F85\u673A\u7B49\u5F85": 10
+  "\u7279\u6B8A\u5F85\u673A\u68C0\u67E5\u95F4\u9694": 5
+  "\u7279\u6B8A\u5F85\u673A\u6982\u7387": 0.2
+  "\u51B0\u6676\u5F15\u5BFC\u534A\u5F84": 1
+  "\u51B0\u6676\u524D\u6CBF\u6DF1\u5165": 0.35
+  "\u706B\u5F39\u7279\u6548": {fileID: 1433718430125335855, guid: 52611e981d76d454a8c821eaf89737e1, type: 3}
+  "\u51B0\u523A":
+  - "\u8282\u70B9\u8DEF\u5F84": Hedra01
+    "\u91CA\u653E\u8FDB\u5EA6": 0.32291666
+  - "\u8282\u70B9\u8DEF\u5F84": Hedra02
+    "\u91CA\u653E\u8FDB\u5EA6": 0.47916666
+  - "\u8282\u70B9\u8DEF\u5F84": Hedra03
+    "\u91CA\u653E\u8FDB\u5EA6": 0.6770833
+  "\u6E90\u9ACB\u9AA8\u8DEF\u5F84": biped/biped Pelvis
+  "\u6E90\u9ACB\u9AA8\u9AD8\u5EA6": 0.5213387
+  "\u6E90\u671D\u5411\u8865\u507F": 180
+  "\u8FD1\u6218\u8DDD\u79BB": 3
+  "\u63A5\u89E6\u5BB9\u5DEE": 0.1
+  "\u7529\u5C3E\u5411\u4E0B\u8986\u76D6": 1
+  "\u7529\u5C3E\u63A5\u89E6\u5BB9\u5DEE": 0.18
+  "\u96F7\u51FB\u534A\u5F84": 0.75
+  "\u96F7\u51FB\u8FDB\u5EA6": 0.5
+  "\u706B\u5F39\u901F\u5EA6": 18
+  "\u706B\u5F39\u5224\u5B9A\u534A\u5F84": 0.14
+  "\u4F24\u5BB3\u500D\u7387":
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1

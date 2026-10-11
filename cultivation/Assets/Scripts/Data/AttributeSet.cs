@@ -26,8 +26,9 @@ public class AttributeSet
         }
         set
         {
+            EnsureSize();
             int i = (int)type;
-            if (values == null || i < 0 || i >= values.Length) return;
+            if (i < 0 || i >= values.Length) return;
             values[i] = value;
         }
     }
@@ -42,7 +43,7 @@ public class AttributeSet
     {
         if (other == null) return;
         EnsureSize();
-        for (int i = 0; i < values.Length; i++) values[i] = other.values[i];
+        for (int i = 0; i < values.Length; i++) values[i] = other[(AttributeType)i];
     }
 
     /// <summary>逐项相加（叠加增益 / 汇总来源时用）</summary>
@@ -50,7 +51,7 @@ public class AttributeSet
     {
         if (other == null) return;
         EnsureSize();
-        for (int i = 0; i < values.Length; i++) values[i] += other.values[i];
+        for (int i = 0; i < values.Length; i++) values[i] += other[(AttributeType)i];
     }
 
     /// <summary>逐项乘以倍率（做百分比修正时用）</summary>

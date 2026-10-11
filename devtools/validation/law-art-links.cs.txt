@@ -1,0 +1,14 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using UnityEngine.UI;
+IEnumerator Run(){
+var report=new System.Text.StringBuilder();int checks=0;void Check(bool ok,string message){report.AppendLine((ok?"PASS ":"FAIL ")+message);File.WriteAllText("../.local/diagnostics/law-art-links-report.txt",report.ToString());if(!ok)throw new Exception(message);checks++;}
+var panel=Object.FindObjectOfType<UIPanelData>();var ui=panel.GetComponent<CharacterPanelUI>();ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);yield return new WaitForSecondsRealtime(.5f);
+var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();var art=page.GetComponentsInChildren<UIInkLawArt>().First(x=>x.法则!=null);var wisp=art.transform.Find("InkWisp");var prior=wisp.localRotation;yield return new WaitForSecondsRealtime(.5f);Check(Quaternion.Angle(prior,wisp.localRotation)>1,"ink artwork layer moves independently");Check(art.transform.Find("SpiritRibbon")&&art.transform.Find("CrystalCore")&&art.transform.Find("LawFlow"),"crystal wisp ribbon and live flow are separate layers");Check(art.GetComponentInChildren<UIInkLawFilaments>().粒子数>0,"fragment filaments have active particles");
+ui.ShowTab(CharacterTab.神通);yield return new WaitForSecondsRealtime(3);var links=ui.tabs[2].page.GetComponentInChildren<UIInkConstellation>();Check(links&&links.SegmentCount==560&&links.游离粒子数>=80,"skills retain five connections with four animated strands and motes each");Check(!links.raycastTarget,"animated links do not intercept skill dragging");var mesh=links.canvasRenderer.GetMesh();var vertices=mesh.vertices;yield return new WaitForSecondsRealtime(.5f);mesh=links.canvasRenderer.GetMesh();Check(vertices.Length==mesh.vertexCount&&vertices.Where((v,i)=>Vector3.Distance(v,mesh.vertices[i])>.5f).Any(),"connection mesh changes while UI pauses game");
+yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/skills-flowing-links.png");yield return new WaitForSecondsRealtime(.3f);ui.ShowTab(CharacterTab.法则);
+var source=GameObject.Find("Player").GetComponent<玩家外观>().玩家视觉;Debug.Log("LAW_SOURCE_COMPONENTS "+string.Join(",",source.GetComponentsInChildren<MonoBehaviour>(true).Select(x=>x?x.GetType().Name:"MISSING")));
+report.AppendLine("LAW_ART_LINKS_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/law-art-links-report.txt",report.ToString());Debug.Log("LAW_ART_LINKS_PASS checks="+checks);
+}
+return Run();

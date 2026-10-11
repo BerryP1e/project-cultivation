@@ -53,7 +53,7 @@ public sealed class PlayerManualAim : MonoBehaviour
     {
         if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
-        if(!skill){var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
+        if(!skill){var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)return dragon.引导范围(落点);var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
         if(skill.结算方式==ActiveSkillKind.追踪弹)return 2.5f;
         return VoxelCombatDamage.AreaRadius(skill);
     }
@@ -65,6 +65,7 @@ public sealed class PlayerManualAim : MonoBehaviour
         else if(slot==-2)cast=GetComponent<QingshanSwordTreasure>()?.TryCastUltimateAt(point) ?? false;
         else
         {
+            var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)cast=dragon.手动出手(point);
             foreach(var melee in GetComponents<BasicJiuba01>())if(melee.enabled){cast=melee.手动出手(point);break;}
             if(!cast)foreach(var ranged in GetComponents<BasicRemoteAttack01>())if(ranged.enabled){cast=ranged.手动出手(point);break;}
             if(!cast)foreach(var thunder in GetComponents<BasicThunder01>())if(thunder.enabled){cast=thunder.手动出手(point);break;}
@@ -95,10 +96,13 @@ public sealed class PlayerManualAim : MonoBehaviour
             ring.positionCount=5;ring.SetPositions(new[]{start-side,start+side,end+side,end-side,start-side});direction.SetPositions(new[]{start,end});return;
         }
         ring.positionCount=65;
+        var aimPoint=point;
+        var dragon=选择槽位==-1?GetComponent<BasicTaichuDragon01>():null;
+        if(dragon&&dragon.enabled&&dragon.引导式(point)<2){point=transform.position;normal=Vector3.up;}
         if(frost&&frost.enabled&&frost.下次式==3){point=transform.position;normal=Vector3.up;}
         var rotation=Quaternion.FromToRotation(Vector3.up,normal);
         for(int i=0;i<65;i++){float angle=i*Mathf.PI*2/64;ring.SetPosition(i,point+rotation*new Vector3(Mathf.Cos(angle)*radius,.08f,Mathf.Sin(angle)*radius));}
-        direction.SetPosition(0,transform.position+Vector3.up*.12f);direction.SetPosition(1,point+Vector3.up*.12f);
+        direction.SetPosition(0,transform.position+Vector3.up*.12f);direction.SetPosition(1,(dragon&&dragon.enabled?aimPoint:point)+Vector3.up*.12f);
     }
     void DrawSenseRange()
     {

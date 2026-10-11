@@ -11,6 +11,13 @@ public class UIPanelData : MonoBehaviour
     [Tooltip("主动四御施放后恢复四枚；切场景和读档保留剩余次数。")]
     public int 绝对护罩剩余次数;
     public bool 四御已激活;
+    [Header("法则")]
+    public List<LawFragment> 法则碎片 = new List<LawFragment>();
+    public List<string> 法则装备 = new List<string> { "", "", "", "", "", "" };
+    public long 法则精粹;
+    public List<string> 炉中法则 = new List<string>();
+    public int 变化序号 { get; private set; }
+
     [Header("玩家")]
     [Tooltip("玩家基本属性定义（lore/玩家基本属性.txt）")]
     public PlayerStatsDefinition 玩家属性;
@@ -215,6 +222,12 @@ public class UIPanelData : MonoBehaviour
     public void EnsureLists()
     {
         if (物品 == null) 物品 = new List<ItemDefinition>();
+        if (法则碎片 == null) 法则碎片 = new List<LawFragment>();
+        if (法则装备 == null) 法则装备 = new List<string>();
+        if (炉中法则 == null) 炉中法则 = new List<string>();
+        var lawCfg = LawFragmentCatalog.取(); int lawSlots = lawCfg ? lawCfg.装备槽数 : 6;
+        while (法则装备.Count < lawSlots) 法则装备.Add("");
+        if (法则装备.Count > lawSlots) 法则装备.RemoveRange(lawSlots, 法则装备.Count - lawSlots);
         if (神通 == null) 神通 = new List<DivineAbilityDefinition>();
         if (已获得主动神通 == null) 已获得主动神通 = new List<ActiveDivineAbility>();
         if (已获得被动神通 == null) 已获得被动神通 = new List<PassiveDivineAbility>();
@@ -399,6 +412,8 @@ public class UIPanelData : MonoBehaviour
     {
         EnsureLists();
         物品 = new List<ItemDefinition>();
+        法则碎片.Clear(); for (int i = 0; i < 法则装备.Count; i++) 法则装备[i] = "";
+        法则精粹 = 0; 炉中法则.Clear();
         已拥有法宝.Clear(); 当前法宝=null; 收服系统已初始化=false;
         灵阵 = new List<SpiritArrayDefinition>();
         坐骑 = new List<MountDefinition>();
@@ -424,7 +439,9 @@ public class UIPanelData : MonoBehaviour
     /// <summary>背包/法宝/灵阵/坐骑/真灵 是不是都为空（用来判定"这是一份新档"）</summary>
     public bool 玩法数据为空()
     {
-        return (物品 == null || 物品.Count == 0)
+        return (法则碎片 == null || 法则碎片.Count == 0)
+            && 法则精粹 == 0
+            && (物品 == null || 物品.Count == 0)
             && (法宝 == null || 法宝.Count == 0)
             && (灵阵 == null || 灵阵.Count == 0)
             && (已学坐骑 == null || 已学坐骑.Count == 0)
@@ -438,7 +455,7 @@ public class UIPanelData : MonoBehaviour
     public event Action<string> Hint;
 
     /// <summary>通知 UI 刷新</summary>
-    public void RaiseChanged() => Changed?.Invoke();
+    public void RaiseChanged() { 变化序号++; Changed?.Invoke(); }
 
     /// <summary>弹一句提示</summary>
     public void ShowHint(string message)

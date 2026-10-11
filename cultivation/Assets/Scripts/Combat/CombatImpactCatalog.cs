@@ -3,15 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum CombatEnvironmentShape { None, Sphere, Ellipsoid }
+public enum CombatHitStopMode { 自动, 仅受击方, 双方, 关闭 }
 
 /// <summary>Contact policies. Biological radius is owned by attack geometry; visual size does not change damage.</summary>
 [CreateAssetMenu(menuName = "修仙/战斗接触目录")]
 public sealed class CombatImpactCatalog : ScriptableObject
 {
+    [Header("成功接触的顿帧（秒，不暂停世界）")]
+    [Range(0, .15f)] public float 物理顿帧 = .055f;
+    [Range(0, .15f)] public float 暴击顿帧 = .075f;
+    [Range(0, .15f)] public float 特殊顿帧 = .035f;
+    [Min(0)] public float 顿帧触发间隔 = .12f;
+    [Tooltip("自动模式：此距离内的物理命中暂停双方，远程只暂停受击方")]
+    [Min(0)] public float 双方顿帧距离 = 3.5f;
     [Serializable] public sealed class Entry
     {
         public string id;
         public string 生物命中特效id;
+        public CombatHitStopMode 顿帧方式;
         public string 地表特效id;
         public Vector3 地表特效偏移;
         public CombatEnvironmentShape 环境形状;

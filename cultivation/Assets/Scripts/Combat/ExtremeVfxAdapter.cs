@@ -17,6 +17,7 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
     MaterialPropertyBlock block;
     float born,visualScale;int depth;Transform owner;
     public float 散布半径;
+    public float 刀光最大宽度=3f;
     public bool 关闭场景灯光;
     public float 灯光强度倍率=1f,灯光最大半径;
     public void 初始化(int 深度,float 表现缩放=1f,Transform 生命周期根=null)
@@ -36,7 +37,7 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
         foreach(var source in GetComponentsInChildren<EFX_Slash>(true)){
             source.enabled=false;var mesh=source.GetComponent<MeshFilter>();var renderer=source.GetComponent<MeshRenderer>();if(!mesh||!renderer)continue;
             var visual=new GameObject("SlashVisual");visual.transform.SetParent(source.transform,false);visual.AddComponent<MeshFilter>().sharedMesh=mesh.sharedMesh;visual.AddComponent<MeshRenderer>().sharedMaterials=renderer.sharedMaterials;renderer.enabled=false;
-            slashes.Add(new Slash{visual=visual.transform,maxScale=3f/Mathf.Max(.01f,mesh.sharedMesh.bounds.size.x*source.transform.lossyScale.x)});
+            slashes.Add(new Slash{visual=visual.transform,maxScale=刀光最大宽度/Mathf.Max(.01f,mesh.sharedMesh.bounds.size.x*Mathf.Abs(source.transform.lossyScale.x))});
         }
         foreach(var ps in GetComponentsInChildren<ParticleSystem>(true)){
             // 原包Shape只缩放发射形状。Flash等节点的0.0001缩放不是粒径倍率。

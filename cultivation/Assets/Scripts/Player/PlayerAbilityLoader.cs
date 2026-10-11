@@ -51,6 +51,7 @@ public class PlayerAbilityLoader : MonoBehaviour
     /// </summary>
     public static readonly string[][] 内置登记 = new string[][]
     {
+        new string[] { "basic_taichu_dragon_01", "BasicTaichuDragon01" },
         // { 功法表里的 普攻方法id, 组件类名 }
         new string[] { "basic_jiuba_01", "BasicJiuba01" },   // 八九玄功：近战普攻
         new string[] { "basic_jiuba_01", "武器挂载" },         // 八九玄功：把三尖两刃刀挂到右手

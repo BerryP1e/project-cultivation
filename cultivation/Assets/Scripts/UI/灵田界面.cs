@@ -68,6 +68,7 @@ public class 灵田界面 : MonoBehaviour
     Text 提示文本;
 
     float 提示到期 = -1f;
+    灵田 订阅的田;
 
     public bool 已打开 => 面板 != null && 面板.gameObject.activeSelf;
 
@@ -83,6 +84,7 @@ public class 灵田界面 : MonoBehaviour
     void Start()
     {
         var 田 = 灵田.取();
+        订阅的田 = 田;
         if (田 != null)
         {
             田.变化 -= 刷新;
@@ -94,7 +96,7 @@ public class 灵田界面 : MonoBehaviour
 
     void OnDestroy()
     {
-        var 田 = 灵田.取();
+        var 田 = 订阅的田;
         if (田 != null) 田.变化 -= 刷新;
     }
 

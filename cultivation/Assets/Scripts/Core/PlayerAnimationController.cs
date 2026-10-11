@@ -138,7 +138,9 @@ public class PlayerAnimationController : MonoBehaviour
     bool 动作定住;
 
     /// <summary>正在播技能动作（普攻 / 施法）</summary>
-    public bool 动作播放中 { get; private set; }
+    bool actionPlaying;
+    public bool 可打断待机中 { get; private set; }
+    public bool 动作播放中 => actionPlaying && !可打断待机中;
 
     /// <summary>技能动作播完了（普攻靠它对齐"何时出弹"、施法靠它知道何时结算）</summary>
     public event System.Action 动作播完;
@@ -206,6 +208,7 @@ public class PlayerAnimationController : MonoBehaviour
     public bool 占用施法(UnityEngine.Object 发起者)
     {
         if(施法占用中 && 施法占用者!=发起者)return false;
+        if (可打断待机中) 停止动作();
         施法占用者=发起者;return true;
     }
     public void 释放施法(UnityEngine.Object 发起者)
@@ -240,6 +243,7 @@ public class PlayerAnimationController : MonoBehaviour
     public bool 播动作(AnimationClip 片段, float 速度倍率 = 1f)
     {
         if(施法占用中)return false;
+        if (可打断待机中) 停止动作();
         if (animator == null || 片段 == null)
         {
             Debug.LogWarning("[动画] 播动作失败：片段为空或没有 Animator", this);
@@ -247,6 +251,8 @@ public class PlayerAnimationController : MonoBehaviour
         }
         var 基 = animator.runtimeAnimatorController;
         if (基 == null) { Debug.LogWarning("[动画] 播动作失败：没有 AnimatorController", this); return false; }
+        bool 重启动作状态 = animator.GetCurrentAnimatorStateInfo(0).IsName(动作状态名)
+            || (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName(动作状态名));
 
         找占位片段();
         if (占位动作片段 == null)
@@ -283,14 +289,29 @@ public class PlayerAnimationController : MonoBehaviour
 
         当前动作 = 片段;
         动作速度倍率 = Mathf.Max(0.05f, 速度倍率);
-        动作播放中 = true;
+        actionPlaying = true;
         动作已进入 = false;
         动作开始时间 = Time.time;
         动作定住 = false;
-        animator.speed = Mathf.Max(0.01f, playbackScale * 动作速度倍率);
+        // 显式施法/动作替换仍允许；新动作在本单位顿帧结束后继续，不吞掉施法请求。
+        animator.speed = CombatHitStop.正在顿帧(transform) ? 0f : Mathf.Max(0.01f, playbackScale * 动作速度倍率);
         记录髋骨高度();
-        animator.SetTrigger(动作参数Hash);
+        if (重启动作状态)
+        {
+            // 上一招尚在Action或退出过渡中时，Trigger不能保证从零重启。
+            animator.ResetTrigger(动作参数Hash);
+            animator.CrossFadeInFixedTime(动作状态名, .08f, 0, 0f);
+            animator.Update(0f); // 建立新状态，不推进时间，防止同帧读到上一招100%的进度。
+        }
+        else animator.SetTrigger(动作参数Hash);
         return true;
+    }
+
+    /// <summary>播放不占用攻击入口的待机动作；移动由调用者打断，新攻击/施法自动替换。</summary>
+    public bool 播可打断待机(AnimationClip clip, float speedScale = 1f)
+    {
+        if (actionPlaying || 施法占用中 || !播动作(clip, speedScale)) return false;
+        可打断待机中 = true; return true;
     }
 
     /// <summary>
@@ -310,8 +331,13 @@ public class PlayerAnimationController : MonoBehaviour
     /// <summary>打断当前技能动作（比如施法被打断）</summary>
     public void 停止动作()
     {
-        if (animator != null) animator.ResetTrigger(动作参数Hash);
-        动作播放中 = false;
+        bool wasIdle = 可打断待机中; 可打断待机中 = false;
+        if (animator != null)
+        {
+            animator.ResetTrigger(动作参数Hash);
+            if (wasIdle && animator.HasState(0, Animator.StringToHash("Locomotion"))) animator.CrossFade("Locomotion", .1f, 0);
+        }
+        actionPlaying = false;
         动作已进入 = false;
         当前动作 = null;
         动作速度倍率 = 1f;
@@ -325,9 +351,9 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     void 维护技能动作()
     {
-        if (!动作播放中) return;
+        if (!actionPlaying) return;
 
-        var 状态 = animator.GetCurrentAnimatorStateInfo(0);
+        var 状态 = 取动作状态();
         if (状态.IsName(动作状态名)) { 动作已进入 = true; return; }
 
         if (!动作已进入)
@@ -340,7 +366,8 @@ public class PlayerAnimationController : MonoBehaviour
             return;
         }
 
-        动作播放中 = false;
+        actionPlaying = false;
+        可打断待机中 = false;
         动作速度倍率 = 1f;
         当前动作 = null;
         动作播完?.Invoke();
@@ -351,11 +378,22 @@ public class PlayerAnimationController : MonoBehaviour
     {
         get
         {
-            if (!动作播放中 || animator == null) return 0f;
-            var 状态 = animator.GetCurrentAnimatorStateInfo(0);
+            if (!actionPlaying || animator == null) return 0f;
+            var 状态 = 取动作状态();
             if (!状态.IsName(动作状态名)) return 动作已进入 ? 1f : 0f;
             return Mathf.Clamp01(状态.normalizedTime);
         }
+    }
+
+    AnimatorStateInfo 取动作状态()
+    {
+        // 动作间混合时以新招为时钟，旧招仍在渲染混合中，不可用于判定新招结束。
+        if (animator.IsInTransition(0))
+        {
+            var next = animator.GetNextAnimatorStateInfo(0);
+            if (next.IsName(动作状态名)) return next;
+        }
+        return animator.GetCurrentAnimatorStateInfo(0);
     }
 
     /// <summary>
@@ -547,7 +585,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     void 记录空闲基准()
     {
-        if (动作播放中) return;
+        if (actionPlaying) return;
         if (Mathf.Abs(已施加偏移Y) > 1e-5f) return;
         if (御风 != null && 御风.御风流程中) return;
 
@@ -574,7 +612,7 @@ public class PlayerAnimationController : MonoBehaviour
             return;
         }
 
-        if (!动作播放中)
+        if (!actionPlaying)
         {
             // Return a residual correction gradually, instead of dropping the model in one
             // frame while the Animator is blending back to locomotion.
@@ -625,6 +663,7 @@ public class PlayerAnimationController : MonoBehaviour
     void Update()
     {
         if (animator == null) return;
+        if(CombatHitStop.正在顿帧(transform)){animator.speed=0;return;}
         if (animator.runtimeAnimatorController == null) return;   // 没挂控制器就不动
 
         float target = playerController != null ? playerController.CurrentSpeed : 0f;
@@ -642,7 +681,7 @@ public class PlayerAnimationController : MonoBehaviour
         // ★ 被 定住动作(true) 时写 **0**（真的停住，不是 0.01）——
         //   瞬雷天闪要在 40% 节点停 1.5 秒让雷球长出来。
         animator.speed = 动作定住 ? 0f
-            : Mathf.Max(0.01f, playbackScale * (动作播放中 ? 动作速度倍率 : 1f));
+            : Mathf.Max(0.01f, playbackScale * (actionPlaying ? 动作速度倍率 : 1f));
 
         维护技能动作();
 
@@ -687,6 +726,7 @@ public class PlayerAnimationController : MonoBehaviour
             float 满速 = 御风 != null ? 御风.飞行速度 : playerController.runSpeed;
             if (外部驱动御风 && playerController.坐骑 != null && playerController.坐骑.骑乘中)
                 满速 = playerController.坐骑.骑乘速度;
+            满速 *= playerController.移动速度倍率;
             目标 = Vector2.ClampMagnitude(new Vector2(速度.x, 速度.z) / Mathf.Max(.01f, 满速), 1f);
             if (外部驱动御风 && 外部移动中 && playerController.水平速度.sqrMagnitude < .0001f)
                 目标 = Vector2.up;

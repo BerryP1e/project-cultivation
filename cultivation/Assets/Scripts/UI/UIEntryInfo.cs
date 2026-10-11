@@ -180,6 +180,7 @@ public class UIEntryInfo : MonoBehaviour
     {
         if (actionButton == null) return;
 
+
         var passive = Current as PassiveDivineAbility;
         var active = Current as ActiveDivineAbility;
         var mount = Current as MountDefinition;

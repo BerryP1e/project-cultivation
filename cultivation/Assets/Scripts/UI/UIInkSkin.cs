@@ -227,6 +227,7 @@ public class UIInkSkin : MonoBehaviour
         UIInkRealmPage.应用(r);
         UIInkSkillsPage.应用(r);
         UIInkFormationPage.应用(r);
+        UIInkLawPage.应用(r);
         UIInkAppearancePage.应用(r);
         UIEquipmentShowcasePage.应用(r);
         foreach(var scroll in r.GetComponentsInChildren<Scrollbar>(true)) InkUITheme.ScrollbarStyle(scroll);
@@ -466,7 +467,7 @@ public class UIInkSkin : MonoBehaviour
             case "境界": return "Icons/icon-realm";
             case "神通": return "Icons/icon-divine-ability";
             case "法宝": return "Icons/icon-treasure";
-            case "灵阵": return "Icons/icon-spirit-array";
+            case "灵阵": case "法则": return "Icons/icon-spirit-array";
             case "战阵": return "Icons/icon-formation";
             case "坐骑": return "Icons/icon-mount";
             case "外观": return "Icons/icon-appearance";

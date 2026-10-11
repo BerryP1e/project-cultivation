@@ -1,0 +1,29 @@
+﻿using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using System.IO;
+using System.Reflection;
+if(EditorApplication.isPlaying)throw new System.Exception("Stop Play before scene audit");
+int count=0,players=0;var report=new System.Text.StringBuilder();
+void Check(bool ok,string msg){if(!ok)throw new System.Exception(msg);report.AppendLine("PASS "+msg);count++;}
+var original=SceneManager.GetActiveScene();Check(!original.isDirty,"active scene is clean before audit");
+var open=typeof(EditorSceneManager).GetMethod("OpenPreviewScene",BindingFlags.Static|BindingFlags.NonPublic,null,new[]{typeof(string)},null);
+foreach(var entry in EditorBuildSettings.scenes.Where(x=>x.enabled)){
+var scene=(Scene)open.Invoke(null,new object[]{entry.path});
+try{
+ var roots=scene.GetRootGameObjects();var panels=roots.SelectMany(x=>x.GetComponentsInChildren<CharacterPanelUI>(true)).ToArray();
+ foreach(var pc in roots.SelectMany(x=>x.GetComponentsInChildren<PlayerController>(true))){
+  Check(pc.GetComponent<PlayerCombatStats>()&&pc.GetComponent<PlayerCultivation>(),entry.path+" shared stats and cultivation");
+  Check(panels.Any(p=>p.tabs.Count>4&&p.tabs[4].page&&p.GetComponent<UIPanelData>()),entry.path+" law replacement index 4 data/page present");
+  Check(panels.All(p=>p.GetComponent<跨场景数据>()),entry.path+" runtime items and equipment have handoff carrier");
+  var stats=pc.GetComponent<PlayerCombatStats>();Check(stats.玩家属性&&stats.玩家属性.基础属性[AttributeType.MoveSpeed]>0,entry.path+" positive base movement multiplier");players++;
+ }
+}finally{EditorSceneManager.ClosePreviewScene(scene);}}
+Check(players==6,"six player scenes covered");
+var cfg=Resources.Load<LawFragmentCatalog>("Laws/Catalog");Check(cfg&&cfg.装备槽数==6&&cfg.称呼.Length==112&&cfg.境界.Length==9,"one shared law configuration");
+foreach(var realm in cfg.境界){
+ Check(realm.图标&&realm.宝箱&&realm.宝箱.使用效果,"generated realm resources valid "+realm.境界名);
+ foreach(var dep in AssetDatabase.GetDependencies(AssetDatabase.GetAssetPath(realm.宝箱),true))Check(AssetDatabase.LoadMainAssetAtPath(dep),"law asset dependency "+dep);
+}
+Check((int)CharacterTab.法则==4,"serialized navigation index remains stable");Check(!original.isDirty&&SceneManager.GetActiveScene()==original,"original scene untouched and clean");
+report.AppendLine("LAW_SCENES_PASS checks="+count+" players="+players);File.WriteAllText("../.local/diagnostics/law-scenes-report.txt",report.ToString());Debug.Log("LAW_SCENES_PASS checks="+count+" players="+players);

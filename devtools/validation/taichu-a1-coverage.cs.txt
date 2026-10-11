@@ -1,0 +1,41 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+IEnumerator Run(){
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var ac=player.GetComponent<PlayerAnimationController>();var stats=player.GetComponent<PlayerCombatStats>();var targeting=player.GetComponent<NpcTargeting>();var panel=Object.FindObjectOfType<UIPanelData>();
+player.GetComponent<PlayerController>().enabled=false;targeting.enabled=false;player.GetComponent<CharacterController>().enabled=false;var origin=new Vector3(19000,30,19000);player.transform.SetPositionAndRotation(origin,Quaternion.identity);
+panel.当前功法=UnityEditor.AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_taichu_longqijue.asset");panel.RaiseChanged();player.GetComponent<PlayerAbilityLoader>().Refresh();yield return null;
+var dragon=player.GetComponent<BasicTaichuDragon01>();dragon.自动出手=false;dragon.基础冷却=0;var original=dragon.配置;dragon.配置=Object.Instantiate(original);
+stats.使用调试数值=true;stats.调试数值=new AttributeSet();stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.AttackSpeed]=1;stats.调试数值[AttributeType.IgnoreDodge]=100;stats.Recalculate();
+int checks=0;var sb=new System.Text.StringBuilder();void Check(bool ok,string msg){sb.AppendLine((ok?"PASS ":"FAIL ")+msg);File.WriteAllText("../.local/diagnostics/taichu-a1-coverage-report.txt",sb.ToString());if(!ok)throw new Exception(msg);checks++;}
+var targets=new List<NpcInstance>();var definitions=new List<NpcDefinition>();var positions=new List<Vector3>();var labels=new List<string>();
+NpcInstance Make(string name,Vector3 point,float height,bool hostile=true){var go=new GameObject(name);go.SetActive(false);go.transform.position=point;var def=ScriptableObject.CreateInstance<NpcDefinition>();def.id=name;def.属性[AttributeType.MaxHealth]=10000;def.对主角好感度=hostile?-100:100;definitions.Add(def);var npc=go.AddComponent<NpcInstance>();npc.定义=def;npc.每次受击降好感=0;var collider=go.AddComponent<CapsuleCollider>();collider.height=height;collider.center=Vector3.up*height/2;collider.radius=Mathf.Min(.3f,height/2);go.SetActive(true);npc.ResetHealth();npc.enabled=false;return npc;}
+foreach(float height in new[]{.4f,.8f,1.2f,2f})foreach(float distance in new[]{.6f,1.5f,2.4f,3f}){var position=origin+Vector3.forward*distance;targets.Add(Make("A1_"+height+"_"+distance,position,height));positions.Add(position-origin);labels.Add("height="+height+" distance="+distance);}
+var friend=Make("A1_Friendly",origin+Vector3.forward*2,.6f,false);var far=Make("A1_Far",origin+Vector3.forward*5,.6f);var side=Make("A1_Side",origin+Vector3.right*5,.6f);var high=Make("A1_Above",origin+Vector3.forward*2+Vector3.up*7,.6f);
+var hits=new List<CombatHitEvent>();var progresses=new List<float>();Action<CombatHitEvent> handler=h=>{if(h.上下文.来源==dragon){hits.Add(h);progresses.Add(ac.动作进度);}};CombatDamagePipeline.结算完成+=handler;
+IEnumerator Attack(){ac.停止动作();targeting.ClearLock();dragon.enabled=false;dragon.enabled=true;yield return null;Check(dragon.手动出手(origin+player.transform.forward*2)&&dragon.当前式==0,"manual A1 starts");float deadline=Time.realtimeSinceStartup+8;while(dragon.出手动作中&&Time.realtimeSinceStartup<deadline){if(ac.动作进度<.37f)Check(hits.Count==0,"no damage before 37 percent");yield return null;}Check(!dragon.出手动作中,"A1 completes");}
+try{
+Check(original.甩尾向下覆盖&&Mathf.Abs(original.甩尾接触容差-.18f)<.00001,"actual asset contains A1 vertical envelope and modest tolerance");
+dragon.配置.甩尾向下覆盖=false;dragon.配置.甩尾接触容差=.1f;yield return Attack();int legacy=targets.Count(n=>n.CurrentHealth<10000);sb.AppendLine("MEASURE legacy coverage="+legacy+"/"+targets.Count);
+Check(legacy<targets.Count/2,"old surface-only rule reproduces misses for short targets");
+for(int facing=0;facing<4;facing++){
+dragon.配置.甩尾向下覆盖=true;dragon.配置.甩尾接触容差=.18f;player.transform.rotation=Quaternion.Euler(0,facing*90,0);for(int i=0;i<targets.Count;i++){targets[i].transform.position=origin+player.transform.rotation*positions[i];targets[i].ResetHealth();}friend.transform.position=origin+player.transform.forward*2;far.transform.position=origin+player.transform.forward*5;side.transform.position=origin+player.transform.right*5;high.transform.position=origin+player.transform.forward*2+Vector3.up*7;Physics.SyncTransforms();hits.Clear();progresses.Clear();yield return Attack();
+for(int i=0;i<targets.Count;i++)sb.AppendLine("MEASURE facing="+facing+" "+labels[i]+" contacts="+hits.Count(h=>h.目标.根==targets[i].transform)+" hp="+targets[i].CurrentHealth);
+sb.AppendLine("MEASURE player facing="+player.transform.eulerAngles+" times="+string.Join(",",progresses));
+for(int i=0;i<targets.Count;i++)Check(hits.Count(h=>h.目标.根==targets[i].transform)==1&&targets[i].CurrentHealth<10000,"one actual A1 contact facing="+facing+" "+labels[i]);
+Check(progresses.All(p=>p>=.37f&&p<=.68f),"all damage remains in tail contact window facing="+facing);
+Check(friend.CurrentHealth==10000&&far.CurrentHealth==10000&&side.CurrentHealth==10000&&high.CurrentHealth==10000,"friendly and targets outside actual horizontal/vertical sweep remain unharmed");
+}
+// 直接跨过整个窗口：验证补采样仍遵守原曲线，而不把两端连成漏判的直线。
+ac.停止动作();targeting.ClearLock();dragon.enabled=false;dragon.enabled=true;yield return null;foreach(var target in targets)target.ResetHealth();hits.Clear();progresses.Clear();Check(dragon.手动出手(origin+player.transform.forward*2),"low-frame A1 starts");
+var rig=(TaichuDragonRig)typeof(BasicTaichuDragon01).GetField("rig",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(dragon);rig.推进过渡(1);
+var sample=typeof(BasicTaichuDragon01).GetMethod("SampleDragonContact",BindingFlags.Instance|BindingFlags.NonPublic);sample.Invoke(dragon,new object[]{.36f});Check(hits.Count==0,"skipped-frame sample before window cannot hit");sample.Invoke(dragon,new object[]{.9f});
+Check(targets.All(n=>hits.Count(h=>h.目标.根==n.transform)==1),"skipping whole window still samples actual tail arc and hits all target sizes once");sample.Invoke(dragon,new object[]{.95f});Check(targets.All(n=>hits.Count(h=>h.目标.根==n.transform)==1),"repeated sampling cannot double damage");
+}
+finally{CombatDamagePipeline.结算完成-=handler;dragon.配置=original;ac.停止动作();foreach(var npc in targets.Concat(new[]{friend,far,side,high}))Object.Destroy(npc.gameObject);foreach(var def in definitions)Object.Destroy(def);}
+sb.AppendLine("TAICHU_A1_COVERAGE_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/taichu-a1-coverage-report.txt",sb.ToString());Debug.Log("TAICHU_A1_COVERAGE_PASS checks="+checks);
+}
+return Run();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -211,10 +212,10 @@ public static class SaveSystem
         // 【为什么老档要重置而不是套 0】版本 < 8 的档这些字段根本不存在（默认 0/空），
         // 直接套上去会让"今天的机会"永远不发。所以老档走 重置()，让它从第 0 天干净起步。
         var 时间 = 时间管理器.取();
-        if (时间 != null)
+        if (时间 != null && !跨场景数据.正在接力)
         {
             if (数据.是空的 || 数据.版本 < 8) 时间.重置();
-            else 时间.导入(数据.天数, 数据.日内进度, 数据.日常机会, 数据.打怪机会, 0);
+            else 时间.导入(数据.天数, 数据.日内进度, 数据.日常机会, 数据.今日修炼次数);
         }
 
         var 田 = 灵田.取();
@@ -528,13 +529,13 @@ public static class SaveSystem
         var 时间 = UnityEngine.Object.FindObjectOfType<时间管理器>();
         if (时间 != null)
         {
-            int 天; float 进度, 打怪; int 今日;
+            int 天; float 进度; int 今日;
             string 机会;
-            时间.导出(out 天, out 进度, out 机会, out 打怪, out 今日);
+            时间.导出(out 天, out 进度, out 机会, out 今日);
             数据.天数 = 天;
             数据.日内进度 = 进度;
             数据.日常机会 = 机会;
-            数据.打怪机会 = 打怪;
+            数据.今日修炼次数 = 今日;
         }
 
         var 田 = UnityEngine.Object.FindObjectOfType<灵田>();
@@ -572,6 +573,9 @@ public static class SaveSystem
     {
         面板.EnsureLists();
 
+        数据.法则碎片 = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(new SaveData { 法则碎片 = 面板.法则碎片 })).法则碎片;
+        数据.法则装备 = new List<string>(面板.法则装备);
+        数据.法则精粹 = 面板.法则精粹; 数据.炉中法则 = new List<string>(面板.炉中法则);
         数据.背包物品.Clear();
         if (面板.物品 != null)
             foreach (var it in 面板.物品) if (it != null) 数据.背包物品.Add(it.物品id);
@@ -625,22 +629,32 @@ public static class SaveSystem
     {
         面板.EnsureLists();
         恢复神通学习记录(数据, 面板);
-
-        // ---- 背包：一件物品有几个就是几条（和 采集面板 对称）----
-        面板.物品 = new System.Collections.Generic.List<ItemDefinition>();
-        var 物品库 = 取物品库();
-        if (数据.背包物品 != null && 物品库 != null)
+        // 场景接力优先最新会话背包，真正读档才使用磁盘实例。
+        bool 保留背包快照 = 跨场景数据.正在接力 && 跨场景数据.HasSnapshot;
+        if (!保留背包快照)
         {
-            var 表 = new System.Collections.Generic.Dictionary<string, ItemDefinition>();
-            foreach (var it in 物品库) if (it != null && !string.IsNullOrEmpty(it.物品id)) 表[it.物品id] = it;
-            foreach (var id in 数据.背包物品)
-            {
-                ItemDefinition it;
-                if (id != null && 表.TryGetValue(id, out it)) 面板.物品.Add(it);
-                else if (!string.IsNullOrEmpty(id)) Debug.LogWarning("[存档] 背包物品找不到定义：" + id);
-            }
-        }
+            LawFragmentSystem.恢复(面板, 数据.法则碎片, 数据.法则装备);
+            面板.法则精粹 = System.Math.Max(0, 数据.法则精粹);
+            面板.炉中法则 = (数据.炉中法则 ?? new List<string>()).Where(id => 面板.法则碎片.Exists(x => x.id == id) && !面板.法则装备.Contains(id)).Distinct().ToList();
 
+            // ---- 背包：一件物品有几个就是几条（和 采集面板 对称）----
+            面板.物品 = new System.Collections.Generic.List<ItemDefinition>();
+            var 物品库 = 取物品库();
+            if (数据.背包物品 != null && 物品库 != null)
+            {
+                var 表 = new System.Collections.Generic.Dictionary<string, ItemDefinition>();
+                foreach (var it in 物品库) if (it != null && !string.IsNullOrEmpty(it.物品id)) 表[it.物品id] = it;
+                var lawCfg = LawFragmentCatalog.取();
+                if (lawCfg) foreach (var realm in lawCfg.境界) if (realm.宝箱) 表[realm.宝箱.物品id] = realm.宝箱;
+                foreach (var id in 数据.背包物品)
+                {
+                    ItemDefinition it;
+                    if (id != null && 表.TryGetValue(id, out it)) 面板.物品.Add(it);
+                    else if (!string.IsNullOrEmpty(id) && !面板.法则碎片.Exists(law => law.id == id)) Debug.LogWarning("[存档] 背包物品找不到定义：" + id);
+                }
+            }
+
+        }
         // ---- 法宝 / 灵阵 / 坐骑：按 id 在「当前场景面板自带的表」里找 ----
         bool 保留收服快照 = 跨场景数据.正在接力 && 跨场景数据.HasSnapshot;
         if (!保留收服快照)

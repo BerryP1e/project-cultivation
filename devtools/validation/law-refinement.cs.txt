@@ -1,0 +1,50 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+IEnumerator Run(){
+var sb=new System.Text.StringBuilder();int checks=0;var rng=new System.Random(614);
+void Check(bool ok,string s){sb.AppendLine((ok?"PASS ":"FAIL ")+s);File.WriteAllText("../.local/diagnostics/law-refinement-report.txt",sb.ToString());if(!ok)throw new Exception(s);checks++;}
+var data=Object.FindObjectOfType<UIPanelData>();var cfg=LawFragmentCatalog.取();data.清空玩法数据();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();foreach(var debug in Object.FindObjectsOfType<PlayerStatsDebugPanel>())debug.Visible=false;
+for(int tier=0;tier<9;tier++){
+Check(cfg.境界[tier].熔炼基础精粹==10L*(long)Math.Pow(5,tier),"realm base yield "+tier);
+Check(cfg.境界[tier].洗练消耗精粹==10*cfg.境界[tier].熔炼基础精粹&&(tier==0||cfg.境界[tier].洗练消耗精粹==50*cfg.境界[tier-1].熔炼基础精粹),"ten same-realm / fifty lower-realm cost "+tier);
+var law=LawFragmentSystem.生成(tier,rng);var main=law.属性.First(x=>x.主属性);var others=law.属性.Where(x=>x!=main).Select(x=>x.数值).ToArray();
+foreach(var roll in law.属性.Where(x=>x.主属性)){var range=LawFragmentBalance.取区间(roll.属性,tier,true,true,cfg.境界[tier].主增幅);roll.数值=range.x;roll.品质=0;}
+Check(LawRefinementSystem.熔炼产出(law)==cfg.境界[tier].熔炼基础精粹,"minimum-quality yield "+tier);
+foreach(var roll in law.属性.Where(x=>x.主属性)){var range=LawFragmentBalance.取区间(roll.属性,tier,true,true,cfg.境界[tier].主增幅);roll.数值=range.y;roll.品质=1;}
+Check(LawRefinementSystem.熔炼产出(law)==2*cfg.境界[tier].熔炼基础精粹,"full-quality yield doubles "+tier);
+var range0=LawFragmentBalance.取区间(main.属性,tier,true,true,cfg.境界[tier].主增幅);main.数值=range0.x;main.品质=0;
+data.法则碎片.Add(law);data.法则精粹=20*LawRefinementSystem.洗练消耗(law);
+others=law.属性.Where(x=>x!=main).Select(x=>x.数值).ToArray();
+for(int i=0;i<20;i++){Check(LawRefinementSystem.洗练(data,law,rng),"refine succeeds "+tier+" step="+i);Check(Mathf.Abs(LawRefinementSystem.主属性进度(law,main)-(i+1)*.05f)<.0001f,"exact bounded five-percent progress "+tier+" step="+i);}
+Check(data.法则精粹==0&&Mathf.Abs(main.数值-range0.y)<.0001f,"twenty refinements cap one main attribute "+tier);
+Check(law.属性.Where(x=>x!=main).Select(x=>x.数值).SequenceEqual(others),"other mains and all secondary attributes unchanged "+tier);
+Check(!LawRefinementSystem.洗练(data,law,rng),"full law cannot consume essence "+tier);
+}
+data.清空玩法数据();var equipped=LawFragmentSystem.生成(3,rng);var a=LawFragmentSystem.生成(1,rng);var b=LawFragmentSystem.生成(8,rng);data.法则碎片.AddRange(new[]{equipped,a,b});LawFragmentSystem.装备(data,equipped.id,0);
+Check(LawRefinementSystem.全部放入(data)==2&&data.法则装备[0]==equipped.id,"insert-all excludes equipped law");Check(LawRefinementSystem.全部放入(data)==0&&data.炉中法则.Count==2,"insert-all idempotent");
+Check(!LawFragmentSystem.装备(data,a.id,1)&&!LawRefinementSystem.洗练(data,a,rng),"queued law cannot be equipped or refined");LawRefinementSystem.取回全部(data);Check(data.炉中法则.Count==0&&data.法则碎片.Count==3,"withdraw does not lose instances");
+var ui=data.GetComponent<CharacterPanelUI>();ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();page.选择(equipped);yield return new WaitForSecondsRealtime(.4f);
+var eventData=new PointerEventData(EventSystem.current){position=RectTransformUtility.WorldToScreenPoint(null,page.炉鼎.transform.position),button=PointerEventData.InputButton.Left};
+page.开始拖拽(equipped,0,eventData);var hits=new List<RaycastResult>();EventSystem.current.RaycastAll(eventData,hits);Check(hits.Count>0&&ExecuteEvents.GetEventHandler<IDropHandler>(hits[0].gameObject)==page.炉鼎.gameObject,"furnace receives real pointer drop through sprite/effect layers");
+ExecuteEvents.Execute(page.炉鼎.gameObject,eventData,ExecuteEvents.dropHandler);Check(data.法则装备[0]==""&&data.炉中法则.Contains(equipped.id)&&page.拖拽法则==null,"explicit drag from equipped slot atomically unequips and queues");
+Check(page.GetComponentsInChildren<Image>().Any(x=>x.name=="LawIntoFurnace"),"insertion starts actual crystal animation");yield return new WaitForSecondsRealtime(1);Check(!page.GetComponentsInChildren<Image>().Any(x=>x.name=="LawIntoFurnace"),"insertion animation completes while panel pauses game");
+long amount=LawRefinementSystem.熔炼产出(equipped);page.炉鼎.开始熔炼();Check(data.法则精粹==amount&&!data.法则碎片.Contains(equipped)&&page.炉鼎.正在熔炼,"smelting awards exact essence before visual animation");Check(LawRefinementSystem.熔炼(data)==0&&data.法则精粹==amount,"repeated smelt cannot double award");
+ui.SetOpen(false,true);yield return null;ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);Check(data.法则精粹==amount&&data.炉中法则.Count==0,"closing during smelting cannot lose or duplicate award");
+LawRefinementSystem.放入(data,a.id);data.法则精粹=5000000000L;var save=new SaveData();SaveSystem.从角色采集(save);var json=JsonUtility.ToJson(save);var restored=JsonUtility.FromJson<SaveData>(json);Check(restored.法则精粹==5000000000L&&restored.炉中法则.SequenceEqual(data.炉中法则),"save JSON preserves essence above 32-bit limit and queued law ids");data.法则精粹=0;data.炉中法则.Clear();SaveSystem.应用到角色(restored);Check(data.法则精粹==5000000000L&&data.炉中法则.Contains(a.id),"normal save restore preserves furnace ownership");
+var snap=typeof(跨场景数据).GetNestedType("快照",BindingFlags.NonPublic);snap.GetMethod("拍下",BindingFlags.Public|BindingFlags.Static).Invoke(null,new object[]{data});data.法则精粹=0;data.炉中法则.Clear();snap.GetMethod("灌回",BindingFlags.Public|BindingFlags.Static).Invoke(null,new object[]{data});Check(data.法则精粹==5000000000L&&data.炉中法则.Contains(a.id),"scene handoff preserves essence and queued fragments");
+LawRefinementSystem.取回全部(data);data.法则精粹=LawRefinementSystem.洗练消耗(b)-1;var before=JsonUtility.ToJson(b);Check(!LawRefinementSystem.洗练(data,b,rng)&&JsonUtility.ToJson(b)==before,"insufficient essence leaves all rolls unchanged");
+data.法则精粹=5000000000L;page.选择(b);data.RaiseChanged();yield return new WaitForSecondsRealtime(.4f);
+var rows=page.GetComponentsInChildren<UIInkRealmRow>();Check(rows.All(x=>x.transform.Find("Name").GetComponent<RectTransform>().anchorMin.y==x.transform.Find("Value").GetComponent<RectTransform>().anchorMin.y),"attribute label and value share a single row");Check(page.transform.Find("LawOrbit").GetComponent<RectTransform>().anchorMin.y>=.43f,"actor and entire orbit raised together");
+Check(page.炉鼎.GetComponentInChildren<Image>().sprite!=null||page.炉鼎.transform.Find("Cauldron").GetComponent<Image>().sprite,"generated furnace sprite imported");Check(page.transform.Find("EssenceIcon").GetComponent<Image>().sprite,"generated essence icon imported");
+Check(page.transform.Find("LawDetails").Find("RefineLaw").GetComponent<Button>().interactable,"refinement button enabled with sufficient essence");
+for(int i=0;i<15;i++)data.法则碎片.Add(LawFragmentSystem.生成(i%9,rng));data.RaiseChanged();yield return new WaitForSecondsRealtime(.5f);yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-refinement.png");yield return new WaitForSecondsRealtime(.3f);
+sb.AppendLine("LAW_REFINEMENT_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/law-refinement-report.txt",sb.ToString());Debug.Log("LAW_REFINEMENT_PASS checks="+checks);
+}
+return Run();

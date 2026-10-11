@@ -17,7 +17,7 @@ public class SaveData
     public bool 收服系统已初始化;
     public string 当前法宝 = "";
     public int 青山剑有效击杀;
-    public const int 当前版本 = 18;   // 18：青山剑击杀成长进度
+    public const int 当前版本 = 20;   // 20：法则精粹与炉中暂存实例
 
     [Header("身份")]
     public int 版本 = 当前版本;
@@ -65,7 +65,7 @@ public class SaveData
     [Tooltip("总灵气（与功法无关的通用积累）")]
     public long 总灵气 = 0;
 
-    [Tooltip("修炼次数的小数累积（杀怪获得）")]
+    [Tooltip("已兑付待消费的日常次数")]
     public float 修炼次数累积 = 0f;
 
     [Tooltip("境界等级 1~90。可由 总灵气 ÷ 难度系数 重算，这里存一份方便读档后立刻显示")]
@@ -99,6 +99,10 @@ public class SaveData
     [Header("背包 / 装备（版本 5 起）")]
     [Tooltip("背包物品的 id。**一件物品有 N 个就在列表里出现 N 次**（和 UIPanelData.物品 一致）")]
     public List<string> 背包物品 = new List<string>();
+    public List<LawFragment> 法则碎片 = new List<LawFragment>();
+    public List<string> 法则装备 = new List<string>();
+    public long 法则精粹;
+    public List<string> 炉中法则 = new List<string>();
 
     [Tooltip("拥有的法宝 id")]
     public List<string> 法宝 = new List<string>();
@@ -155,11 +159,10 @@ public class SaveData
     [Tooltip("每天白送的那次修炼机会的**逐日余额**。格式 `天数:剩余次数`，分号分隔。\n\n" +
              "【为什么按天存而不是存一个总数】需求是「日常机会**最多保存 3 天**，3 天后消失」——\n" +
              "必须知道每一次机会是哪天发的才能让它过期。\n" +
-             "打怪得到的机会**不在这里**（那个不过期，走 修炼次数累积）。")]
+             "余额为零的日期也保存，防止读档重新发放已用完的机会。")]
     public string 日常机会 = "";
 
-    [Tooltip("打怪获得的修炼机会（小数累积）。**不过期**")]
-    public float 打怪机会 = 0f;
+    public int 今日修炼次数 = 0;
 
     [Header("灵田（版本 11 起：每块地自己带位置与朝向）")]
     [Tooltip("玩家在洞府里摆下来的每一块地（位置 / 朝向 / 品阶 / 种了什么 / 长了多久）。\n\n" +

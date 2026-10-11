@@ -11,13 +11,17 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 198f8fc54c3b70e42b07a662da59b711, type: 3}
   m_Name: CombatVfxCatalog
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   "\u7279\u6548":
   - id: taixu_sword_hit
     "\u9884\u5236\u4F53": {fileID: 100000, guid: fb0970486f03f4e40b9768df39fedffd, type: 3}
-    "\u7F29\u653E": 0.12
+    "\u7F29\u653E": 0.3
     "\u65CB\u8F6C\u6B27\u62C9": {x: 90, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 1
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 1
+    "\u671D\u5411\u955C\u5934": 1
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 4.5
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -25,9 +29,13 @@ MonoBehaviour:
     "\u6700\u957F\u5B58\u6D3B": 1.3
   - id: fire_slash_hit
     "\u9884\u5236\u4F53": {fileID: 100000, guid: 45489f78e68a25844be8d4c7fce7ea93, type: 3}
-    "\u7F29\u653E": 0.12
+    "\u7F29\u653E": 0.3
     "\u65CB\u8F6C\u6B27\u62C9": {x: 90, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 1
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 1
+    "\u671D\u5411\u955C\u5934": 1
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 4.5
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -38,6 +46,10 @@ MonoBehaviour:
     "\u7F29\u653E": 0.2
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 1
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -48,6 +60,10 @@ MonoBehaviour:
     "\u7F29\u653E": 0.3
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -58,6 +74,10 @@ MonoBehaviour:
     "\u7F29\u653E": 0.05
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 0.04
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 1.5
@@ -68,6 +88,10 @@ MonoBehaviour:
     "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -78,6 +102,10 @@ MonoBehaviour:
     "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -88,6 +116,10 @@ MonoBehaviour:
     "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
@@ -98,6 +130,10 @@ MonoBehaviour:
     "\u7F29\u653E": 2.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
+    "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0
+    "\u671D\u5411\u955C\u5934": 0
+    "\u5916\u4FA7\u7559\u767D": 0.12
+    "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
     "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
     "\u706F\u5149\u6700\u5927\u534A\u5F84": 0

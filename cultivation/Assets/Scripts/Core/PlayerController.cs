@@ -76,10 +76,14 @@ public class PlayerController : MonoBehaviour
     Vector3 horizontalVelocity;
     float verticalVelocity;
     BasicJiuba01 近战普攻;
+    PlayerCombatStats 属性;
+    /// <summary>移动属性以 1 为原速，统一影响步行、御风与骑乘。</summary>
+    public float 移动速度倍率 => 属性 ? Mathf.Max(0, 属性.当前属性[AttributeType.MoveSpeed]) : 1;
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
+        属性 = GetComponent<PlayerCombatStats>();
         if (御风 == null) 御风 = GetComponent<YufengFlight>();
         if (坐骑 == null) 坐骑 = GetComponent<MountRider>();
         if (目标管理器 == null) 目标管理器 = GetComponent<NpcTargeting>();
@@ -89,6 +93,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if(CombatHitStop.正在顿帧(transform))return;
         Vector3 desired = ReadMoveDirection(out bool running);
         MoveDirection = desired;
         IsRunning = running;
@@ -106,9 +111,10 @@ public class PlayerController : MonoBehaviour
         float targetSpeed = 坐骑过渡 ? 0f
                          : (骑乘中 ? 坐骑.骑乘速度
                          : (飞行中 ? 御风.飞行速度 : (running ? runSpeed : walkSpeed)));
+        targetSpeed *= 移动速度倍率;
         Vector3 targetVelocity = desired * targetSpeed;
         float rate = desired.sqrMagnitude > 0.0001f ? acceleration : deceleration;
-        horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, targetVelocity, rate * Time.deltaTime);
+        horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, targetVelocity, rate * Mathf.Max(1, 移动速度倍率) * Time.deltaTime);
 
         if (IsFlying)
             ApplyFlightHeight();
@@ -126,6 +132,7 @@ public class PlayerController : MonoBehaviour
         CurrentSpeed = horizontalVelocity.magnitude;
         float 上限速度 = 骑乘中 ? Mathf.Max(0.01f, 坐骑.骑乘速度)
                        : (飞行中 ? Mathf.Max(0.01f, 御风.飞行速度) : runSpeed);
+        上限速度 *= 移动速度倍率;
         Speed01 = 上限速度 > 0.0001f ? Mathf.Clamp01(CurrentSpeed / 上限速度) : 0f;
     }
 
@@ -250,6 +257,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>近战起手对准目标，保留模型视觉朝向补偿；动作中由原动画转体。</summary>
     public void 对准攻击方向(Vector3 direction)
     {
+        if(CombatHitStop.正在顿帧(transform))return;
         direction.y = 0f;
         if (direction.sqrMagnitude < .0001f) return;
         transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up)

@@ -2,7 +2,15 @@
 
 目标平台为 Windows x64，使用团结 1.6.13 / 2022.3.61t14。软件包发布到 [GitHub Releases](https://github.com/BerryP1e/project-cultivation/releases)，二进制文件不进入源码仓库。
 
-## 当前测试版（2026-10-09）
+## 当前测试版（2026-10-11）
+
+[争渡 · 太初伴龙与法则系统](https://github.com/BerryP1e/project-cultivation/releases/tag/v0.1.0-alpha.20261011)：`zhengdu-2026.10.11-windows-x64.zip`，附SHA-256文件。包含太初龙栖诀五式与伴龙、真实甩尾/切式修正、统一物理命中和局部顿帧，以及九境界法则宝箱/六槽仪轨/熔炼/洗练。七主题怪物子弹与动态路径保护已补齐；独立伴龙成品替换原22个FBX，工程资产净减少68.8 MiB，既有成品动作保持不变。
+
+Windows x64构建成功，0错误、18条既有素材着色器/缺失脚本警告，六个有效场景，最终构建约149秒。定稿资源五式运行91项、六场景/独立成品93项、A1覆盖716项通过。法则敏感规则只针对移速、攻速、闪避、冷却和两类回复，宝箱10%掉落且条件5%升阶；数值仍为测试版。构建报告保存在 `Builds/windows-release-report.json`，测试包不进入源码仓库。
+
+最终独立D3D11程序启动检查通过：146个妖魔、1306次动作、146个骨骼运动模型，0失败。ZIP内 `release-manifest.json` 记录源码提交、构建信息和此报告；日志与正式玩家存档不打包。
+
+## 上一测试版（2026-10-09）
 
 [争渡 · 御风、战斗特效与体素更新](https://github.com/BerryP1e/project-cultivation/releases/tag/v0.1.0-alpha.20261009)：`zhengdu-2026.10.09-windows-x64.zip`，附SHA-256文件。包含八向御风、腕指与持械姿态、灵虚飞剑收放、全状态水龙炮/冰暴/瞬雷施法、ExtremeFX命中特效和玄霄四式，以及焚天38%召唤、每颗火球接触破坏、体素范围/深度独立控制和连续攻击及时提交。此前开始界面、主线和体素地图功能保留。
 
@@ -24,7 +32,7 @@
 & 'D:\Tuanjie 2022.3.61t14\Editor\Tuanjie.exe' -batchmode -projectPath 'D:\project：cultivation\cultivation' -executeMethod WindowsReleaseBuilder.Build -logFile 'D:\project：cultivation\cultivation\Builds\build.log'
 ```
 
-`Assets/Editor` 下的工具代码不会进入软件包，包括 `DshBridge`，无需删除源码。
+`Assets/Editor` 下的工具代码不会进入软件包。已定稿资源只保留成品及当前工具，不保留只服务于已删除原模型的重建器。
 
 ## 软件包
 

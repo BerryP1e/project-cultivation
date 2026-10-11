@@ -1,0 +1,59 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+IEnumerator Run() {
+yield return null;
+var report=new System.Text.StringBuilder();int checks=0;
+void Check(bool ok,string name){report.AppendLine((ok?"PASS ":"FAIL ")+name);if(!ok){File.WriteAllText("../.local/diagnostics/law-fragments-report.txt",report.ToString());throw new Exception(name);}checks++;}
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var panel=Object.FindObjectOfType<UIPanelData>();var stats=player.GetComponent<PlayerCombatStats>();var cultivation=player.GetComponent<PlayerCultivation>();var ui=panel.GetComponent<CharacterPanelUI>();
+var cfg=LawFragmentCatalog.取();Check(cfg&&cfg.境界.Length==9&&cfg.称呼.Length==112,"nine realms and 112 prefixes");Check(cfg.称呼.Select(x=>x.称呼).Distinct().Count()==112,"all prefixes unique");
+Check(cfg.称呼.Count(x=>x.主属性.Length==1)==4&&cfg.称呼.Count(x=>x.主属性.Length==2)==36&&cfg.称呼.Count(x=>x.主属性.Length==3)==72,"4+36+72 name combinations");
+Check(cfg.称呼.All(x=>x.主属性[0]>=AttributeType.MaxHealth&&x.主属性[0]<=AttributeType.MaxSpirit&&x.主属性.Distinct().Count()==x.主属性.Length),"first pool and unique main types");
+int definitions=0;var rng=new System.Random(76543);
+for(int tier=0;tier<9;tier++){
+ var realm=cfg.境界[tier];Check(realm.图标&&realm.宝箱&&realm.宝箱.使用效果 is LawChestUseEffect,"icon and usable chest tier "+tier);
+ definitions+=cfg.称呼.Count(x=>x.主属性.Length==realm.主属性数);
+ for(int n=0;n<200;n++){
+  var law=LawFragmentSystem.生成(tier,rng);Check(law.境界==tier&&law.属性.Count(x=>x.主属性)==realm.主属性数&&law.属性.Count(x=>!x.主属性)==realm.副属性数,"realm counts "+tier+" roll "+n);
+  Check(law.属性.Select(x=>x.属性).Distinct().Count()==law.属性.Count,"no duplicate rolls "+tier+"/"+n);
+  Check(law.属性.All(x=>{var r=LawFragmentBalance.取区间(x.属性,tier,x.主属性,x.大增幅,x.主属性?realm.主增幅:x.大增幅?realm.副增幅:realm.小增幅);return x.品质>=0&&x.品质<=1&&x.数值>=0&&(!x.主属性||x.大增幅)&&x.数值>=r.x-.0001f&&x.数值<=r.y+.0001f;}),"roll ranges "+tier+"/"+n);
+  Check(law.评分>0&&law.名称.EndsWith(realm.后缀),"score and suffix "+tier+"/"+n);
+ }
+ Check(LawFragmentSystem.掉落境界(tier*10+1,0,.1,cfg)==tier,"same-realm chest never lower "+tier);
+ Check(LawFragmentSystem.掉落境界(tier*10+10,0,0,cfg)==Math.Min(8,tier+1),"5 percent upgrade boundary and top cap "+tier);
+}
+Check(definitions==404,"404 realm/name variants share nine textures");Check(LawFragmentSystem.掉落境界(0,0,0,cfg)==-1&&LawFragmentSystem.掉落境界(21,.99,0,cfg)==-1,"invalid monster and failed independent drop");
+int upgrades=0;for(int n=0;n<100000;n++)if(LawFragmentSystem.掉落境界(21,0,rng.NextDouble(),cfg)==3)upgrades++;Check(upgrades>4700&&upgrades<5300,"upgrades approximate 5 percent: "+upgrades);
+var pair=cfg.称呼.Single(x=>x.主属性.Length==2&&x.主属性[0]==AttributeType.Attack&&x.主属性[1]==AttributeType.CritChance);Check(pair.称呼=="锋锐","user attack/crit naming example");
+var baseline=new AttributeSet();baseline[AttributeType.Attack]=100;baseline[AttributeType.CritChance]=.1f;
+var percent=new AttributeSet();percent[AttributeType.Attack]=2;percent[AttributeType.CritChance]=1;percent[AttributeType.BasicAttackBonus]=1;
+var flat=new AttributeSet();flat[AttributeType.Attack]=5;flat[AttributeType.CritChance]=.02f;
+LawFragmentSystem.结算(baseline,percent,flat);Check(Mathf.Abs(baseline[AttributeType.Attack]-305)<.001f,"large before small gives 100*(1+200%)+5=305");Check(Mathf.Abs(baseline[AttributeType.CritChance]-.22f)<.001f,"flat rate uses percentage points after multiplier");Check(Mathf.Abs(baseline[AttributeType.BasicAttackBonus]-.05f)<.001f,"zero-base gain uses reference without adding baseline");
+var legacyArray=new AttributeSet();var values=typeof(AttributeSet).GetField("values",BindingFlags.Instance|BindingFlags.NonPublic);values.SetValue(legacyArray,new float[27]);var copied=new AttributeSet(legacyArray);copied.Add(legacyArray);legacyArray[AttributeType.Sense]=12;Check(legacyArray[AttributeType.Sense]==12,"append Sense preserves 27-slot asset indices safely");
+panel.清空玩法数据();var chest=cfg.境界[2].宝箱;panel.给物品(chest,2);Check(物品使用器.使用(chest,panel,player),"open chest through existing inventory action");Check(panel.物品数量(chest)==1&&panel.法则碎片.Count==1&&panel.物品.All(x=>!panel.法则碎片.Any(l=>l.id==x.物品id)),"consume exactly one chest and add unique rolled law collection instance");
+var one=panel.法则碎片[0];var two=LawFragmentSystem.生成(5,new System.Random(1));LawFragmentSystem.获得(panel,two);Check(LawFragmentSystem.装备(panel,one.id,0)&&LawFragmentSystem.装备(panel,two.id,1),"equip owned instances");Check(LawFragmentSystem.装备(panel,one.id,1)&&panel.法则装备[0]==two.id&&panel.法则装备[1]==one.id,"moving equipped instance swaps, never duplicates");Check(!LawFragmentSystem.装备(panel,"not-owned",2),"cannot equip unowned fragment");
+LawFragmentSystem.卸下(panel,0);Check(panel.法则碎片.Count==2&&panel.法则装备[0]=="","unequip keeps owned item");
+stats.使用调试数值=false;stats.Recalculate();var originalStats=new AttributeSet(stats.当前属性);var sense=LawFragmentSystem.生成(5,new System.Random(5));sense.属性=new List<LawFragment.Roll>{new LawFragment.Roll{属性=AttributeType.Sense,主属性=true,大增幅=true,数值=1,品质=.5f}};LawFragmentSystem.获得(panel,sense);LawFragmentSystem.装备(panel,sense.id,2);yield return null;Check(Mathf.Abs(stats.当前神识-originalStats[AttributeType.Sense]*2)<.001f,"equipped Sense modifies actual targeting stat");
+var save=new SaveData();SaveSystem.从角色采集(save);var json=JsonUtility.ToJson(save);var roundtrip=JsonUtility.FromJson<SaveData>(json);Check(roundtrip.法则碎片.Count==3&&roundtrip.法则装备.SequenceEqual(panel.法则装备),"JSON preserves instances and slots");Check(JsonUtility.ToJson(roundtrip.法则碎片[0])==JsonUtility.ToJson(one),"random rolls and score never rerolled");
+panel.清空玩法数据();typeof(SaveSystem).GetMethod("恢复面板",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{roundtrip,panel});Check(panel.法则碎片.Count==3&&panel.物品.All(x=>!panel.法则碎片.Any(l=>l.id==x.物品id))&&panel.物品数量(chest)==1,"save restore restores independent law collection and chest count");Check(panel.法则装备.SequenceEqual(roundtrip.法则装备),"save restore keeps actual equipment");
+var clock=时间管理器.取();clock.暂停=true;clock.重置();cultivation.设置修炼次数(0);Check(clock.还能修炼几次==1&&clock.消耗一次修炼(),"daily opportunity is sole cultivation source");
+clock.导出(out int day,out float time,out string daily,out int spent);clock.导入(day,time,daily,spent);Check(clock.还能修炼几次==0&&clock.今日次数==1,"zero daily balance does not refill on load");clock.推进(1);Check(clock.还能修炼几次==1,"new day grants daily cultivation");clock.推进(5);Check(clock.日常机会剩余==3,"daily opportunities expire after three days");
+float chance=cfg.宝箱掉率,upgrade=cfg.高一境界概率;cfg.宝箱掉率=1;cfg.高一境界概率=0;
+try{
+ var go=new GameObject("LawKilledMonster");go.SetActive(false);var def=ScriptableObject.CreateInstance<NpcDefinition>();def.类型=NpcKind.妖魔;def.境界=25;def.对主角好感度=-100;def.属性[AttributeType.MaxHealth]=10;var npc=go.AddComponent<NpcInstance>();npc.定义=def;go.SetActive(true);npc.enabled=false; npc.ResetHealth();stats.使用调试数值=true;stats.调试数值[AttributeType.Attack]=10000;stats.调试数值[AttributeType.IgnoreDodge]=100;stats.Recalculate();
+ int boxes=panel.物品数量(chest);float credit=cultivation.修炼次数累积;int dailyBefore=clock.日常机会剩余;
+ var result=CombatDamagePipeline.命中(npc,new CombatHitContext(stats,AttackSpec.物理普通攻击,player,"law_test",go.transform.position,Vector3.forward));
+ Check(result.致命&&panel.物品数量(chest)==boxes+1,"actual unified kill event grants independent same-realm chest");Check(cultivation.修炼次数累积==credit&&clock.日常机会剩余==dailyBefore,"monster death grants no cultivation opportunity");
+ CombatDamagePipeline.命中(npc,new CombatHitContext(stats,AttackSpec.物理普通攻击,player,"law_test",go.transform.position,Vector3.forward));Check(panel.物品数量(chest)==boxes+1,"repeated hit on corpse cannot duplicate chest");
+ npc.定义.死亡后立即重生=true;npc.ResetHealth();CombatDamagePipeline.命中(npc,new CombatHitContext(stats,AttackSpec.物理普通攻击,player,"law_test",go.transform.position,Vector3.forward));Check(panel.物品数量(chest)==boxes+1,"training dummy excluded from law drops");Object.Destroy(go);Object.Destroy(def);
+}finally{cfg.宝箱掉率=chance;cfg.高一境界概率=upgrade;stats.使用调试数值=false;stats.Recalculate();}
+ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);yield return null;var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();Check(page&&page.预览相机,"existing page index replaced with real 3D law page");float orbitBefore=page.环角度;page.旋转(90);page.选择槽(3);page.选择(panel.法则碎片[0]);Check(Mathf.Abs(Mathf.DeltaAngle(orbitBefore,page.环角度)-90)<.01f&&page.当前选择==panel.法则碎片[0]&&page.当前槽位==3,"drag angle and selected replacement remain independent");
+yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-ui-preview.png");yield return new WaitForSecondsRealtime(.2f);
+Check(page.预览相机.targetTexture!=null&&Object.FindObjectsOfType<GameObject>().Any(x=>x.name=="FloatingActor"),"render texture and current actor preview exist");
+ui.SetOpen(false,true);Check(!GameObject.Find("LawPreview_Runtime"),"closed panel disables separate 3D stage");
+report.AppendLine("LAW_FRAGMENTS_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/law-fragments-report.txt",report.ToString());Debug.Log("LAW_FRAGMENTS_PASS checks="+checks+" upgrades="+upgrades);}
+return Run();

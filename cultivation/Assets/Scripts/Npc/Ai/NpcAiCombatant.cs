@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 会主动打玩家的 NPC 的公共实现（妖魔 / 人类）。
@@ -109,6 +109,7 @@ public abstract class NpcAiCombatant : NpcAiBase
     protected override void Update()
     {
         base.Update();
+        if(CombatHitStop.正在顿帧(transform))return;
 
         if (敌人 == null || !敌人还活着) return;
         if (状态 == NpcAiState.死亡 || 状态 == NpcAiState.受击) return;

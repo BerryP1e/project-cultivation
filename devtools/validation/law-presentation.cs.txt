@@ -1,0 +1,31 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+IEnumerator Run(){
+var report=new System.Text.StringBuilder();int checks=0;
+void Check(bool ok,string label){report.AppendLine((ok?"PASS ":"FAIL ")+label);File.WriteAllText("../.local/diagnostics/law-presentation-report.txt",report.ToString());if(!ok)throw new Exception(label);checks++;}
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();foreach(var debug in Object.FindObjectsOfType<PlayerStatsDebugPanel>())debug.Visible=false;
+var panel=Object.FindObjectOfType<UIPanelData>();panel.清空玩法数据();var laws=new List<LawFragment>();for(int i=0;i<24;i++){var law=LawFragmentSystem.生成(i%9,new System.Random(93+i));laws.Add(law);LawFragmentSystem.获得(panel,law);}for(int i=0;i<6;i++)LawFragmentSystem.装备(panel,laws[i].id,i);
+var ui=panel.GetComponent<CharacterPanelUI>();ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();page.选择(laws[8]);yield return new WaitForSecondsRealtime(1);
+var workspace=(RectTransform)page.transform.Find("LawWorkspace");Check(workspace.anchorMin.y<=.08f&&workspace.anchorMax.x>=.797f&&workspace.anchorMax.y>=.97f,"workspace backdrop fills preview and curved collection area");Check(!workspace.GetComponent<Image>().raycastTarget,"full workspace backdrop cannot intercept drag input");
+var info=page.transform.Find("LawDetails");var ink=info.Find("LawInfoInk").GetComponent<Image>();Check(ink.sprite==InkUITheme.Load("Bag/bag-info-ink")&&ink.color==Color.white,"details restored to shared ink backdrop");Check(page.transform.Find("LawOrbit").GetComponent<Image>()==null,"old inner decorative backdrop removed");
+float zoom=Mathf.Tan(37*Mathf.Deg2Rad*.5f)/Mathf.Tan(page.预览相机.fieldOfView*Mathf.Deg2Rad*.5f);Check(Mathf.Abs(zoom-1.45f)<.001f,"camera enlarges actor orbit and six glyphs together by 1.45");
+var slots=page.GetComponentsInChildren<UIInkLawSlot>();Check(slots.Length==6&&slots.All(x=>((RectTransform)x.transform).rect.width>110),"all six enlarged slot hit regions remain active");
+var stage=page.预览相机.transform.parent;var nodes=stage.Find("LawRing").Cast<Transform>().Where(x=>x.name.StartsWith("LawSlot_")).ToArray();Check(nodes.Length==6&&nodes.All(x=>{var p=page.预览相机.WorldToViewportPoint(x.position);return p.x>.03f&&p.x<.97f&&p.y>.1f&&p.y<.9f;}),"enlarged six orbit centers fit preview without clipping");
+var hits=new List<RaycastResult>();var e=new PointerEventData(EventSystem.current){position=RectTransformUtility.WorldToScreenPoint(null,slots[1].transform.position)};EventSystem.current.RaycastAll(e,hits);Check(hits.Count>0&&hits[0].gameObject.GetComponent<UIInkLawSlot>(),"enlarged slots receive real pointer hits through workspace");
+var rows=info.GetComponentsInChildren<UIInkRealmRow>();Check(rows.Length==9,"immortal law displays all nine attributes in individual rows");Check(info.GetComponentsInChildren<Text>().Count(x=>x.name=="Title"&&x.text=="主属性")==1&&info.GetComponentsInChildren<Text>().Count(x=>x.name=="Title"&&x.text=="副属性")==1,"main and secondary attributes have separate headings");
+Check(rows.All(x=>x.transform.Find("AttributeInk")&&x.transform.Find("AttributeStroke")&&x.transform.Find("Name").GetComponent<Text>().text.Length>0&&x.transform.Find("Value").GetComponent<Text>().text.StartsWith("+")),"each attribute has soft ink backdrop label and separate value");
+var row=rows[0];var blot=row.transform.Find("AttributeInk").GetComponent<Image>();float resting=blot.color.a;row.OnPointerEnter(e);yield return new WaitForSecondsRealtime(.2f);Check(blot.color.a>resting+.35f&&((RectTransform)row.transform.Find("AttributeStroke")).rect.width>20,"hover animates ink and brush stroke while gameplay is paused");row.OnPointerExit(e);yield return new WaitForSecondsRealtime(.2f);Check(Mathf.Abs(blot.color.a-resting)<.01f,"hover smoothly returns to faint backdrop");
+var scroll=info.GetComponentInChildren<ScrollRect>();Canvas.ForceUpdateCanvases();Check(scroll.content.rect.height>scroll.viewport.rect.height&&scroll.verticalScrollbar.gameObject.activeInHierarchy,"maximum attribute count has working scroll overflow");scroll.verticalNormalizedPosition=0;yield return null;Check(scroll.verticalNormalizedPosition<.01f,"detail scrollbar reaches final secondary attribute");
+for(int i=0;i<25;i++)page.选择(laws[i%9]);yield return null;page.选择(laws[8]);yield return null;Check(info.GetComponentsInChildren<UIInkRealmRow>().Length==9&&info.GetComponentsInChildren<UIInkRealmRow>(true).Length<=10,"switching between realms reuses rows without stale duplicate attributes");
+var texts=page.GetComponentsInChildren<Text>().Select(x=>x.text);Check(!texts.Any(x=>x.Contains("拖动")||x.Contains("拖入")||x.Contains("卸下")||x.Contains("滚轮")||x.Contains("先计算")||x.Contains("折算")||x.Contains("叠加上限")),"law page contains no operation or calculation instruction text");
+page.选择槽(0);yield return null;Check(info.Find("LawName").GetComponent<Text>().text==page.取槽(0).名称&&info.GetComponentsInChildren<UIInkRealmRow>().Length==1,"selecting equipped qi law shows its single actual attribute");
+page.选择(laws[8]);yield return new WaitForSecondsRealtime(.7f);yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-presentation.png");yield return new WaitForSecondsRealtime(.3f);
+ui.SetOpen(false,true);yield return null;ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);yield return null;Check(info.GetComponentsInChildren<UIInkRealmRow>().Length==9,"close and reopen preserve selected law and rebuilt attribute rows");
+report.AppendLine("LAW_PRESENTATION_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/law-presentation-report.txt",report.ToString());Debug.Log("LAW_PRESENTATION_PASS checks="+checks);
+}
+return Run();

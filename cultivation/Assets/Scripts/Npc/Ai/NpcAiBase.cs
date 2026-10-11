@@ -559,6 +559,7 @@ public abstract class NpcAiBase : MonoBehaviour
     /// </summary>
     protected virtual void OnAnimatorMove()
     {
+        if(CombatHitStop.正在顿帧(transform))return;
         if (动画 == null || !强制关闭RootMotion) return;
         if (状态 != NpcAiState.攻击 || !攻击期间锁定朝向) return;
         if (自己 != null && 自己.IsDead) return;
@@ -660,6 +661,12 @@ public abstract class NpcAiBase : MonoBehaviour
 
     protected virtual void Update()
     {
+        if(CombatHitStop.正在顿帧(transform)){
+            // AI以绝对时间驱动出手节点；同步延后，避免动画暂停但攻击计时继续。
+            动作开始时间+=Time.deltaTime;动作结束时间+=Time.deltaTime;
+            受击结束时间+=Time.deltaTime;上次受击动画时间+=Time.deltaTime;
+            return;
+        }
         if (自己 == null) return;
 
         刷新距离();
@@ -1748,10 +1755,16 @@ public abstract class NpcAiBase : MonoBehaviour
     {
         var 路径 = 取命中特效路径(配置);
         if (string.IsNullOrEmpty(路径)) return null;
-
+        if(配置.伤害属性==DamageNature.物理){
+            // 默认物理资源也走共享目录；自配资源沿用原素材，只调整尺寸与外侧位置。
+            if(路径==物理基础命中特效)return CombatVfxPipeline.播放(CombatVfxPipeline.太虚剑命中,
+                命中点,朝向,Mathf.Max(.01f,配置.命中特效缩放),锁定单位?.根);
+            命中点=CombatVfxPipeline.模型外侧位置(命中点,锁定单位?.根);
+        }
         var fx = 生成装饰特效(路径, 命中点, 朝向, Mathf.Max(1.2f, 配置.命中特效存活));
         if (fx != null && 配置.命中特效缩放 > 0f && !Mathf.Approximately(配置.命中特效缩放, 1f))
             fx.transform.localScale *= 配置.命中特效缩放;
+        if(fx && 配置.伤害属性==DamageNature.物理)fx.transform.localScale*=2.5f;
         return fx;
     }
 

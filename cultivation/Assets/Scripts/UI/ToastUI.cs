@@ -79,6 +79,18 @@ public class ToastUI : MonoBehaviour
         var rt=icon.rectTransform;rt.anchorMin=rt.anchorMax=new Vector2(0,.5f);rt.pivot=new Vector2(0,.5f);rt.anchoredPosition=new Vector2(12,0);rt.sizeDelta=new Vector2(52,52);icon.raycastTarget=false;icon.enabled=item.图标!=null;
         t.更新物品文字();
     }
+    public static void 获得法则(LawFragment law)
+    {
+        if (!Application.isPlaying || law == null) return;
+        var root = 取画布(); if (!root) return;
+        var go = new GameObject("获得法则_" + law.id, typeof(RectTransform)); go.transform.SetParent(root.transform, false);
+        var toast = go.AddComponent<ToastUI>(); toast.尺寸 = new Vector2(460, 68); toast.构建("获得法则  " + law.名称, 3.5f);
+        toast.组.blocksRaycasts = false; toast.组.interactable = false;
+        var label = go.transform.Find("文字").GetComponent<Text>(); label.alignment = TextAnchor.MiddleLeft;
+        label.rectTransform.offsetMin = new Vector2(76, 8); label.rectTransform.offsetMax = new Vector2(-14, -8);
+        var image = UIBuildUtils.CreateImage("法则图标", go.transform, law.颜色); image.sprite = law.图标; image.preserveAspect = true; image.raycastTarget = false;
+        var rt = image.rectTransform; rt.anchorMin = rt.anchorMax = new Vector2(0, .5f); rt.pivot = new Vector2(0, .5f); rt.anchoredPosition = new Vector2(12, 0); rt.sizeDelta = new Vector2(52, 52);
+    }
     void 更新物品文字()
     {
         var text=transform.Find("文字")?.GetComponent<Text>();

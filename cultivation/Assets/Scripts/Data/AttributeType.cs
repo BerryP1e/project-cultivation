@@ -62,13 +62,15 @@ public enum AttributeType
     PassiveSpellBonus = 25,
     /// <summary>被动法术伤害减免</summary>
     PassiveSpellReduction = 26,
+    /// <summary>神识；追加在末尾，保留已有战斗属性的下标。</summary>
+    Sense = 27,
 }
 
 /// <summary>属性表的公共常量与中文名查询。</summary>
 public static class AttributeUtil
 {
     /// <summary>属性总数</summary>
-    public const int Count = 27;
+    public const int Count = 28;
 
     static readonly string[] DisplayNames =
     {
@@ -80,7 +82,7 @@ public static class AttributeUtil
         "气血回复", "灵力回复", "治疗加成",
         "普攻伤害加成", "普攻伤害减免",
         "主动法术伤害加成", "主动法术伤害减免",
-        "被动法术伤害加成", "被动法术伤害减免",
+        "被动法术伤害加成", "被动法术伤害减免", "神识",
     };
 
     /// <summary>取属性的中文显示名</summary>

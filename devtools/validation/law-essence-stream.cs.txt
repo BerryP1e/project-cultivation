@@ -1,0 +1,35 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+IEnumerator Run(){
+int checks=0;var report=new System.Text.StringBuilder();
+void Check(bool ok,string label){report.AppendLine((ok?"PASS ":"FAIL ")+label);File.WriteAllText("../.local/diagnostics/law-essence-stream-report.txt",report.ToString());if(!ok)throw new Exception(label);checks++;}
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x.GetType().Name=="MainQuestTutorial"||x.GetType().Name=="主线开场"||x.GetType().Name=="任务管理器"))q.enabled=false;
+DialogueUI.关闭();foreach(var debug in Object.FindObjectsOfType<PlayerStatsDebugPanel>())debug.Visible=false;
+var data=Object.FindObjectOfType<UIPanelData>();data.清空玩法数据();var rng=new System.Random(54912);var laws=new List<LawFragment>();
+for(int i=0;i<25;i++){var law=LawFragmentSystem.生成(i%9,rng);data.法则碎片.Add(law);laws.Add(law);}for(int i=0;i<6;i++)LawFragmentSystem.装备(data,laws[i+3].id,i);
+var ui=data.GetComponent<CharacterPanelUI>();ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);var page=ui.tabs[4].page.GetComponent<UIInkLawPage>();page.选择(laws[8]);data.RaiseChanged();yield return new WaitForSecondsRealtime(.4f);
+var label=page.transform.Find("LawEssence").GetComponent<RectTransform>();Check(label.anchorMin.y>.87&&label.anchorMax.x<.4,"essence balance relocated to upper left");
+var furnace=(RectTransform)page.炉鼎.transform;Check(furnace.anchorMax.y>=.43&&furnace.anchorMax.x-furnace.anchorMin.x>.21,"furnace expanded in lower right");
+Check(!page.精粹流.raycastTarget&&page.精粹流.mainTexture==page.精粹图标.sprite.texture,"batched stream uses imported essence sprite and cannot intercept interaction");
+Check(UIInkLawEssenceStream.产出粒子数(0)==0&&UIInkLawEssenceStream.产出粒子数(10)<UIInkLawEssenceStream.产出粒子数(1000)&&UIInkLawEssenceStream.产出粒子数(1000)<UIInkLawEssenceStream.产出粒子数(3906250)&&UIInkLawEssenceStream.产出粒子数(long.MaxValue)<150,"visual quantity grows monotonically without unbounded per-unit objects");
+var e=new PointerEventData(EventSystem.current){position=RectTransformUtility.WorldToScreenPoint(null,furnace.position)};var hits=new List<RaycastResult>();EventSystem.current.RaycastAll(e,hits);Check(hits.Count>0&&ExecuteEvents.GetEventHandler<IDropHandler>(hits[0].gameObject)==page.炉鼎.gameObject,"expanded furnace receives real drag/drop through stream");
+var lawToSmelt=laws[17];long expected=LawRefinementSystem.熔炼产出(lawToSmelt);Check(LawRefinementSystem.放入(data,lawToSmelt.id),"queue immortal law for stream test");page.炉鼎.开始熔炼();Check(data.法则精粹==expected&&page.精粹流.上次粒子数==UIInkLawEssenceStream.产出粒子数(expected),"smelt awards once and schedules quantity-scaled particles");
+Check(Time.timeScale==0,"law panel pauses simulation");
+var meshMethod=typeof(UIInkLawEssenceStream).GetMethod("OnPopulateMesh",BindingFlags.Instance|BindingFlags.NonPublic,null,new[]{typeof(VertexHelper)},null);
+using(var vh=new VertexHelper()){meshMethod.Invoke(page.精粹流,new object[]{vh});Check(vh.currentVertCount==0,"essence begins after heating rather than at smelt click");}
+yield return new WaitForSecondsRealtime(2.05f);
+using(var vh=new VertexHelper()){meshMethod.Invoke(page.精粹流,new object[]{vh});Check(vh.currentVertCount>0,"real sprite vertices fly from furnace while simulation paused");}
+yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-essence-stream-flight.png");
+yield return new WaitForSecondsRealtime(2);
+Check(page.精粹流.待汇入粒子数==0&&data.法则精粹==expected,"stream completes without duplicate currency changes");
+page.播放精粹飞行(furnace.position,1000,0);yield return new WaitForSecondsRealtime(.9f);Check(page.精粹图标.transform.localScale.x>1,"arriving particles pulse destination icon");
+ui.SetOpen(false,true);yield return null;Check(page.精粹流.待汇入粒子数==0&&data.法则精粹==expected&&page.精粹图标.transform.localScale==Vector3.one,"close cancels only visuals and clears icon pulse");
+ui.SetOpen(true,true);ui.ShowTab(CharacterTab.法则);yield return new WaitForSecondsRealtime(.3f);page.选择(laws[8]);yield return new WaitForEndOfFrame();ScreenCapture.CaptureScreenshot("../.local/diagnostics/law-essence-stream-layout.png");yield return new WaitForSecondsRealtime(.2f);
+report.AppendLine("LAW_ESSENCE_STREAM_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/law-essence-stream-report.txt",report.ToString());Debug.Log("LAW_ESSENCE_STREAM_PASS checks="+checks);
+}
+return Run();

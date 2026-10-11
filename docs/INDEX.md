@@ -1,4 +1,12 @@
-﻿# docs/ 索引 —— 查文档从这里开始
+# docs/ 索引 —— 查文档从这里开始
+
+当前Windows测试版：[2026-10-11 太初伴龙与法则系统](guides/Windows打包与发布.md)，包含本轮已验证的玩法、修复与资源清理，整包及SHA-256发布到GitHub Release。
+
+定稿整理：[龙祭司动作资源](guides/龙祭司动作资源.md)已改为八套独立伴龙成品，删除原22个FBX和重建器，归入 `Art/Characters/DragonPriest`；运行、场景及甩尾覆盖回归通过，资源净减少68.8 MiB。
+
+当前新增：[法则碎片](guides/法则碎片.md)（独立宝箱、112称呼/9境界、六槽动态仪轨、半弧滚动收藏、分组悬停详情与分层素材、敏感属性上限/高值稀有分布/评分/存档）；伴龙窗口、A1矮小目标/连续出招漏判修正与平滑切式见[太初龙栖诀](guides/太初龙栖诀.md)。
+
+当前补充：法则炉鼎熔炼、精粹及主属性洗练见[法则碎片 §3.1](guides/法则碎片.md#31-炉鼎熔炼与洗练2026-10-11)，生图来源见[法则炼制素材](reference/UI素材/法则炼制素材.md)。怪物子弹资源误删恢复与动态路径保护见[飞弹与子弹 §1.3](guides/飞弹与子弹.md#13-路径变更史与验证状态)。
 
 开发约定（2026-10-06）：后续按新建存档验证，不再做旧存档恢复或兼容迁移；正常保存和跨场景数据仍维护。
 
@@ -141,6 +149,7 @@ docs/
 │   ├─ 沧澜寒渊录.md · 寒墟.md · 冰暴术.md
 │   ├─ 水龙炮.md · 禁锢锁链.md · 小剑阵.md · 邪眼.md · 防护罩.md
 │   ├─ 太虚剑决.md         三式近战剑招 · 锦衣卫完整动作重定向 · 神秘人待机与佩剑
+│   ├─ 太初龙栖诀.md       伴龙五式 · 远近循环 · 目标冰晶/三枚火弹 · 可打断特殊待机
 │   ├─ 八九玄功.md         近战普攻 · 完整攻击与御风重定向 · 杨戬 Run 持械移动 · 手骨握持标定
 │   ├─ 画面统一调色.md · 外观系统说明.md · 动画竖直处理.md · 默认移动动画.md
 │   ├─ 御风前进动作.md      Flying Mage八向移动 · 朝向与手部 · 持刀/御剑收放 · 重建与实机复验
@@ -181,10 +190,11 @@ docs/
 | **在洞府里摆东西 / 摆放与吸附规则（占用边距 · SAT · 8 朝向 · 跨种类互斥）** | [guides/灵田 §4](guides/灵田.md) | [PROGRESS §2.2](PROGRESS.md) |
 | **摆练功木桩 / 加一种新的可摆放物** | [guides/灵田 §4.5~4.6](guides/灵田.md) | [design/存档系统](design/存档系统.md) · [ai/踩坑总库 §B](ai/踩坑总库.md) |
 | **资产分类、第三方资源清理、定稿动作与共享特效依赖** | [architecture/资产与目录](architecture/资产与目录.md) | [开发工具](../devtools/README.md)、[外部素材来源](reference/外部素材来源.md) |
+| **龙祭司来源记录、伴龙成品资产与定稿清理** | [guides/龙祭司动作资源](guides/龙祭司动作资源.md) | [architecture/资产与目录](architecture/资产与目录.md) |
 | **外部素材的授权 / 出处 / sha256（★ 必读授权状况）** | [reference/外部素材来源](reference/外部素材来源.md) | [guides/灵田 §7](guides/灵田.md) |
 | **时间 / 纪年 / 修炼机会** | [guides/时间系统](guides/时间系统.md) | [architecture/修炼与境界](architecture/修炼与境界.md) |
 | **炼丹 / 拖拽丹房 / 竹筒丹方 / 品（= 丹药对应境界）/ 服丹提破境成功率** | [guides/炼丹](guides/炼丹.md) | [炼丹交互素材与提示词](reference/UI素材/炼丹交互素材.md) · `Assets/Scripts/Alchemy/炼丹炉.cs` |
-| **伤害公式 / 实际扣血 / 护盾 / 命中事件 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) · [战斗命中特效管线](guides/战斗命中特效管线.md) | `CombatDamagePipeline` / `CombatImpactCatalog` / `CombatCalculator` |
+| **伤害公式 / 实际扣血 / 护盾 / 命中事件 / 物理特效遮挡 / 顿帧 / 受伤飘字** | [architecture/战斗与伤害](architecture/战斗与伤害.md) · [战斗命中特效管线](guides/战斗命中特效管线.md) | `CombatDamagePipeline` / `CombatImpactCatalog` / `CombatHitStop` / `CombatCalculator` |
 | **主动技能 / 神通 / 特效怎么摆** | [architecture/主动技能与神通](architecture/主动技能与神通.md) | [guides/特效系统](guides/特效系统.md) |
 | **水炮 / 持续锁链 / 主动键施放的被动伤害剑阵** | [水龙炮](guides/水龙炮.md) · [禁锢锁链](guides/禁锢锁链.md) · [小剑阵](guides/小剑阵.md) | [配置表字段](reference/配置表字段.md#31-神通运行效果字段) |
 | **邪眼攻击耗蓝 / 减伤护罩互斥耗蓝 / 主动四御与次数保存** | [邪眼](guides/邪眼.md) · [防护罩](guides/防护罩.md) | [神通图标](reference/UI素材/神通图标.md) |
@@ -218,6 +228,7 @@ docs/
 | **特效放哪 / 加新特效包怎么整理** | [guides/特效系统](guides/特效系统.md) | [guides/特效资源清单](guides/特效资源清单.md) |
 | **找某个特效的路径** | [guides/特效资源清单](guides/特效资源清单.md)（自动生成） | — |
 | **电系功法「玄霄雷决」+ 雷动千闪** | [guides/玄霄雷决与雷动千闪](guides/玄霄雷决与雷动千闪.md) | [guides/瞬雷天闪](guides/瞬雷天闪.md) · [guides/千劫雷狱](guides/千劫雷狱.md) · [guides/雷云](guides/雷云.md) · [guides/闪电链特效](guides/闪电链特效.md) |
+| **伴龙功法「太初龙栖诀」五式 / 目标冰晶 / 火弹 / 特殊待机** | [guides/太初龙栖诀](guides/太初龙栖诀.md) | [龙祭司动作资源](guides/龙祭司动作资源.md) · [战斗与伤害](architecture/战斗与伤害.md) |
 | **冰系功法「沧澜寒渊录」四式普攻 / 冰暴术** | [guides/沧澜寒渊录](guides/沧澜寒渊录.md) | [寒墟并入说明](guides/寒墟.md) · [guides/冰暴术](guides/冰暴术.md) |
 | **近战普攻功法「八九玄功」**（完整攻击与御风重定向 · 杨戬 Run 移动 · 武器手骨轴与缩放 · 实机检查） | [guides/八九玄功](guides/八九玄功.md) | [guides/玄霄雷决与雷动千闪](guides/玄霄雷决与雷动千闪.md) · [architecture/主动技能与神通](architecture/主动技能与神通.md) |
 | **动画上下晃 / 人悬空** | [guides/动画竖直处理](guides/动画竖直处理.md) | [ai/踩坑总库 §B](ai/踩坑总库.md) |

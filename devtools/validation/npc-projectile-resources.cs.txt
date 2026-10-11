@@ -1,0 +1,36 @@
+﻿using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text.RegularExpressions;
+IEnumerator Run(){
+var report=new System.Text.StringBuilder();int checks=0;
+void Check(bool ok,string label){report.AppendLine((ok?"PASS ":"FAIL ")+label);File.WriteAllText("../.local/diagnostics/npc-projectile-report.txt",report.ToString());if(!ok)throw new Exception(label);checks++;}
+Time.timeScale=1;
+var manifest=Regex.Matches(File.ReadAllText("../devtools/maintenance/runtime-resource-roots.json"),"\"([^\"]+)\"").Cast<Match>().Select(x=>x.Groups[1].Value).Where(x=>x.StartsWith("CombatVFX/")).ToHashSet();
+foreach(var path in manifest)Check(Resources.Load<GameObject>(path),"runtime root loads: "+path);
+var shoot=typeof(NpcAiBase).GetMethod("生成子弹",BindingFlags.Instance|BindingFlags.NonPublic);
+foreach(var type in new[]{typeof(NpcAiBaiLuJing),typeof(NpcAiBingPoGuai),typeof(NpcAiBaiYanMoJun),typeof(NpcAiChangHuoZhangLao),typeof(NpcAiFeishe),typeof(NpcAiGouTouJunShi),typeof(NpcAiLaoGuiJing),typeof(NpcAiZhiZhuJing),typeof(NpcAiXuanFeng)}){
+var root=new GameObject("ProjectileValidation_"+type.Name);root.transform.position=new Vector3(1000,1000,1000);var ai=(NpcAiBase)root.AddComponent(type);ai.enabled=false;ai.应用类型默认值();
+var attacks=ai.攻击方式.Where(x=>!string.IsNullOrEmpty(x.子弹特效路径)).ToArray();Check(attacks.Length>0,type.Name+" actual defaults contain projectile attacks");
+foreach(var config in attacks){
+foreach(var path in new[]{config.子弹特效路径,config.闪光特效路径,config.命中特效路径}.Where(x=>!string.IsNullOrEmpty(x)))Check(manifest.Contains(path)&&Resources.Load<GameObject>(path),type.Name+" configured dynamic resource retained: "+path);
+var before=Object.FindObjectsOfType<NpcProjectile>().ToHashSet();shoot.Invoke(ai,new object[]{config,config.取规则()});
+var bullet=Object.FindObjectsOfType<NpcProjectile>().FirstOrDefault(x=>!before.Contains(x));Check(bullet,type.Name+" actual AI spawns visible projectile rather than delayed-hit fallback");
+var position=bullet.transform.position;yield return new WaitForSeconds(.15f);
+Check(bullet&&Vector3.Distance(position,bullet.transform.position)>.1f,type.Name+" projectile moves during flight");
+var particles=bullet.GetComponentsInChildren<ParticleSystem>().Where(x=>x.gameObject.activeInHierarchy).ToArray();
+if(particles.Length>0)Check(particles.Any(x=>x.particleCount>0&&x.GetComponent<ParticleSystemRenderer>().enabled&&x.GetComponent<ParticleSystemRenderer>().sharedMaterial&&x.GetComponent<ParticleSystemRenderer>().sharedMaterial.shader.isSupported),type.Name+" flying particles emitted with supported material");
+else Check(bullet.GetComponentsInChildren<MeshRenderer>().Any(x=>x.enabled&&x.sharedMaterial&&x.GetComponent<MeshFilter>()&&x.GetComponent<MeshFilter>().sharedMesh&&x.GetComponent<MeshFilter>().sharedMesh.vertexCount>0),type.Name+" mesh projectile has visible source material");
+Object.Destroy(bullet.gameObject);
+}Object.Destroy(root);yield return null;
+}
+var target=new GameObject("ProjectileContactTarget");target.transform.position=new Vector3(1100,1000,1008);var prefab=Resources.Load<GameObject>(manifest.First(x=>x.EndsWith("Demon_Projectile_Only")));var go=Object.Instantiate(prefab,new Vector3(1100,1001.1f,1000),Quaternion.identity);var flight=go.AddComponent<NpcProjectile>();flight.设置直线飞行(Vector3.forward,target.transform,20);flight.命中半径=.3f;int contacts=0;flight.到达时+=()=>contacts++;
+yield return new WaitForSeconds(.55f);Check(contacts==1&&!flight,"straight projectile reports exactly one real arrival");
+go=Object.Instantiate(prefab,new Vector3(1100,1001.1f,1000),Quaternion.identity);flight=go.AddComponent<NpcProjectile>();flight.设置直线飞行(Vector3.forward,target.transform,20);flight.命中半径=.3f;flight.最大飞行距离=22;contacts=0;flight.到达时+=()=>contacts++;target.transform.position+=Vector3.right*4;
+yield return new WaitForSeconds(.55f);Check(flight&&contacts==0&&Mathf.Abs(flight.transform.position.x-1100)<.001f,"dodged NPC projectile remains visible and flies straight without false hit");
+yield return new WaitForSeconds(1.5f);Check(!flight&&contacts==0,"missed projectile fades out at configured maximum distance");Object.Destroy(target);
+report.AppendLine("NPC_PROJECTILE_RUNTIME_PASS checks="+checks);File.WriteAllText("../.local/diagnostics/npc-projectile-report.txt",report.ToString());Debug.Log("NPC_PROJECTILE_RUNTIME_PASS checks="+checks);
+}
+return Run();

@@ -27,6 +27,14 @@ reasons = {}
 def keep(path, reason):
     seeds.add(path)
     reasons.setdefault(path, []).append(reason)
+# Full dynamic paths are required roots. Prefix + directory + theme concatenation
+# cannot be reliably inferred from isolated C# string literals.
+manifest = json.loads((ROOT / 'devtools/maintenance/runtime-resource-roots.json').read_text(encoding='utf-8'))
+for resource in manifest['resources']:
+    asset = 'Assets/resources/' + resource + '.prefab'
+    if asset not in paths:
+        raise SystemExit('Required runtime resource is missing: ' + resource)
+    keep(asset, 'explicit runtime resource root')
 source = '\n'.join(p.read_text(encoding='utf-8-sig', errors='replace')
                    for path, p in paths.items() if not targeted(path) and
                    p.suffix in ('.cs', '.csv', '.json', '.shader', '.asset', '.prefab', '.scene', '.unity'))
