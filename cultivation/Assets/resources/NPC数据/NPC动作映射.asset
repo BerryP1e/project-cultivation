@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ed51e8445f2bb84da3da54190cfb4f7, type: 3}
   m_Name: "NPC\u52A8\u4F5C\u6620\u5C04"
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   controllers:
   - controller: {fileID: 9100000, guid: 74fc37b97d4541842b027bfa13d08d2c, type: 2}
     usesActionParameter: 1
@@ -956,21 +956,6 @@ MonoBehaviour:
       index: 8
       clip: {fileID: 7400000, guid: 6f59d24116f5669478b7e1cd314b0c7d, type: 3}
       statePath: Base Layer.Wound
-  - controller: {fileID: 9100000, guid: 2bc82123bed7320468ea73369814d698, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Idle
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: 168fdea02504a6448a8731b94b0663c8, type: 3}
-      statePath: Base Layer.Idle
-    - name: Specialidle
-      index: 1
-      clip: {fileID: 1827226128182048838, guid: 8092274b489884c48883e00e17aeeb11, type: 3}
-      statePath: Base Layer.Specialidle
-    - name: Walk
-      index: 2
-      clip: {fileID: 1827226128182048838, guid: 38f6c5106264c6d468d25fee6bf44cbf, type: 3}
-      statePath: Base Layer.Walk
   - controller: {fileID: 9100000, guid: a6931387304df4c48bb04cfaef58a6ac, type: 2}
     usesActionParameter: 1
     actions:
@@ -1589,25 +1574,6 @@ MonoBehaviour:
       index: 1
       clip: {fileID: 1827226128182048838, guid: 5b41419bd3e370342926ff5f120afec2, type: 3}
       statePath: Base Layer.Run
-  - controller: {fileID: 9100000, guid: ebaa4159ef8a39f498a623be83ca885a, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Idle
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: 0e170aa50993bd244b3e4774805d85aa, type: 3}
-      statePath: Base Layer.Idle
-    - name: Run
-      index: 1
-      clip: {fileID: 1827226128182048838, guid: e4a129f1fb0045b4797671b2aac25bdd, type: 3}
-      statePath: Base Layer.Run
-    - name: Specialidle
-      index: 2
-      clip: {fileID: 1827226128182048838, guid: 18d067453e4e468418344fc0092a6f14, type: 3}
-      statePath: Base Layer.Specialidle
-    - name: Walk
-      index: 3
-      clip: {fileID: 1827226128182048838, guid: 355776e3a311e8b40abfb769ee1a4dc2, type: 3}
-      statePath: Base Layer.Walk
   - controller: {fileID: 9100000, guid: 71fdb6438d284b8488208deb5983b0a2, type: 2}
     usesActionParameter: 1
     actions:
@@ -2187,21 +2153,6 @@ MonoBehaviour:
       index: 8
       clip: {fileID: 7400000, guid: 78a976ad310f647429a9eaae17442f2e, type: 3}
       statePath: Base Layer.Wound
-  - controller: {fileID: 9100000, guid: 9f83646ab58fc4f49abc038d77bb16a3, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Idle
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: 83620aeab96752d449dc2a803dc5a437, type: 3}
-      statePath: Base Layer.Idle
-    - name: Specialidle
-      index: 1
-      clip: {fileID: 1827226128182048838, guid: 479859b01fcd39649b6e07a0c1908463, type: 3}
-      statePath: Base Layer.Specialidle
-    - name: Walk
-      index: 2
-      clip: {fileID: 1827226128182048838, guid: 207290d840fb1f94aa3ab85a6d4c8081, type: 3}
-      statePath: Base Layer.Walk
   - controller: {fileID: 9100000, guid: c14629873d922a04db8e1f1ca74f9beb, type: 2}
     usesActionParameter: 1
     actions:
@@ -2241,21 +2192,6 @@ MonoBehaviour:
       index: 8
       clip: {fileID: 7400000, guid: 912fcbf21720d384695419a69c37e1ca, type: 3}
       statePath: Base Layer.Wound
-  - controller: {fileID: 9100000, guid: 26297490448cfa5408dbe332c9def982, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Idle
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: 0b5a70483b05b3946a2905be9f24d13d, type: 3}
-      statePath: Base Layer.Idle
-    - name: Specialidle
-      index: 1
-      clip: {fileID: 1827226128182048838, guid: 93b28fe55cd97454bbce305c514d2fa6, type: 3}
-      statePath: Base Layer.Specialidle
-    - name: Walk
-      index: 2
-      clip: {fileID: 1827226128182048838, guid: 335afd80e9170c74f9e0aa5d3998ece0, type: 3}
-      statePath: Base Layer.Walk
   - controller: {fileID: 9100000, guid: 991ee7174ca9cde4caa66104bf45a177, type: 2}
     usesActionParameter: 1
     actions:
@@ -2466,28 +2402,6 @@ MonoBehaviour:
       index: 8
       clip: {fileID: 7400000, guid: 7620d40bcdae90448bac4cab73c593d9, type: 3}
       statePath: Base Layer.Wound
-  - controller: {fileID: 9100000, guid: e5004461226a5f244b456d3b79b92f5b, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Run
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: 5fb4f3d0c2f1a8b42843e72fbe45e18d, type: 3}
-      statePath: Base Layer.Run
-  - controller: {fileID: 9100000, guid: fb5873535b97ee04e9c519dbbe071d1e, type: 2}
-    usesActionParameter: 1
-    actions:
-    - name: Idle
-      index: 0
-      clip: {fileID: 1827226128182048838, guid: f9bc0faeaa1face468b302328bc43486, type: 3}
-      statePath: Base Layer.Idle
-    - name: Specialidle
-      index: 1
-      clip: {fileID: 1827226128182048838, guid: 899a3ff411d5e72499ce82e3aeb2c5d7, type: 3}
-      statePath: Base Layer.Specialidle
-    - name: Walk
-      index: 2
-      clip: {fileID: 1827226128182048838, guid: 61f225a95226f0e43a319b9229ebf4bc, type: 3}
-      statePath: Base Layer.Walk
   - controller: {fileID: 9100000, guid: f9075e7a56c3ee449992aaddf462474f, type: 2}
     usesActionParameter: 1
     actions:

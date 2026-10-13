@@ -10,10 +10,9 @@ public static class DivineCastingBaker
     public static void Build()
     {
         if(EditorApplication.isPlaying)throw new InvalidOperationException("请停止Play后烘焙");
-        Bake("attack_FlyingAtk02","水龙炮_施法");
         Bake("attack_FlyingAtk01_short","追踪弹_施法");
         AssetDatabase.SaveAssets();
-        Debug.Log("[神通施法] 全状态Attack02水龙炮43%左手出水；Attack01_short追踪弹0~50%右手凝聚、58%放飞；非循环");
+        Debug.Log("[神通施法] 水龙炮复用玄霄雷诀A3；Attack01_short追踪弹0~50%右手凝聚、58%放飞；非循环");
     }
 
     static void Bake(string sourceName,string outputName)

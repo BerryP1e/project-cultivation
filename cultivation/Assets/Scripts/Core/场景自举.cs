@@ -147,6 +147,7 @@ public static class 场景自举
     /// </summary>
     static void 补单例(Scene 场景)
     {
+        HomeWorld.取();
         if (!场景内有<任务管理器>(场景))
         {
             var go = new GameObject("任务管理器");

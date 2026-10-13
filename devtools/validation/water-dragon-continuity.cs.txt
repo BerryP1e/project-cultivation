@@ -1,0 +1,37 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using System.IO;
+var scene=EditorSceneManager.NewPreviewScene();var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string name){if(!ok)throw new Exception("FAIL "+name);count++;report.AppendLine("PASS "+name);}
+try{
+var prefab=Resources.Load<GameObject>(WaterDragonSkillRunner.龙资源路径);
+Check(prefab&&Vector3.Distance(prefab.transform.localScale,Vector3.one*2.5f)<.001f,"summoned dragon scale doubled 1.25 -> 2.5");
+WaterDragonBreathVisual Create(){var go=(GameObject)PrefabUtility.InstantiatePrefab(prefab,scene);var v=go.GetComponent<WaterDragonBreathVisual>();if(!v.初始化())throw new Exception("Init failed");return v;}
+var probe=Create();float spawn=probe.被击动作.length,blend=probe.显形过渡秒,attack=probe.攻击动作.length*probe.吐息定格进度*Mathf.PI*.5f;float breath=spawn+blend+attack;
+probe.攻击动作.SampleAnimation(probe.gameObject,probe.攻击动作.length*.55f);float measured=Mathf.Max(0,Vector3.Dot(probe.炮口-probe.transform.position,probe.transform.forward));Check(measured>0&&Mathf.Abs(probe.吐息前伸距离-measured)<.001f,"actual Attack55 jaw reach measured "+measured.ToString("F3"));Check(Mathf.Abs(probe.吐息定格进度-.55f)<.001f&&probe.震颤权重>=.3f&&probe.震颤角度上限>=8,"Attack55 and stronger tremor configuration");Object.DestroyImmediate(probe.gameObject);
+foreach(float boundary in new[]{spawn,spawn+blend,breath,breath+.75f/2.4f}){
+var v=Create();float age=0,before=boundary-.0001f;while(age<before){float dt=Mathf.Min(1f/240,before-age);v.推进(dt,Vector3.zero,Quaternion.identity);age+=dt;}
+var bones=v.GetComponentsInChildren<Transform>();var positions=bones.Select(t=>t.localPosition).ToArray();var rotations=bones.Select(t=>t.localRotation).ToArray();
+v.推进(.0002f,Vector3.zero,Quaternion.identity);
+float angle=bones.Select((t,i)=>Quaternion.Angle(rotations[i],t.localRotation)).Max();float gap=bones.Select((t,i)=>Vector3.Distance(positions[i],t.localPosition)).Max();
+Check(angle<.15f&&gap<.001f,"boundary "+boundary.ToString("F4")+" no snap angle="+angle.ToString("F4")+" localGap="+gap.ToString("F6"));
+Object.DestroyImmediate(v.gameObject);
+}
+foreach(int hz in new[]{30,60,120}){
+var v=Create();int frames=Mathf.CeilToInt((breath+1.2f)*hz);for(int i=0;i<frames;i++)v.推进(1f/hz,Vector3.zero,Quaternion.identity);
+Check(v.正在吐息&&Mathf.Abs(v.当前攻击进度-.55f)<.001f,hz+"Hz ends exactly at Attack55");
+var bones=v.GetComponentsInChildren<Transform>();var previous=bones.Select(t=>t.localRotation).ToArray();v.结束();v.推进(.0001f,Vector3.zero,Quaternion.identity);
+float jump=bones.Select((t,i)=>Quaternion.Angle(previous[i],t.localRotation)).Max();Check(jump<.1f,hz+"Hz entering dissolve preserves last tremor pose");
+v.推进(.25f,Vector3.zero,Quaternion.identity);var settled=bones.Select(t=>t.localRotation).ToArray();v.攻击动作.SampleAnimation(v.gameObject,v.攻击动作.length*.55f);float error=bones.Select((t,i)=>Quaternion.Angle(settled[i],t.localRotation)).Max();
+Check(error<.1f,hz+"Hz tremor smoothly settles onto hold pose");Object.DestroyImmediate(v.gameObject);
+}
+foreach(int hz in new[]{30,60,120}){
+var v=Create();float elapsed=0,prior=0;while(elapsed<1.6f*.43f){elapsed+=1f/hz;float clock=v.吐息预备时长*Mathf.Clamp01(elapsed/(1.6f*.43f));v.推进(1f/hz,Vector3.zero,Quaternion.identity,clock-prior);prior=clock;}
+Check(v.正在吐息&&Mathf.Abs(v.当前攻击进度-.55f)<.001f&&v.当前消融==0,hz+"Hz synchronized player43 and dragon55 visible");Object.DestroyImmediate(v.gameObject);
+}
+var skipped=Create();skipped.推进(.7f,Vector3.zero,Quaternion.identity,skipped.吐息预备时长);Check(skipped.正在吐息&&skipped.当前消融==0,"hitch crossing all preparation stages still shows dragon");Object.DestroyImmediate(skipped.gameObject);
+var stronger=Create();var weaker=Create();weaker.震颤权重=.12f;weaker.震颤角度上限=3;float difference=0;var strongBones=stronger.GetComponentsInChildren<Transform>();var weakBones=weaker.GetComponentsInChildren<Transform>();
+for(int i=0;i<180;i++){stronger.推进(1f/60,Vector3.zero,Quaternion.identity);weaker.推进(1f/60,Vector3.zero,Quaternion.identity);if(stronger.正在吐息)for(int j=0;j<strongBones.Length;j++)difference=Mathf.Max(difference,Quaternion.Angle(strongBones[j].localRotation,weakBones[j].localRotation));}
+Check(difference>1,"actual stronger Run blend difference "+difference.ToString("F2")+" degrees");Object.DestroyImmediate(stronger.gameObject);Object.DestroyImmediate(weaker.gameObject);
+report.AppendLine("WATER_DRAGON_CONTINUITY_PASS count="+count);File.WriteAllText("../.local/diagnostics/dragon-mob/water-continuity-report.txt",report.ToString());Debug.Log(report.ToString());return report.ToString();
+}finally{EditorSceneManager.ClosePreviewScene(scene);}

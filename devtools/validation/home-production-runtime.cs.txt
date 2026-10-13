@@ -1,0 +1,125 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+IEnumerator Run()
+{
+    var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+    bool Near(float a,float b)=>Mathf.Abs(a-b)<.002f;
+    var catalog=HomeAnimalCatalog.取();Check(catalog&&catalog.动物.Length==5,"runtime catalog loaded");
+    foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
+    foreach(var quest in UnityEngine.Object.FindObjectsOfType<任务管理器>())quest.enabled=false;
+    var clock=时间管理器.取();clock.暂停=true;
+    var manager=摆设.取();var previous=manager.导出();
+    var bag=UnityEngine.Object.FindObjectOfType<UIPanelData>();Check(bag,"actual runtime inventory");
+    var oldItems=new List<ItemDefinition>(bag.物品);bag.物品=new List<ItemDefinition>();
+    var db=QuestDatabase.取();
+    var storage=new HomeBuildingStorage();storage.确保(1);
+    Check(!storage.存入("a",0)&&!storage.存入("a",-1)&&!storage.存入("a",1000),"invalid/overflow deposit rejected");
+    Check(storage.存入("a",999)&&!storage.存入("a",1)&&!storage.存入("b",1),"warehouse stack and slot limits");
+    Check(!storage.取出("a",1000)&&storage.数量("a")==999,"failed withdrawal is atomic");
+    Check(storage.取出("a",999)&&storage.存入("b",1),"emptied slot reusable");
+    foreach(var d in catalog.动物)
+    {
+        var pen=new HomePenState();pen.确保();Check(pen.放入(d,catalog),d.id+" add animal");pen.推进(2,catalog);
+        Check(pen.收获篮.格.All(s=>s.数量==0),d.id+" hungry animal produces nothing");
+        pen.食槽.存入(d.喜爱食物id,4);pen.推进(1,catalog);
+        Check(pen.收获篮.数量(HomeAnimalCatalog.粪便id)==d.粪便数量*2,d.id+" periodic manure while fed");
+        if(!string.IsNullOrEmpty(d.产物id))Check(pen.收获篮.数量(d.产物id)>=1,d.id+" species-specific harvest");
+        Check(pen.食槽.数量(d.喜爱食物id)==3,d.id+" one favorite herb feeds one day");
+        var pair=new HomePenState();pair.放入(d,catalog);pair.放入(d,catalog);pair.食槽.存入(d.喜爱食物id,30);pair.繁育.Add(new HomeBreedingState{物种id=d.id,配对天数=.49f,诞生阈值=.5f});pair.推进(.02f,catalog);Check(pair.动物.Count==3&&pair.占用(catalog)<=10,d.id+" each species can actually breed in a ten-capacity pen");
+    }
+    var hen=catalog.找("muji");var cap=new HomePenState();cap.确保();
+    for(int i=0;i<10;i++)Check(cap.放入(hen,catalog),"hen capacity slot "+i);
+    Check(!cap.放入(hen,catalog)&&!cap.放入(catalog.找("xiaolu"),catalog)&&cap.占用(catalog)==10,"full pen rejects extra volume");
+    var ordinary=new HomePenState();ordinary.放入(hen,catalog);ordinary.食槽.存入("item_shenglingcao",1);ordinary.推进(.75f,catalog);
+    Check(ordinary.食槽.数量("item_shenglingcao")==0&&Near(ordinary.动物[0].产物进度,.5f)&&ordinary.动物[0].饱食天数==0,"nonfavorite herb feeds half day then stops production");
+    var splitA=new HomePenState();splitA.放入(hen,catalog);splitA.食槽.存入(hen.喜爱食物id,6);
+    var splitB=JsonUtility.FromJson<HomePenState>(JsonUtility.ToJson(splitA));splitA.推进(3.1f,catalog);for(int i=0;i<310;i++)splitB.推进(.01f,catalog);
+    Check(splitA.收获篮.数量(hen.产物id)==splitB.收获篮.数量(hen.产物id)&&Near(splitA.动物[0].饱食天数,splitB.动物[0].饱食天数),"large time jump matches small steps");
+    var birth=new HomePenState();birth.放入(hen,catalog);birth.放入(hen,catalog);birth.繁育.Add(new HomeBreedingState{物种id=hen.id,配对天数=.49f,诞生阈值=.5f});birth.推进(1,catalog);
+    Check(birth.动物.Count==2&&Near(birth.繁育[0].配对天数,.49f),"hungry parents cannot breed");
+    birth.食槽.存入(hen.喜爱食物id,100);birth.推进(.02f,catalog);
+    Check(birth.动物.Count==3&&birth.动物.Select(a=>a.uid).Distinct().Count()==3,"eligible parents generate unique offspring");
+    float threshold=birth.繁育[0].诞生阈值;var restoredBirth=JsonUtility.FromJson<HomePenState>(JsonUtility.ToJson(birth));Check(Near(threshold,restoredBirth.繁育[0].诞生阈值),"breeding random threshold survives save roundtrip");
+    var fullBreed=new HomePenState();for(int i=0;i<10;i++)fullBreed.放入(hen,catalog);fullBreed.食槽.存入(hen.喜爱食物id,999);fullBreed.推进(10,catalog);Check(fullBreed.动物.Count==10,"breeding never exceeds capacity");
+    var mixed=new HomePenState();mixed.放入(catalog.找("gou"),catalog);mixed.放入(hen,catalog);mixed.食槽.存入("item_huichuncao",100);mixed.推进(12,catalog);Check(mixed.动物.Count==2,"different species alone do not reproduce");
+    var jam=new HomePenState();jam.放入(hen,catalog);jam.食槽.存入(hen.喜爱食物id,20);for(int i=0;i<8;i++)jam.收获篮.存入("block"+i,999);jam.推进(5,catalog);
+    Check(Near(jam.动物[0].产物进度,hen.产出间隔天)&&jam.收获篮.数量(hen.产物id)==0,"full harvest basket caps pending production without loss or huge backlog");
+    jam.收获篮.取出("block0",999);jam.推进(.01f,catalog);Check(jam.收获篮.数量(hen.产物id)==1,"cleared harvest basket resumes pending output");
+    var compost=new HomeCompostState();compost.确保();compost.原料.存入(HomeAnimalCatalog.粪便id,9);compost.推进(.49f);Check(compost.成品.数量(HomeAnimalCatalog.肥料id)==0,"compost waits until fermentation completes");
+    compost.推进(.51f);Check(compost.成品.数量(HomeAnimalCatalog.肥料id)==2&&compost.原料.数量(HomeAnimalCatalog.粪便id)==3,"compost consumes three manure per fertilizer");
+    compost.成品.存入(HomeAnimalCatalog.肥料id,997);compost.推进(20);Check(compost.原料.数量(HomeAnimalCatalog.粪便id)==3,"full compost product pauses without consuming material");
+    compost.成品.取出(HomeAnimalCatalog.肥料id,999);compost.推进(.5f);Check(compost.成品.数量(HomeAnimalCatalog.肥料id)==1,"compost resumes after withdrawal");
+    var field=new 灵田地块状态{作物id="lingcao_shengling"};Check(field.施肥()&&Near(field.已生长天数,.45f),"fertilizer advances fifteen percent total duration");
+    Check(!field.施肥(),"fertilizer repeat blocked during cooldown");field.推进(.75f);Check(field.可施肥&&field.施肥(),"fertilizer available again after game-time interval");
+    field.已生长天数=field.植.成熟天数;Check(!field.施肥(),"mature plant cannot consume fertilizer");field.清空作物();Check(!field.施肥()&&field.施肥冷却天数==0,"empty field refuses fertilizer and crop reset clears cooldown");
+    var recipe=灵丹库.取("item_dan_juqi");对话标记.添加(炼丹炉.丹方标记(recipe.id));
+    var alchemy=new HomeAlchemyState{丹方id=recipe.id,自动炼制=true};alchemy.确保();alchemy.主材.存入(recipe.主材id,10);alchemy.辅材.存入("item_ningluhua",10);
+    alchemy.成品.存入("item_dan_yushang",1);alchemy.推进(1);Check(alchemy.主材.数量(recipe.主材id)==10&&alchemy.在炼丹方id=="","incompatible full product slot blocks opening before material spend");
+    alchemy.成品.取出("item_dan_yushang",1);alchemy.推进(.01f);Check(alchemy.主材.数量(recipe.主材id)==8&&alchemy.辅材.数量("item_ningluhua")==9&&alchemy.在炼丹方id==recipe.id,"alchemy deducts exact main/aux cost once when starting");
+    var restoredAlchemy=JsonUtility.FromJson<HomeAlchemyState>(JsonUtility.ToJson(alchemy));Check(restoredAlchemy.待产数量==alchemy.待产数量&&Near(restoredAlchemy.剩余天数,alchemy.剩余天数),"in-progress alchemy result and timer survive save");
+    int pending=restoredAlchemy.待产数量;restoredAlchemy.自动炼制=false;restoredAlchemy.推进(1);Check(restoredAlchemy.在炼丹方id==""&&restoredAlchemy.主材.数量(recipe.主材id)==8&&restoredAlchemy.成品.数量(recipe.id)==pending,"stop finishes current batch without starting another or spending twice");
+    var notLearned=new HomeAlchemyState{丹方id="item_dan_pojing_dengxian",自动炼制=true};notLearned.确保();Check(notLearned.开炉原因().Contains("尚未学会"),"automatic furnace requires learned recipe");
+    var incomplete=new HomeAlchemyState{丹方id=recipe.id,自动炼制=true};incomplete.确保();incomplete.主材.存入(recipe.主材id,2);incomplete.推进(1);Check(incomplete.主材.数量(recipe.主材id)==2,"missing auxiliary material causes no partial consumption");
+    manager.导入(new List<摆设状态>{new 摆设状态{类型id="animal_pen",位置=new Vector3(10000,0,10000)},new 摆设状态{类型id="compost_bin",位置=new Vector3(10008,0,10000)},new 摆设状态{类型id="auto_alchemy",位置=new Vector3(10008,0,10005)}});
+    yield return null;yield return null;
+    var penBuilding=UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Single(b=>b.状态.类型id=="animal_pen");var compostBuilding=UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Single(b=>b.状态.类型id=="compost_bin");var furnaceBuilding=UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Single(b=>b.状态.类型id=="auto_alchemy");
+    Check(penBuilding.GetComponent<StationInteractable>().类型==StationInteractable.StationKind.家园建筑,"generic furnishing view installs F interaction");
+    foreach(var d in catalog.动物)
+    {
+        var it=db.找物品(d.幼崽id);bag.给物品(it,1);penBuilding.状态.兽栏.动物.Clear();
+        Check(penBuilding.放入动物(it,bag)&&bag.物品数量(it)==0,"actual inventory to pen "+d.id);
+        Check(penBuilding.取出动物(penBuilding.状态.兽栏.动物[0].uid,bag)&&bag.物品数量(it)==1,"actual pen to inventory "+d.id);
+    }
+    penBuilding.状态.兽栏=cap;var cub=db.找物品(hen.幼崽id);int before=bag.物品数量(cub);Check(!penBuilding.放入动物(cub,bag)&&bag.物品数量(cub)==before,"capacity failure does not consume juvenile");
+    var food=db.找物品(hen.喜爱食物id);bag.给物品(food,4);
+    Check(penBuilding.存入(penBuilding.状态.兽栏.食槽,food,4,bag)&&bag.物品数量(food)==0,"food deposit removes only actual inventory");
+    Check(!penBuilding.存入(penBuilding.状态.兽栏.食槽,cub,1,bag)&&bag.物品数量(cub)==before,"nonherb cannot enter food trough");
+    Check(penBuilding.取回(penBuilding.状态.兽栏.食槽,0,bag)&&bag.物品数量(food)==4,"food withdrawal returns full stack");
+    var manure=db.找物品(HomeAnimalCatalog.粪便id);bag.给物品(manure,6);Check(compostBuilding.存入(compostBuilding.状态.堆肥.原料,manure,6,bag),"manure can be deposited at compost bin");
+    Check(!compostBuilding.存入(compostBuilding.状态.堆肥.原料,food,1,bag),"compost rejects unrelated plants");
+    var main=db.找物品(recipe.主材id);bag.给物品(main,10);Check(furnaceBuilding.存入(furnaceBuilding.状态.炼丹.主材,main,10,bag,0),"main material input accepts one slot");
+    var aux=db.找物品("item_ningluhua");bag.给物品(aux,12);Check(furnaceBuilding.存入(furnaceBuilding.状态.炼丹.辅材,aux,10,bag,0),"auxiliary input uses selected slot");
+    int auxBefore=bag.物品数量(aux);Check(!furnaceBuilding.存入(furnaceBuilding.状态.炼丹.主材,aux,1,bag,0)&&bag.物品数量(aux)==auxBefore,"different herb cannot silently overwrite occupied main slot");
+    furnaceBuilding.状态.炼丹.丹方id=recipe.id;furnaceBuilding.状态.炼丹.自动炼制=true;
+    manager.推进建筑生产(.5f);Check(compostBuilding.状态.堆肥.成品.数量(HomeAnimalCatalog.肥料id)==1,"central production advances compost alongside furnace");
+    Check(furnaceBuilding.状态.炼丹.主材.数量(recipe.主材id)<10,"central production advances automatic alchemy");
+    var saved=JsonUtility.ToJson(new SaveData{摆设=manager.导出()});var roundtrip=JsonUtility.FromJson<SaveData>(saved);
+    Check(roundtrip.摆设.Count==3&&roundtrip.摆设[0].兽栏.动物.Count==10&&roundtrip.摆设[1].堆肥.成品.数量(HomeAnimalCatalog.肥料id)==1,"SaveData roundtrip persists animals and production storage");
+    penBuilding.状态.兽栏.动物.Clear();foreach(var id in new[]{"gou","linghe","muji","tuzi","xiaolu"})penBuilding.状态.兽栏.放入(catalog.找(id),catalog);
+    penBuilding.状态.兽栏.食槽.存入("item_huichuncao",30);penBuilding.状态.兽栏.食槽.存入("item_qingxinlian",30);penBuilding.状态.兽栏.食槽.存入("item_ningluhua",30);penBuilding.状态.兽栏.食槽.存入("item_chiyanzhi",30);
+    clock.暂停=false;yield return new WaitForSeconds(.6f);
+    Check(penBuilding.GetComponentsInChildren<HomeAnimalView>().Length==5,"five home animal native animation views instantiated");
+    for(int i=0;i<90;i++)
+    {
+        yield return null;
+        foreach(var view in penBuilding.GetComponentsInChildren<HomeAnimalView>())
+        {
+            var pos=view.transform.localPosition;Check(new Vector2(pos.x,pos.z).magnitude<3.05f,"animal remains safely inside fence "+i);
+            foreach(var r in view.GetComponentsInChildren<Renderer>())Check(!float.IsNaN(r.bounds.size.x)&&r.bounds.size.magnitude<6,"native animation retains reasonable body bounds "+i);
+        }
+    }
+    clock.暂停=true;
+    foreach(var building in new[]{penBuilding,compostBuilding,furnaceBuilding})
+    {
+        var panel=HomeBuildingPanel.创建(building);yield return null;yield return null;
+        Check(panel.GetComponentsInChildren<ScrollRect>().Length==(building==furnaceBuilding?3:2),building.状态.类型id+" actual panel scrolling inventory and storage");
+        Check(panel.GetComponentsInChildren<Button>().Any(b=>b.name=="挪动建筑"),building.状态.类型id+" panel supports reposition");
+        Canvas.ForceUpdateCanvases();
+        ScreenCapture.CaptureScreenshot("D:/project：cultivation/.local/diagnostics/home-production/"+building.状态.类型id+"-panel.png");yield return new WaitForEndOfFrame();yield return null;
+        UnityEngine.Object.Destroy(panel);yield return null;
+    }
+    // 与正式角色无关的局部模型观察相机，用于检查原生姿态和围栏开口。
+    var cameraRoot=new GameObject("生产建筑验证相机");var camera=cameraRoot.AddComponent<Camera>();camera.transform.position=penBuilding.transform.position+new Vector3(10,12,-13);camera.transform.LookAt(penBuilding.transform.position);camera.orthographic=true;camera.orthographicSize=6;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.3f,.35f,.34f);camera.farClipPlane=50;
+    var lightRoot=new GameObject("验证照明");var light=lightRoot.AddComponent<Light>();light.type=LightType.Directional;light.intensity=1;light.transform.rotation=Quaternion.Euler(45,25,0);
+    var rt=new RenderTexture(1000,900,24);camera.targetTexture=rt;camera.Render();var oldRT=RenderTexture.active;RenderTexture.active=rt;var png=new Texture2D(1000,900,TextureFormat.RGB24,false);png.ReadPixels(new Rect(0,0,1000,900),0,0);png.Apply();
+    System.IO.File.WriteAllBytes("D:/project：cultivation/.local/diagnostics/home-production/pen-animals.png",png.EncodeToPNG());RenderTexture.active=oldRT;
+    UnityEngine.Object.Destroy(png);UnityEngine.Object.Destroy(rt);UnityEngine.Object.Destroy(cameraRoot);UnityEngine.Object.Destroy(lightRoot);
+    manager.导入(previous);bag.物品=oldItems;
+    var result="PASS "+checks.Count+" checks\n"+string.Join("\n",checks);System.IO.File.WriteAllText("D:/project：cultivation/.local/diagnostics/home-production/runtime-report.txt",result);Debug.Log("HOME_PRODUCTION_PASS "+checks.Count);
+}
+return Run();

@@ -71,7 +71,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
     {
         if (!InkUITheme.Enabled) return;
         // 对话、传送和丹房已使用独立布局，避免登记器重新套回旧纸卷/金框。
-        if (name == "灵田地块界面" || name == "灵田总览" || GetComponent<MainMenuUI>() != null || GetComponent<DialogueUI>() != null || GetComponent<UIInkTeleportPanel>() != null
+        if (name == "HomeStationPanel" || name == "灵田地块界面" || name == "灵田总览" || GetComponent<MainMenuUI>() != null || GetComponent<DialogueUI>() != null || GetComponent<UIInkTeleportPanel>() != null
             || GetComponentInParent<UIInkAlchemyPage>(true) != null
             || name == "ChronicleCanvas" || name == "QuestGuideCanvas" || name == "StationHint") return;
         string canvas = name;

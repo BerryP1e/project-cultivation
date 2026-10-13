@@ -577,6 +577,22 @@ public class StationInteractor : MonoBehaviour
         // ★ 灵田地块：**面板由地块自己画**（每块地一个、要带自己的上下文，
         //   占位幕布和共用预制体都表达不了"是哪一块地"）。
         //   和下面传送圈一个路子：这里只负责"按 F 这一下"和把面板根记下来。
+        if (设施.类型 == StationInteractable.StationKind.傀儡基站)
+        {
+            var station=设施.GetComponent<HomePuppetStation>();
+            if (!station) return;
+            当前设施=设施;当前界面=HomeStationPanel.创建(station);
+            有界面打开=true;本次右键已被占用=true;
+            return;
+        }
+        if (设施.类型 == StationInteractable.StationKind.家园建筑)
+        {
+            var building = 设施.GetComponent<HomeBuilding>();
+            if (!building) return;
+            当前设施 = 设施; 当前界面 = HomeBuildingPanel.创建(building);
+            有界面打开 = true; 本次右键已被占用 = true;
+            return;
+        }
         if (设施.类型 == StationInteractable.StationKind.灵田地块)
         {
             var 块 = 设施.GetComponent<灵田地块>();

@@ -1,0 +1,51 @@
+using System.Reflection;
+using System.IO;
+using UnityEditor;
+System.Collections.IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Run using exec_runtime_script in Play Mode");
+Time.timeScale=1;DialogueUI.关闭();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"||c.GetType().Name=="SaveApplier"))q.enabled=false;
+var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string name){if(!ok)throw new Exception("FAIL "+name);count++;report.AppendLine("PASS "+name);}
+var flags=BindingFlags.NonPublic|BindingFlags.Instance;
+var root=new GameObject("FlightDodge_QA");root.SetActive(false);root.transform.position=new Vector3(10000,2.4f,10000);
+var model=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),root.transform);model.transform.localPosition=Vector3.zero;model.transform.localRotation=Quaternion.identity;model.transform.localScale=Vector3.one;
+var animator=model.GetComponent<Animator>();animator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var cc=root.AddComponent<CharacterController>();cc.height=1;cc.center=Vector3.up*.5f;cc.radius=.25f;
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=1000;stats.调试数值[AttributeType.MaxSpirit]=1000;stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.MoveSpeed]=1;stats.调试数值[AttributeType.AttackSpeed]=1;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;vitals.过场保护宽限=0;
+var flight=root.AddComponent<YufengFlight>();flight.神通id="isolated_flight_dodge_qa";flight.强制御风=true;flight.升空时长=.01f;flight.打印状态切换=false;
+var actions=root.AddComponent<PlayerAnimationController>();actions.animator=animator;actions.御风=flight;
+var movement=root.AddComponent<PlayerController>();movement.御风=flight;movement.gravity=0;actions.playerController=movement;
+var cameraObject=new GameObject("FlightDodge_QA_camera");movement.cameraTransform=cameraObject.transform;
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="FlightDodge_QA_floor";floor.transform.position=new Vector3(10000,-.5f,10000);floor.transform.localScale=new Vector3(100,1,100);
+GameObject wall=null;root.SetActive(true);
+var dodge=root.GetComponent<PlayerFlightDodge>();dodge.冷却=0;dodge.慢放时长=0;
+void Reset(){dodge.取消();typeof(PlayerFlightDodge).GetField("availableAt",flags).SetValue(dodge,Time.time);root.transform.rotation=Quaternion.identity;cc.enabled=false;root.transform.position=new Vector3(10000,2.4f,10000);cc.enabled=true;Physics.SyncTransforms();}
+try{
+yield return new WaitForSeconds(.2f);
+Check(dodge&&flight.御风中,"auto-installed component and stable flight state="+flight.状态+" enabled="+flight.AbilityEnabled+" spirit="+vitals.当前灵气);
+vitals.当前气血=1000;typeof(PlayerVitals).GetField("过场宽限剩余",flags).SetValue(vitals,0f);typeof(PlayerVitals).GetField("上次在演出中",flags).SetValue(vitals,false);
+Check(!vitals.无敌,"no unrelated immunity masks dodge checks");
+
+var swordGo=Object.Instantiate(Resources.Load<GameObject>("Weapons/灵虚剑决/灵虚剑"),animator.transform);swordGo.name="灵虚剑";animator.Rebind();
+var sword=swordGo.GetComponent<LingxuFlightSword>();var blade=swordGo.transform.Find("LingxuSword");
+var localPanel=root.AddComponent<UIPanelData>();localPanel.当前功法=ScriptableObject.CreateInstance<GongFaDefinition>();localPanel.当前功法.功法id="gongfa_lingxu_jianjue";
+var carry=root.AddComponent<WeaponCarryAnim>();typeof(WeaponCarryAnim).GetField("面板",flags).SetValue(carry,localPanel);carry.刷新();
+flight.强制御风=false;flight.强制落地();flight.升空时长=.65f;flight.落地时长=.65f;yield return new WaitForSeconds(.3f);
+Check(Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"prefab and ground default sword size calibrated");
+model.transform.localScale=Vector3.one*1.80072f;
+foreach(var name in new[]{"A1","A2","A3"}){var clip=Resources.Load<AnimationClip>("技能动作/灵虚剑决/"+name);foreach(var binding in AnimationUtility.GetCurveBindings(clip).Where(b=>b.path.Contains("LingxuSword")&&b.propertyName.StartsWith("m_LocalScale")))Check(AnimationUtility.GetEditorCurve(clip,binding).keys.All(k=>Mathf.Abs(k.value-sword.后方缩放.x)<.0001f),"original attack scale retained "+name+" "+binding.propertyName);}
+float ground=blade.localScale.x,maxRise=0,maxLand=0;int riseFrames=0,landFrames=0;
+flight.切换();float start=Time.time;while(Time.time-start<1.1f){yield return new WaitForEndOfFrame();if(flight.状态==YufengFlight.FlightState.升空){maxRise=Mathf.Max(maxRise,blade.localScale.x);riseFrames++;Check(Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"takeoff scale invariant");}}
+Check(riseFrames>5&&Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"hover follows takeoff at identical size");float hover=blade.localScale.x;flight.切换();start=Time.time;while(Time.time-start<1.1f){yield return new WaitForEndOfFrame();if(flight.状态==YufengFlight.FlightState.落地){maxLand=Mathf.Max(maxLand,blade.localScale.x);landFrames++;Check(Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"landing scale invariant");}}
+Debug.Log("LINGXU_SCALE ground="+ground+" riseMax="+maxRise+" hover="+hover+" landMax="+maxLand+" riseFrames="+riseFrames+" landFrames="+landFrames+" reference="+sword.后方缩放.x);
+Check(landFrames>5&&Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"ground follows landing at identical size");
+flight.切换();while(flight.状态!=YufengFlight.FlightState.升空)yield return null;
+blade.localScale=Vector3.one;typeof(LingxuFlightSword).GetMethod("LateUpdate",flags).Invoke(sword,null);Check(Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"runtime transition repairs old cached default size");
+var a1=Resources.Load<AnimationClip>("技能动作/灵虚剑决/A1");Check(actions.播动作(a1),"attack can blend during takeoff");
+start=Time.time;while(Time.time-start<.45f){yield return new WaitForEndOfFrame();Check(Vector3.Distance(blade.localScale,sword.后方缩放)<.0001f,"attack and takeoff blend preserves calibrated size");}
+report.AppendLine("LINGXU_TAKEOFF_SCALE_PASS count="+count);File.WriteAllText("../.local/diagnostics/flight-dodge/takeoff-scale-report.txt",report.ToString());Debug.Log(report.ToString());Object.Destroy(localPanel.当前功法);
+}finally{Object.Destroy(root);Object.Destroy(cameraObject);Object.Destroy(floor);}
+}
+return Run();

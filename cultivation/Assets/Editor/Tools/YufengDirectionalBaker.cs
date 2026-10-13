@@ -81,6 +81,7 @@ public static class YufengDirectionalBaker
     {
         var clips=Names.Select(n=>AssetDatabase.LoadAssetAtPath<AnimationClip>(Folder+"御风八向_"+n+".anim")).ToArray();
         if(!controller || clips.Any(c=>!c))return false;
+        YufengDodgeBaker.ConfigureController(controller);
         foreach(string parameter in new[]{PlayerAnimationController.御风横向参数,PlayerAnimationController.御风纵向参数})
             if(!controller.parameters.Any(p=>p.name==parameter))controller.AddParameter(parameter,AnimatorControllerParameterType.Float);
         var tree=new BlendTree{name="御风八向",blendType=BlendTreeType.FreeformDirectional2D,blendParameter=PlayerAnimationController.御风横向参数,blendParameterY=PlayerAnimationController.御风纵向参数,useAutomaticThresholds=false};
@@ -155,6 +156,8 @@ public static class YufengDirectionalBaker
             var pose=contents.GetComponent<LingxuFlightSword>();if(!pose)pose=contents.AddComponent<LingxuFlightSword>();
             pose.后方髋骨偏移=node.localPosition-target.transform.InverseTransformPoint(animator.GetBoneTransform(HumanBodyBones.Hips).position);
             pose.后方旋转=node.localRotation;pose.后方缩放=node.localScale;
+            // 没有剑曲线的升空/落地会使用预制体默认值，默认也必须是标定大小。
+            contents.transform.Find("LingxuSword").localScale=pose.后方缩放;
             PrefabUtility.SaveAsPrefabAsset(contents,path);
         }
         finally{if(contents)PrefabUtility.UnloadPrefabContents(contents);graph.Destroy();Object.DestroyImmediate(target);}

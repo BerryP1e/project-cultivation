@@ -1,0 +1,52 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
+using System.IO;
+var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string message){if(!ok)throw new Exception("FAIL "+message);count++;report.AppendLine("PASS "+message);}
+var catalog=Resources.Load<FlightDodgeAnimations>(FlightDodgeAnimations.ResourcePath);
+Check(catalog && catalog.持械.Length==3,"shared catalog and three carry profiles");
+var scene=EditorSceneManager.NewPreviewScene();var graph=PlayableGraph.Create("DodgeAnimationQA");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+var rig=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),scene);
+var animator=rig.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var output=AnimationPlayableOutput.Create(graph,"Pose",animator);graph.Play();
+var all=catalog.持械.Concat(new[]{catalog.自由手}).ToArray();
+AnimationCurve Curve(AnimationClip c,string n)=>AnimationUtility.GetEditorCurve(c,EditorCurveBinding.FloatCurve("",typeof(Animator),n));
+Quaternion Q(AnimationClip c,float t)=>new Quaternion(Curve(c,"RootQ.x").Evaluate(t),Curve(c,"RootQ.y").Evaluate(t),Curve(c,"RootQ.z").Evaluate(t),Curve(c,"RootQ.w").Evaluate(t)).normalized;
+try{
+foreach(var set in all){
+foreach(var clip in new[]{set.左旋,set.右旋,set.后闪}){
+Check(clip&&clip.humanMotion&&!clip.isLooping,"humanoid nonloop "+clip.name);
+Check(AnimationUtility.GetCurveBindings(clip).Count(b=>b.propertyName.Contains("Hand."))==40,"all finger curves "+clip.name);
+Check(Curve(clip,"RootT.x").keys.All(k=>Mathf.Abs(k.value)<.0001f)&&Curve(clip,"RootT.z").keys.All(k=>Mathf.Abs(k.value)<.0001f),"no duplicate root translation "+clip.name);
+var playable=AnimationClipPlayable.Create(graph,clip);playable.SetApplyFootIK(false);output.SetSourcePlayable(playable);
+var bones=Enum.GetValues(typeof(HumanBodyBones)).Cast<HumanBodyBones>().Where(b=>b<HumanBodyBones.LastBone).Select(animator.GetBoneTransform).Where(b=>b).ToArray();
+float maxJump=0,minFoot=float.MaxValue;Vector3[] prior=null;float armAngle=0;
+for(int f=0;f<=120;f++){
+playable.SetTime(clip.length*f/120f);graph.Evaluate(0);var positions=bones.Select(b=>b.position).ToArray();
+if(positions.Any(p=>!float.IsFinite(p.x)||!float.IsFinite(p.y)||!float.IsFinite(p.z)))throw new Exception("Nonfinite joint "+clip.name);
+if(prior!=null)maxJump=Mathf.Max(maxJump,positions.Select((p,i)=>Vector3.Distance(p,prior[i])).Max());prior=positions;
+minFoot=Mathf.Min(minFoot,animator.GetBoneTransform(HumanBodyBones.LeftFoot).position.y,animator.GetBoneTransform(HumanBodyBones.RightFoot).position.y);
+if(f==60){var arm=animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);var elbow=animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);armAngle=Vector3.Angle(elbow.position-arm.position,Vector3.down);}
+}
+Check(maxJump<.25f,"continuous joints "+clip.name+" maxStep="+maxJump.ToString("F4"));
+Check(armAngle<80,"left arm lowered, not horizontal "+clip.name+" angle="+armAngle.ToString("F1"));
+Check(Quaternion.Angle(Q(clip,0),Q(clip,clip.length))<.01f,"returns to same hover heading "+clip.name);
+graph.DestroyPlayable(playable);
+}
+var left=set.左旋;var right=set.右旋;
+float leftTurn=0,rightTurn=0,lPrev=0,rPrev=0;var l0=Q(left,0);var r0=Q(right,0);
+for(int f=0;f<=180;f++){
+float t=left.length*f/180f;var l=Quaternion.Inverse(l0)*Q(left,t);var r=Quaternion.Inverse(r0)*Q(right,t);
+float a=l.eulerAngles.y,b=r.eulerAngles.y;if(f>0){leftTurn+=Mathf.DeltaAngle(lPrev,a);rightTurn+=Mathf.DeltaAngle(rPrev,b);}lPrev=a;rPrev=b;
+Check(Quaternion.Angle(new Quaternion(l.x,-l.y,-l.z,l.w),r)<.35f,"root spin mirror "+left.name+" frame="+f);
+}
+Check(Mathf.Abs(leftTurn)>300&&Mathf.Abs(leftTurn+rightTurn)<.1f,"full opposite turns "+left.name+" "+leftTurn.ToString("F1")+" / "+rightTurn.ToString("F1"));
+}
+Check(catalog.取(FlightDodgeDirection.Left,"unknown")==catalog.自由手.左旋,"new techniques fallback to free hand");
+var scenePaths=EditorBuildSettings.scenes.Where(s=>s.enabled).Select(s=>s.path).ToArray();
+foreach(var path in scenePaths.Where(p=>!p.Contains("Start"))){var deps=AssetDatabase.GetDependencies(path);Check(deps.Contains("Assets/Animations/PlayerLocomotion.controller"),"shared movement controller "+path);}
+report.AppendLine("FLIGHT_DODGE_EDITOR_PASS count="+count);Directory.CreateDirectory("../.local/diagnostics/flight-dodge");File.WriteAllText("../.local/diagnostics/flight-dodge/editor-report.txt",report.ToString());
+return report.ToString().Split('\n').Where(l=>!l.Contains("root spin mirror")).Aggregate("",(s,l)=>s+l+"\n");
+}finally{graph.Destroy();EditorSceneManager.ClosePreviewScene(scene);}

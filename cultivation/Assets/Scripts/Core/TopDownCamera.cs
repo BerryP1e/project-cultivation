@@ -88,8 +88,9 @@ public class TopDownCamera : MonoBehaviour
     {
         if (cam == null) return;
         cam.orthographic = orthographic;
-        if (orthographic) cam.orthographicSize = orthographicSize;
-        else cam.fieldOfView = fieldOfView;
+        float focus = DodgeNearMissFocus.镜头倍率(target);
+        if (orthographic) cam.orthographicSize = orthographicSize * focus;
+        else cam.fieldOfView = fieldOfView * focus;
     }
 
     /// <summary>立刻把摄像机摆到目标位置，不做平滑</summary>

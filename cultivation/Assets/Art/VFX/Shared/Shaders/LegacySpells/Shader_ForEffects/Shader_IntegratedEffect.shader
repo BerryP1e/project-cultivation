@@ -17,6 +17,8 @@ Shader "GAPH Custom Shader/Shader_IntegradedEffect"
 					[Toggle(IS_UNITY_PARTICLE_INSTANCING_ENABLED)]_ParticleInstancing("Is Unity Paticle Instancing Enable",int) = 0
 					[Toggle(IS_ALL_TEXTURE_STRAIGHT_MOVE)]_MixedMove("Is All Texture Straight Move",int) = 0
 						_TexPosMove("xPosMove", Range(-1,1)) = 0
+					[Toggle(IS_USE_ROTATE_UV)]_IsRotateAngle("Is Rotate Angle", int) = 0
+						_RotateAngle("RotateAngle", Range(-1,1)) = 0
 			[Header(Soft Particle)]
 				[Space]
 					[Toggle(IS_SOFT_PARTICLES)]_SoftParticle("Is Soft Particles",int) = 1
@@ -116,6 +118,7 @@ Shader "GAPH Custom Shader/Shader_IntegradedEffect"
 							#pragma shader_feature UNITY_PARTICLE_INSTANCING_ENABLED
 							#pragma shader_feature IS_LINEPASS
 							#pragma shader_feature IS_USE_TEXANIMATION
+							#pragma shader_feature IS_USE_ROTATE_UV
 							
 							#include "UnityCG.cginc"	
 							#include "UnityStandardParticleInstancing.cginc"
@@ -184,6 +187,10 @@ Shader "GAPH Custom Shader/Shader_IntegradedEffect"
 										half4 _LinePassTex_ST;
 										half _TexLength;
 										half _TexLength2;
+							#endif
+								
+							#ifdef IS_USE_ROTATE_UV
+										half _RotateAngle;
 							#endif
 							
 
@@ -378,6 +385,18 @@ Shader "GAPH Custom Shader/Shader_IntegradedEffect"
 
 										o.linepasscoord = TRANSFORM_TEX(i.texcoord, _LinePassTex);
 										i.texcoord = originaltexcoord;
+								#endif
+
+								#ifdef IS_USE_ROTATE_UV
+										float2 center = float2(0.5, 0.5);
+										float cosA = cos(_RotateAngle);
+										float sinA = sin(_RotateAngle);
+										float2x2 rt = float2x2(cosA, -sinA, sinA, cosA);
+
+										//main_tex uv
+										float2 uv = o.maintex - center;
+										o.maintex = mul(rt, uv);
+										o.maintex += uv;
 								#endif
 
 								o.color = i.color;

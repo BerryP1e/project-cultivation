@@ -55,6 +55,7 @@ public sealed class PlayerManualAim : MonoBehaviour
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
         if(!skill){var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)return dragon.引导范围(落点);var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
         if(skill.结算方式==ActiveSkillKind.追踪弹)return 2.5f;
+        if(skill.结算方式==ActiveSkillKind.天降打击||skill.结算方式==ActiveSkillKind.螺旋剑雨)return skill.范围;
         return VoxelCombatDamage.AreaRadius(skill);
     }
     public bool 确认施放(int slot,Vector3 point)

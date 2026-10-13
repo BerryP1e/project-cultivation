@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e4f4f8e9ba8bd941adfcf6d50561dd5, type: 3}
+  m_Name: XuanxiaoA1Palette
+  m_EditorClassIdentifier: 
+  materials:
+  - source: {fileID: 2100000, guid: ef5084a73d3e4654bbc79262ac35897a, type: 2}
+    target: {fileID: 2100000, guid: 9140168047856494492c7ebb2ed0973a, type: 2}
+  - source: {fileID: 2100000, guid: eff72157979ec664ca41a0e4b4ff57e2, type: 2}
+    target: {fileID: 2100000, guid: ce44435e06ce1a948978649906deb513, type: 2}
+  - source: {fileID: 2100000, guid: ba47d4d5773bb4d40b369fc89afd5b49, type: 2}
+    target: {fileID: 2100000, guid: 0ed4c48a4993ea3498dcb6c877daf258, type: 2}
+  - source: {fileID: 2100000, guid: 795eb062222ae8f4d9757f005c44003e, type: 2}
+    target: {fileID: 2100000, guid: ae4dcddf124cf1e46a5c50673b61c313, type: 2}
+  - source: {fileID: 2100000, guid: 6176c39e92731b74381f538dd9835d0c, type: 2}
+    target: {fileID: 2100000, guid: adad0fe95e7811e4e8ea115297c25372, type: 2}
+  - source: {fileID: 2100000, guid: 94bc31376ea3d634c863f97ae40fd74d, type: 2}
+    target: {fileID: 2100000, guid: 610c187f3976da840b2f83793bef8137, type: 2}
+  - source: {fileID: 2100000, guid: 62a38a85a8e2a034699b85b6cd1fff47, type: 2}
+    target: {fileID: 2100000, guid: 6400fb7abd570ca4480e3fea9a6c34f6, type: 2}
+  lightColor: {r: 0.3426571, g: 0, b: 1, a: 1}

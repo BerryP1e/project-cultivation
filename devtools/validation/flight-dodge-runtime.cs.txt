@@ -1,0 +1,87 @@
+using System.Reflection;
+using System.IO;
+using UnityEditor;
+System.Collections.IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Run using exec_runtime_script in Play Mode");
+Time.timeScale=1;DialogueUI.关闭();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"||c.GetType().Name=="SaveApplier"))q.enabled=false;
+var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string name){if(!ok)throw new Exception("FAIL "+name);count++;report.AppendLine("PASS "+name);}
+var flags=BindingFlags.NonPublic|BindingFlags.Instance;
+var root=new GameObject("FlightDodge_QA");root.SetActive(false);root.transform.position=new Vector3(10000,2.4f,10000);
+var model=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),root.transform);model.transform.localPosition=Vector3.zero;model.transform.localRotation=Quaternion.identity;model.transform.localScale=Vector3.one;
+var animator=model.GetComponent<Animator>();animator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var cc=root.AddComponent<CharacterController>();cc.height=1;cc.center=Vector3.up*.5f;cc.radius=.25f;
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=1000;stats.调试数值[AttributeType.MaxSpirit]=1000;stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.MoveSpeed]=1;stats.调试数值[AttributeType.AttackSpeed]=1;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;vitals.过场保护宽限=0;
+var flight=root.AddComponent<YufengFlight>();flight.神通id="isolated_flight_dodge_qa";flight.强制御风=true;flight.升空时长=.01f;flight.打印状态切换=false;
+var actions=root.AddComponent<PlayerAnimationController>();actions.animator=animator;actions.御风=flight;
+var movement=root.AddComponent<PlayerController>();movement.御风=flight;movement.gravity=0;actions.playerController=movement;
+var cameraObject=new GameObject("FlightDodge_QA_camera");movement.cameraTransform=cameraObject.transform;
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="FlightDodge_QA_floor";floor.transform.position=new Vector3(10000,-.5f,10000);floor.transform.localScale=new Vector3(100,1,100);
+GameObject wall=null;root.SetActive(true);
+var dodge=root.GetComponent<PlayerFlightDodge>();dodge.冷却=0;dodge.慢放时长=0;
+void Reset(){dodge.取消();typeof(PlayerFlightDodge).GetField("availableAt",flags).SetValue(dodge,Time.time);root.transform.rotation=Quaternion.identity;cc.enabled=false;root.transform.position=new Vector3(10000,2.4f,10000);cc.enabled=true;Physics.SyncTransforms();}
+try{
+yield return new WaitForSeconds(.2f);
+Check(dodge&&flight.御风中,"auto-installed component and stable flight state="+flight.状态+" enabled="+flight.AbilityEnabled+" spirit="+vitals.当前灵气);
+vitals.当前气血=1000;typeof(PlayerVitals).GetField("过场宽限剩余",flags).SetValue(vitals,0f);typeof(PlayerVitals).GetField("上次在演出中",flags).SetValue(vitals,false);
+Check(!vitals.无敌,"no unrelated immunity masks dodge checks");
+foreach(float yaw in new[]{0f,45f,90f,180f,270f}){
+cameraObject.transform.rotation=Quaternion.Euler(20,yaw,0);
+foreach(var v in new[]{Vector2.up,Vector2.right,Vector2.down,Vector2.left,new Vector2(1,1),new Vector2(-1,-1)}){
+var actual=movement.相机相对方向(v);var expected=Quaternion.Euler(0,yaw,0)*new Vector3(v.normalized.x,0,v.normalized.y);
+Check(Vector3.Distance(actual,expected)<.001f,"camera-relative input yaw="+yaw+" "+v);
+}}
+foreach(var dir in new[]{Vector3.forward,Vector3.left,Vector3.right,Vector3.back,new Vector3(1,0,1),new Vector3(-1,0,-1)}){
+Reset();Check(dodge.尝试闪避(dir),"start dodge "+dir);var expected=dir.z<-.5f?dodge.动作.自由手.后闪:dir.x>.5f?dodge.动作.自由手.右旋:dodge.动作.自由手.左旋;
+Check(actions.当前动作==expected,"direction clip "+dir);
+float health=vitals.当前气血;
+foreach(var spec in new[]{AttackSpec.物理普通攻击,AttackSpec.特殊普通攻击,AttackSpec.物理主动神通,AttackSpec.特殊主动神通,AttackSpec.物理被动神通,AttackSpec.特殊被动神通}){
+var random=Random.state;var result=CombatDamagePipeline.命中(new PlayerTarget(vitals),stats,spec);float draw=Random.value;Random.state=random;float baseline=Random.value;
+Check(result.状态==CombatHitState.Immune&&result.伤害==0&&draw==baseline,"pipeline immunity before RNG "+spec);Random.state=random;
+}
+Check(vitals.受到伤害(10,DamageNature.物理)==0&&vitals.受到伤害(10,DamageNature.特殊)==0&&vitals.当前气血==health,"direct damage immune");
+Check(!actions.播动作(dodge.动作.自由手.后闪)&&!actions.占用施法(dodge),"new actions blocked without stealing dodge");
+var start=root.transform.position;float elapsed=0;
+while(dodge.闪避中&&elapsed<1){yield return null;elapsed+=Time.deltaTime;if(dodge.闪避中)Check(vitals.无敌,"immune throughout movement");}
+var delta=root.transform.position-start;delta.y=0;
+Check(!dodge.闪避中&&!actions.闪避动作中&&!vitals.无敌,"immunity and action ownership released");
+Check(Vector3.Distance(delta,dir.normalized*6)<.04f,"collision movement six metres "+delta);
+Check(vitals.受到伤害(1)==1,"damage resumes immediately");
+yield return new WaitForSeconds(.12f);
+Check(!actions.动作播放中,"smooth return to flight locomotion");
+}
+foreach(int hz in new[]{30,60,120}){
+Reset();Check(dodge.尝试闪避(Vector3.forward),"start rate test "+hz);Vector3 travel=Vector3.zero;
+for(int i=0;i<hz;i++){travel+=dodge.推进(1f/hz);dodge.完成本帧();}
+Check(Mathf.Abs(travel.z-6)<.001f,"fixed total distance at "+hz+"Hz");
+}
+Reset();root.transform.rotation=Quaternion.Euler(0,90,0);movement.visualYawOffset=90;
+Check(dodge.尝试闪避(Vector3.zero)&&Vector3.Distance(dodge.方向,Vector3.back)<.001f&&actions.当前动作==dodge.动作.自由手.后闪,"space alone uses visual-facing backward");dodge.取消();movement.visualYawOffset=0;
+Reset();wall=GameObject.CreatePrimitive(PrimitiveType.Cube);wall.name="FlightDodge_QA_wall";wall.transform.position=root.transform.position+Vector3.forward*2;wall.transform.localScale=new Vector3(10,10,.3f);Physics.SyncTransforms();
+Check(dodge.尝试闪避(Vector3.forward),"wall dodge accepted");while(dodge.闪避中)yield return null;
+Check(root.transform.position.z<10001.65f&&root.transform.position.z>10001.3f,"CharacterController stops at wall "+root.transform.position.z);Object.Destroy(wall);wall=null;yield return null;
+Reset();dodge.冷却=1;Check(dodge.尝试闪避(Vector3.left),"cooldown start");dodge.取消();Check(!dodge.尝试闪避(Vector3.left),"cooldown blocks spam");dodge.冷却=0;
+Reset();Check(dodge.尝试闪避(Vector3.left),"disable cancellation start");movement.enabled=false;
+Check(!dodge.闪避中&&!vitals.无敌&&!actions.闪避动作中,"controller disabled clears dodge immediately");movement.enabled=true;
+Reset();UiEscRegistry.SetSceneInputBlocked(root,true);Check(!dodge.尝试闪避(Vector3.left),"UI blocks input");UiEscRegistry.SetSceneInputBlocked(root,false);yield return null;
+Check(dodge.尝试闪避(Vector3.left),"UI interruption start");UiEscRegistry.SetSceneInputBlocked(root,true);Check(!vitals.无敌,"UI removes immunity immediately");yield return null;Check(!dodge.闪避中,"UI cancels dodge");UiEscRegistry.SetSceneInputBlocked(root,false);
+Reset();flight.强制御风=false;flight.强制落地();Check(!dodge.尝试闪避(Vector3.forward),"ground dodge forbidden");
+flight.强制御风=true;yield return null;yield return null;
+Reset();var mount=root.AddComponent<MountRider>();movement.坐骑=mount;
+var stateProperty=typeof(MountRider).GetProperty("状态");
+var field=typeof(MountRider).GetFields(flags).First(f=>f.Name.Contains("状态")&&f.FieldType.IsEnum);
+foreach(var state in Enum.GetValues(field.FieldType).Cast<object>().Where(s=>s.ToString()!="未骑乘")){
+field.SetValue(mount,state);Check(!dodge.尝试闪避(Vector3.forward),"mount state forbidden "+state);
+}field.SetValue(mount,Enum.Parse(field.FieldType,"未骑乘"));Object.Destroy(mount);movement.坐骑=null;
+// 解除骑乘屏蔽可能触发重新升空；必须等待稳定御风，不能以两次Editor协程Tick代替游戏时间。
+yield return new WaitForSeconds(.2f);Check(flight.御风中,"stable flight restored after mount teardown");
+Reset();Check(actions.占用施法(root)&&!dodge.尝试闪避(Vector3.left),"channel ownership respected");actions.释放施法(root);
+Reset();var remote=root.AddComponent<BasicRemoteAttack01>();remote.自动出手=false;remote.普攻动作=Resources.Load<AnimationClip>("技能动作/普攻_远程_01");
+typeof(BasicRemoteAttack01).GetField("<出手动作中>k__BackingField",flags).SetValue(remote,true);typeof(BasicRemoteAttack01).GetField("本轮已出弹",flags).SetValue(remote,false);
+Check(dodge.尝试闪避(Vector3.left),"dodge interrupts remote basic flight="+flight.状态+" enabled="+flight.enabled+" blocked="+UiEscRegistry.SceneInputBlocked+" actionBusy="+actions.施法占用中+" cooldown="+dodge.冷却剩余+" mount="+movement.坐骑);yield return null;Check(!remote.出手动作中&&(bool)typeof(BasicRemoteAttack01).GetField("本轮已出弹",flags).GetValue(remote),"pending projectile canceled");Object.Destroy(remote);
+report.AppendLine("FLIGHT_DODGE_RUNTIME_PASS count="+count);Directory.CreateDirectory("../.local/diagnostics/flight-dodge");File.WriteAllText("../.local/diagnostics/flight-dodge/runtime-report.txt",report.ToString());Debug.Log(report.ToString());
+}finally{UiEscRegistry.SetSceneInputBlocked(root,false);if(root)Object.Destroy(root);if(cameraObject)Object.Destroy(cameraObject);if(floor)Object.Destroy(floor);if(wall)Object.Destroy(wall);}
+}
+return Run();

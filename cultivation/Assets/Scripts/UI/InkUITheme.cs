@@ -91,6 +91,7 @@ public static class InkUITheme
     {
         if (!Enabled) return;
         if (button == null || button.image == null) return;
+        if(button.GetComponent<UICharacterActionButton>()){UICharacterBackdrop.StyleButton(button);return;}
         // 遮罩上的 Button 仅负责点空白关闭；它不是一枚可换皮的操作按钮。
         if (button.name == "Dim" || button.name.Contains("幕布") || button.name == "暗色底" || button.name == "黑幕") return;
         if (button.name == "InkBagParcel") return;

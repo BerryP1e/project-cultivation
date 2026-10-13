@@ -12,6 +12,7 @@ public class UIEntryInfo : MonoBehaviour
 {
     [Header("引用")]
     public Image iconImage;
+    [System.NonSerialized] public bool 独立属性展示;
     public Text nameText;
     public Text tierText;
     public Text descriptionText;
@@ -109,7 +110,7 @@ public class UIEntryInfo : MonoBehaviour
         else if (Current is MountDefinition m && data != null)
         {
             // 装备 / 取消装备坐骑。再点一次同一只 = 卸下。
-            // ★ 一律走 设置当前坐骑()：互斥规则（装备坐骑 → 自动停用【凭虚御风】）写在那一处，
+            // ★ 一律走 设置当前坐骑()：准备状态与修炼门槛检查写在那一处，
             //   这里直接写 data.当前坐骑 会绕过它
             data.设置当前坐骑(data.当前坐骑 == m ? null : m);
         }
@@ -147,7 +148,7 @@ public class UIEntryInfo : MonoBehaviour
         if (nameText != null) nameText.text = entry.DisplayName;
         if (tierText != null) tierText.text = "【" + entry.DisplayTier + "】";
         if (descriptionText != null) descriptionText.text = entry.DisplayDescription;
-        if (descriptionText != null && entry is ActiveDivineAbility activeInfo)
+        if (descriptionText != null && !独立属性展示 && entry is ActiveDivineAbility activeInfo)
             descriptionText.text += "\n\n灵力消耗：" + activeInfo.消耗灵力 + "\n冷却：" + activeInfo.冷却时间 + " 秒";
         if (descriptionText != null && (entry is TreasureDefinition || entry is SpiritArrayDefinition))
             descriptionText.text += "\n\n效果待开发";

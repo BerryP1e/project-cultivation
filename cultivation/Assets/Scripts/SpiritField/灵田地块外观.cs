@@ -74,6 +74,7 @@ public static class 灵田地块外观
         //   **脚陷进去一点点**，第三人称俯视角基本看不出来；换来的是"整片田随便走"。
         挂网格体(床, 床网格(), 土材质(false), false);
         视.土床 = 床.GetComponent<MeshRenderer>();
+        HomeFieldBorder.建造(视.根.transform, 块.编号);
 
         视.植根 = new GameObject("作物").transform;
         视.植根.SetParent(视.根.transform, false);
@@ -95,13 +96,13 @@ public static class 灵田地块外观
         //   而且那个染色实际上把贴图烧成了**亮橙色**，不像土。
         //   现在改成**两个网格**：待种植是**翻好的深沟**（垄高 0.14，一眼是"刚整好的地"），
         //   种下去之后换成正常的浅垄（0.08）+ 深色湿土 + 三株作物 ⇒ 轮廓和颜色同时变。
-        int 待种 = b.待种植 ? 1 : 0;
+        int 待种 = b.待种植 || b.需要浇水 ? 1 : 0;
         if (待种 != 视.上次待种)
         {
             视.上次待种 = 待种;
             if (视.土床 != null)
             {
-                视.土床.sharedMaterial = 土材质(b.待种植);
+                视.土床.sharedMaterial = 土材质(待种 == 1);
                 var mf = 视.土床.GetComponent<MeshFilter>();
                 if (mf != null) mf.sharedMesh = 床网格(b.待种植);
             }
@@ -339,7 +340,7 @@ public static class 灵田地块外观
     static Mesh 造畦网格(float 垄高)
     {
         const int 横 = 24;      // 沿宽度采样几段
-        const int 纵 = 6;       // 沿深度采样几段
+        const int 纵 = 20;
         float 宽 = 灵田规格.床边长, 深 = 灵田规格.床边长;
         float hw = 宽 * 0.5f, hd = 深 * 0.5f;
 
@@ -361,7 +362,11 @@ public static class 灵田地块外观
             for (int i = 0; i <= 横; i++)
             {
                 float x = -hw + 宽 * i / 横;
-                顶点.Add(new Vector3(x, 面高(x), z));
+                float 边距 = Mathf.Min(hw - Mathf.Abs(x), hd - Mathf.Abs(z));
+                float 圆角 = Mathf.Clamp01((hw * 1.38f - new Vector2(x, z).magnitude) / .22f);
+                float 柔边 = Mathf.SmoothStep(0, 1, Mathf.Clamp01(边距 / .22f)) * 圆角;
+                float 小波 = .035f * Mathf.Sin(z * 9f + x * 7f);
+                顶点.Add(new Vector3(x + 小波 * (1 - 柔边), .012f + (面高(x) - .012f) * 柔边, z + 小波 * (1 - 柔边)));
                 uv.Add(new Vector2(i / (float)横, j / (float)纵));
             }
         }
@@ -396,15 +401,15 @@ public static class 灵田地块外观
         {
             float x1 = -hw + 宽 * i / 横, x2 = -hw + 宽 * (i + 1) / 横;
             float u1 = i / (float)横 * 宽 * 贴图密度, u2 = (i + 1) / (float)横 * 宽 * 贴图密度;
-            裙(new Vector3(x1, 面高(x1), -hd), new Vector3(x2, 面高(x2), -hd), u1, u2);
-            裙(new Vector3(x2, 面高(x2), hd), new Vector3(x1, 面高(x1), hd), u2, u1);
+            裙(new Vector3(x1, .012f, -hd), new Vector3(x2, .012f, -hd), u1, u2);
+            裙(new Vector3(x2, .012f, hd), new Vector3(x1, .012f, hd), u2, u1);
         }
         for (int j = 0; j < 纵; j++)
         {
             float z1 = -hd + 深 * j / 纵, z2 = -hd + 深 * (j + 1) / 纵;
             float u1 = j / (float)纵 * 深 * 贴图密度, u2 = (j + 1) / (float)纵 * 深 * 贴图密度;
-            裙(new Vector3(-hw, 面高(-hw), z2), new Vector3(-hw, 面高(-hw), z1), u2, u1);
-            裙(new Vector3(hw, 面高(hw), z1), new Vector3(hw, 面高(hw), z2), u1, u2);
+            裙(new Vector3(-hw, .012f, z2), new Vector3(-hw, .012f, z1), u2, u1);
+            裙(new Vector3(hw, .012f, z1), new Vector3(hw, .012f, z2), u1, u2);
         }
 
         var m = new Mesh { name = "灵田畦" };

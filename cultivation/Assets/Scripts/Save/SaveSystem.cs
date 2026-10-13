@@ -52,6 +52,7 @@ public static class SaveSystem
         {
             var 数据 = JsonUtility.FromJson<SaveData>(File.ReadAllText(p));
             if (数据 == null) return null;
+            清理已移除家畜(数据);
             if (数据.版本 > SaveData.当前版本)
                 Debug.LogWarning("[SaveSystem] 槽位 " + 槽位 + " 的存档版本 " + 数据.版本 + " 比程序新，可能读不全");
             return 数据;
@@ -199,10 +200,25 @@ public static class SaveSystem
         数据.镇妖塔最高层 = 1;
     }
 
+    /// <summary>移除已下架的家畜记录；幂等处理，不改其他动物、库存、生产进度或磁盘存档。</summary>
+    public static void 清理已移除家畜(SaveData 数据)
+    {
+        if (数据 == null) return;
+        数据.背包物品?.RemoveAll(id => id == HomeAnimalCatalog.已移除幼崽id);
+        if (数据.摆设 == null) return;
+        foreach (var state in 数据.摆设)
+        {
+            if (state == null) continue;
+            state.确保建筑状态();
+            state.傀儡基站?.确保();
+        }
+    }
+
     /// <summary>把一份档套到当前场景里的角色身上。属性结算系统做好前，只恢复能恢复的那几项</summary>
     public static void 应用到角色(SaveData 数据)
     {
         if (数据 == null) return;
+        清理已移除家畜(数据);
         当前存档 = 数据;
 
         var 玩家 = GameObject.Find("Player");
@@ -218,6 +234,7 @@ public static class SaveSystem
             else 时间.导入(数据.天数, 数据.日内进度, 数据.日常机会, 数据.今日修炼次数);
         }
 
+        HomeWorld.取().导入(数据.是空的 ? null : 数据.家园扩建);
         var 田 = 灵田.取();
         if (田 != null)
         {
@@ -538,6 +555,7 @@ public static class SaveSystem
             数据.今日修炼次数 = 今日;
         }
 
+        数据.家园扩建 = new List<UnityEngine.Vector2Int>(HomeWorld.取().扩建地块);
         var 田 = UnityEngine.Object.FindObjectOfType<灵田>();
         if (田 != null)
         {
@@ -676,7 +694,7 @@ public static class SaveSystem
                 if (id != "mount_julong_01" && 面板.坐骑.Exists(m => m != null && m.坐骑id == id)
                     && !面板.已学坐骑.Contains(id)) 面板.已学坐骑.Add(id);
 
-        // 当前坐骑（走 设置当前坐骑，互斥规则写在那一处）
+        // 当前准备坐骑；与御风启用状态分别还原，运行互斥交给行游控制器
         面板.当前坐骑 = null;
         if (!string.IsNullOrEmpty(数据.当前坐骑) && 面板.坐骑 != null)
             foreach (var m in 面板.坐骑)

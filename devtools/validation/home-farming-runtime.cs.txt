@@ -1,0 +1,135 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+IEnumerator Run()
+{
+    var checks=new List<string>();
+    void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+    var imported=new HomeStationState();
+    for(int i=0;i<4;i++)Check(imported.存入("test"+i,1),"four slots "+i);
+    Check(!imported.存入("test4",1)&&imported.存入("test0",500),"full store rejects new type but stacks same type");
+    var carrier=new HomeStationState();carrier.存入("item_seed_shengling",1);
+    Check(carrier.带种子("lingcao_shengling",0)&&carrier.数量("item_seed_shengling")==0,"seed reserved before departure");
+    for(int i=0;i<3;i++)carrier.存入("other"+i,1);
+    Check(!carrier.存入("extra",1),"carried seed keeps its warehouse slot reserved");
+    carrier.归还种子();Check(carrier.数量("item_seed_shengling")==1&&carrier.携带种子=="","cancel returns carried seed to reserved slot");
+    var moisture=new 灵田地块状态{作物id="lingcao_shengling",剩余湿润天数=1};moisture.推进(3);
+    Check(Mathf.Abs(moisture.已生长天数-1.2f)<.001f&&moisture.需要浇水,"wet/dry growth integrated across large time step");
+    foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
+    if(!SceneManager.GetSceneByName("3C_Testbed").isLoaded){var load=SceneManager.LoadSceneAsync("3C_Testbed",LoadSceneMode.Additive);while(!load.isDone)yield return null;}
+    var home=SceneManager.GetSceneByName("3C_Testbed");SceneManager.SetActiveScene(home);
+    foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
+    for(int i=0;i<SceneManager.sceneCount;i++){var s=SceneManager.GetSceneAt(i);if(s!=home)foreach(var g in s.GetRootGameObjects())g.SetActive(false);}
+    foreach(var q in UnityEngine.Object.FindObjectsOfType<任务管理器>())q.enabled=false;
+    foreach(var d in UnityEngine.Object.FindObjectsOfType<NpcDialogue>())d.enabled=false;
+    foreach(var player in UnityEngine.Object.FindObjectsOfType<PlayerController>())player.enabled=false;
+    时间管理器.取().暂停=true;
+    yield return new WaitForSeconds(.3f);
+    var world=HomeWorld.取();world.导入(null);
+    Check(world.扩建(new Vector3(40,0,0)),"adjacent grid expansion");
+    Check(!world.扩建(new Vector3(40,0,0))&&!world.扩建(new Vector3(120,0,0)),"duplicate and disconnected cells rejected");
+    Check(world.包含(new Vector3(20,0,0))&&!world.包含(new Vector3(20,0,20)),"merged land stays within outer contour");
+    yield return null;
+    Check(!Physics.RaycastAll(new Vector3(14,1,0),Vector3.right,12).Any(h=>h.collider.name=="家园边界"),"merged join has no internal air wall");
+    Check(Physics.RaycastAll(new Vector3(0,1,14),Vector3.forward,5).Any(h=>h.collider.name=="家园边界"),"unconnected edge keeps its air wall");
+    var crossing=new GameObject("merged land regression walker");crossing.transform.position=new Vector3(8,.2f,8);
+    var cc=crossing.AddComponent<CharacterController>();cc.height=1.6f;cc.center=Vector3.up*.8f;cc.radius=.25f;cc.stepOffset=.3f;
+    var bridgePath=HomeFarmPath.查找(crossing.transform.position,new Vector3(26,0,0),crossing.transform);
+    Check(bridgePath!=null,"A-star finds cross-platform route");
+    float bridgeTimeout=Time.time+25;int next=0;
+    while(next<bridgePath.Count&&Time.time<bridgeTimeout){var delta=bridgePath[next]-crossing.transform.position;delta.y=0;if(delta.magnitude<.15f)next++;else cc.Move(delta.normalized*Mathf.Min(delta.magnitude,Time.deltaTime*2.5f)+Vector3.down*3*Time.deltaTime);yield return null;}
+    Check(next==bridgePath.Count&&crossing.transform.position.y>-.2f,"character controller crosses merged land without falling or hitting wall");
+    UnityEngine.Object.Destroy(crossing);
+    var panel=UnityEngine.Object.FindObjectOfType<UIPanelData>();
+    foreach(var id in new[]{"item_home_expansion","item_puppet_station"}){
+        var token=QuestDatabase.取().找物品(id);Check(token&&token.使用效果,"token registered with placement effect: "+id);
+        panel.给物品(token,1);int before=panel.物品数量(token);
+        Check(物品使用器.使用(token,panel)&&panel.物品数量(token)==before-1,"inventory token enters placement: "+id);
+        灵田摆放器.取().取消();灵田摆放器.取().取消();Check(panel.物品数量(token)==before&&!灵田摆放器.正在摆放,"cancel refunds exactly once: "+id);
+    }
+    var farm=灵田.取();farm.导入(new List<灵田地块状态>{new 灵田地块状态{位置=new Vector3(42,0,4)}});
+    var expansionToken=QuestDatabase.取().找物品("item_home_expansion");int tokensBefore=panel.物品数量(expansionToken);
+    Check(物品使用器.使用(expansionToken,panel)&&灵田摆放器.取().试着放下(new Vector3(80,0,0))&&world.已有(new Vector2Int(2,0))&&panel.物品数量(expansionToken)==tokensBefore-1,"inventory placement builds expansion and consumes token once");
+    Check(farm.位置可用(new Vector3(82,0,4),0,out string placementReason),"field placement available on new platform: "+placementReason);
+    var furnishing=摆设.取();furnishing.导入(null);
+    int stationId=furnishing.放置("puppet_station",new Vector3(40,0,-3),315);
+    Check(stationId>=0,"station placed with shared validator");yield return new WaitForSeconds(.3f);
+    var station=UnityEngine.Object.FindObjectsOfType<HomePuppetStation>().Single();
+    Check(station.已就绪,"puppet with valid Avatar spawned");
+    var dock=station.transform.InverseTransformPoint(station.傀儡实例.transform.position);
+    var expectedDock=new Vector3(-.539434f,.452f,.051194f);
+    var expectedFacing=station.transform.rotation*Quaternion.Euler(0,269.3783f,0);
+    Check(Vector3.Distance(dock,expectedDock)<.05f&&Quaternion.Angle(station.傀儡实例.transform.rotation,expectedFacing)<1,"puppet matches user-arranged wooden-plate dock position and facing");
+    var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+    var clipPlayers=(UnityEngine.Animations.AnimationClipPlayable[])typeof(HomePuppetStation).GetField("clips",flags).GetValue(station);
+    Check(clipPlayers.Where((c,i)=>i!=2).All(c=>Math.Abs(UnityEngine.Playables.PlayableExtensions.GetSpeed(c)-1)<.001),"idle walk sow harvest and watering retain original 1x animation speed");
+    Check(Math.Abs(UnityEngine.Playables.PlayableExtensions.GetSpeed(clipPlayers[2])-HomeAssets.取().松土.length*6/10)<.001,"cultivation plays six full clips in ten seconds");
+    float maxWorkDistance=0;
+    void CheckWorkPosition(){if(new[]{"松土","播种","浇水","收获"}.Contains(station.当前作业)){var d=station.傀儡实例.transform.position-farm.状态(0).位置;d.y=0;maxWorkDistance=Mathf.Max(maxWorkDistance,d.magnitude);}}
+    Check(station.状态.存入("item_seed_shengling",3),"seed storage");station.设置任务(true);
+    float timeout=Time.time+50;
+    bool sawCrop=false,sawDig=false;float cropStart=-1,cropEnd=-1,peakMoveSpeed=0;var loops=new HashSet<int>();var previous=station.傀儡实例.transform.position;
+    while(farm.状态(0).待种植&&Time.time<timeout){
+        CheckWorkPosition();sawCrop|=station.当前作业=="松土";sawDig|=station.当前作业=="播种";
+        var move=station.傀儡实例.transform.position-previous;move.y=0;
+        if(station.当前作业.StartsWith("前往")&&Time.deltaTime>0)peakMoveSpeed=Mathf.Max(peakMoveSpeed,move.magnitude/Time.deltaTime);
+        previous=station.傀儡实例.transform.position;
+        if(station.当前作业=="松土"){if(cropStart<0)cropStart=Time.time;loops.Add((int)typeof(HomePuppetStation).GetField("cultivationLoops",flags).GetValue(station));}
+        else if(cropStart>=0&&cropEnd<0)cropEnd=Time.time;
+        yield return null;
+    }
+    Check(!farm.状态(0).待种植&&sawCrop&&sawDig,"puppet walks, cultivates and sows");
+    Check(Mathf.Abs(peakMoveSpeed-1.65f)<.05f,"actual navigation speed increased from 1.1 to 1.65 metres per second");
+    Check(cropStart>=0&&Mathf.Abs(cropEnd-cropStart-10)<.15f,"cultivation lasts approximately ten seconds before sowing");
+    Check(Enumerable.Range(0,6).All(loops.Contains)&&loops.Count==6,"all six cultivation passes observed without extra repeats");
+    Check(station.状态.数量("item_seed_shengling")==2,"exactly one seed consumed");
+    timeout=Time.time+50;bool sawWater=false,sawParticles=false;
+    while(farm.状态(0).需要浇水&&Time.time<timeout){CheckWorkPosition();sawWater|=station.当前作业=="浇水";sawParticles|=station.傀儡实例.GetComponentsInChildren<ParticleSystem>().Any(p=>p.particleCount>0);yield return null;}
+    Check(!farm.状态(0).需要浇水&&sawWater,"water task completes");
+    Check(sawParticles,"held kettle emits actual watering particles");
+    farm.状态(0).已生长天数=3;
+    timeout=Time.time+50;
+    while(!farm.状态(0).待种植&&Time.time<timeout){CheckWorkPosition();yield return null;}
+    Check(farm.状态(0).待种植&&station.状态.数量("item_shenglingcao")>=2,"harvest routed into base store");
+    Check(maxWorkDistance<.06f,"cultivation sowing watering and harvesting all stand at field center");
+    station.设置任务(false);
+    timeout=Time.time+15;
+    while(station.当前作业=="返回基站"&&Time.time<timeout)yield return null;
+    yield return new WaitForSeconds(.8f);
+    dock=station.transform.InverseTransformPoint(station.傀儡实例.transform.position);
+    Check(Vector3.Distance(dock,expectedDock)<.05f&&Quaternion.Angle(station.傀儡实例.transform.rotation,expectedFacing)<1,"worker physically returns to user-arranged wooden-plate dock position and facing");
+    farm.状态(0).作物id="lingcao_ninglu";farm.状态(0).已生长天数=3;
+    station.状态.仓库=new List<HomeStorageSlot>();station.状态.确保();
+    foreach(var id in new[]{"item_shenglingcao","item_seed_shengling","item_huichuncao","item_seed_huichun"})station.状态.存入(id,1);
+    station.设置任务(true);yield return new WaitForSeconds(.6f);
+    var stopped=station.傀儡实例.transform.position;yield return new WaitForSeconds(.6f);
+    Check(station.错误.StartsWith("仓库已满")&&Vector3.Distance(stopped,station.傀儡实例.transform.position)<.001f&&farm.状态(0).已成熟,"full warehouse halts worker without consuming harvest");
+    station.状态.取出("item_huichuncao",1);timeout=Time.time+35;
+    while(!farm.状态(0).待种植&&Time.time<timeout)yield return null;
+    Check(farm.状态(0).待种植&&station.状态.数量("item_ningluhua")>0&&station.错误=="","worker automatically resumes after warehouse space is freed");
+    var data=new SaveData{家园扩建=world.扩建地块,灵田地块=farm.导出(),摆设=furnishing.导出()};
+    var recovered=JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+    Check(recovered.家园扩建.Count==2&&recovered.摆设[0].傀儡基站.仓库.Count==4&&recovered.灵田地块.Count==1,"home data roundtrip");
+    station.设置任务(false);station.enabled=false;station.状态.仓库=new List<HomeStorageSlot>();station.状态.确保();station.状态.存入("item_seed_shengling",1);station.状态.种田任务=true;
+    farm.状态(0).清空作物();时间管理器.取().暂停=false;
+    HomeFarmBackground.推进(25);Check(!farm.状态(0).待种植&&station.状态.数量("item_seed_shengling")==0,"background sow takes seed from base");
+    HomeFarmBackground.推进(25);Check(!farm.状态(0).需要浇水,"background waters planted field");
+    farm.状态(0).已生长天数=3;HomeFarmBackground.推进(25);Check(farm.状态(0).待种植&&station.状态.数量("item_shenglingcao")>=2,"background harvest stored in base");
+    farm.状态(0).作物id="lingcao_ninglu";farm.状态(0).已生长天数=3;
+    station.状态.仓库=new List<HomeStorageSlot>();foreach(var id in new[]{"item_shenglingcao","item_seed_shengling","item_huichuncao","item_seed_huichun"})station.状态.存入(id,1);
+    HomeFarmBackground.推进(25);Check(farm.状态(0).已成熟,"background full warehouse does not consume crop");
+    farm.状态(0).清空作物();station.状态.仓库=new List<HomeStorageSlot>();station.状态.存入("item_seed_shengling",1);时间管理器.取().暂停=true;HomeFarmBackground.推进(100);
+    Check(farm.状态(0).待种植&&station.状态.数量("item_seed_shengling")==1,"paused background does not work");
+    station.设置任务(false);station.enabled=true;
+    var homeInteractor=home.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<StationInteractor>()).First();
+    var playerController=homeInteractor.GetComponent<CharacterController>();if(playerController)playerController.enabled=false;
+    homeInteractor.transform.position=station.transform.position+new Vector3(3,0,1);if(playerController)playerController.enabled=true;
+    homeInteractor.关闭界面();homeInteractor.打开界面(station.GetComponent<StationInteractable>());
+    yield return null;Check(UnityEngine.Object.FindObjectOfType<HomeStationPanel>(),"station interaction opens warehouse panel");
+    System.IO.File.WriteAllText("../.local/diagnostics/home/runtime-report.json",Codely.Newtonsoft.Json.JsonConvert.SerializeObject(new{passed=checks.Count,checks},Codely.Newtonsoft.Json.Formatting.Indented));
+    yield break;
+}
+return Run();

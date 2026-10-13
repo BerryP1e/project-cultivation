@@ -1,0 +1,78 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+var catalog=AssetDatabase.LoadAssetAtPath<HomeAnimalCatalog>("Assets/resources/Home/Animals.asset");Check(catalog&&catalog.动物.Length==5,"five retained species");
+var db=QuestDatabase.取();Check(db,"runtime item database");
+foreach(var d in catalog.动物)
+{
+    Check(d.容积>0&&d.容积<=10,d.id+" volume");
+    Check(d.容积*3<=HomeAnimalCatalog.兽栏容量,d.id+" two parents and one offspring fit pen capacity");
+    var item=db.找物品(d.幼崽id);Check(item&&item.兑换消耗贡献>0&&item.图标,d.id+" juvenile stocked at merit shop with icon");
+    Check(HomeAnimalCatalog.是食物(d.喜爱食物id),d.id+" favorite is usable herb");
+    Check(d.模型&&d.待机&&d.行走,d.id+" native model and idle/walk clips");
+    Check(d.模型.GetComponentsInChildren<MonoBehaviour>(true).Length==0&&d.模型.GetComponentsInChildren<Collider>(true).Length==0,d.id+" neutral display has no NPC AI/health/collider");
+    if(!string.IsNullOrEmpty(d.产物id))Check(db.找物品(d.产物id)&&db.找物品(d.产物id).图标,d.id+" actual product item and icon");
+}
+Check(catalog.找("muji").容积==1&&catalog.找("muji").产物id=="item_home_egg","mother hen uses one volume and produces eggs");
+Check(catalog.找("maolv")==null&&db.找物品(HomeAnimalCatalog.已移除幼崽id)==null,"retired donkey absent from species and merit item catalogs");
+foreach(var id in new[]{HomeAnimalCatalog.粪便id,HomeAnimalCatalog.肥料id})Check(db.找物品(id)&&db.找物品(id).图标,id+" inventory material");
+foreach(var name in new[]{"AnimalPen","CompostBin","AutoAlchemy"})
+{
+    var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/Home/"+name+".prefab");Check(prefab,name+" actual prefab");
+    var colliders=prefab.GetComponentsInChildren<MeshCollider>();Check(colliders.Length>0,name+" mesh collision exists");
+    foreach(var c in colliders)Check(!c.convex&&c.sharedMesh==c.GetComponent<MeshFilter>().sharedMesh,name+" exact nonconvex source mesh collision");
+}
+foreach(var id in new[]{"animal_pen","compost_bin","auto_alchemy"})
+{
+    var def=摆放物库.取(id);var item=db.找物品(def.道具id);
+    Check(def!=null&&item&&item.可使用&&item.使用效果&&item.兑换消耗贡献>0&&item.图标,id+" building placement item and merit exchange");
+    Check(摆放物库.按道具(item.物品id)==def,id+" generic backpack placement route");
+}
+var pen=UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/Home/AnimalPen.prefab"));
+try
+{
+    pen.transform.position=new Vector3(10000,0,10000);Physics.SyncTransforms();
+    var mesh=pen.GetComponentInChildren<MeshCollider>();
+    Check(!mesh.Raycast(new Ray(pen.transform.position+Vector3.up*4,Vector3.down),out _,8),"pen center remains empty instead of solid box collision");
+    int walls=0;for(int i=0;i<36;i++){float angle=i*Mathf.PI*2/36;var dir=new Vector3(Mathf.Cos(angle),0,Mathf.Sin(angle));if(mesh.Raycast(new Ray(pen.transform.position+Vector3.up*.6f,dir),out _,5))walls++;}
+    Check(walls>=25,"physical railing remains around pen interior; measured hits="+walls);
+    Check(pen.transform.Find("收获储物篮"),"visible harvest basket separate from food trough");
+}
+finally{UnityEngine.Object.DestroyImmediate(pen);}
+foreach(var name in new[]{"HouZi","ShuiLan","SongShu","XianHe","XiaoJi","MaoLv"})
+{
+    Check(!AssetDatabase.IsValidFolder("Assets/resources/NPC/Animal/"+name)&&!AssetDatabase.IsValidFolder("Assets/resources/NPC/Animal/"+name+"_Animation"),name+" retired model/animations removed");
+    Check(!AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/Animations/NPC/"+name+".controller"),name+" obsolete controller removed");
+}
+var npc=AssetDatabase.LoadAssetAtPath<NpcDatabase>("Assets/resources/NPC数据/NPC库.asset");Check(npc.全部.All(n=>n),"NPC catalog has no missing entries");
+var mapping=AssetDatabase.LoadAssetAtPath<NpcAnimationCatalog>("Assets/resources/NPC数据/NPC动作映射.asset");Check(mapping.controllers.All(c=>c.controller&&c.actions.All(a=>a.clip)),"NPC animation mapping has no deleted clips");
+var retired=HomeAnimalCatalog.已移除幼崽id;
+var legacy=new SaveData();legacy.背包物品=new List<string>{retired,"item_huichuncao",retired};
+var savedBuilding=new 摆设状态{类型id="animal_pen"};legacy.摆设.Add(savedBuilding);savedBuilding.兽栏.确保();
+savedBuilding.兽栏.动物.Add(new HomeAnimalState{物种id="maolv",uid="old_donkey",饱食天数=1});
+savedBuilding.兽栏.动物.Add(new HomeAnimalState{物种id="muji",uid="kept_hen",饱食天数=.7f,产物进度=.3f});
+savedBuilding.兽栏.繁育.Add(new HomeBreedingState{物种id="maolv",配对天数=2,诞生阈值=3});
+savedBuilding.兽栏.繁育.Add(new HomeBreedingState{物种id="muji",配对天数=1,诞生阈值=4});
+savedBuilding.兽栏.食槽.格[0].物品id=retired;savedBuilding.兽栏.食槽.格[0].数量=4;
+savedBuilding.兽栏.收获篮.存入(HomeAnimalCatalog.粪便id,8);
+savedBuilding.堆肥.确保();savedBuilding.堆肥.原料.存入(retired,2);
+savedBuilding.炼丹.确保();savedBuilding.炼丹.辅材.存入("item_huichuncao",5);savedBuilding.炼丹.成品.存入(retired,1);
+savedBuilding.炼丹.在炼丹方id="pill_test_preserve";savedBuilding.炼丹.剩余天数=.4f;
+savedBuilding.傀儡基站.确保();savedBuilding.傀儡基站.仓库[0].物品id=retired;savedBuilding.傀儡基站.仓库[0].数量=3;
+SaveSystem.清理已移除家畜(legacy);
+Check(legacy.背包物品.SequenceEqual(new[]{"item_huichuncao"}),"legacy backpack removes only donkey juveniles");
+Check(savedBuilding.兽栏.动物.Count==1&&savedBuilding.兽栏.动物[0].uid=="kept_hen"&&savedBuilding.兽栏.占用(catalog)==1,"retired animals release pen capacity");
+Check(savedBuilding.兽栏.动物[0].饱食天数==.7f&&savedBuilding.兽栏.动物[0].产物进度==.3f,"other animals retain feeding and production progress");
+Check(savedBuilding.兽栏.繁育.Count==1&&savedBuilding.兽栏.繁育[0].物种id=="muji"&&savedBuilding.兽栏.繁育[0].配对天数==1,"retired breeding records removed without rerolling other species");
+Check(savedBuilding.兽栏.食槽.格[0].数量==0&&savedBuilding.兽栏.食槽.格[0].物品id=="","retired juveniles clear food/storage slots");
+Check(savedBuilding.兽栏.收获篮.数量(HomeAnimalCatalog.粪便id)==8,"previous manure remains usable");
+Check(savedBuilding.堆肥.原料.数量(retired)==0&&savedBuilding.炼丹.成品.数量(retired)==0,"retired items removed from other production storage");
+Check(savedBuilding.炼丹.辅材.数量("item_huichuncao")==5&&savedBuilding.炼丹.在炼丹方id=="pill_test_preserve"&&savedBuilding.炼丹.剩余天数==.4f,"alchemy materials and unfinished batch remain unchanged");
+Check(savedBuilding.傀儡基站.仓库[0].数量==0&&savedBuilding.傀儡基站.仓库[0].物品id=="","retired juveniles removed from puppet station storage");
+var once=JsonUtility.ToJson(legacy);SaveSystem.清理已移除家畜(legacy);Check(JsonUtility.ToJson(legacy)==once,"migration is idempotent");
+Check(!AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/Data/Generated/NpcDefinition/beast_maolv.asset")&&!AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/Scripts/Npc/Ai/NpcAiMaoLv.cs")&&!AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/resources/UI/HomeProduction/item_home_cub_maolv.png"),"obsolete NPC definition AI and juvenile icon removed");
+System.IO.Directory.CreateDirectory("D:/project：cultivation/.local/diagnostics/home-production");
+var result="PASS "+checks.Count+" checks\n"+string.Join("\n",checks);System.IO.File.WriteAllText("D:/project：cultivation/.local/diagnostics/home-production/editor-report.txt",result);return result;

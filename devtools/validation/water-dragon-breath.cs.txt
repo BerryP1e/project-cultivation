@@ -1,0 +1,49 @@
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+yield return null;
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Namespace==null&&(c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器")))q.enabled=false;
+DialogueUI.关闭();Time.timeScale=1;
+var player=GameObject.Find("Player");var driver=player.GetComponent<PlayerAnimationController>();var caster=player.GetComponent<ActiveSkillCaster>();var vitals=player.GetComponent<PlayerVitals>();var panel=Object.FindObjectOfType<UIPanelData>();
+foreach(var n in Object.FindObjectsOfType<NpcInstance>())foreach(var c in n.GetComponentsInChildren<MonoBehaviour>())c.enabled=false;
+foreach(var c in player.GetComponents<MonoBehaviour>()){var f=c.GetType().GetField("自动出手");if(f!=null&&f.FieldType==typeof(bool))f.SetValue(c,false);}
+foreach(var gate in player.GetComponents<MonoBehaviour>().Where(c=>c.GetType().Name=="主动神通开关"))gate.enabled=false;
+player.GetComponent<PlayerController>().enabled=false;var targeting=player.GetComponent<NpcTargeting>();targeting.ClearLock();targeting.enabled=false;
+panel.当前功法=null;panel.RaiseChanged();caster.enabled=true;caster.动画=driver;caster.生命=vitals;caster.快捷键=new KeyCode[0];driver.animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var ability=UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_shuilong_pao.asset");
+var report=new System.Text.StringBuilder();int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("FAIL "+name);count++;report.AppendLine("PASS "+name);File.WriteAllText("../.local/diagnostics/dragon-mob/water-edges-report.txt",report.ToString());}
+WaterDragonSkillRunner Start(ActiveSkillCaster owner,NpcInstance locked=null){driver.停止动作();var host=new GameObject("WaterBreathQA");var wr=host.AddComponent<WaterDragonSkillRunner>();wr.初始化(owner,ability,locked,locked? (Vector3?)null:player.transform.position+player.transform.forward*9);return wr;}
+IEnumerator WaitBeam(WaterDragonSkillRunner wr){float deadline=Time.time+5;while(wr&&!wr.已释放&&Time.time<deadline)yield return null;Check(wr&&wr.当前龙&&wr.当前特效,"breath starts");}
+IEnumerator WaitClean(WaterDragonSkillRunner wr){float deadline=Time.time+5;while(wr&&Time.time<deadline)yield return null;Check(!wr&&!driver.施法占用中&&!driver.动作已定住,"fade/ownership clean");}
+Check(WaterDragonSkillRunner.资源就绪(),"Resources prefab, clips and player A3 ready");
+var wr=Start(caster);yield return WaitBeam(wr);yield return new WaitForSeconds(.45f);
+Check(wr.当前龙.正在吐息&&Mathf.Abs(wr.当前龙.当前攻击进度-.55f)<.001f,"manual aim holds Attack55");
+Check(!driver.动作已定住&&driver.动作进度>.6f,"manual player animation continues naturally");
+Check(Vector3.Distance(wr.当前龙.transform.localScale,Vector3.one*2.5f)<.001f,"actual summoned model doubled");
+Check(Vector3.Dot(wr.当前龙.transform.position-player.transform.position,player.transform.forward)<-.6f,"dragon moved behind player's side");
+Check(Vector3.Distance(wr.当前特效.transform.position,wr.炮口)<.015f,"manual beam originates at jaw");
+var cam=Camera.main;foreach(var c in cam.GetComponents<MonoBehaviour>())c.enabled=false;
+cam.transform.position=player.transform.position+new Vector3(8,7,-8);cam.transform.LookAt(player.transform.position+player.transform.forward*4+Vector3.up);
+var rt=new RenderTexture(1200,800,24);cam.targetTexture=rt;cam.Render();var prev=RenderTexture.active;RenderTexture.active=rt;var tex=new Texture2D(1200,800,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,1200,800),0,0);tex.Apply();File.WriteAllBytes("../.local/diagnostics/dragon-mob/water-active.png",tex.EncodeToPNG());RenderTexture.active=prev;cam.targetTexture=null;Object.Destroy(tex);rt.Release();Object.Destroy(rt);
+yield return WaitClean(wr);
+// 吐息前的显形阶段中断：不能提前出水、结算或残留半条龙。
+wr=Start(caster);float deadline=Time.time+3;while(wr&&!wr.当前龙&&Time.time<deadline)yield return null;
+Check(wr&&wr.当前龙&&!wr.当前特效&&wr.结算次数==0,"summon has no early beam/damage");yield return new WaitForSeconds(.1f);driver.停止动作();yield return null;
+Check(wr&&wr.正在消散,"summon interruption dissolves");yield return WaitClean(wr);
+// 移动目标的口部及方向跟随；超距立即停止伤害。
+var npcgo=GameObject.CreatePrimitive(PrimitiveType.Capsule);npcgo.SetActive(false);var def=ScriptableObject.CreateInstance<NpcDefinition>();def.id="qa_water_breath";def.名字="BreathQA";def.境界=1;def.属性[AttributeType.MaxHealth]=100000;def.对主角好感度=-100;var npc=npcgo.AddComponent<NpcInstance>();npc.定义=def;npc.每次受击降好感=0;npcgo.SetActive(true);npc.enabled=false;npc.ResetHealth();npcgo.transform.position=player.transform.position+Vector3.forward*9;
+wr=Start(caster,npc);yield return WaitBeam(wr);yield return new WaitForSeconds(.3f);npcgo.transform.position+=Vector3.right*2;yield return null;yield return new WaitForEndOfFrame();
+Vector3 direction=(AbilityVfxUtility.命中点(npcgo.transform)-wr.炮口).normalized;
+Check(Vector3.Distance(wr.当前特效.transform.position,wr.炮口)<.015f&&Vector3.Angle(wr.当前特效.transform.forward,direction)<.1f,"moving target updates muzzle and beam direction");
+int damageCount=wr.结算次数;npcgo.transform.position=player.transform.position+Vector3.forward*30;yield return new WaitForSeconds(.1f);Check(wr&&wr.正在消散&&wr.结算次数==damageCount,"out of range stops damage");yield return WaitClean(wr);
+npcgo.transform.position=player.transform.position+Vector3.forward*2;wr=Start(caster,npc);yield return WaitBeam(wr);yield return new WaitForEndOfFrame();
+Check(Vector3.Dot(npcgo.transform.position-wr.炮口,wr.当前龙.transform.forward)>.1f,"enlarged dragon mouth stays before close target");yield return WaitClean(wr);Object.Destroy(npcgo);Object.Destroy(def);
+// 施法者组件消失时，执行体仍须独立完成消融。
+var proxygo=new GameObject("WaterCasterProxy");proxygo.transform.SetPositionAndRotation(player.transform.position,player.transform.rotation);var proxy=proxygo.AddComponent<ActiveSkillCaster>();proxy.动画=driver;proxy.生命=vitals;proxy.战斗属性=caster.战斗属性;proxy.快捷键=new KeyCode[0];
+wr=Start(proxy);yield return WaitBeam(wr);var dragon=wr.当前龙;Object.Destroy(proxygo);yield return new WaitForSeconds(.1f);Check(wr&&wr.正在消散&&!driver.施法占用中,"destroyed caster releases action");yield return WaitClean(wr);Check(!dragon,"destroyed caster leaves no dragon");
+wr=Start(caster);yield return WaitBeam(wr);dragon=wr.当前龙;var beam=wr.当前特效;wr.enabled=false;yield return null;
+Check(!dragon&&!beam&&!driver.施法占用中&&!driver.动作已定住,"disabled runner removes owned objects");Object.Destroy(wr.gameObject);driver.停止动作();yield return null;
+Check(!Object.FindObjectsOfType<WaterDragonBreathVisual>().Any()&&!Object.FindObjectsOfType<WaterDragonSkillRunner>().Any(),"no stray summon or runner");
+report.AppendLine("WATER_BREATH_EDGES_PASS count="+count);File.WriteAllText("../.local/diagnostics/dragon-mob/water-edges-report.txt",report.ToString());Debug.Log(report.ToString());
+}
+return Run();

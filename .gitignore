@@ -112,3 +112,6 @@ __pycache__/
 .local/
 /第三方资源（带转换）/
 /proton邮箱恢复短语.pdf
+
+# Unity MCP script-call generated request payloads; keep source recipes only.
+devtools/validation/*.cs.txt.json

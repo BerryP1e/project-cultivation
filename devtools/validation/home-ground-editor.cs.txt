@@ -1,0 +1,27 @@
+﻿if(UnityEditor.EditorApplication.isPlaying)throw new System.Exception("Requires edit mode");
+var assets=HomeAssets.取();
+var scene=UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+var report=new System.Collections.Generic.List<object>();
+try{
+ var light=new GameObject("light");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(light,scene);var li=light.AddComponent<Light>();li.type=LightType.Directional;li.intensity=1.2f;light.transform.rotation=Quaternion.Euler(48,-35,0);
+ var cameraObject=new GameObject("camera");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(cameraObject,scene);var cam=cameraObject.AddComponent<Camera>();cam.scene=scene;cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.12f,.16f,.17f);cam.orthographic=true;
+ foreach(var path in new[]{"Assets/resources/Home/StonePlatform.prefab","Assets/Art/Environment/Home/HomeGroundMergedPair.prefab"}){
+  var floor=(GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path),scene);
+  bool pair=path.Contains("Merged");cam.orthographicSize=pair?44:30;cam.transform.position=new Vector3(pair?67:40,48,58);cam.transform.LookAt(new Vector3(pair?20:0,-1,0));
+  var rt=new RenderTexture(1200,850,24);cam.targetTexture=rt;cam.Render();RenderTexture.active=rt;var tex=new Texture2D(1200,850,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,1200,850),0,0);tex.Apply();System.IO.File.WriteAllBytes(System.IO.Path.GetFullPath("../.local/diagnostics/home/ground-"+(pair?"merged":"single")+".png"),tex.EncodeToPNG());RenderTexture.active=null;cam.targetTexture=null;rt.Release();UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(tex);
+  var collider=floor.GetComponent<MeshCollider>();var hits=new System.Collections.Generic.List<object>();
+  foreach(float x in new[]{0f,14f,18f,20f,22f,26f,40f})if(collider.Raycast(new Ray(new Vector3(x,5,0),Vector3.down),out var h,20))hits.Add(new{x,y=h.point.y,normal=h.normal.y});
+  if(hits.Count!=(pair?7:4))throw new System.Exception("Missing ground collision: "+path);
+  report.Add(new{path,vertices=collider.sharedMesh.vertexCount,triangles=collider.sharedMesh.triangles.Length/3,walls=floor.GetComponentsInChildren<BoxCollider>().Length,hits});UnityEngine.Object.DestroyImmediate(floor);
+ }
+ foreach(var layout in new[]{new[]{Vector2Int.zero},new[]{Vector2Int.zero,Vector2Int.right},new[]{Vector2Int.zero,Vector2Int.right,Vector2Int.up},new[]{Vector2Int.zero,Vector2Int.right,Vector2Int.up,Vector2Int.one},new[]{new Vector2Int(0,0),new Vector2Int(1,0),new Vector2Int(2,0),new Vector2Int(2,1),new Vector2Int(2,2),new Vector2Int(1,2),new Vector2Int(0,2),new Vector2Int(0,1)}}){
+  var sw=System.Diagnostics.Stopwatch.StartNew();var mesh=HomeLandMesh.生成(assets,layout,out var contour);sw.Stop();
+  var vs=mesh.vertices;var ix=mesh.triangles;var unique=new System.Collections.Generic.Dictionary<string,int>();var welded=new int[vs.Length];
+  for(int i=0;i<vs.Length;i++){string k=Mathf.RoundToInt(vs[i].x*1000)+","+Mathf.RoundToInt(vs[i].y*1000)+","+Mathf.RoundToInt(vs[i].z*1000);if(!unique.ContainsKey(k))unique[k]=unique.Count;welded[i]=unique[k];}
+  var counts=new System.Collections.Generic.Dictionary<ulong,int>();
+  for(int i=0;i<ix.Length;i+=3)for(int j=0;j<3;j++){int a=welded[ix[i+j]],b=welded[ix[i+(j+1)%3]];if(a==b)continue;ulong k=((ulong)(uint)Mathf.Min(a,b)<<32)|(uint)Mathf.Max(a,b);if(!counts.ContainsKey(k))counts[k]=0;counts[k]++;}
+  if(counts.Any(p=>p.Value!=2))throw new System.Exception("Open or non-manifold ground: "+layout.Length);
+  report.Add(new{cells=layout.Length,vertices=mesh.vertexCount,ms=sw.ElapsedMilliseconds,openEdges=counts.Count(p=>p.Value==1),nonManifold=counts.Count(p=>p.Value>2),finite=vs.All(p=>!float.IsNaN(p.x)&&!float.IsNaN(p.y)&&!float.IsNaN(p.z)),centerDistance=HomeLandMesh.距离(assets,new System.Collections.Generic.HashSet<Vector2Int>(layout),new Vector2(20,0))});UnityEngine.Object.DestroyImmediate(mesh);
+ }
+ System.IO.File.WriteAllText(System.IO.Path.GetFullPath("../.local/diagnostics/home/ground-report.json"),Codely.Newtonsoft.Json.JsonConvert.SerializeObject(report,Codely.Newtonsoft.Json.Formatting.Indented));return Codely.Newtonsoft.Json.JsonConvert.SerializeObject(report);
+}finally{UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene);}

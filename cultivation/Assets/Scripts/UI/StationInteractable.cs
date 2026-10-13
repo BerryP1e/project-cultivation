@@ -24,6 +24,8 @@ public class StationInteractable : MonoBehaviour
         对话,       // ★ 人类 NPC 对话（2026-09-26 合并进来）
         传送,       // ★ 传送圈（2026-09-28 合并进来：从"走上去自动弹"改成"按 F 开"）
         灵田地块,   // ★ 一块田地（2026-10-01：灵田从"一个面板管一片"改成"每块地独立互动"）
+        傀儡基站,
+        家园建筑,
     }
 
     [Header("身份")]
@@ -86,6 +88,8 @@ public class StationInteractable : MonoBehaviour
             case StationKind.对话: return "对话";
             case StationKind.传送: return "传送";
             case StationKind.灵田地块: return "灵田";
+            case StationKind.傀儡基站: return "傀儡基站";
+            case StationKind.家园建筑: return "家园建筑";
             default: return "交互";
         }
     }

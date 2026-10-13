@@ -35,6 +35,7 @@ public class UIEquipmentShowcasePage : MonoBehaviour
         foreach(Transform child in transform) child.gameObject.SetActive(false);
         var background=GetComponent<Image>(); if(background != null) background.enabled=false;
         var body=UIBuildUtils.CreateRect("EquipmentShowcase",transform); Place(body,.025f,.025f,.985f,.975f);
+        UICharacterBackdrop.Panel(body);
         title=Label("EquipmentName",body,"",30); Place(title.rectTransform,.20f,.90f,.80f,.98f);
         var imageGo=new GameObject("Equipment3D",typeof(RectTransform),typeof(RawImage));
         imageGo.transform.SetParent(body,false); var image=imageGo.GetComponent<RawImage>(); Place(image.rectTransform,.15f,.34f,.85f,.89f);
@@ -97,7 +98,7 @@ public class UIEquipmentShowcasePage : MonoBehaviour
         bool equipped=Selected is MountDefinition m2 ? data.当前坐骑==m2 : Selected is TreasureDefinition t2 && data.当前法宝==t2;
         equip.interactable=Selected != null;
         equip.GetComponentInChildren<Text>().text=equipped ? "取消装备" : mounts ? "装备选中坐骑" : "装备选中法宝";
-        status.text=Selected == null ? mounts ? "尚未学会驾驭坐骑" : "尚未拥有法宝" : equipped ? mounts?"已装备 · Shift 乘骑":"已装备 · E 施放" : "左右拖动查看模型";
+        status.text=Selected == null ? mounts ? "尚未学会驾驭坐骑" : "尚未拥有法宝" : equipped ? mounts?"已准备 · Tab 行游":"已装备 · E 施放" : "左右拖动查看模型";
     }
     void Select(IPanelEntry entry) {
         bool changed=Selected!=entry; Selected=entry;

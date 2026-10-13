@@ -106,6 +106,7 @@ public class UIMountPage : MonoBehaviour
         var 根 = new GameObject("坐骑预览场地");
         根.transform.position = new Vector3(GetInstanceID() % 1000 * 100f, 场地高度, 0f);
         场地 = 根.transform;
+        环绕中心 = 场地.position;
 
         var 相机物体 = new GameObject("预览相机", typeof(Camera));
         相机物体.transform.SetParent(场地, false);
@@ -217,7 +218,7 @@ public class UIMountPage : MonoBehaviour
 
         if (信息栏 != null && m != null) 刷新信息文本(m);
 
-        if (m == null && !(entry is TreasureDefinition)) { 清模型(); if (预览图 != null) 预览图.color = new Color(1f, 1f, 1f, 0.35f); return; }
+        if (m == null && !(entry is TreasureDefinition)) { 清模型(); if (预览图 != null) 预览图.color = Color.clear; return; }
         if (预览图 != null) 预览图.color = Color.white;
 
         换模型(entry);
@@ -256,6 +257,7 @@ public class UIMountPage : MonoBehaviour
         var prefab = m != null ? m.加载模型() : treasure != null ? treasure.加载模型() : null;
         if (prefab == null)
         {
+            if (预览图 != null) 预览图.color = Color.clear;
             if (打印日志) Debug.LogWarning("[坐骑页] 加载不到模型：" + entry.DisplayName, this);
             return;
         }
@@ -390,6 +392,7 @@ public class UIMountPage : MonoBehaviour
     void Update()
     {
         if (相机 == null) return;
+        相机.backgroundColor=背景色; // 运行时展示页在 AddComponent 后配置透明底，不能沿用初次建场地的默认灰底。
         必要时重建贴图();                      // 预览图矩形变了就换贴图，比例始终对得上
         if (当前模型 == null) return;
         if (!string.IsNullOrEmpty(待播动作)) 试播待机();

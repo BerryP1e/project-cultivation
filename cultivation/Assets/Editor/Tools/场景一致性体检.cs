@@ -99,6 +99,10 @@ public static class 场景一致性体检
         var 清单 = 建清单();
         var 报 = new StringBuilder();
         报.Append("=== 场景一致性").Append(补 ? "（补齐模式）" : "（只报告）").Append(" ===\n\n");
+        // 家园跨场景服务由自举创建，不向各场景重复保存；只检查共享资源入口。
+        var home = AssetDatabase.LoadAssetAtPath<HomeAssets>("Assets/resources/Home/Assets.asset");
+        报.Append(home && home.地面 && home.地面材质 && home.围挡树木 != null && home.围挡树木.Length > 0 && home.围挡石头 != null && home.围挡石头.Length > 0 && home.基站 && home.傀儡 && home.行走 && home.松土 && home.播种收获 && home.浇水
+            ? "家园共享资源：齐全（服务运行时自举）\n" : "⚠ 家园共享资源缺失，检查 Home/Assets.asset\n");
 
         var 当前场景路径 = SceneManager.GetActiveScene().path;
         int 总缺 = 0, 总补 = 0;

@@ -9,6 +9,7 @@ public sealed class UIInkLawPreview : MonoBehaviour
     public Transform 右手 => hand;
     public int 活跃粒子数 { get; private set; }
     Transform actor, hand, orbit;
+    Transform appearanceSource, clonedVisual;
     PlayableGraph graph;
     AnimationClipPlayable idlePlayable;
     float length, clock, emission;
@@ -21,12 +22,14 @@ public sealed class UIInkLawPreview : MonoBehaviour
 
     public void 初始化(Transform source, Transform lawOrbit)
     {
+        appearanceSource = source;
         orbit = lawOrbit;
         if (source)
         {
             var holder = new GameObject("FloatingActor"); holder.transform.SetParent(transform, false); holder.SetActive(false);
             actor = holder.transform;
             var clone = Instantiate(source.gameObject, actor, false); clone.name = "WindIdleVisual";
+            clonedVisual = clone.transform;
             // 在激活前移除游戏逻辑，舞台只保留骨架、Animator 和渲染器。
             foreach (var behaviour in clone.GetComponentsInChildren<MonoBehaviour>(true)) DestroyImmediate(behaviour);
             foreach (var collider in clone.GetComponentsInChildren<Collider>(true)) DestroyImmediate(collider);
@@ -130,6 +133,29 @@ public sealed class UIInkLawPreview : MonoBehaviour
         }
         活跃粒子数 = motes.Count; particles.SetParticles(buffer, motes.Count);
     }
-    void OnDisable() { motes.Clear(); emission = 0; 活跃粒子数 = 0; if (particles) particles.Clear(); }
+    void 同步外观(AppearanceDefinition unused)
+    {
+        if (!appearanceSource || !clonedVisual) return;
+        foreach (var skin in appearanceSource.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            string path = ""; var node = skin.transform;
+            while (node != appearanceSource && node) { path = node.name + (path.Length == 0 ? "" : "/" + path); node = node.parent; }
+            var destination = path.Length == 0 ? clonedVisual : clonedVisual.Find(path);
+            var target = destination ? destination.GetComponent<SkinnedMeshRenderer>() : null;
+            if (!target || !skin.sharedMesh) continue;
+            target.sharedMesh = skin.sharedMesh;
+            var mats = skin.sharedMaterials;
+            foreach (var old in target.sharedMaterials) if (ownedMaterials.Remove(old)) Destroy(old);
+            var replacement = new Material[mats.Length];
+            for (int i = 0; i < mats.Length; i++) {
+                var material = new Material(Shader.Find("Cultivation/UI/FormationModelBrush")); ownedMaterials.Add(material);
+                if (mats[i]) { if (mats[i].HasProperty("_MainTex")) material.mainTexture = mats[i].mainTexture; if (mats[i].HasProperty("_Color")) material.color = mats[i].color; }
+                replacement[i] = material;
+            }
+            target.sharedMaterials = replacement;
+        }
+    }
+    void OnEnable() { 玩家外观.外观变化 += 同步外观; 同步外观(null); }
+    void OnDisable() { 玩家外观.外观变化 -= 同步外观; motes.Clear(); emission = 0; 活跃粒子数 = 0; if (particles) particles.Clear(); }
     void OnDestroy() { if (graph.IsValid()) graph.Destroy(); foreach (var material in ownedMaterials) Destroy(material); if (particleMaterial) Destroy(particleMaterial); }
 }

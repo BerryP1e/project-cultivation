@@ -191,6 +191,14 @@ public class PlayerAnimationController : MonoBehaviour
         if (御风 != null) 御风.状态变化 -= OnFlightStateChanged;
         if (烘焙网格 != null) Destroy(烘焙网格);
     }
+    /// <summary>新学会御风后可以晚于Awake装载组件，同步引用与升降事件。</summary>
+    public void 绑定御风(YufengFlight flight)
+    {
+        if (御风 == flight) return;
+        if (御风) 御风.状态变化 -= OnFlightStateChanged;
+        御风 = flight;
+        if (御风) 御风.状态变化 += OnFlightStateChanged;
+    }
 
     /// <summary>御风状态变化时打对应的 Trigger，让状态机精确切换</summary>
     void OnFlightStateChanged(YufengFlight.FlightState s)
@@ -204,7 +212,14 @@ public class PlayerAnimationController : MonoBehaviour
     public void StopAction() => 停止动作();
     public bool IsActionPlaying => 动作播放中;
     UnityEngine.Object 施法占用者;
-    public bool 施法占用中 => 施法占用者 != null;
+    public bool 闪避动作中 { get; private set; }
+    bool 闪避正在衔接;
+    public const string 闪避动作倍率参数 = "DodgeActionRate";
+    static readonly int dodgeRateHash = Animator.StringToHash(闪避动作倍率参数);
+    bool 闪避独立倍率;
+    Vector3 闪避衔接方向;
+    // 两种独占动作均阻止新攻击消费资源；引导者仍按原所有者释放。
+    public bool 施法占用中 => 施法占用者 != null || 闪避动作中;
     public bool 占用施法(UnityEngine.Object 发起者)
     {
         if(施法占用中 && 施法占用者!=发起者)return false;
@@ -216,6 +231,62 @@ public class PlayerAnimationController : MonoBehaviour
         if(施法占用者==发起者)施法占用者=null;
     }
     public float ActionProgress => 动作进度;
+
+    public bool 播闪避(AnimationClip clip, float duration)
+    {
+        if (施法占用中 || !播动作(clip, clip.length / Mathf.Max(.1f, duration) / Mathf.Max(.01f, playbackScale))) return false;
+        闪避动作中 = true;
+        闪避正在衔接 = false;
+        闪避独立倍率 = false;
+        foreach (var parameter in animator.parameters)
+            if (parameter.nameHash == dodgeRateHash && parameter.type == AnimatorControllerParameterType.Float) 闪避独立倍率 = true;
+        if (闪避独立倍率)
+        {
+            // 仅Action状态加速；退出时八向移动保持原速，两段时钟同时连续推进。
+            animator.SetFloat(dodgeRateHash, 动作速度倍率);
+            animator.speed = Mathf.Max(.01f, playbackScale);
+        }
+        animator.ResetTrigger(动作参数Hash);
+        animator.CrossFadeInFixedTime(动作状态名, .055f, 0, 0);
+        animator.Update(0);
+        return true;
+    }
+
+    public void 衔接闪避(AnimationClip clip, Vector3 direction, float remaining = .035f)
+    {
+        if (!闪避动作中 || 当前动作 != clip || !animator) return;
+        if (闪避正在衔接) return; // 不重启目标动画或过渡时钟。
+        闪避衔接方向 = direction;
+        bool moving = direction.sqrMagnitude > .0001f;
+        smoothSpeed = playerController ? playerController.CurrentSpeed : 0;
+        speedVelocity = 0;
+        animator.SetFloat(speedHash, smoothSpeed);
+        animator.SetBool(flyingHash, 御风 && 御风.御风中);
+        animator.SetBool(flyMovingHash, moving);
+        var facing = transform.rotation * Quaternion.Euler(0, -(playerController ? playerController.visualYawOffset : 0), 0);
+        var local = Quaternion.Inverse(facing) * direction;
+        御风方向 = new Vector2(local.x, local.z); 御风方向速度 = Vector2.zero;
+        animator.SetFloat(flyXHash, 御风方向.x);
+        animator.SetFloat(flyYHash, 御风方向.y);
+        string state = 御风 && 御风.御风中 ? (moving ? "Yufeng_Forward" : "Yufeng_Idle") : "Locomotion";
+        int hash = Animator.StringToHash(state);
+        if (!animator.HasState(0, hash)) return;
+        // 固定秒数按正常播放倍率补偿；目标片段从开头播放，结束时保留已混合的相位。
+        animator.speed = Mathf.Max(.01f, playbackScale);
+        animator.CrossFadeInFixedTime(hash, Mathf.Max(.001f, remaining) * animator.speed, 0, 0f);
+        闪避正在衔接 = true;
+    }
+
+    public void 结束闪避(AnimationClip clip)
+    {
+        if (!闪避动作中) return;
+        if (当前动作 != clip) { 闪避动作中 = false; 闪避正在衔接 = false; return; }
+        if (!闪避正在衔接) 衔接闪避(clip, playerController ? playerController.MoveDirection : Vector3.zero);
+        // 实体刚交接了输入速度，不能再用上一帧的零速平滑值触发一次待机。
+        smoothSpeed = playerController ? playerController.CurrentSpeed : 0;
+        speedVelocity = 0;
+        停止动作();
+    }
 
     // ============================================================ 技能动作（普攻 / 施法共用）
 
@@ -331,6 +402,10 @@ public class PlayerAnimationController : MonoBehaviour
     /// <summary>打断当前技能动作（比如施法被打断）</summary>
     public void 停止动作()
     {
+        if (闪避独立倍率 && animator) animator.SetFloat(dodgeRateHash, 1f);
+        闪避独立倍率 = false;
+        闪避动作中 = false;
+        闪避正在衔接 = false;
         bool wasIdle = 可打断待机中; 可打断待机中 = false;
         if (animator != null)
         {
@@ -351,7 +426,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// </summary>
     void 维护技能动作()
     {
-        if (!actionPlaying) return;
+        if (!actionPlaying || 闪避动作中) return; // 尾段已混合到移动，免疫/动作占用仍由闪避时钟结束。
 
         var 状态 = 取动作状态();
         if (状态.IsName(动作状态名)) { 动作已进入 = true; return; }
@@ -681,7 +756,7 @@ public class PlayerAnimationController : MonoBehaviour
         // ★ 被 定住动作(true) 时写 **0**（真的停住，不是 0.01）——
         //   瞬雷天闪要在 40% 节点停 1.5 秒让雷球长出来。
         animator.speed = 动作定住 ? 0f
-            : Mathf.Max(0.01f, playbackScale * (actionPlaying ? 动作速度倍率 : 1f));
+            : Mathf.Max(0.01f, playbackScale * (actionPlaying && !闪避独立倍率 && !闪避正在衔接 ? 动作速度倍率 : 1f));
 
         维护技能动作();
 
@@ -696,7 +771,7 @@ public class PlayerAnimationController : MonoBehaviour
         else if (御风 != null)
         {
             animator.SetBool(flyingHash, 御风.御风流程中);
-            animator.SetBool(flyMovingHash, smoothSpeed > 0.15f);
+            animator.SetBool(flyMovingHash, 闪避正在衔接 || smoothSpeed > 0.15f);
         }
         更新御风方向();
     }
@@ -718,7 +793,13 @@ public class PlayerAnimationController : MonoBehaviour
         if (!支持八向御风) return;
         bool 飞行 = 外部驱动御风 ? 外部飞行中 : 御风 != null && 御风.御风流程中;
         Vector2 目标 = Vector2.zero;
-        if (飞行 && playerController != null)
+        if (飞行 && 闪避正在衔接)
+        {
+            var 朝向 = transform.rotation * Quaternion.Euler(0f, -(playerController ? playerController.visualYawOffset : 0), 0f);
+            var 方向 = Quaternion.Inverse(朝向) * 闪避衔接方向;
+            目标 = new Vector2(方向.x, 方向.z);
+        }
+        else if (飞行 && playerController != null)
         {
             // 采用场景实例的视觉补偿（当前为0），兼容带额外模型旋转的角色。
             var 朝向 = playerController.transform.rotation * Quaternion.Euler(0f, -playerController.visualYawOffset, 0f);
@@ -732,7 +813,7 @@ public class PlayerAnimationController : MonoBehaviour
                 目标 = Vector2.up;
         }
         if (!飞行) { 御风方向 = 御风方向速度 = Vector2.zero; }
-        else 御风方向 = 御风方向平滑时间 > 0f
+        else 御风方向 = !闪避正在衔接 && 御风方向平滑时间 > 0f
             ? Vector2.SmoothDamp(御风方向, 目标, ref 御风方向速度, 御风方向平滑时间)
             : 目标;
         animator.SetFloat(flyXHash, 御风方向.x);

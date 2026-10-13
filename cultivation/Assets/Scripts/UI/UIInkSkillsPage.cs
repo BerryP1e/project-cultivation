@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>手绘纵向星图与神通瀑布流。复用原六槽、列表、被动和详情。</summary>
+/// <summary>神通四区：掌握列表、六槽装备、独立3D表现、属性与介绍。</summary>
 public class UIInkSkillsPage : MonoBehaviour
 {
     public UIActiveSkillBar 星图 {get;private set;}
@@ -10,6 +10,7 @@ public class UIInkSkillsPage : MonoBehaviour
     public UIEntryList 生效被动 {get;private set;}
     public UIInkWaterfall 瀑布流 {get;private set;}
     public UIEntryInfo 详情 {get;private set;}
+    public UIAbilityPreview 神通预览 {get;private set;}
     public int 被动星数 {get;private set;}
     public Material 星点描边材质=>mapMaterial;
     public Vector2 星位锚点(int index)=>positions[index];
@@ -33,29 +34,26 @@ public class UIInkSkillsPage : MonoBehaviour
     UIInkSkillStar[] slots;
     Material mapMaterial;
     UIInkConstellation constellation;
-    float age,detailAge;
-    IPanelEntry selected;
-    bool ready;
-    static readonly Color Light=new Color(.96f,.95f,.88f);
-    public static void 应用(Transform root) {
+    float age;
+    IPanelEntry selected;RectTransform propertyRows;bool ready;
+    public static void 应用(Transform root)
+    {
         if(!UIInkNavigation.启用)return;
-        var panel=root.GetComponent<CharacterPanelUI>();if(panel==null || panel.tabs.Count<3)return;
-        var page=panel.tabs[2].page;var view=page.GetComponent<UIInkSkillsPage>();if(view==null)view=page.AddComponent<UIInkSkillsPage>();view.Build();
+        var panel=root.GetComponent<CharacterPanelUI>();if(!panel||panel.tabs.Count<3)return;
+        var page=panel.tabs[2].page;(page.GetComponent<UIInkSkillsPage>()??page.AddComponent<UIInkSkillsPage>()).Build();
     }
-    void Build() {
+    void Build()
+    {
         if(ready)return;
-        if(InkUITheme.Load("SkillsDynamic/fx-star-particle")==null)return;
-        星图=GetComponentInChildren<UIActiveSkillBar>(true);
-        已悟神通=transform.Find("KnownList").GetComponent<UIEntryList>();生效被动=transform.Find("PassiveList").GetComponent<UIEntryList>();详情=已悟神通.infoTarget;
-        ready=true;
+        星图=GetComponentInChildren<UIActiveSkillBar>(true);已悟神通=transform.Find("KnownList")?.GetComponent<UIEntryList>();生效被动=transform.Find("PassiveList")?.GetComponent<UIEntryList>();
+        if(!星图||!已悟神通)return;详情=已悟神通.infoTarget;if(!详情)return;ready=true;
         foreach(var motion in GetComponentsInChildren<UIInkMotion>(true))motion.enabled=false;
-        foreach(var panel in new Transform[]{星图.transform,已悟神通.transform,生效被动.transform,详情.transform}) {
-            var image=panel.GetComponent<Image>();if(image!=null)image.enabled=false;
-            var title=panel.Find("Title");if(title!=null)title.gameObject.SetActive(false);
-        }
-        UIBuildUtils.Place(星图.transform as RectTransform,new Vector2(.005f,.04f),new Vector2(.455f,.97f),Vector2.zero,Vector2.zero);
-        foreach(var name in new[]{"InkRing","Hint","InkNumbers"}) {var old=星图.transform.Find(name);if(old!=null)old.gameObject.SetActive(false);}
-        foreach(var oldImage in 星图.GetComponentsInChildren<Image>(true)) if(oldImage.name.StartsWith("InkNumber"))oldImage.gameObject.SetActive(false);
+        foreach(var area in new[]{星图.transform,已悟神通.transform,详情.transform}){var image=area.GetComponent<Image>();if(image)image.enabled=false;var title=area.Find("Title");if(title)title.gameObject.SetActive(false);}
+        Place((RectTransform)已悟神通.transform,.005f,.09f,.24f,.96f);已悟神通.inkCards=false;
+        瀑布流=已悟神通.gameObject.AddComponent<UIInkWaterfall>();瀑布流.OrderedCards=true;瀑布流.CardColumns=3;瀑布流.AllowLoop=false;瀑布流.Initialize(已悟神通);瀑布流.Skip();
+        if(生效被动)生效被动.gameObject.SetActive(false);
+        Place((RectTransform)星图.transform,.245f,.055f,.48f,.97f);
+        foreach(var name in new[]{"InkRing","Hint","InkNumbers"}){var old=星图.transform.Find(name);if(old)old.gameObject.SetActive(false);}
         mapMaterial=new Material(Shader.Find("UI/InkCircle"));
         var graph=UIBuildUtils.CreateRect("LiveConstellation",星图.transform);graph.SetAsFirstSibling();UIBuildUtils.Stretch(graph);constellation=graph.gameObject.AddComponent<UIInkConstellation>();constellation.raycastTarget=false;constellation.material=mapMaterial;
         for(int i=0;i<16;i++){
@@ -77,41 +75,45 @@ public class UIInkSkillsPage : MonoBehaviour
         }
         constellation.Nodes=slots;
         星图.gameObject.AddComponent<UIInkSkillVolume>().Initialize(星图,slots);
-        UIBuildUtils.Place(已悟神通.transform as RectTransform,new Vector2(.47f,.08f),new Vector2(.73f,.96f),Vector2.zero,Vector2.zero);
-        已悟神通.inkCards=false;
-        瀑布流=已悟神通.gameObject.AddComponent<UIInkWaterfall>();瀑布流.Initialize(已悟神通);瀑布流.Skip();
-        // 保留原始数据组件，但启用状态改由星图卫星表示，不再显示独立列表。
-        生效被动.gameObject.SetActive(false);
-        UIBuildUtils.Place(详情.transform as RectTransform,new Vector2(.755f,.04f),new Vector2(.995f,.96f),Vector2.zero,Vector2.zero);
-        var ink=UIBuildUtils.CreateImage("SkillInfoInk",详情.transform,Color.white);ink.sprite=InkUITheme.Load("Bag/bag-info-ink");ink.raycastTarget=false;ink.transform.SetAsFirstSibling();UIBuildUtils.Stretch(ink.rectTransform);
-        LayoutDetail();
-        已悟神通.RebuildFromSource();生效被动.RebuildFromSource();
-        if(星图.data!=null)星图.data.Changed+=RefreshPassiveStars;
-        if(gameObject.activeInHierarchy)Restart();
+        var previewRT=UIBuildUtils.CreateRect("Ability3D",transform);Place(previewRT,.485f,.07f,.725f,.96f);var image3D=previewRT.gameObject.AddComponent<RawImage>();神通预览=previewRT.gameObject.AddComponent<UIAbilityPreview>();神通预览.初始化(image3D);
+        Place((RectTransform)详情.transform,.745f,.02f,.998f,.98f);UICharacterBackdrop.Panel(详情.transform);
+        详情.独立属性展示=true;
+        TextPlace(详情.nameText,.07f,.92f,.94f,.995f,28,TextAnchor.MiddleLeft);
+        TextPlace(详情.tierText,.07f,.85f,.48f,.91f,19,TextAnchor.MiddleLeft);TextPlace(详情.kindText,.55f,.85f,.94f,.91f,18,TextAnchor.MiddleRight);
+        if(!详情.iconImage)详情.iconImage=UIBuildUtils.CreateImage("SkillIcon",详情.transform,Color.white);
+        Place(详情.iconImage.rectTransform,.18f,.62f,.82f,.83f);详情.iconImage.preserveAspect=true;详情.iconImage.gameObject.SetActive(true);
+        var art=详情.transform.Find("InkAbilityArtwork");if(art)art.gameObject.SetActive(false);
+        UICharacterBackdrop.Divider(详情.transform,"SkillHeaderDivider",.605f);
+        propertyRows=UIBuildUtils.CreateRect("SkillProperties",详情.transform);Place(propertyRows,.065f,.445f,.94f,.59f);
+        var host=UIBuildUtils.CreateRect("SkillDescriptionScroll",详情.transform);Place(host,.075f,.145f,.94f,.425f);
+        var scroll=host.gameObject.AddComponent<ScrollRect>();scroll.horizontal=false;scroll.scrollSensitivity=30;
+        var viewport=UIBuildUtils.CreateRect("Viewport",host);UIBuildUtils.Stretch(viewport);viewport.gameObject.AddComponent<Image>().color=Color.clear;viewport.gameObject.AddComponent<RectMask2D>();
+        if(详情.descriptionText){var desc=详情.descriptionText;desc.transform.SetParent(viewport,false);desc.rectTransform.anchorMin=new Vector2(0,1);desc.rectTransform.anchorMax=Vector2.one;desc.rectTransform.pivot=new Vector2(.5f,1);desc.rectTransform.sizeDelta=Vector2.zero;desc.rectTransform.anchoredPosition=Vector2.zero;desc.fontSize=20;desc.alignment=TextAnchor.UpperLeft;desc.color=UICharacterBackdrop.TextColor;desc.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;scroll.content=desc.rectTransform;scroll.viewport=viewport;}
+        if(详情.actionButton){Place((RectTransform)详情.actionButton.transform,.14f,.025f,.94f,.105f);UICharacterBackdrop.StyleButton(详情.actionButton);}
+        foreach(var text in 详情.GetComponentsInChildren<Text>(true))if(text!=详情.actionLabel)text.color=UICharacterBackdrop.TextColor;
+        星图.Refresh();已悟神通.RebuildFromSource();详情.Show(详情.Current);已悟神通.SelectionChanged+=Select;
+        if(星图.data)星图.data.Changed+=RefreshPassiveStars;RefreshPassiveStars();
+        Select(详情.Current);
     }
-    static void Shadow(Text t){var s=t.GetComponent<Shadow>();if(s==null)s=t.gameObject.AddComponent<Shadow>();s.effectColor=new Color(0,0,0,.9f);s.effectDistance=new Vector2(1,-1);}
-    void LayoutDetail() {
-        Place(详情.nameText,.05f,.86f,.95f,.96f,28,TextAnchor.MiddleCenter);
-        Place(详情.tierText,.05f,.81f,.50f,.86f,17,TextAnchor.MiddleLeft);
-        Place(详情.kindText,.55f,.81f,.95f,.86f,17,TextAnchor.MiddleRight);
-        Place(详情.descriptionText,.09f,.16f,.91f,.48f,18,TextAnchor.UpperLeft);
-        if(详情.actionButton!=null)UIBuildUtils.Place(详情.actionButton.transform as RectTransform,new Vector2(.14f,.055f),new Vector2(.86f,.12f),Vector2.zero,Vector2.zero);
-        if(详情.iconImage!=null) {UIBuildUtils.Place(详情.iconImage.rectTransform,new Vector2(.22f,.51f),new Vector2(.78f,.78f),Vector2.zero,Vector2.zero);详情.iconImage.preserveAspect=true;}
-        var art=详情.transform.Find("InkAbilityArtwork") as RectTransform;if(art!=null)UIBuildUtils.Place(art,new Vector2(.09f,.51f),new Vector2(.91f,.78f),Vector2.zero,Vector2.zero);
+    static void Place(RectTransform r,float x,float y,float xx,float yy)=>UIBuildUtils.Place(r,new Vector2(x,y),new Vector2(xx,yy),Vector2.zero,Vector2.zero);
+    static void TextPlace(Text t,float x,float y,float xx,float yy,int size,TextAnchor align){if(!t)return;Place(t.rectTransform,x,y,xx,yy);t.fontSize=size;t.alignment=align;}
+    void Select(IPanelEntry entry)
+    {
+        selected=entry;神通预览.显示(entry);
+        if(详情.iconImage){详情.iconImage.gameObject.SetActive(true);详情.iconImage.enabled=详情.iconImage.sprite!=null;详情.iconImage.color=Color.white;}
+        foreach(Transform child in propertyRows){child.gameObject.SetActive(false);Destroy(child.gameObject);}
+        if(entry is ActiveDivineAbility active){Property("灵力消耗",active.消耗灵力.ToString("0.#"),.67f);Property("冷却",active.冷却时间.ToString("0.#")+" 秒",.34f);Property("攻击",active.伤害属性.ToString(),.01f);}
+        else if(entry is PassiveDivineAbility passive){Property("类型","被动神通",.67f);Property("维持消耗",passive.维持消耗灵力.ToString("0.#"),.34f);}
+        var scroll=详情.descriptionText?详情.descriptionText.GetComponentInParent<ScrollRect>():null;if(scroll){scroll.StopMovement();scroll.verticalNormalizedPosition=1;}
     }
-    static void Place(Text t,float x,float y,float xx,float yy,int size,TextAnchor alignment){if(t==null)return;UIBuildUtils.Place(t.rectTransform,new Vector2(x,y),new Vector2(xx,yy),Vector2.zero,Vector2.zero);t.fontSize=size;t.alignment=alignment;t.color=Light;Shadow(t);}
-    void OnEnable(){if(ready)Restart();}
-    void Restart(){age=0;detailAge=0;RefreshPassiveStars();}
-    void LateUpdate() {
-        if(!ready)return;
-        age+=Time.unscaledDeltaTime;float t=UIInkMotion.减少动效?10:age;
-        constellation.Progress=Mathf.Clamp01(t/.55f);
-        for(int i=0;i<slots.Length;i++)slots[i].Refresh(Mathf.Clamp01((t-.1f-i*.06f)/.18f));
-        LayoutDetail();
-        if(详情.Current!=selected){selected=详情.Current;detailAge=0;}detailAge+=Time.unscaledDeltaTime;
-        foreach(var text in 详情.GetComponentsInChildren<Text>(true)){text.color=Light;Shadow(text);var r=text.GetComponent<UIInkReveal>();if(r==null)r=text.gameObject.AddComponent<UIInkReveal>();r.进度=UIInkMotion.减少动效?1:Mathf.Clamp01(detailAge/.18f);}
-        if(详情.iconImage!=null)详情.iconImage.enabled=详情.iconImage.sprite!=null;
+    void Property(string name,string value,float y)
+    {
+        var row=UIBuildUtils.CreateRect("PropertyRow",propertyRows);Place(row,0,y,1,y+.29f);row.gameObject.AddComponent<Image>().color=new Color(.49f,.60f,.61f,.14f);
+        var a=UIBuildUtils.CreateText("Name",row,已悟神通.font,name,18,TextAnchor.MiddleLeft,UICharacterBackdrop.TextColor);Place(a.rectTransform,.03f,0,.60f,1);
+        var b=UIBuildUtils.CreateText("Value",row,已悟神通.font,value,18,TextAnchor.MiddleRight,UICharacterBackdrop.TextColor);Place(b.rectTransform,.60f,0,.97f,1);
     }
+    void OnEnable(){if(ready){age=0;RefreshPassiveStars();}}
+    void LateUpdate(){if(!ready)return;age+=Time.unscaledDeltaTime;constellation.Progress=UIInkMotion.减少动效?1:Mathf.Clamp01(age/.55f);for(int i=0;i<slots.Length;i++)slots[i].Refresh(UIInkMotion.减少动效?1:Mathf.Clamp01((age-.1f-i*.06f)/.18f));if(详情.Current!=selected)Select(详情.Current);}
     void RefreshPassiveStars(){
         if(星图.data==null)return;
         foreach(var pair in passiveStars)pair.Value.gameObject.SetActive(false);被动星数=0;
@@ -128,5 +130,8 @@ public class UIInkSkillsPage : MonoBehaviour
             particle.gameObject.SetActive(true);被动星数++;
         }
     }
-    void OnDestroy(){if(星图!=null && 星图.data!=null)星图.data.Changed-=RefreshPassiveStars;if(mapMaterial!=null)Destroy(mapMaterial);}
+
+    void OnDestroy(){if(已悟神通)已悟神通.SelectionChanged-=Select;if(星图&&星图.data)星图.data.Changed-=RefreshPassiveStars;if(mapMaterial)Destroy(mapMaterial);}
+    static void Shadow(Text t){var shadow=t.GetComponent<Shadow>();if(!shadow)shadow=t.gameObject.AddComponent<Shadow>();shadow.effectColor=new Color(0,0,0,.8f);shadow.effectDistance=new Vector2(1,-1);}
+    static readonly Color Light=new Color(.96f,.95f,.88f);
 }

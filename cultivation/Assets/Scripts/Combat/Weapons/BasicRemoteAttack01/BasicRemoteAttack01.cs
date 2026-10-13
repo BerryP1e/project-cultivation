@@ -203,6 +203,12 @@ public class BasicRemoteAttack01 : MonoBehaviour
         int id = npc != null ? npc.GetInstanceID() : 0;
         if (id != 缓存目标id) { 缓存目标id = id; 缓存 = null; }
 
+        // 闪避打断普攻时丢弃尚未发出的子弹，不能借闪避动作的进度出弹。
+        if (出手动作中 && 动画 && 动画.闪避动作中)
+        {
+            出手动作中 = false; 本轮已出弹 = true;
+            下次可出手时间 = Time.time + 实际冷却;
+        }
         // 动作播到 出手进度 → 出弹
         if (出手动作中 && !本轮已出弹)
         {

@@ -1500,6 +1500,7 @@ public abstract class NpcAiBase : MonoBehaviour
         }
         if (!有) return false;
         if (配置.判定外扩 > 0f) 武器体.Expand(配置.判定外扩 * 2f);
+        if (玩家生命) 玩家生命.GetComponent<PlayerFlightDodge>()?.检查擦身网格(武器体);
 
         var 玩家体 = 取玩家体积();
         if (!武器体.Intersects(玩家体)) return false;

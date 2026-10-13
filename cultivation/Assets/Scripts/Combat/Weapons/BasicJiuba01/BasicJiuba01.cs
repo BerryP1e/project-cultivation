@@ -280,6 +280,11 @@ public class BasicJiuba01 : MonoBehaviour
         int id = npc != null ? npc.GetInstanceID() : 0;
         if (id != 缓存目标id) { 缓存目标id = id; 缓存 = null; }
 
+        if (动画 && 动画.闪避动作中 && 出手动作中)
+        {
+            出手动作中 = false; 本轮已结算 = true;
+            if (刃光 != null) 刃光.停止(true);
+        }
         if(出手动作中 && 手动攻击)处理手动挥砍();
         if (出手动作中 && !本轮已结算) 推进判定();
 

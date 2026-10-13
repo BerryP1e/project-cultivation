@@ -69,16 +69,11 @@ public class UIPanelData : MonoBehaviour
     [Tooltip("实际学会驾驭的坐骑 id；目录不代表拥有")]
     public List<string> 已学坐骑 = new List<string>();
 
-    [Tooltip("当前乘骑的坐骑。null = 没骑。\n" +
-             "★ **不要直接赋值** —— 一律走 设置当前坐骑()，" +
-             "互斥规则（装备坐骑 → 自动停用【凭虚御风】）就写在那一处")]
+    [Tooltip("准备使用的坐骑。通过设置当前坐骑检查学习/境界；可与御风同时准备，运行时互斥。") ]
     public MountDefinition 当前坐骑;
 
-    [Header("坐骑 ⇄ 御风 互斥")]
-    [Tooltip("【凭虚御风】在被动神通表里的 id。\n" +
-             "用户 2026-09-24 定的规则：**装备坐骑 → 自动停用这个被动；" +
-             "启用这个被动 → 自动取消装备坐骑**，两者不能同时生效\n" +
-             "（Shift 是它们共用的一个键，见 MountRider / YufengFlight）")]
+    [Header("行游能力")]
+    [Tooltip("凭虚御风的神通id。装备坐骑不再停用御风，启用御风也不卸下坐骑。") ]
     public string 御风神通id = 御风神通默认id;
 
     /// <summary>【凭虚御风】在被动神通表里的 id 的默认值</summary>
@@ -491,12 +486,8 @@ public class UIPanelData : MonoBehaviour
         else { 已停用被动.Add(ability); nowEnabled = false; }
         if (nowEnabled) 关闭其他护罩(ability);
 
-        // ★ 启用【凭虚御风】→ **自动取消装备坐骑**（用户 2026-09-24 定的规则）
-        bool 卸了坐骑 = nowEnabled && 取消坐骑因为御风(ability);
-
         RaiseChanged();
-        ShowHint(ability.DisplayName + (nowEnabled ? " 已启用" : " 已停用")
-                 + (卸了坐骑 ? "，坐骑已自动取消装备" : ""));
+        ShowHint(ability.DisplayName + (nowEnabled ? " 已启用" : " 已停用"));
         return nowEnabled;
     }
 
@@ -509,23 +500,12 @@ public class UIPanelData : MonoBehaviour
         else if (!已停用被动.Contains(ability)) 已停用被动.Add(ability);
         if (enabled) 关闭其他护罩(ability);
 
-        // 同 TogglePassive：启用御风就卸坐骑
-        if (enabled && 取消坐骑因为御风(ability))
-            ShowHint("【" + ability.DisplayName + "】已启用，坐骑已自动取消装备");
-
         RaiseChanged();
     }
 
-    // ---------------------------------------------------------------- 坐骑 ⇄ 御风 互斥
+    // ---------------------------------------------------------------- 准备坐骑（运行互斥由行游控制器管理）
 
-    /// <summary>
-    /// **装备 / 取消装备坐骑**。★ 所有入口都走这里 ——
-    /// 互斥规则（装备坐骑就自动停用【凭虚御风】）只在这一处实现。
-    ///
-    /// 用户 2026-09-24：「装备坐骑时会自动停用御风这个被动神通。
-    /// 启用凭虚御风时会自动取消装备坐骑」—— 两条规则一起保证两者**不会同时生效**，
-    /// Shift 那个共用键才不会有歧义。
-    /// </summary>
+    /// <summary>装备/取消装备坐骑，检查学习与境界，不改变御风的启用状态。</summary>
     public void 设置当前坐骑(MountDefinition m)
     {
         EnsureLists();
@@ -537,12 +517,10 @@ public class UIPanelData : MonoBehaviour
 
         当前坐骑 = m;
 
-        bool 停了御风 = m != null && 停用御风被动();
         RaiseChanged();
 
         if (m != null)
-            ShowHint("已装备坐骑「" + m.DisplayName + "」"
-                     + (停了御风 ? "，【凭虚御风】已自动停用" : ""));
+            ShowHint("已装备坐骑「" + m.DisplayName + "」");
     }
 
     /// <summary>取消装备当前坐骑。返回是否真的卸掉了（本来就没装 → false）</summary>
@@ -576,13 +554,6 @@ public class UIPanelData : MonoBehaviour
         return true;
     }
 
-    /// <summary>这条被动是不是【凭虚御风】</summary>
-    bool 是御风(PassiveDivineAbility ability)
-        => ability != null && !string.IsNullOrEmpty(御风神通id) && ability.神通id == 御风神通id;
-
-    /// <summary>启用御风时要顺手卸坐骑。返回是否真的卸了（本来就没坐骑 → false）</summary>
-    bool 取消坐骑因为御风(PassiveDivineAbility ability)
-        => 是御风(ability) && 取消装备坐骑();
 
     // ---------------------------------------------------------------- 装备槽
 

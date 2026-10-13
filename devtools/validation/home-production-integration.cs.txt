@@ -1,0 +1,65 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+IEnumerator Run()
+{
+    var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+    foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
+    foreach(var quest in UnityEngine.Object.FindObjectsOfType<任务管理器>())quest.enabled=false;
+    var clock=时间管理器.取();clock.倍率=0;clock.暂停=false;
+    var manager=摆设.取();var prior=manager.导出();var farm=灵田.取();var previousFarm=farm.导出();var bag=UnityEngine.Object.FindObjectOfType<UIPanelData>();
+    var oldItems=new List<ItemDefinition>(bag.物品);bag.物品=new List<ItemDefinition>();var db=QuestDatabase.取();var catalog=HomeAnimalCatalog.取();
+    var pen=new 摆设状态{类型id="animal_pen",位置=new Vector3(10000,0,10000)};pen.兽栏.放入(catalog.找("muji"),catalog);pen.兽栏.食槽.存入("item_ningluhua",30);
+    var comp=new 摆设状态{类型id="compost_bin",位置=new Vector3(10008,0,10000)};comp.堆肥.确保();comp.堆肥.原料.存入(HomeAnimalCatalog.粪便id,30);
+    var alch=new 摆设状态{类型id="auto_alchemy",位置=new Vector3(10008,0,10005)};alch.炼丹.确保();alch.炼丹.丹方id="item_dan_juqi";alch.炼丹.自动炼制=true;alch.炼丹.主材.存入("item_shenglingcao",30);alch.炼丹.辅材.存入("item_ningluhua",30);对话标记.添加(炼丹炉.丹方标记("item_dan_juqi"));
+    manager.导入(new List<摆设状态>{pen,comp,alch});yield return null;yield return null;
+    clock.推进(.5f);yield return null;yield return null;
+    Check(comp.堆肥.成品.数量(HomeAnimalCatalog.肥料id)==1,"actual game clock advances compost");
+    Check(pen.兽栏.收获篮.数量(HomeAnimalCatalog.粪便id)==1,"actual game clock advances manure");
+    Check(alch.炼丹.主材.数量("item_shenglingcao")==24,"actual clock runs two finished batches and one in progress");
+    int pausedManure=pen.兽栏.收获篮.数量(HomeAnimalCatalog.粪便id);clock.暂停=true;clock.推进(.5f);yield return null;yield return null;
+    Check(comp.堆肥.成品.数量(HomeAnimalCatalog.肥料id)==1&&pen.兽栏.收获篮.数量(HomeAnimalCatalog.粪便id)==pausedManure,"paused clock does not advance buildings or catch up paused time");
+    clock.暂停=false;
+    var home=SceneManager.GetActiveScene();var away=SceneManager.CreateScene("HomeProductionAwayTest");SceneManager.SetActiveScene(away);manager.重建视图();yield return null;yield return null;
+    Check(UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Length==0,"home views removed when active scene is elsewhere");
+    clock.推进(.5f);yield return null;yield return null;
+    Check(comp.堆肥.成品.数量(HomeAnimalCatalog.肥料id)==2&&pen.兽栏.收获篮.数量(HomeAnimalCatalog.粪便id)==2,"scene-independent production continues away from home");
+    SceneManager.SetActiveScene(home);manager.重建视图();yield return null;yield return null;
+    Check(UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Length==3&&comp.堆肥.成品.数量(HomeAnimalCatalog.肥料id)==2,"return rebuilds visuals without resetting or duplicating output");
+    var penBuilding=UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Single(b=>b.状态==pen);var compBuilding=UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Single(b=>b.状态==comp);var alchBuilding=UnityEngine.Object.FindObjectsOfType<HomeBuilding>().Single(b=>b.状态==alch);
+    var shopRoot=new GameObject("功德堂目录验证");var shop=shopRoot.AddComponent<功德堂兑换>();var stocked=shop.取兑换目录();
+    foreach(var id in new[]{"item_home_animal_pen","item_home_compost_bin","item_home_auto_alchemy"}.Concat(catalog.动物.Select(d=>d.幼崽id)))Check(stocked.Any(i=>i.物品id==id),"real merit shop lists "+id);
+    UnityEngine.Object.Destroy(shopRoot);
+    var interactor=UnityEngine.Object.FindObjectOfType<StationInteractor>();Check(interactor,"actual player station interactor");
+    var player=interactor.GetComponent<PlayerController>();if(player)player.enabled=false;var mover=interactor.GetComponent<CharacterController>();if(mover)mover.enabled=false;
+    foreach(var building in new[]{penBuilding,compBuilding,alchBuilding})
+    {
+        interactor.transform.position=building.transform.position+new Vector3(3,0,0);interactor.打开界面(building.GetComponent<StationInteractable>());yield return null;
+        Check(StationInteractor.有界面打开&&interactor.当前界面&&interactor.当前界面.GetComponent<HomeBuildingPanel>(),building.状态.类型id+" real F route opens building panel");
+        var columns=interactor.当前界面.GetComponentsInChildren<ScrollRect>();
+        if(building==alchBuilding)
+        {
+            var a=columns.Single(s=>s.name=="建筑仓储").GetComponent<RectTransform>();var b=columns.Single(s=>s.name=="丹方列表").GetComponent<RectTransform>();var c=columns.Single(s=>s.name=="背包").GetComponent<RectTransform>();
+            Check(a.anchoredPosition.x+a.sizeDelta.x*.5f<b.anchoredPosition.x-b.sizeDelta.x*.5f&&b.anchoredPosition.x+b.sizeDelta.x*.5f<c.anchoredPosition.x-c.sizeDelta.x*.5f,"alchemy columns have positive separation");
+            var first=interactor.当前界面.GetComponentsInChildren<Button>().First(btn=>btn.name=="辅材 · 三格0");first.onClick.Invoke();yield return null;
+            Check(interactor.当前界面.GetComponentsInChildren<Text>().Any(t=>t.name=="背包标题"&&t.text.Contains("辅材")),"selecting auxiliary slot updates actual UI deposit target");
+            var toggle=interactor.当前界面.GetComponentsInChildren<Button>().First(btn=>btn.name=="自动炼制");toggle.onClick.Invoke();Check(!alch.炼丹.自动炼制,"UI toggle pauses automatic batches");
+            Canvas.ForceUpdateCanvases();ScreenCapture.CaptureScreenshot("D:/project：cultivation/.local/diagnostics/home-production/auto-alchemy-final-panel.png");yield return new WaitForEndOfFrame();
+        }
+        interactor.关闭界面();yield return null;Check(!StationInteractor.有界面打开&&!interactor.当前界面,building.状态.类型id+" close clears input ownership and destroys panel");
+    }
+    farm.导入(new List<灵田地块状态>{new 灵田地块状态{位置=new Vector3(10030,0,10000),作物id="lingcao_shengling"}});yield return null;
+    var fertilizer=db.找物品(HomeAnimalCatalog.肥料id);bag.给物品(fertilizer,2);Check(farm.施肥(0)&&bag.物品数量(fertilizer)==1,"actual field fertilizer consumes one inventory item");
+    Check(!farm.施肥(0)&&bag.物品数量(fertilizer)==1,"cooldown rejection consumes no inventory item");farm.推进生长(.75f);Check(farm.施肥(0)&&bag.物品数量(fertilizer)==0,"actual field can fertilize again after interval");
+    Check(!farm.施肥(0)&&bag.物品数量(fertilizer)==0,"no fertilizer cannot advance crop");
+    bool found=false;Vector3 candidate=Vector3.zero;for(int x=-12;x<=12&&!found;x+=6)for(int z=-12;z<=12&&!found;z+=6){candidate=new Vector3(x,0,z);found=manager.位置可用("animal_pen",candidate,0,out _);}
+    Check(found,"new pen can be placed on actual home ground");var beforePosition=pen.位置;pen.位置=candidate;Check(!manager.位置可用("compost_bin",candidate,0,out _),"cross-building footprint collision prevents overlap");pen.位置=beforePosition;
+    var data=new SaveData{摆设=manager.导出(),灵田地块=farm.导出()};var saved=JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));Check(saved.灵田地块[0].施肥冷却天数>.7f&&saved.摆设[2].炼丹.在炼丹方id==alch.炼丹.在炼丹方id,"save roundtrip includes fertilizer cooldown and unfinished automatic batch");
+    manager.导入(prior);farm.导入(previousFarm);bag.物品=oldItems;yield return null;SceneManager.UnloadSceneAsync(away);
+    System.IO.File.WriteAllText("D:/project：cultivation/.local/diagnostics/home-production/integration-report.txt","PASS "+checks.Count+" checks\n"+string.Join("\n",checks));Debug.Log("HOME_PRODUCTION_INTEGRATION_PASS "+checks.Count);
+}
+return Run();

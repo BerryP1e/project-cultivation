@@ -40,6 +40,13 @@ public static class UiEscRegistry
     {
         InputOwners.RemoveWhere(o=>o==null || (o is Behaviour b && !b.isActiveAndEnabled));
     }
+    /// <summary>短时轮盘可以忽略自己的输入锁，仍尊重其他界面、对话和暂停。</summary>
+    public static bool SceneInputBlockedByOthers(Object owner)
+    {
+        PruneInputOwners();
+        foreach (var current in InputOwners) if (current != owner) return true;
+        return StationInteractor.有界面打开 || DialogueUI.正在显示 || Time.timeScale <= 0;
+    }
     public static bool SceneInputBlocked
     {
         get

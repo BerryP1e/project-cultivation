@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
@@ -216,6 +216,16 @@ public class 灵田摆放器 : MonoBehaviour
         var 相 = Camera.main;
         if (相 == null) return;
         RaycastHit 地;
+        if (要摆的 != null && 要摆的.id == "home_ground")
+        {
+            var ray=相.ScreenPointToRay(Input.mousePosition);
+            if (new Plane(Vector3.up,Vector3.zero).Raycast(ray,out float distance))
+            {
+                var p=HomeWorld.取().吸附扩建(ray.GetPoint(distance));
+                朝向档=0;当前可以=校验(p,out 当前原因);摆预览(p);刷提示();
+            }
+            return;
+        }
         if (!Physics.Raycast(相.ScreenPointToRay(Input.mousePosition), out 地, 200f,
                              ~0, QueryTriggerInteraction.Ignore)
             || 地.collider is CharacterController)

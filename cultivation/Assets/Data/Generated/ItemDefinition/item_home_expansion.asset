@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfe6fcb52b706541aad5cb735cea8bf, type: 3}
+  m_Name: item_home_expansion
+  m_EditorClassIdentifier: 
+  "\u7269\u54C1\u540D": "\u6D1E\u5E9C\u62D3\u5883\u4EE4"
+  "\u7269\u54C1id": item_home_expansion
+  "\u6700\u5927\u5806\u53E0\u6570\u91CF": 99
+  "\u56FE\u6807": {fileID: 21300000, guid: 5fcd3bf7d07aa9d4ebd668ca625c06e3, type: 3}
+  "\u4ECB\u7ECD": "\u5728\u6D1E\u5E9C\u5468\u56F4\u7F51\u683C\u653E\u7F6E\u4E00\u5757\u77F3\u53F0\u5E76\u81EA\u52A8\u8FDE\u63A5\u901A\u8DEF\u3002"
+  "\u54C1\u9636": 1
+  "\u53EF\u4F7F\u7528": 1
+  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: 7c24666e055e197419b50bc345d987d4, type: 2}
+  "\u5151\u6362\u6D88\u8017\u8D21\u732E": 100

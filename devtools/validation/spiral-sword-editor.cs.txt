@@ -1,0 +1,28 @@
+using System.IO;
+using UnityEditor;
+var report=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);report.Add(name);}
+foreach(int seed in new[]{1,9,37,101,777,2026,9472,123456}){
+var ribbon=SpiralSwordCurves.Ribbon.Create(seed);float prev=0;bool contracted=false;
+for(int i=0;i<=100;i++){var p=ribbon.Evaluate(i/100f,0);Check(!float.IsNaN(p.x)&&!float.IsNaN(p.y)&&p.y>.3f,"finite ribbon height "+seed+":"+i);float r=new Vector2(p.x,p.z).magnitude;if(i>0&&r<prev-.02f)contracted=true;prev=r;}Check(contracted,"ellipse radius locally contracts despite outward envelope "+seed);
+var arc=new SpiralSwordCurves.ArcLengthRibbon(ribbon,0);var gaps=new List<float>();for(int i=1;i<72;i++)gaps.Add(Vector3.Distance(arc.Evaluate((i-.5f)/72),arc.Evaluate((i+.5f)/72)));Check(gaps.Min()>gaps.Average()*.8f&&gaps.Max()<gaps.Average()*1.12f,"arc-length sword spacing even "+seed);
+}
+
+foreach(var destination in new[]{new Vector3(12,0,4),new Vector3(0,-8,0),Vector3.zero}){
+var origin=Vector3.zero;var start=new Vector3(3,2,-5);var velocity=(destination-start).normalized*32;
+var flight=SpiralSwordCurves.SwordFlight.Create(origin,destination+Vector3.up,destination,start,velocity,.22f,1.1f);
+Check(Vector3.Distance(flight.Evaluate(0),start)<.0001f,"range flight starts exactly on sword sheet "+destination);
+Check(Vector3.Distance(flight.Evaluate(1),destination)<.0001f,"each sword reaches its own area point "+destination);
+Check(Vector3.Distance(flight.Velocity(0),velocity)<.0001f,"strong directed launch velocity "+destination);
+Check(Vector3.Distance(flight.Evaluate(flight.Handoff-.000001f),flight.Evaluate(flight.Handoff+.000001f))<.001f,"curve to straight position continuous "+destination);
+Check(Vector3.Distance(flight.Velocity(flight.Handoff-.000001f),flight.Velocity(flight.Handoff+.000001f))<.01f,"curve to straight velocity continuous "+destination);
+for(int i=0;i<=50;i++){var p=flight.Evaluate(i/50f);Check(!float.IsNaN(p.x)&&!float.IsNaN(p.y)&&!float.IsInfinity(p.z),"finite range trajectory "+destination+":"+i);}
+foreach(float t in new[]{.62f,.72f,.82f,.92f}){Check(Vector3.Cross(flight.Evaluate(t)-flight.Neck,destination-flight.Neck).magnitude<.0001f,"final flight is straight through area "+destination+":"+t);Check(Vector3.Distance(flight.Velocity(t),flight.Velocity(1))<.0001f,"final direction and speed remain fixed "+destination+":"+t);}
+}
+var scatter=Enumerable.Range(0,288).Select(i=>SpiralSwordCurves.AreaOffset(i,288,4)).ToArray();Check(scatter.All(p=>p.y==0&&p.magnitude<=4)&&scatter.Count(p=>p.magnitude>2)>200,"wide area coverage instead of target apex");Check(scatter.Count(p=>p.magnitude<1)>15&&scatter.Distinct().Count()==288,"distinct center and surrounding ground impacts");
+foreach(int seed in new[]{1,37,777}){var arc=new SpiralSwordCurves.ArcLengthRibbon(SpiralSwordCurves.Ribbon.Create(seed),0);for(int i=0;i<72;i++){float u=(i+.5f)/72;var q=arc.SwordRotation(u);var tip=q*Vector3.forward;var point=arc.Evaluate(u);Check(Mathf.Abs(Vector3.Dot(tip,arc.Tangent(u)))<.01f&&Vector3.Dot(tip,new Vector3(-point.x,0,-point.z).normalized)>.7f,"flat sword spans ribbon width "+seed+":"+i);}}
+var id=SpiralSwordAbilityBaker.Id;var skill=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/"+id+".asset");Check(skill&&skill.结算方式==ActiveSkillKind.螺旋剑雨&&SpiralSwordSkillRunner.资源就绪(skill),"definition resources and action ready");Check(Resources.Load<PanelDatabase>("面板/面板库").神通.Contains(skill),"shared all-scene panel catalog");var book=QuestDatabase.取().找物品("item_"+id);Check(book&&book.使用效果 is 学主动神通效果&&book.兑换消耗贡献==360,"merit shop learning book");Check(skill.攻击类别==AttackKind.主动神通&&skill.伤害属性==DamageNature.物理,"active physical damage routing");var ptn=Resources.Load<GameObject>(skill.特效资源路径).GetComponent<SpiralSwordPattern>();Check(ptn.剑数==288&&ptn.最大同时飞剑==64,"bounded mesh particles and flight budget");Check(ptn.星屑.GetComponent<ParticleSystemRenderer>().sharedMaterial.shader.isSupported&&ptn.剑群.GetComponent<ParticleSystemRenderer>().sharedMaterial.shader.isSupported,"flight trail and sword shaders supported");
+Check(ptn.GetComponentsInChildren<LineRenderer>(true).Length==0,"formation has no visible track lines");
+Check(ptn.飞行速度==38&&Resources.Load<AnimationClip>("技能动作/"+ptn.齐射动作),"faster flight and separate volley action ready");
+var rates=Enumerable.Range(0,101).Select(i=>ptn.出剑速率(i*.01f)).ToArray();Check(rates.Min()>60&&rates.Max()>rates.Min()*1.3f,"dense continuous launch rate varies without pauses");Check(rates.Skip(1).Select((r,i)=>Mathf.Abs(r-rates[i])).Max()<9,"launch rate changes smoothly rather than discrete waves");Check(ptn.星光剑间隔>=6&&ptn.剑数/ptn.星光剑间隔<=64,"sparse edge stars do not overwhelm sword sheet");Check(skill.范围==4&&Mathf.Abs(skill.伤害倍率-.105f)<.0001f,"area radius and per-sword damage configured");Check(ptn.单剑显现时长==.3f,"ghost condensation duration configured");
+foreach(var key in new[]{"ability_jianyu_luohua_cast","ability_jianyu_luohua_impact"}){var fx=CombatVfxPipeline.配置.查找(key).预制体;Check(fx.GetComponentsInChildren<AudioSource>(true).Length==0&&fx.GetComponentsInChildren<EGA_EffectSound>(true).Length==0,"flower sword rain silent "+key);}
+Check(CombatImpactPipeline.规则(id)!=null&&CombatVfxPipeline.配置.查找(id+"_impact")!=null,"shared impact and VFX policies");File.WriteAllText("../.local/diagnostics/spiral-sword/editor-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));return "SPIRAL_EDITOR_PASS "+report.Count;

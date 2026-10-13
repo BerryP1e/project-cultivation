@@ -47,6 +47,10 @@ public static class UIInkAbilityArt
         for (var parent = info.transform.parent; parent != null; parent = parent.parent)
             if (parent.name == "Page_神通") { skillsPage = true; break; }
         if (!skillsPage) return;
+        if(info.GetComponentInParent<UIInkSkillsPage>(true)!=null){
+            var old=info.transform.Find("InkAbilityArtwork");if(old)old.gameObject.SetActive(false);
+            if(info.iconImage)info.iconImage.gameObject.SetActive(true);return;
+        }
         var image = info.transform.Find("InkAbilityArtwork")?.GetComponent<Image>();
         var sprite = Artwork(info.Current);
         if (sprite == null)

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -66,6 +66,31 @@ public class 摆设 : MonoBehaviour
     public event System.Action 变化;
 
     void 通知变化() => 变化?.Invoke();
+    float 上次生产天数 = -1;
+
+    void Update()
+    {
+        var clock = 时间管理器.取(); if (!clock) return;
+        float now = clock.总天数;
+        float delta = 上次生产天数 < 0 ? 0 : now - 上次生产天数;
+        上次生产天数 = now;
+        if (!clock.暂停 && delta > 0) 推进建筑生产(delta);
+    }
+
+    /// <summary>生产属于持久状态，不依赖洞府场景中的模型；时间跳转也按真实游戏日积分。</summary>
+    public void 推进建筑生产(float days)
+    {
+        if (days <= 0 || float.IsNaN(days) || float.IsInfinity(days)) return;
+        var catalog = HomeAnimalCatalog.取();
+        foreach (var s in 全部)
+        {
+            if (s == null) continue;
+            s.确保建筑状态();
+            if (s.类型id == "animal_pen") s.兽栏.推进(days, catalog);
+            else if (s.类型id == "compost_bin") s.堆肥.推进(days);
+            else if (s.类型id == "auto_alchemy") s.炼丹.推进(days);
+        }
+    }
 
     // ============================================================ 生命周期
 
@@ -104,6 +129,7 @@ public class 摆设 : MonoBehaviour
     /// <summary>摆下一件新摆设（**道具由调用方扣**）。返回编号；失败返回 -1</summary>
     public int 放置(string 类型id, Vector3 位置, int 朝向档)
     {
+        if (类型id == "home_ground") return HomeWorld.取().扩建(位置) ? 0 : -1;
         string 原因;
         if (!位置可用(类型id, 位置, 朝向档, out 原因))
         {
@@ -183,6 +209,7 @@ public class 摆设 : MonoBehaviour
 
     public void 导入(List<摆设状态> 存档)
     {
+        上次生产天数 = -1; // 读档时重设时钟基线，不把上一份存档的时间当作生产增量。
         全部 = new List<摆设状态>();
         if (存档 != null)
             foreach (var s in 存档)
@@ -195,6 +222,7 @@ public class 摆设 : MonoBehaviour
                     continue;
                 }
                 s.朝向档 = Mathf.Clamp(s.朝向档, 0, 灵田规格.朝向档数 - 1);
+                s.确保建筑状态();
                 全部.Add(s);
             }
 
@@ -249,5 +277,15 @@ public class 摆设物件 : MonoBehaviour
         // 缩放也归零成 1：prefab 自己带的缩放要保留的话，这里就不该动 ——
         // 木桩 prefab 的缩放是它自己的事，别覆盖。
         实例.transform.localScale = 预.transform.localScale;
+        if (s.类型id == "puppet_station")
+        {
+            var station = gameObject.AddComponent<HomePuppetStation>();
+            station.状态 = s.傀儡基站 ?? (s.傀儡基站 = new HomeStationState());
+        }
+        else if (s.类型id == "animal_pen" || s.类型id == "compost_bin" || s.类型id == "auto_alchemy")
+        {
+            s.确保建筑状态();
+            gameObject.AddComponent<HomeBuilding>().编号 = 编号;
+        }
     }
 }

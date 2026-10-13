@@ -16,14 +16,15 @@
 
 ## 0. 当前接入层与阅读边界
 
-原编辑器生成器提供基础节点，运行时 UIInkSkin 接入换皮和逐页布局。父导航不绘制父底板；已重制背包、境界、神通、战阵。完整文件地图、当前边界、验证入口见 [UI 接入与维护](../guides/UI换皮.md)。下文生成器的节点名、原始锚点及素材接口是基准结构，运行时子页控制器会覆盖布局，不应据此重跑生成器。
+原编辑器生成器提供基础节点，运行时 UIInkSkin 接入换皮和逐页布局。父导航不绘制父底板；已重制背包、境界、神通、战阵。本轮分区与核心视觉规则见 [角色界面统一布局](../guides/角色界面统一布局.md)。Tab 行游十二扇区由 PlayerTraversalWheel 独立 Overlay Canvas 接入，见 [行游轮盘](../guides/行游轮盘.md)。完整文件地图、当前边界、验证入口见 [UI 接入与维护](../guides/UI换皮.md)。下文生成器的节点名、原始锚点及素材接口是基准结构，运行时子页控制器会覆盖布局，不应据此重跑生成器。
 
 | 接入 | 控制器 | 当前结构 |
 |---|---|---|
-| 父导航 | UIInkNavigation / UIInkDensity | 独立墨点与标签自身流动；I 打开时缓存并隐藏 HUD，关闭恢复 |
-| 背包 | UIInkBagPage / UIInkWaterfall | 包裹开场后全区瀑布流、数量自适应、纯墨详情、墨边裁剪 |
+| 父导航/幕布 | UIInkNavigation / UICharacterBackdrop | 独立墨点导航；远近墨云、持久墨流与鼠标局部搅动与底部渐变，I 打开隐藏HUD；简洁圆角操作按钮 |
+| 背包 | UIInkBagPage / UIInkWaterfall / UICharacterCard | 六列等距品质卡片、数量/图标/底栏、右侧可滚动详情与使用，首尾渐隐 |
+| 法则 | UIInkLawPage / UIInkLawGrid | 默认装备总览；点击进入三列筛选背包，原人物/仪轨拖拽，熔炼与洗练，Esc逐层返回 |
 | 境界 | UIInkRealmPage | 0.5秒连续加速墨圈，右侧圆弧属性、背包样式滚动条 |
-| 神通 | UIInkSkillsPage / UIInkSkillVolume / UIInkDragSpark | 六槽三维轨道和图标平面、双向拖拽、随机被动星点与详情 |
+| 神通 | UIInkSkillsPage / UIInkSkillVolume / UIInkDragSpark | 已悟卡片在左，保留六槽三维轨道/流动连线/被动星点；另设隔离神通展示和右侧详情，双向拖拽 |
 | 战阵 | UIInkFormationPage / UIInkSpiritCloud | 隔离透视相机、模型烘焙姿态与九宫格，云形真灵列表 |
 
 资源读取 UI/InkUI，制作源另放 Assets/Art/UI/Source/InkUI/Authoring。共用动效、显示数值插值和裁剪仍由 UIInkMotion 等组件负责，业务入口不改。未重制页保留基础皮肤；材质统一和剩余子页仍需验收，不能标为整套完成。

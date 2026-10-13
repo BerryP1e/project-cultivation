@@ -24,6 +24,7 @@ public sealed class CombatVfxCatalog : ScriptableObject
         [Min(0)] public float 灯光最大半径;
         public float 散布半径;
         public float 最长存活=12f;
+        public CombatVfxPalette 调色;
     }
     public Entry[] 特效=Array.Empty<Entry>();
     public Entry 查找(string id)=>Array.Find(特效,e=>e!=null&&e.id==id);

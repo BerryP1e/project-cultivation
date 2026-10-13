@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// **坐骑系统**：按 <see cref="坐骑键"/>（和御风共用的 Shift）上/下坐骑。
+/// **坐骑系统**：通过Tab行游轮盘上/下坐骑，保留原生四阶段动画与高度。
 ///
 /// ## 四个状态（用户 2026-09-23 定）
 ///
@@ -25,22 +25,10 @@ using UnityEngine;
 ///   玩家的落地段**推迟到 2.03−0.70 = 1.33s 才触发**，让"脚踩到地面"和
 ///   "坐骑消散完"同时发生。
 ///
-/// ## 和「凭虚御风」的关系（用户 2026-09-24 改成"互斥 + 一个键"）
+/// ## 御风与坐骑
 ///
-/// > 「统一改成 shift 开启御风或是坐骑，装备坐骑时会自动停用御风这个被动神通。
-/// >   启用凭虚御风时会自动取消装备坐骑」
-///
-/// 所以：
-/// * **Shift 是两者共用的一个键**：装了坐骑 → Shift 归坐骑；没装 → Shift 归御风
-///   （<see cref="按了坐骑键"/> 里"没装坐骑就直接 return"，御风那边也用
-///   `按键归坐骑()` 对称地让开）；
-/// * **装备坐骑 → 自动停用【凭虚御风】**，**启用御风 → 自动取消装备坐骑** ——
-///   两条规则都写在 `UIPanelData`（装备 / 启停的唯一入口），所以两者不会同时生效；
-///   面板里卸掉坐骑时，这里每帧的兜底判断会**立刻收掉正在骑的那只**；
-/// * 骑乘期间仍然**屏蔽 Shift 起飞**（<see cref="YufengFlight.禁止切换"/>），高度由本组件自己管，
-///   **不消耗灵气**、**不走重力**；
-/// * 玩家动画只是**借用**御风的四个片段（升空/Idle/前进/落地），
-///   通过 <see cref="PlayerAnimationController"/> 的外部驱动接口播。
+/// 两者可以同时准备。PlayerTraversalController负责落地后再切换，
+/// 骑乘期间YufengFlight禁止启动；面板改装/卸装仍回收当前坐骑。
 ///
 /// ## 高度：固定的**对地**高度（用户 2026-09-24 定）
 ///
@@ -83,13 +71,9 @@ public class MountRider : MonoBehaviour
     [Tooltip("玩家动画控制器（借它的御风片段）")]
     public PlayerAnimationController 动画;
 
-    [Header("按键")]
-    [Tooltip("**上/下坐骑的按键**。★ 用户定：和【凭虚御风】**共用 Shift 一个键** ——\n" +
-             "装了坐骑时 Shift 是坐骑，没装坐骑时这一下留给御风（见 按了坐骑键）。")]
-    public KeyCode 坐骑键 = KeyCode.LeftShift;
-
-    [Tooltip("第二个键（键盘左右 Shift 都认）。填 None 表示不要")]
-    public KeyCode 坐骑键2 = KeyCode.RightShift;
+    // 旧场景字段保留；上下坐骑现在由Tab轮盘调用，不读取Shift。
+    [HideInInspector] public KeyCode 坐骑键 = KeyCode.None;
+    [HideInInspector] public KeyCode 坐骑键2 = KeyCode.None;
 
     [Tooltip("骑乘期间是否允许再次按键下坐骑")]
     public bool 允许下坐骑 = true;
@@ -314,15 +298,7 @@ public class MountRider : MonoBehaviour
     {
         if (面板数据 == null) 解析引用();
 
-        // ★ Shift 是「坐骑 / 御风」**共用的一个键**：装了坐骑才响应，没装就留给御风
-        //   （判断在 按了坐骑键 里，御风那边也用 按键归坐骑() 对称地让开）
-        bool 按下 = Input.GetKeyDown(坐骑键)
-                 || (坐骑键2 != KeyCode.None && Input.GetKeyDown(坐骑键2));
-        if (按下 && !UiEscRegistry.SceneInputBlocked) 按了坐骑键();
-
         // ★ 面板里把坐骑卸了 / 换成另一只 → **立刻收掉正在骑的这只**。
-        //   用户定的规则是「启用【凭虚御风】→ 自动取消装备坐骑」，
-        //   取消装备之后总不能还让那只坐骑驮着人跑。
         //   面板打开时 timeScale=0，Update 照跑，所以是"当场"收掉（没有过渡动画）。
         if (骑乘中 && 面板数据 != null && 面板数据.当前坐骑 != 坐骑定义)
         {
@@ -339,29 +315,13 @@ public class MountRider : MonoBehaviour
         }
     }
 
-    void 按了坐骑键()
-    {
-        if (状态 == 骑乘状态.未骑乘)
-        {
-            // ★ 没装坐骑时**这一下不归我** —— Shift 要留给【凭虚御风】（用户定的共用键）。
-            //   以前这里是 E 键，没装坐骑会提示"还没有装备坐骑"；
-            //   现在再提示就变成噪音了：玩家按 Shift 想飞，却被坐骑系统抢答一句"没装坐骑"。
-            if (面板数据 == null || 面板数据.当前坐骑 == null) return;
-            尝试上坐骑();
-        }
-        else if (已骑稳 && 允许下坐骑) 开始下坐骑();
-    }
-
     // ============================================================ 上坐骑
 
     void 尝试上坐骑()
     {
         解析引用();
 
-        // ★ 御风流程中要上坐骑 → **先把御风收干净，不再"开启不了对方"**（用户 2026-09-24 定）。
-        //   正常路径上走不到这里：装备坐骑时【凭虚御风】已经被自动停用了
-        //   （UIPanelData.设置当前坐骑 → 停用被动 → PlayerAbilityLoader 顺手 强制落地()）。
-        //   这条只是数据对不上时的兜底，所以强制落地 + 打一条 warning。
+        // 非轮盘脚本直接召唤时的安全兜底；轮盘已等待原生落地完成。
         if (御风 != null && 御风.御风流程中)
         {
             御风.强制落地();

@@ -18,10 +18,15 @@ if(!caster||!driver||!control||!anim.avatar||!anim.avatar.isValid||!anim.avatar.
 }
 }finally{EditorSceneManager.ClosePreviewScene(scene);}
 }
-foreach(string name in new[]{"水龙炮_施法","追踪弹_施法"}){
-var clip=Resources.Load<AnimationClip>("技能动作/神通施法/"+name);
+foreach(string name in new[]{"玄霄雷诀/A3","神通施法/追踪弹_施法"}){
+var clip=Resources.Load<AnimationClip>("技能动作/"+name);
 if(!clip||!clip.humanMotion||clip.isLooping)throw new System.Exception("Missing shared casting asset "+name);
 report.AppendLine("Resources "+name+" length="+clip.length+" human="+clip.humanMotion+" loop="+clip.isLooping);
+}
+if(!WaterDragonSkillRunner.资源就绪())throw new Exception("Shared summon prefab missing");
+foreach(var dependency in AssetDatabase.GetDependencies(AssetDatabase.GetAssetPath(Resources.Load<GameObject>(WaterDragonSkillRunner.龙资源路径)),true)){
+if(dependency.Contains("Reference/")||dependency.EndsWith("DragonMob.controller"))throw new Exception("Summon should not depend on preview/reference assets: "+dependency);
+report.AppendLine("Summon dependency "+dependency);
 }
 report.AppendLine("SCENE_AUDIT_PASS players="+players+" active="+original.path+" dirty="+original.isDirty);
 File.WriteAllText("../.local/diagnostics/flying-cast-scenes-audit-report.txt",report.ToString());Debug.Log(report.ToString());

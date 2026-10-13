@@ -17,7 +17,8 @@ public class SaveData
     public bool 收服系统已初始化;
     public string 当前法宝 = "";
     public int 青山剑有效击杀;
-    public const int 当前版本 = 20;   // 20：法则精粹与炉中暂存实例
+    public const int 当前版本 = 22;   // 22：兽栏、堆肥、自动炼丹与施肥冷却；旧档加法字段补齐。
+    public List<UnityEngine.Vector2Int> 家园扩建 = new List<UnityEngine.Vector2Int>();
 
     [Header("身份")]
     public int 版本 = 当前版本;

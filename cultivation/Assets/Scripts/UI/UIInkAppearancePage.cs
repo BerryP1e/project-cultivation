@@ -118,7 +118,8 @@ public class UIInkAppearancePage : MonoBehaviour
         Place(label.rectTransform, .20f, .35f, .87f, .88f);
         var owned = Label("State", rt, actor.当前外观 == appearance ? "已穿戴" : "已拥有 · 点击查看", 16, TextAnchor.MiddleLeft);
         Place(owned.rectTransform, .20f, .05f, .87f, .37f);
-        StyleAction(button);
+        rowImage.color=Color.clear;button.transition=Selectable.Transition.None;
+        UICharacterBackdrop.Panel(rt,"AppearanceRowBackground");
         button.onClick.AddListener(() => { Selected = appearance; ShowSelection(); });
         rows.Add(rt.gameObject);
         foreach (var graphic in rt.GetComponentsInChildren<Graphic>(true)) graphic.gameObject.AddComponent<UIInkScrollFade>();
@@ -143,18 +144,15 @@ public class UIInkAppearancePage : MonoBehaviour
         DescriptionScroll.verticalNormalizedPosition = 1;
         foreach (var row in rows)
         {
-            var fluid = row.GetComponent<UIInkFluid>();
-            if (fluid != null) fluid.选中(row.name == "AppearanceRow_" + id);
+            var image=row.transform.Find("AppearanceRowBackground")?.GetComponent<Image>();
+            if(image)image.color=new Color(1,1,1,row.name=="AppearanceRow_"+id?.54f:.25f);
         }
     }
 
     RectTransform Panel(string name, Transform parent, Vector2 min, Vector2 max)
     {
-        var image = UIBuildUtils.CreateImage(name, parent, Color.white);
-        UIBuildUtils.Place(image.rectTransform, min, max, Vector2.zero, Vector2.zero);
-        InkUITheme.Image(image, "Bag/bag-info-ink", false);
-        image.raycastTarget = false;
-        return image.rectTransform;
+        var rect=UIBuildUtils.CreateRect(name,parent);
+        UIBuildUtils.Place(rect,min,max,Vector2.zero,Vector2.zero);UICharacterBackdrop.Panel(rect);return rect;
     }
     Text Label(string name, Transform parent, string value, int size, TextAnchor alignment)
     {
@@ -196,11 +194,7 @@ public class UIInkAppearancePage : MonoBehaviour
     }
     static void StyleAction(Button button)
     {
-        UIInkActionButton.Apply(button);
-        button.GetComponent<UIInkActionButton>().设置绘制倍率(new Vector2(.84f,1.45f));
-        var fluid=button.GetComponent<UIInkFluid>();
-        fluid.位移强度=.10f;
-        fluid.形变强度=.15f;
+        UICharacterBackdrop.StyleButton(button);
     }
     static void Place(RectTransform rt, float x0, float y0, float x1, float y1)
     { UIBuildUtils.Place(rt, new Vector2(x0, y0), new Vector2(x1, y1), Vector2.zero, Vector2.zero); }

@@ -1,0 +1,59 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+if(EditorApplication.isPlaying)throw new Exception("Requires edit mode");
+var assets=HomeAssets.取();
+var scene=EditorSceneManager.NewPreviewScene();
+var checks=new List<string>();
+void Check(bool value,string name){if(!value)throw new Exception(name);checks.Add(name);}
+try
+{
+    var floor=(GameObject)PrefabUtility.InstantiatePrefab(assets.地面,scene);
+    PrefabUtility.UnpackPrefabInstance(floor,PrefabUnpackMode.Completely,InteractionMode.AutomatedAction);
+    var boundary=floor.GetComponentInChildren<HomeBoundary>();
+    var original=boundary.GetComponentsInChildren<HomeBoundaryPiece>().Where(p=>!p.空气墙).ToDictionary(p=>p.键);
+    var poses=original.ToDictionary(p=>p.Key,p=>p.Value.transform.position);
+    Check(original.Count>30,"initial prefab contains visible natural boundary");
+    Check(original.Values.Any(p=>p.name.Contains("Tree"))&&original.Values.Any(p=>p.name.Contains("Rock")),"trees and rocks both baked");
+    Check(original.Values.All(p=>p.GetComponentsInChildren<Collider>().Length==0),"scenery does not introduce duplicate physics obstacles");
+    foreach(var rock in assets.围挡石头)
+    {
+        var model=rock.transform.Find("模型").GetChild(0);
+        Check(Quaternion.Angle(model.localRotation,Quaternion.Euler(-90,0,0))<.01f,"rock source orientation corrected: "+rock.name);
+    }
+    boundary.同步(assets,new[]{Vector2Int.zero});
+    Check(boundary.最近新增==0&&boundary.最近移除==0&&boundary.最近移动==0,"same layout is a no-op");
+    var far=original.Where(p=>poses[p.Key].z<-5).ToArray();
+    boundary.同步(assets,new[]{Vector2Int.zero,Vector2Int.up});
+    var current=boundary.GetComponentsInChildren<HomeBoundaryPiece>().Where(p=>!p.空气墙).ToDictionary(p=>p.键);
+    Check(boundary.最近新增>0&&boundary.最近移除>0&&boundary.最近保留>0,"expansion changes only part of boundary");
+    Check(far.Length>10&&far.All(p=>current.TryGetValue(p.Key,out var v)&&v==p.Value&&(v.transform.position-poses[p.Key]).sqrMagnitude<.000001f),"southern trees and rocks retain exact instances and positions");
+    Check(original.Any(p=>!current.ContainsKey(p.Key)),"obsolete entrance scenery removed");
+    var delta=new{added=boundary.最近新增,removed=boundary.最近移除,moved=boundary.最近移动,retained=boundary.最近保留,farPreserved=far.Length};
+    boundary.同步(assets,new[]{Vector2Int.zero});
+    var reset=boundary.GetComponentsInChildren<HomeBoundaryPiece>().Where(p=>!p.空气墙).ToDictionary(p=>p.键);
+    Check(reset.Count==original.Count&&reset.All(p=>(p.Value.transform.position-poses[p.Key]).sqrMagnitude<.000001f),"reset restores deterministic layout");
+    foreach(var path in new[]{"Assets/resources/Home/StonePlatform.prefab","Assets/Art/Environment/Home/HomeGroundMergedPair.prefab"})
+    {
+        var go=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path),scene);
+        var lightObject=new GameObject("preview light");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(lightObject,scene);
+        var light=lightObject.AddComponent<Light>();light.type=LightType.Directional;light.intensity=1.2f;light.transform.rotation=Quaternion.Euler(48,-35,0);
+        var cameraObject=new GameObject("preview camera");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(cameraObject,scene);
+        var camera=cameraObject.AddComponent<Camera>();camera.scene=scene;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.12f,.16f,.17f);camera.orthographic=true;
+        bool pair=path.Contains("Merged");camera.orthographicSize=pair?44:30;camera.transform.position=new Vector3(pair?67:40,48,58);camera.transform.LookAt(new Vector3(pair?20:0,-1,0));
+        floor.SetActive(false);
+        var rt=new RenderTexture(1200,850,24);camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;
+        var tex=new Texture2D(1200,850,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,1200,850),0,0);tex.Apply();
+        System.IO.File.WriteAllBytes(System.IO.Path.GetFullPath("../.local/diagnostics/home/boundary-"+(pair?"merged":"single")+".png"),tex.EncodeToPNG());
+        RenderTexture.active=null;camera.targetTexture=null;rt.Release();UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(tex);
+        UnityEngine.Object.DestroyImmediate(go);UnityEngine.Object.DestroyImmediate(lightObject);UnityEngine.Object.DestroyImmediate(cameraObject);
+    }
+    var result=new{passed=checks.Count,checks,initial=original.Count,delta};
+    System.IO.File.WriteAllText(System.IO.Path.GetFullPath("../.local/diagnostics/home/boundary-editor-report.json"),Codely.Newtonsoft.Json.JsonConvert.SerializeObject(result,Codely.Newtonsoft.Json.Formatting.Indented));
+    return Codely.Newtonsoft.Json.JsonConvert.SerializeObject(result);
+}
+finally{EditorSceneManager.ClosePreviewScene(scene);}

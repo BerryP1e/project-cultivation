@@ -1,0 +1,17 @@
+using System.IO;
+using System.Collections;
+IEnumerator Run(){
+var report=new List<string>();var effects=new List<GameObject>();var buffer=new ParticleSystem.Particle[8];
+try{
+foreach(var id in new[]{"ability_jianyu_luo","ability_jianyu_luohua"}){
+var point=new Vector3(24000,3,24000);var fx=CombatVfxPipeline.播放(id+"_impact",point,Vector3.down);effects.Add(fx);
+var ps=fx.GetComponentsInChildren<ParticleSystem>().Single(p=>p.GetComponent<ParticleSystemRenderer>().renderMode==ParticleSystemRenderMode.Mesh);
+yield return new WaitForSeconds(.05f);if(ps.GetParticles(buffer)!=1)throw new Exception("Missing planted sword "+id);var initial=buffer[0];float size=initial.GetCurrentSize(ps);var rotation=initial.rotation3D;
+for(int i=0;i<7;i++){yield return new WaitForSeconds(.1f);if(ps.GetParticles(buffer)!=1)throw new Exception("Premature disappearance "+id);var current=buffer[0];if(Vector3.Distance(initial.position,current.position)>.0001f||Quaternion.Angle(Quaternion.Euler(rotation),Quaternion.Euler(current.rotation3D))>.01f||Mathf.Abs(size-current.GetCurrentSize(ps))>.0001f)throw new Exception("Sword geometry changed "+id);report.Add(id+" stable position rotation and size at "+((i+1)*.1f+.05f));}
+report.Add(id+" sword axis "+(Quaternion.Euler(rotation)*Vector3.forward));
+if(Vector3.Dot(Quaternion.Euler(rotation)*Vector3.forward,Vector3.down)<.999f)throw new Exception("Sword not planted tip-down "+id);
+}
+File.WriteAllText("../.local/diagnostics/active-wave1/stability-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));yield break;
+}finally{foreach(var fx in effects)if(fx)Object.Destroy(fx);}
+}
+return Run();

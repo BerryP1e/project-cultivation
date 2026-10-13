@@ -223,8 +223,20 @@ public class NpcProjectile : MonoBehaviour
         foreach (var ps in 全部粒子)
         {
             var m = ps.main;
+            // PFX 的弹体与 Trail 原生自带15m/s世界空间位移；根节点已有本飞行器推进。
+            // 只固定主体，沿路烟、星光仍留在世界空间，不能让两套弹道各飞各的。
+            if ((ps == GetComponent<ParticleSystem>() && ps.name.StartsWith("VFX_")) || ps.name == "Trail")
+            {
+                ps.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                m.simulationSpace = ParticleSystemSimulationSpace.Local;
+                m.startSpeed = 0f;
+                var velocity = ps.velocityOverLifetime; velocity.enabled = false;
+                var inherited = ps.inheritVelocity; inherited.enabled = false;
+                var force = ps.forceOverLifetime; force.enabled = false;
+                var trails = ps.trails; if (trails.enabled) trails.worldSpace = true;
+            }
             m.playOnAwake = true;
-            ps.Play(true);
+            ps.Play(false);
 
             // 自己不会出粒子的（rate 和 burst 都是 0）→ 归到"沿路补发"
             if (ps.emission.rateOverTime.constantMax <= 0.001f && ps.emission.burstCount == 0)
@@ -266,6 +278,7 @@ public class NpcProjectile : MonoBehaviour
             }
 
             if(检查环境(transform.position+飞行方向*本帧能走))return;
+            检查闪避擦身(transform.position + 飞行方向 * 本帧能走);
             transform.position += 飞行方向 * 本帧能走;
             // 朝向跟着飞行方向（不追踪时方向恒定，等于没变）
             if (飞行方向.sqrMagnitude > 0.0001f)
@@ -292,6 +305,7 @@ public class NpcProjectile : MonoBehaviour
         Vector3 差 = 目标点 - transform.position;
         float 距离 = 差.magnitude;
         if(检查环境(transform.position+差.normalized*Mathf.Min(距离,本帧能走)))return;
+        检查闪避擦身(transform.position + 差.normalized * Mathf.Min(距离, 本帧能走));
 
         if (距离 <= Mathf.Max(0.08f, 本帧能走))
         {
@@ -324,6 +338,13 @@ public class NpcProjectile : MonoBehaviour
     }
 
     float 补发累计;
+
+    void 检查闪避擦身(Vector3 next)
+    {
+        if (!追踪目标) return;
+        var dodge = 追踪目标.GetComponentInParent<PlayerFlightDodge>();
+        if (dodge) dodge.检查擦身轨迹(transform.position, next, Mathf.Max(.05f, 命中半径));
+    }
 
     /// <summary>按飞过的距离给「沿路粒子」补发（跟速度无关，所以快慢都均匀）</summary>
     void 补发沿路粒子(float 本帧距离)

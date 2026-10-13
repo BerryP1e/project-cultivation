@@ -1,0 +1,66 @@
+var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();if(scene.name!="Sect"||EditorApplication.isPlaying)throw new Exception("在非Play的Sect执行");
+var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+var all=scene.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<Transform>(true)).ToArray();
+var root=all.Single(t=>t.name=="宗门圆角地面");var generated=root.GetComponentsInChildren<MeshFilter>();
+Check(generated.Length==7,"eleven original platforms baked into seven height groups");
+var original=all.Select(t=>t.GetComponent<MeshFilter>()).Where(f=>f&&f.sharedMesh.name.Contains("dabingshi")).ToArray();
+Check(original.Length==22&&original.All(f=>!f.GetComponent<Renderer>().enabled&&f.GetComponents<Collider>().All(c=>!c.enabled)),"all source surfaces replaced without duplicate rendering or collision");
+var beforePath=System.IO.Path.GetFullPath("../.local/diagnostics/home/sect-transforms-before.json");
+if(System.IO.File.Exists(beforePath)){
+ var before=Codely.Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(beforePath));
+ var current=all.GroupBy(t=>UnityEditor.AnimationUtility.CalculateTransformPath(t,null)).ToDictionary(g=>g.Key,g=>g.ToArray());
+ foreach(var item in before){var path=(string)item["path"];Check(current.TryGetValue(path,out var candidates)&&candidates.Any(t=>t.position.ToString()==(string)item["position"]&&t.rotation.ToString()==(string)item["rotation"]&&t.localScale.ToString()==(string)item["scale"]),"original transform retained: "+path);}
+}
+int rays=0,wallBands=0;float maxDifference=0,maxWallGap=0;
+var sourceRock=original.GroupBy(f=>f.transform.parent).Select(g=>g.OrderByDescending(f=>f.GetComponent<Renderer>().bounds.size.y).First()).Select(f=>new{vertices=f.sharedMesh.vertices.Select(f.transform.TransformPoint).ToArray(),indices=f.sharedMesh.triangles}).ToArray();
+float WallGap(Vector3 p){
+ float min=float.MaxValue;var point=new Vector2(p.x,p.z);
+ foreach(var source in sourceRock)for(int i=0;i<source.indices.Length;i+=3){
+  var cuts=new List<Vector2>();
+  for(int j=0;j<3;j++){var a=source.vertices[source.indices[i+j]];var b=source.vertices[source.indices[i+(j+1)%3]];
+   if((a.y<=p.y&&b.y>p.y)||(a.y>p.y&&b.y<=p.y)){var q=Vector3.Lerp(a,b,(p.y-a.y)/(b.y-a.y));cuts.Add(new Vector2(q.x,q.z));}
+  }
+  if(cuts.Count!=2)continue;var e=cuts[1]-cuts[0];if(e.sqrMagnitude<1e-12f)continue;
+  min=Mathf.Min(min,(point-cuts[0]-e*Mathf.Clamp01(Vector2.Dot(point-cuts[0],e)/e.sqrMagnitude)).magnitude);
+ }
+ return min;
+}
+foreach(var group in original.GroupBy(f=>f.transform.parent)){
+ var f=group.OrderBy(m=>m.GetComponent<Renderer>().bounds.size.y).First();var v=f.sharedMesh.vertices;var idx=f.sharedMesh.triangles;
+ for(int i=0;i<idx.Length;i+=3){
+  var p=f.transform.TransformPoint((v[idx[i]]+v[idx[i+1]]+v[idx[i+2]])/3f);var ray=new Ray(p+Vector3.up*2,Vector3.down);float min=float.MaxValue;
+  foreach(var candidate in generated)if(candidate.GetComponent<MeshCollider>().Raycast(ray,out var hit,4))min=Mathf.Min(min,Mathf.Abs(hit.point.y-p.y));
+  Check(min<.55f,"original top triangle remains supported: "+f.transform.parent.name+"/"+i);maxDifference=Mathf.Max(maxDifference,min);rays++;
+ }
+}
+foreach(var f in generated){
+ var mesh=f.sharedMesh;Check(f.GetComponent<MeshCollider>().sharedMesh==mesh,"visual and collision mesh match "+f.name);
+ Check(mesh.vertices.All(v=>!float.IsNaN(v.x)&&!float.IsNaN(v.y)&&!float.IsNaN(v.z)),"finite mesh "+f.name);
+ var materials=f.GetComponent<Renderer>().sharedMaterials;Check(materials.Length==2&&materials.All(m=>m&&m.shader),"original stone materials retained "+f.name);
+ var edges=new Dictionary<ulong,int>();var top=mesh.GetTriangles(0);
+ for(int i=0;i<top.Length;i+=3)for(int j=0;j<3;j++){int a=top[i+j],b=top[i+(j+1)%3];ulong k=((ulong)(uint)Mathf.Min(a,b)<<32)|(uint)Mathf.Max(a,b);edges.TryGetValue(k,out var count);edges[k]=count+1;}
+ Check(edges.Values.All(n=>n<=2),"top is manifold "+f.name);
+ var vertices=mesh.vertices;var wall=mesh.GetTriangles(1);int start=top.Max()+1;
+ int beforeBands=wallBands;
+ var topPositions=new HashSet<Vector3>(top.Select(i=>vertices[i]));
+ // 上沿每段为6行、14顶点、36索引；下方原岩体三角形不参加该检查。
+ for(int offset=0;offset+35<wall.Length&&wall[offset]==start&&wall[offset+1]==start+2&&wall[offset+2]==start+1&&wall[offset+35]==start+13;offset+=36,start+=14){
+  Check(topPositions.Contains(vertices[start])&&topPositions.Contains(vertices[start+1]),"wall starts on top boundary "+f.name+"/"+wallBands);
+  for(int side=0;side<2;side++){
+   var p=vertices[start+12+side];float gap=WallGap(p);maxWallGap=Mathf.Max(maxWallGap,gap);
+   Check(gap<.0003f,"wall joins actual source cliff without a protruding convex hull "+f.name+"/"+wallBands+"/"+side);
+   var a=vertices[start+side];var end=new Vector2(p.x,p.z)-new Vector2(a.x,a.z);
+   for(int row=1;row<6;row++){
+    var q=vertices[start+row*2+side];var relative=new Vector2(q.x-a.x,q.z-a.z);
+    float along=end.sqrMagnitude>1e-8f?Vector2.Dot(relative,end)/end.sqrMagnitude:0;
+    float across=end.sqrMagnitude>1e-8f?Mathf.Abs(end.x*relative.y-end.y*relative.x)/end.magnitude:relative.magnitude;
+    Check(across<.0003f&&along>=-.0001f&&along<=1.0001f,"wall stays within rim-to-cliff transition "+f.name+"/"+wallBands+"/"+side+"/"+row);
+   }
+  }
+  wallBands++;
+ }
+ Check(wallBands>beforeBands,"wall seam coverage "+f.name);
+}
+Check(wallBands>500,"wall seam checks cover every height group");
+System.IO.File.WriteAllText(System.IO.Path.GetFullPath("../.local/diagnostics/home/sect-ground-report.json"),Codely.Newtonsoft.Json.JsonConvert.SerializeObject(new{passed=checks.Count,rays,maxDifference,wallBands,maxWallGap,vertices=generated.Sum(f=>f.sharedMesh.vertexCount),checks},Codely.Newtonsoft.Json.Formatting.Indented));
+return new{passed=checks.Count,rays,maxDifference,wallBands,maxWallGap};

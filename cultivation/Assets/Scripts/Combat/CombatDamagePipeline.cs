@@ -22,7 +22,13 @@ public static class CombatDamagePipeline
             已应用 = true, 状态 = CombatHitState.InvalidTarget };
         if (target == null || target.根 == null || target.已倒下 || target.战斗属性 == null) return result;
         if (context.攻击属性 == null) { result.状态 = CombatHitState.InvalidAttack; return result; }
-        if (target.免疫伤害) result.状态 = CombatHitState.Immune;
+        if (target.免疫伤害)
+        {
+            result.状态 = CombatHitState.Immune;
+            var dodge = target.根.GetComponent<PlayerFlightDodge>();
+            var source = CombatTargets.取(context.攻击属性)?.根 ?? CombatTargets.取(context.来源)?.根;
+            if (dodge && source != target.根) dodge.收到擦身攻击();
+        }
         else
         {
             result = CombatCalculator.Resolve(context.攻击属性, target.战斗属性, context.规则);

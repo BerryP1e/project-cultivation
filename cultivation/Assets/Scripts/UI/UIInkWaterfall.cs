@@ -12,6 +12,8 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     public int PoolCount => cells.Count;
     public float ScrollOffset => offset;
     public bool AllowLoop = true;
+    public bool OrderedCards;
+    public int CardColumns=3;
     public float MaxScrollOffset => viewport==null ? 0 : Mathf.Max(0,ContentHeight-viewport.rect.height);
     public bool Opening { get; private set; }
     public Vector2 LaunchPoint;
@@ -74,7 +76,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     }
     float Cycle => Mathf.Max(1,Mathf.CeilToInt(entries.Count/(float)Columns))*Pitch;
     public int Quantity(IPanelEntry entry) => entry!=null && quantities.TryGetValue(entry,out int value) ? value : 0;
-    float ContentHeight => Cycle+(Columns-1)*25+36*ItemScale;
+    float ContentHeight => OrderedCards ? Cycle+12 : Cycle+(Columns-1)*25+36*ItemScale;
     bool Looping => AllowLoop && viewport!=null && Cycle>viewport.rect.height;
     bool Scrollable => Looping || MaxScrollOffset>0;
     public void Open()
@@ -83,6 +85,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
     }
     public void Skip() { Opening=false; openingAge=10; Refresh(false); }
     public void ScrollBy(float pixels) { offset=Scrollable ? offset+pixels : 0; Refresh(false); }
+    public void StopMovement(){speed=0;dragging=false;}
     public void OnScroll(PointerEventData e)
     { Skip(); ScrollBy(-e.scrollDelta.y*78); speed=-e.scrollDelta.y*210; }
     public void OnBeginDrag(PointerEventData e)
@@ -127,6 +130,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
         ItemScale=Mathf.Clamp((viewport.rect.width/Columns-20)/160,.88f,1.55f);
         BackdropScale=entries.Count<=9 ? 1 : entries.Count<=20 ? .93f : entries.Count<=40 ? .82f : .70f;
         Pitch=180*ItemScale;
+        if(OrderedCards){Columns=Mathf.Max(1,CardColumns);ItemScale=Mathf.Clamp((viewport.rect.width/Columns-20)/160,.55f,1.25f);Pitch=(viewport.rect.width-18)/Columns*1.23f;BackdropScale=1;}
         int rows=Mathf.CeilToInt(viewport.rect.height/Pitch)+3;
         int count=entries.Count==0 ? 0 : rows*Columns;
         while(cells.Count<count) {
@@ -135,6 +139,7 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
                 var coords=graphic.gameObject.AddComponent<UIInkFadeCoordinates>(); coords.Viewport=viewport;
             }
             cell.GetComponent<UIInkFluid>().渐隐视口=viewport;
+            cell.OrderedCard=OrderedCards;
             cells.Add(cell);
         }
         float width=Mathf.Max(100,(viewport.rect.width-18)/Columns);
@@ -153,12 +158,12 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
             if(index<0 || index>=entries.Count || !Looping && row>=dataRows) { cell.gameObject.SetActive(false); continue; }
             cell.gameObject.SetActive(true);
             if(rebind || cell.Entry!=entries[index]) cell.Bind(entries[index]);
-            cell.Rect.sizeDelta=new Vector2(width-14,140*ItemScale);
+            cell.Rect.sizeDelta=new Vector2(width-14,OrderedCards?(width-14)*1.16f:140*ItemScale);
             cell.Layout(ItemScale,BackdropScale);
-            float top=Scrollable ? viewport.rect.height*.5f : Mathf.Min(viewport.rect.height*.5f,ContentHeight*.5f);
-            Vector2 target=new Vector2(9+col*width+width*.5f,top-row*Pitch+offset-Pitch*.5f-col*25);
+            float top=OrderedCards || Scrollable ? viewport.rect.height*.5f : Mathf.Min(viewport.rect.height*.5f,ContentHeight*.5f);
+            Vector2 target=new Vector2(9+col*width+width*.5f,top-row*Pitch+offset-Pitch*.5f-(OrderedCards?0:col*25));
             target.x-=viewport.rect.width*.5f;
-            target+=cell.Scatter;
+            if(!OrderedCards)target+=cell.Scatter;
             float progress=UIInkMotion.减少动效 || !Opening ? 1 : Mathf.Clamp01((openingAge-.48f-i*.025f)/.34f);
             float t=UIInkMotion.Timing.Cubic(progress);
             Vector2 position=Vector2.Lerp(LaunchPoint,target,t); position.y+=Mathf.Sin(t*Mathf.PI)*120;
@@ -177,8 +182,9 @@ public class UIInkWaterfall : MonoBehaviour, IScrollHandler, IBeginDragHandler, 
 }
 
 /// <summary>固定命中单元；只牵引、放大图标，不移动名称或按钮。</summary>
-public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    public bool OrderedCard;
     public IPanelEntry Entry { get; private set; }
     public Vector2 Scatter { get; private set; }
     public RectTransform Rect => transform as RectTransform;
@@ -195,9 +201,11 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     float displayScale=-1;
     float backdropScale=-1;
     public Material FadeMaterial;
+    UICharacterCard card;
     Graphic[] visuals;
     UIInkSpiritCloud cloud;
     bool landed;
+    IPanelEntry pressedEntry;
     public static UIInkWaterfallCell Create(RectTransform parent,UIEntryList owner)
     {
         var rt=UIBuildUtils.CreateRect("InkWaterfallCell",parent);
@@ -246,9 +254,10 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     public void UpdateQuantity()
     {
         int count=Entry is ItemDefinition ? owner.inkWaterfall.Quantity(Entry) : 0;
-        if(lastQuantity!=count) { quantity.text=count>0 ? "×"+count : ""; lastQuantity=count; }
+        if(lastQuantity!=count) { quantity.text=count>0 ? "×"+count : Entry is DivineAbilityDefinition ability?(ability is ActiveDivineAbility&&owner.data.IsEquipped(ability)?"已装备":ability is PassiveDivineAbility passive&&owner.data.IsPassiveEnabled(passive)?"启用中":""):""; lastQuantity=count; }
         bool selected=Entry==owner.Selected;
-        if(lastSelected!=selected) { ink.选中(selected); lastSelected=selected; }
+        if(lastSelected!=selected) { if(!OrderedCard)ink.选中(selected); lastSelected=selected; }
+        if(OrderedCard&&card)card.绑定(UIEntryRow.TierColor(Entry.DisplayTier),selected);
     }
     public void SetArrival(float progress) {
         group.alpha=progress>0 ? 1 : 0; group.interactable=progress>.9f; group.blocksRaycasts=progress>.9f;
@@ -262,6 +271,14 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     public void Layout(float value,float density)
     {
         if(Mathf.Approximately(displayScale,value) && Mathf.Approximately(backdropScale,density)) return; displayScale=value; backdropScale=density;
+        if(OrderedCard){
+            ink.enabled=false;shadow.rectTransform.localRotation=Quaternion.identity;
+            if(!card){card=gameObject.AddComponent<UICharacterCard>();card.初始化(shadow);}card.绑定(UIEntryRow.TierColor(Entry.DisplayTier),Entry==owner.Selected);card.渐隐(owner.GetComponent<ScrollRect>().viewport);
+            UIBuildUtils.Stretch(shadow.rectTransform);shadow.rectTransform.offsetMin=new Vector2(0,4);shadow.rectTransform.offsetMax=new Vector2(0,-4);
+            icon.rectTransform.localRotation=Quaternion.identity;icon.rectTransform.sizeDelta=Vector2.one*115*value;icon.rectTransform.anchoredPosition=new Vector2(0,15*value);
+            nameLabel.rectTransform.sizeDelta=new Vector2(Rect.rect.width-12,Mathf.Max(18,Rect.rect.height*.17f));nameLabel.rectTransform.anchoredPosition=new Vector2(0,-Rect.rect.height*.40f);nameLabel.fontSize=16;nameLabel.resizeTextForBestFit=true;nameLabel.resizeTextMinSize=11;nameLabel.resizeTextMaxSize=16;nameLabel.verticalOverflow=VerticalWrapMode.Truncate;
+            tier.enabled=false;quantity.rectTransform.sizeDelta=new Vector2(Rect.rect.width-12,24);quantity.rectTransform.anchoredPosition=new Vector2(0,-Rect.rect.height*.20f);quantity.fontSize=17;return;
+        }
         uint hash=2166136261; foreach(char letter in Entry.DisplayName) hash=(hash^letter)*16777619;
         float variation=.88f+(hash%1000)/999f*.24f;
         icon.rectTransform.sizeDelta=Vector2.one*72*value*variation;
@@ -278,16 +295,19 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
     }
     public void OnPointerEnter(PointerEventData e) { hovered=true; }
     public void OnPointerExit(PointerEventData e) { hovered=false; }
+    public void OnPointerDown(PointerEventData e){if(e.button!=PointerEventData.InputButton.Left)return;pressedEntry=Entry;owner.inkWaterfall.StopMovement();}
     public void OnBeginDrag(PointerEventData e) {
-        if(Entry is ActiveDivineAbility || owner.source==ListSource.战阵成员 && Entry is NpcDefinition) {
+        var source=pressedEntry??Entry;
+        if(source is ActiveDivineAbility || owner.source==ListSource.战阵成员 && source is NpcDefinition) {
+            owner.Select(source);
             var canvas=GetComponentInParent<Canvas>();
-            UIDragContext.Begin(Entry,canvas.rootCanvas.transform,owner.font);UIDragContext.Move(e.position);
-            if(Entry is NpcDefinition)UIDragContext.ApplySpiritGhost();else UIDragContext.ApplyInkGhost();
+            UIDragContext.Begin(source,canvas.rootCanvas.transform,owner.font);UIDragContext.Move(e.position);
+            if(source is NpcDefinition)UIDragContext.ApplySpiritGhost();else UIDragContext.ApplyInkGhost();
         } else owner.inkWaterfall.OnBeginDrag(e);
     }
     public void OnDrag(PointerEventData e) {if(UIDragContext.Dragging)UIDragContext.Move(e.position);else owner.inkWaterfall.OnDrag(e);}
     public void OnEndDrag(PointerEventData e) {if(UIDragContext.Dragging)UIDragContext.End();else owner.inkWaterfall.OnEndDrag(e);}
-    void OnDisable(){hovered=false;if(UIDragContext.Entry==Entry)UIDragContext.End();}
+    void OnDisable(){hovered=false;pressedEntry=null;if(UIDragContext.Entry==Entry)UIDragContext.End();}
     void LateUpdate()
     {
         var canvas=GetComponentInParent<Canvas>();
@@ -296,7 +316,7 @@ public class UIInkWaterfallCell : MonoBehaviour, IPointerEnterHandler, IPointerE
         float distance=(local-new Vector2(0,18)).magnitude;
         var goal=UIInkMotion.减少动效 ? Vector2.zero : Vector2.ClampMagnitude(local-new Vector2(0,18),6)*Mathf.Clamp01(1-distance/110);
         shift=Vector2.SmoothDamp(shift,goal,ref velocity,.1f,100,Time.unscaledDeltaTime);
-        icon.rectTransform.anchoredPosition=new Vector2(0,18*Mathf.Max(1,displayScale))+shift;
+        icon.rectTransform.anchoredPosition=new Vector2(0,(OrderedCard?16*displayScale:18*Mathf.Max(1,displayScale)))+shift;
         float hoverScale=owner.source==ListSource.神通 ? 1.1f : 1.15f;
         scale=Mathf.MoveTowards(scale,!UIInkMotion.减少动效 && hovered ? hoverScale : 1,Time.unscaledDeltaTime*(.15f/.14f));
         icon.rectTransform.localScale=Vector3.one*scale;

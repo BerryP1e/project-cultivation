@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f489a4bb2c23834ca4b8a9443a2a3e2, type: 3}
+  m_Name: Assets
+  m_EditorClassIdentifier: 
+  "\u5730\u9762": {fileID: 3371302179717577754, guid: e0663962a9dd9fa4e94c7dd188d87a82, type: 3}
+  "\u57FA\u7AD9": {fileID: 9222867324672862118, guid: 676e2a19c10b91940a49e65eca518e8d, type: 3}
+  "\u5080\u5121": {fileID: 8543768967072179959, guid: de1636189cce2d5429d04bce939407d8, type: 3}
+  "\u7A3F\u5B50": {fileID: 495649902332972285, guid: 84f3ba08020269140b3a88fe1e93c845, type: 3}
+  "\u6C34\u58F6": {fileID: 5577975927920984935, guid: cd2e7c3d3f8b16c48b21874307f2dac8, type: 3}
+  "\u5730\u9762\u6750\u8D28": {fileID: 2100000, guid: 47226aabb217c0f459b0ca7b388a0c5d, type: 2}
+  "\u5730\u9762\u5185\u8F6E\u5ED3":
+  - {x: -19.547892, y: -2.3774889}
+  - {x: -17.433197, y: -14.291535}
+  - {x: -5.765749, y: -17.998451}
+  - {x: -5.074093, y: -18.110046}
+  - {x: 12.449596, y: -19.51573}
+  - {x: 17.048779, y: -14.648988}
+  - {x: 19.537085, y: -4.391651}
+  - {x: 18.060328, y: 2.351897}
+  - {x: 3.3900926, y: 14.995426}
+  - {x: -5.7955985, y: 19.51427}
+  - {x: -15.557914, y: 13.7376995}
+  "\u5730\u9762\u5706\u89D2": 2.4
+  "\u56F4\u6321\u6811\u6728":
+  - {fileID: 4643996576330923743, guid: ac8ee500a0d53df418840c48c5b7bd93, type: 3}
+  - {fileID: 7112653201139697453, guid: bb335c2035181e54bb43e9625e120847, type: 3}
+  "\u56F4\u6321\u77F3\u5934":
+  - {fileID: 5128989279016500781, guid: cc691ada3c43c58499bcf156e0b541f6, type: 3}
+  - {fileID: 3628964686825243084, guid: 7853a20d126e281478a692ec85b44056, type: 3}
+  "\u5F85\u673A": {fileID: 7994627924475153551, guid: 5911d02f8b6c4094baa5521c8ea0870d, type: 3}
+  "\u884C\u8D70": {fileID: 7400000, guid: 0ebd3a0846026bf49bdc11da43431229, type: 2}
+  "\u677E\u571F": {fileID: 2106029975725247774, guid: 6e7e7d09035e0654ea2dcbda2cca6100, type: 3}
+  "\u64AD\u79CD\u6536\u83B7": {fileID: 8246844301536879415, guid: 6e7e7d09035e0654ea2dcbda2cca6100, type: 3}
+  "\u6D47\u6C34": {fileID: -6685402617049750665, guid: 6e7e7d09035e0654ea2dcbda2cca6100, type: 3}

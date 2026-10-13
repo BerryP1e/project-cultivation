@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -72,6 +72,11 @@ public static class 摆放物库
         if (缓存 != null) return;
         缓存 = new List<摆放物定义>
         {
+            new 摆放物定义 { id="home_ground", 名="洞府地面", 道具id="item_home_expansion", 模型路径="Home/StonePlatform", 占地边长=34f, 占用边距=0 },
+            new 摆放物定义 { id="puppet_station", 名="傀儡基站", 道具id="item_puppet_station", 模型路径="Home/PuppetStation", 占地边长=2.8f, 占用边距=.5f },
+            new 摆放物定义 { id="animal_pen", 名="兽栏", 道具id="item_home_animal_pen", 模型路径="Home/AnimalPen", 占地边长=8f, 占用边距=.4f },
+            new 摆放物定义 { id="compost_bin", 名="堆肥箱", 道具id="item_home_compost_bin", 模型路径="Home/CompostBin", 占地边长=2.2f, 占用边距=.35f },
+            new 摆放物定义 { id="auto_alchemy", 名="自动炼丹炉", 道具id="item_home_auto_alchemy", 模型路径="Home/AutoAlchemy", 占地边长=2.4f, 占用边距=.4f },
             // 灵田地块：外观是程序化土床（见 灵田地块外观），状态由 灵田 管
             new 摆放物定义
             {
@@ -126,6 +131,19 @@ public class 摆设状态
 
     /// <summary>朝向档 0~7（每档 45°）</summary>
     public int 朝向档 = 0;
+
+    public HomeStationState 傀儡基站 = new HomeStationState();
+    public HomePenState 兽栏 = new HomePenState();
+    public HomeCompostState 堆肥 = new HomeCompostState();
+    public HomeAlchemyState 炼丹 = new HomeAlchemyState();
+
+    public void 确保建筑状态()
+    {
+        if (兽栏 == null) 兽栏 = new HomePenState();
+        if (堆肥 == null) 堆肥 = new HomeCompostState();
+        if (炼丹 == null) 炼丹 = new HomeAlchemyState();
+        兽栏.确保(); 堆肥.确保(); 炼丹.确保();
+    }
 
     public float 朝向角度 => 朝向档 * 灵田规格.每档角度;
 
@@ -184,6 +202,8 @@ public static class 摆放校验
 
         if (定义 == null) { 原因 = "没有这种东西的定义"; return false; }
         if (!当前场景可摆放) { 原因 = "只能在个人洞府里摆放"; return false; }
+        if (定义.id == "home_ground") return HomeWorld.取().可扩建(位置, out 原因);
+        if (!HomeWorld.取().包含(位置, 定义.占用半边长)) { 原因="超出家园可摆放范围"; return false; }
 
         // ---- 地面：往下探，要有地、而且够平 ----
         //

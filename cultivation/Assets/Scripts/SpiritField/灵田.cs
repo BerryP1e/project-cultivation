@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -179,7 +179,9 @@ public class 灵田 : MonoBehaviour
         {
             if (b == null || b.待种植 || b.已成熟) continue;
             float 旧进度 = b.进度;
-            b.已生长天数 += 增量天 * 灵田品阶说明.生长倍率(b.品阶);
+            bool 原缺水 = b.需要浇水;
+            b.推进(增量天);
+            if (原缺水 != b.需要浇水) 有变化 = true;
             if (旧进度 < 1f && b.进度 >= 1f) 有变化 = true;      // 刚好熟了一块
         }
 
@@ -253,6 +255,46 @@ public class 灵田 : MonoBehaviour
 
     // ============================================================ 播种 / 收获
 
+    public bool 施肥(int i)
+    {
+        var b = 状态(i);
+        if (b == null || !b.可施肥) return false;
+        var item = 取物品(HomeAnimalCatalog.肥料id);
+        var panel = 取面板();
+        if (!item || !panel || !panel.移除物品(item, 1)) return false;
+        b.施肥();
+        通知变化();
+        return true;
+    }
+
+    public bool 浇水(int i)
+    {
+        var b = 状态(i);
+        if (b == null || b.待种植 || b.已成熟) return false;
+        b.剩余湿润天数 = b.植.浇水间隔天数;
+        通知变化();
+        return true;
+    }
+
+    /// <summary>自动化与玩家播种共用同一份地块状态，不读取玩家的种子。</summary>
+    public bool 自动播种(int i, string 灵植id, System.Func<string, bool> 扣种子)
+    {
+        var b = 状态(i); var d = 灵植库.取(灵植id);
+        if (b == null || !b.待种植 || !灵植库.可种(d, b.品阶) || 扣种子 == null || !扣种子(d.种子id)) return false;
+        b.作物id = 灵植id; b.已生长天数 = 0; b.剩余湿润天数 = 0;
+        通知变化(); return true;
+    }
+
+    public int 自动收获(int i, System.Func<string, int, bool> 存入)
+    {
+        var b = 状态(i);
+        if (b == null || !b.已成熟 || 存入 == null) return 0;
+        int 数量 = 灵植库.掷产量(b.植, b.品阶);
+        string id = b.植.产物id;
+        if (!存入(id, 数量)) return 0;
+        b.清空作物(); 收获?.Invoke(id, 数量); 通知变化(); return 数量;
+    }
+
     public bool 能种(int i, string 灵植id, out string 原因)
     {
         原因 = "";
@@ -291,6 +333,7 @@ public class 灵田 : MonoBehaviour
         var d = 灵植库.取(灵植id);
         b.作物id = 灵植id;
         b.已生长天数 = 0f;
+        b.剩余湿润天数 = 0f;
         if (d != null && !string.IsNullOrEmpty(d.种子id)) 扣物品(d.种子id, 1);
 
         Debug.Log("[灵田] 第 " + (i + 1) + " 块地种下「" + (d != null ? d.名 : 灵植id) + "」，"

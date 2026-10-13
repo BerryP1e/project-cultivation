@@ -75,8 +75,8 @@ public static class InkBagQa
             data.物品=new List<ItemDefinition>{usable,usable,usable}; data.RaiseChanged();
             list.Select(usable);
             check("duplicate items aggregate quantity without changing inventory",bag.Waterfall.EntryCount==1 && bag.Waterfall.Quantity(usable)==3 && data.物品.Count==3);
-            check("small inventory enlarges items automatically",bag.Waterfall.ItemScale>largeCatalogScale);
-            check("opening parcel disappears after playback",!bag.transform.Find("InkBagParcel").gameObject.activeSelf);
+            check("ordered cards retain six columns for small inventory",bag.Waterfall.VisibleColumns==6);
+            check("ordered grid has no parcel opening obstruction",bag.AnimationFinished);
             check("single item does not repeat down the whole viewport",Array.FindAll(panel.tabs[0].page.GetComponentsInChildren<UIInkWaterfallCell>(true),x=>x.gameObject.activeInHierarchy).Length==1);
             check("original selection refreshes original detail",list.infoTarget.Current==usable);
             check("use action available",list.infoTarget.actionButton.gameObject.activeInHierarchy && list.infoTarget.actionButton.interactable);

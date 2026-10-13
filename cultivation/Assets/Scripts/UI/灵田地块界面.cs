@@ -62,6 +62,9 @@ public class 灵田地块界面 : MonoBehaviour
     Text 主按钮字;
     Button 升级按钮;
     Text 升级按钮字;
+    Button 施肥按钮;
+    Text 施肥按钮字;
+    float 下次刷新肥料;
 
     readonly List<Button> 种子按钮 = new List<Button>();
     readonly List<Text> 种子文字 = new List<Text>();
@@ -207,13 +210,20 @@ public class 灵田地块界面 : MonoBehaviour
             状态文本.text = (d != null ? d.名 : b.作物id) + "　" + b.阶段名 + "\n"
                           + "生长进度 " + (b.进度 * 100f).ToString("0.#") + "%"
                           + (b.已成熟 ? "" : "　还需约 " + b.剩余天数.ToString("0.0") + " 天") + "\n"
-                          + "这块地：" + 灵田品阶说明.中文名(b.品阶);
+                          + "这块地：" + 灵田品阶说明.中文名(b.品阶) + "　" + b.水分说明;
         }
 
         清空动作区();
         if (b.待种植) 建播种动作(b);
         else if (b.已成熟) 主按钮 = 建动作按钮("收　获", true, 点收获);
-        else 主按钮 = 建动作按钮("还没熟，再等等", false, null);
+        else
+        {
+            主按钮 = 建动作按钮(b.需要浇水 ? "浇　水" : "补充水分", true, () => 灵田.取().浇水(块.编号));
+            施肥按钮 = 建动作按钮("施　肥", b.可施肥, () => 灵田.取().施肥(块.编号));
+            施肥按钮.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 56);
+            施肥按钮字 = 施肥按钮.GetComponentInChildren<Text>();
+            刷新施肥();
+        }
 
         // ---- 升级这一行：需求一直写出来，不够就变灰并补一句为什么 ----
         string 升级原因 = "";
@@ -228,11 +238,30 @@ public class 灵田地块界面 : MonoBehaviour
 
     void 清空动作区()
     {
+        施肥按钮 = null; 施肥按钮字 = null;
         种子按钮.Clear();
         种子文字.Clear();
         主按钮 = null;
         主按钮字 = null;
         for (int i = 动作区.childCount - 1; i >= 0; i--) Destroy(动作区.GetChild(i).gameObject);
+    }
+
+    void Update()
+    {
+        if (Time.unscaledTime < 下次刷新肥料) return;
+        下次刷新肥料 = Time.unscaledTime + .3f;
+        刷新施肥();
+    }
+
+    void 刷新施肥()
+    {
+        var b = 块 ? 块.状态 : null;
+        if (b == null || !施肥按钮 || !施肥按钮字) return;
+        var bag = FindObjectOfType<UIPanelData>(); var db = QuestDatabase.取();
+        var item = db ? db.找物品(HomeAnimalCatalog.肥料id) : null;
+        int count = bag && item ? bag.物品数量(item) : 0;
+        施肥按钮.interactable = b.可施肥 && count > 0;
+        施肥按钮字.text = b.施肥冷却天数 > .00001f ? "施肥冷却 · " + b.施肥冷却天数.ToString("0.00") + " 天" : "施肥 · 肥料 " + count;
     }
 
     // ---- 待种植：选种子 + 种下 ----

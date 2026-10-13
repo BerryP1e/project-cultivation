@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2822841b0d7d0a74c9d4f0a7e9f68342, type: 3}
+  m_Name: Animals
+  m_EditorClassIdentifier: 
+  "\u52A8\u7269":
+  - id: gou
+    "\u540D": "\u72D7"
+    "\u5E7C\u5D3Did": item_home_cub_gou
+    "\u4EA7\u7269id": item_home_dog_milk
+    "\u559C\u7231\u98DF\u7269id": item_huichuncao
+    "\u5BB9\u79EF": 2
+    "\u7CAA\u4FBF\u6570\u91CF": 1
+    "\u4EA7\u51FA\u95F4\u9694\u5929": 1
+    "\u7CAA\u4FBF\u95F4\u9694\u5929": 0.5
+    "\u6A21\u578B": {fileID: 4842875969580294106, guid: d6735a2afe4fab1428f673f2226a86ea, type: 3}
+    "\u5F85\u673A": {fileID: 1827226128182048838, guid: 43294f758158cf744bc01fcc69ed7bc1, type: 3}
+    "\u884C\u8D70": {fileID: 1827226128182048838, guid: 2af295d0bd638704ba349fecd3599593, type: 3}
+    "\u534A\u5F84": 0.6325
+  - id: linghe
+    "\u540D": "\u7075\u9E64"
+    "\u5E7C\u5D3Did": item_home_cub_linghe
+    "\u4EA7\u7269id": item_home_crane_feather
+    "\u559C\u7231\u98DF\u7269id": item_qingxinlian
+    "\u5BB9\u79EF": 2
+    "\u7CAA\u4FBF\u6570\u91CF": 1
+    "\u4EA7\u51FA\u95F4\u9694\u5929": 1
+    "\u7CAA\u4FBF\u95F4\u9694\u5929": 0.5
+    "\u6A21\u578B": {fileID: 5760778894019850005, guid: a2660135862ca524fb7b854368d28e67, type: 3}
+    "\u5F85\u673A": {fileID: 1827226128182048838, guid: bed4886f34d84784f811630f897523a9, type: 3}
+    "\u884C\u8D70": {fileID: 1827226128182048838, guid: 02c05d879f8bcd449a97d10b6da0f702, type: 3}
+    "\u534A\u5F84": 0.5775
+  - id: muji
+    "\u540D": "\u6BCD\u9E21"
+    "\u5E7C\u5D3Did": item_home_cub_muji
+    "\u4EA7\u7269id": item_home_egg
+    "\u559C\u7231\u98DF\u7269id": item_ningluhua
+    "\u5BB9\u79EF": 1
+    "\u7CAA\u4FBF\u6570\u91CF": 1
+    "\u4EA7\u51FA\u95F4\u9694\u5929": 0.75
+    "\u7CAA\u4FBF\u95F4\u9694\u5929": 0.5
+    "\u6A21\u578B": {fileID: 1700667099916829516, guid: 0178ed6ec4505c9449ff960ae3add708, type: 3}
+    "\u5F85\u673A": {fileID: 1827226128182048838, guid: 81e30ed08d9ec014c87a9c158d348c0b, type: 3}
+    "\u884C\u8D70": {fileID: 1827226128182048838, guid: 1fb2594c4cd794d45aad949e9b75cfb0, type: 3}
+    "\u534A\u5F84": 0.3575
+  - id: tuzi
+    "\u540D": "\u5154\u5B50"
+    "\u5E7C\u5D3Did": item_home_cub_tuzi
+    "\u4EA7\u7269id": item_home_rabbit_fur
+    "\u559C\u7231\u98DF\u7269id": item_huichuncao
+    "\u5BB9\u79EF": 1
+    "\u7CAA\u4FBF\u6570\u91CF": 1
+    "\u4EA7\u51FA\u95F4\u9694\u5929": 1
+    "\u7CAA\u4FBF\u95F4\u9694\u5929": 0.5
+    "\u6A21\u578B": {fileID: 2211029358048624578, guid: 6516fda9b7c209e4badc22cc82e931b3, type: 3}
+    "\u5F85\u673A": {fileID: 1827226128182048838, guid: 1c2fd6719ef3a4943afb89048683f0d7, type: 3}
+    "\u884C\u8D70": {fileID: 1827226128182048838, guid: 0e2a346609aa3bc4fb23305cb9c88414, type: 3}
+    "\u534A\u5F84": 0.3575
+  - id: xiaolu
+    "\u540D": "\u5C0F\u9E7F"
+    "\u5E7C\u5D3Did": item_home_cub_xiaolu
+    "\u4EA7\u7269id": item_home_deer_antler
+    "\u559C\u7231\u98DF\u7269id": item_chiyanzhi
+    "\u5BB9\u79EF": 3
+    "\u7CAA\u4FBF\u6570\u91CF": 1
+    "\u4EA7\u51FA\u95F4\u9694\u5929": 1
+    "\u7CAA\u4FBF\u95F4\u9694\u5929": 0.5
+    "\u6A21\u578B": {fileID: 7990981054150635176, guid: 4ae7fecd475b30147a2573463ab55434, type: 3}
+    "\u5F85\u673A": {fileID: 1827226128182048838, guid: c720ac7455df1d849a6637b991c63792, type: 3}
+    "\u884C\u8D70": {fileID: 1827226128182048838, guid: 60245e6bb35e08541ac47e0743e74f27, type: 3}
+    "\u534A\u5F84": 0.605

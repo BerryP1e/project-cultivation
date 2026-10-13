@@ -50,7 +50,7 @@ public static class 灵田品阶说明
 }
 
 /// <summary>
-/// **一种灵植的静态定义**。用代码内置一份，不依赖配置表 —— 
+/// **一种灵植的静态定义**。用代码内置一份，不依赖配置表 ——
 /// 后续要挪到 CSV 表里时，只要把 <see cref="灵植库.全部"/> 换成读表即可。
 /// </summary>
 [System.Serializable]
@@ -67,6 +67,8 @@ public class 灵植定义
 
     [Tooltip("从种下到成熟需要多少**游戏日**")]
     [Min(0.01f)] public float 成熟天数 = 3f;
+
+    public float 浇水间隔天数 => id == "lingcao_ninglu" ? .5f : id == "lingcao_qingxin" ? .75f : id == "lingcao_chiyan" ? 2f : 1f;
 
     [Tooltip("收获数量下限")]
     [Min(1)] public int 产量下限 = 1;
@@ -122,7 +124,7 @@ public static class 灵植库
                 成熟天数 = 3f, 产量下限 = 2, 产量上限 = 5,
                 产物id = "item_shenglingcao", 种子id = "item_seed_shengling", 株高 = 0.5f,
                 主色 = new Color(0.42f, 0.80f, 0.40f),
-                说明 = "最基础的聚气灵草。灵田初开就能种，无需照看。",
+                说明 = "最基础的聚气灵草。每游戏日浇水一次。",
             },
             new 灵植定义
             {

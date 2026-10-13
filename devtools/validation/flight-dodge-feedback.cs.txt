@@ -1,0 +1,116 @@
+using System.Reflection;
+using System.IO;
+using UnityEditor;
+System.Collections.IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Run using exec_runtime_script in Play Mode");
+Time.timeScale=1;DialogueUI.关闭();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"||c.GetType().Name=="SaveApplier"))q.enabled=false;
+var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string name){if(!ok)throw new Exception("FAIL "+name);count++;report.AppendLine("PASS "+name);}
+var flags=BindingFlags.NonPublic|BindingFlags.Instance;
+var root=new GameObject("FlightDodge_QA");root.SetActive(false);root.transform.position=new Vector3(10000,2.4f,10000);
+var model=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),root.transform);model.transform.localPosition=Vector3.zero;model.transform.localRotation=Quaternion.identity;model.transform.localScale=Vector3.one;
+var animator=model.GetComponent<Animator>();animator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var cc=root.AddComponent<CharacterController>();cc.height=1;cc.center=Vector3.up*.5f;cc.radius=.25f;
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=1000;stats.调试数值[AttributeType.MaxSpirit]=1000;stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.MoveSpeed]=1;stats.调试数值[AttributeType.AttackSpeed]=1;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;vitals.过场保护宽限=0;
+var flight=root.AddComponent<YufengFlight>();flight.神通id="isolated_flight_dodge_qa";flight.强制御风=true;flight.升空时长=.01f;flight.打印状态切换=false;
+var actions=root.AddComponent<PlayerAnimationController>();actions.animator=animator;actions.御风=flight;
+var movement=root.AddComponent<PlayerController>();movement.御风=flight;movement.gravity=0;actions.playerController=movement;
+var cameraObject=new GameObject("FlightDodge_QA_camera");movement.cameraTransform=cameraObject.transform;
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="FlightDodge_QA_floor";floor.transform.position=new Vector3(10000,-.5f,10000);floor.transform.localScale=new Vector3(100,1,100);
+GameObject wall=null;root.SetActive(true);
+var dodge=root.GetComponent<PlayerFlightDodge>();dodge.冷却=0;dodge.慢放时长=0;
+void Reset(){dodge.取消();typeof(PlayerFlightDodge).GetField("availableAt",flags).SetValue(dodge,Time.time);root.transform.rotation=Quaternion.identity;cc.enabled=false;root.transform.position=new Vector3(10000,2.4f,10000);cc.enabled=true;Physics.SyncTransforms();}
+try{
+yield return new WaitForSeconds(.2f);
+Check(dodge&&flight.御风中,"auto-installed component and stable flight state="+flight.状态+" enabled="+flight.AbilityEnabled+" spirit="+vitals.当前灵气);
+vitals.当前气血=1000;typeof(PlayerVitals).GetField("过场宽限剩余",flags).SetValue(vitals,0f);typeof(PlayerVitals).GetField("上次在演出中",flags).SetValue(vitals,false);
+Check(!vitals.无敌,"no unrelated immunity masks dodge checks");
+var fx=root.GetComponent<FlightDodgeVfx>();
+Check(Resources.Load<Shader>("VFX/FlightDodgeGhost")!=null,"ghost shader included in Resources");
+Reset();Check(dodge.尝试闪避(Vector3.forward),"continuous handoff starts");
+dodge.推进(.405f); movement.接续御风移动(Vector3.forward);dodge.准备衔接(Vector3.forward);
+animator.Update(0); // CrossFade请求在下一次Animator求值后才出现在state info中。
+Check(actions.闪避动作中&&vitals.无敌,"pre-blend retains ownership and immunity");
+Check(Mathf.Abs(movement.CurrentSpeed-flight.飞行速度)<.001f&&animator.GetBool("FlyMoving"),"handoff has full movement immediately");
+Check(animator.GetNextAnimatorStateInfo(0).IsName("Yufeng_Forward"),"direct blend targets moving state instead of idle");
+Check(Mathf.Abs(animator.speed-actions.playbackScale)<.001f,"blend discards accelerated action speed");
+animator.Update(.018f);animator.Update(.018f);
+dodge.推进(.06f);dodge.完成本帧();
+Check(!dodge.闪避中&&!vitals.无敌&&!actions.施法占用中,"pre-blended dodge ends cleanly");
+Check(animator.GetCurrentAnimatorStateInfo(0).IsName("Yufeng_Forward")||animator.GetNextAnimatorStateInfo(0).IsName("Yufeng_Forward"),"completion does not redirect moving state to idle");
+yield return null;Check(movement.CurrentSpeed>.1f,"following movement frame has no zero-speed reset");
+Reset();Check(dodge.尝试闪避(Vector3.left),"VFX dodge start");
+float t=Time.time;while(Time.time-t<.16f)yield return null;
+Check(fx.可见残影数>0&&fx.可见残影数<=fx.残影上限,"bounded moving afterimage pool");
+Check(GameObject.Find("DodgeWindThread_0").GetComponent<LineRenderer>().enabled,"spiral wind visible");
+Material[] Bodies()=>root.GetComponentsInChildren<SkinnedMeshRenderer>().SelectMany(x=>x.sharedMaterials).ToArray();
+var original=Bodies();
+dodge.取消();yield return new WaitForSeconds(.3f);
+Check(fx.可见残影数==0,"afterimages fade out after dodge");
+Check(!GameObject.Find("DodgeWindThread_0").GetComponent<LineRenderer>().enabled,"wind ends with dodge");
+Check(original.SequenceEqual(Bodies()),"shared character materials unchanged");
+Reset();dodge.慢放时长=.3f;Check(dodge.尝试闪避(Vector3.forward),"near-miss dodge start");
+var rng=Random.state;float hp=vitals.当前气血,fixedStep=Time.fixedDeltaTime;
+var enemy=new GameObject("FlightDodge_QA_enemy");
+var enemyStats=enemy.AddComponent<PlayerCombatStats>();enemyStats.使用调试数值=true;enemyStats.调试数值[AttributeType.Attack]=100;
+enemy.AddComponent<PlayerVitals>().自动回复=false;
+try{
+int hits=dodge.擦身触发次数;
+var result=CombatDamagePipeline.命中(new PlayerTarget(vitals),enemyStats,AttackSpec.特殊普通攻击,enemyStats);
+Check(result.状态==CombatHitState.Immune&&vitals.当前气血==hp,"actual contact remains immune");
+float draw=Random.value;Random.state=rng;Check(draw==Random.value,"near-miss feedback consumes no damage random draw");Random.state=rng;
+Check(DodgeNearMissFocus.正在慢放&&Mathf.Abs(Time.timeScale-.2f)<.001f,"world slowdown begins at 0.2 speed");
+Check(Mathf.Abs(Time.fixedDeltaTime-fixedStep*.2f)<.0001f,"physics clock synchronized");
+CombatDamagePipeline.命中(new PlayerTarget(vitals),enemyStats,AttackSpec.物理普通攻击,enemyStats);vitals.受到伤害(5);
+Check(dodge.擦身触发次数==hits+1,"multi-hit and direct damage trigger once per dodge");
+float began=Time.unscaledTime,gameTime=Time.time;
+while(Time.unscaledTime-began<.08f)yield return null;
+float f=DodgeNearMissFocus.镜头倍率(root.transform);
+Check(f<.98f&&f>=.92f,"subtle focus closeup applies to player");
+Check(DodgeNearMissFocus.镜头倍率(cameraObject.transform)==1,"unrelated cameras receive no focus");
+while(DodgeNearMissFocus.正在慢放&&Time.unscaledTime-began<.5f)yield return null;
+Check(!DodgeNearMissFocus.正在慢放&&Time.unscaledTime-began<.4f,"slowdown completes in about 0.3 real seconds");
+Check(Time.time-gameTime<.2f,"scaled world advances less than real time");
+Check(Mathf.Abs(Time.timeScale-1)<.001f&&Mathf.Abs(Time.fixedDeltaTime-fixedStep)<.0001f&&DodgeNearMissFocus.镜头倍率(root.transform)==1,"clock physics and camera restored exactly");
+dodge.取消();Reset();Check(dodge.尝试闪避(Vector3.forward),"pause precedence dodge start");dodge.收到擦身攻击();
+Time.timeScale=0;yield return null;yield return null;
+Check(!DodgeNearMissFocus.正在慢放&&Time.timeScale==0&&Mathf.Abs(Time.fixedDeltaTime-fixedStep)<.0001f,"pause is never overwritten by feedback restore");Time.timeScale=1;yield return null;
+Reset();Check(dodge.尝试闪避(Vector3.forward),"disable focus cleanup start");dodge.收到擦身攻击();movement.enabled=false;
+Check(!DodgeNearMissFocus.正在慢放&&Time.timeScale==1&&!vitals.无敌,"disabled movement immediately restores slowdown and immunity");movement.enabled=true;
+yield return null;Reset();vitals.调试无敌=true;Check(dodge.尝试闪避(Vector3.forward),"debug immunity test start");dodge.收到擦身攻击();Check(!DodgeNearMissFocus.正在慢放,"debug immunity cannot trigger slowdown");vitals.调试无敌=false;dodge.取消();
+yield return null;Reset();Check(dodge.尝试闪避(Vector3.forward),"direct legacy near-miss start");vitals.受到伤害(5);Check(DodgeNearMissFocus.正在慢放,"positive direct legacy damage supports feedback");dodge.取消();DodgeNearMissFocus.取消(dodge);
+}finally{Object.Destroy(enemy);}
+yield return null;Reset();Check(dodge.尝试闪避(Vector3.forward),"expanded near-miss starts");
+var center=dodge.擦身判定中心;hp=vitals.当前气血;
+Check(!dodge.检查擦身轨迹(center+Vector3.right*3+Vector3.back*4,center+Vector3.right*3+Vector3.forward*4),"outside temporary circle cannot trigger");
+var projectileGo=new GameObject("FlightDodge_QA_projectile");
+var projectile=projectileGo.AddComponent<NpcProjectile>();projectile.设置直线飞行(Vector3.forward,root.transform,100);
+projectileGo.transform.position=center+Vector3.right+Vector3.back*5;
+typeof(NpcProjectile).GetMethod("检查闪避擦身",flags).Invoke(projectile,new object[]{center+Vector3.right+Vector3.forward*5});
+Check(DodgeNearMissFocus.正在慢放&&!projectile.已终止&&vitals.当前气血==hp,"swept projectile near-miss triggers without consuming projectile or HP");
+Object.Destroy(projectileGo);dodge.取消();DodgeNearMissFocus.取消(dodge);
+Reset();Check(dodge.尝试闪避(Vector3.left),"expanded mesh contact starts");
+dodge.检查擦身网格(new Bounds(dodge.擦身判定中心+Vector3.right,Vector3.one*.1f));
+Check(DodgeNearMissFocus.正在慢放,"melee mesh can touch expanded circle");dodge.取消();DodgeNearMissFocus.取消(dodge);
+dodge.检查擦身轨迹(center-Vector3.forward*5,center+Vector3.forward*5);
+Check(!DodgeNearMissFocus.正在慢放,"temporary circle disappears when dodge ends");
+// Exercise the same already-calibrated sword prefab and carry override on the real player Avatar.
+var swordGo=Object.Instantiate(Resources.Load<GameObject>("Weapons/灵虚剑决/灵虚剑"),animator.transform);swordGo.name="灵虚剑";
+var sword=swordGo.GetComponent<LingxuFlightSword>();var blade=swordGo.transform.Find("LingxuSword");animator.Rebind();
+flight.强制御风=false;flight.强制落地();yield return new WaitForSeconds(.25f);
+movement.接续御风移动(Vector3.forward);typeof(LingxuFlightSword).GetField("groundSide",flags).SetValue(sword,1f);
+typeof(LingxuFlightSword).GetMethod("LateUpdate",flags).Invoke(sword,null);
+var hips=animator.GetBoneTransform(HumanBodyBones.Hips);
+Check(Vector3.Distance(blade.localPosition,animator.transform.InverseTransformPoint(hips.position)+sword.身侧髋骨偏移)<.001f,"ground sword follows user-arranged side position");
+Check(Quaternion.Angle(blade.localRotation,sword.身侧旋转)<.05f&&Vector3.Distance(blade.localScale,sword.身侧缩放)<.001f,"ground sword preserves user rotation and scale");
+var localPanel=root.AddComponent<UIPanelData>();localPanel.当前功法=ScriptableObject.CreateInstance<GongFaDefinition>();localPanel.当前功法.功法id="gongfa_lingxu_jianjue";
+var carry=root.AddComponent<WeaponCarryAnim>();typeof(WeaponCarryAnim).GetField("面板",flags).SetValue(carry,localPanel);carry.刷新();
+var expectedMove=Resources.Load<AnimationClip>("技能动作/御风八向/灵虚剑决/御风八向_前");
+Check(carry.当前覆盖&&carry.当前覆盖["Armature|Walk_Loop"]==expectedMove&&carry.当前覆盖["Armature|Sprint_Loop"]==expectedMove,"ground walk and run use flight move body animation");
+Object.Destroy(localPanel.当前功法);Object.Destroy(swordGo);Object.Destroy(carry);Object.Destroy(localPanel);
+report.AppendLine("FLIGHT_DODGE_FEEDBACK_PASS count="+count);Directory.CreateDirectory("../.local/diagnostics/flight-dodge");File.WriteAllText("../.local/diagnostics/flight-dodge/feedback-report.txt",report.ToString());Debug.Log(report.ToString());
+}finally{DodgeNearMissFocus.取消(dodge);Time.timeScale=1;UiEscRegistry.SetSceneInputBlocked(root,false);if(root)Object.Destroy(root);if(cameraObject)Object.Destroy(cameraObject);if(floor)Object.Destroy(floor);}
+}
+return Run();

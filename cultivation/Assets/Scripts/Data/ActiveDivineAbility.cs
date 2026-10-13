@@ -41,6 +41,8 @@ public enum ActiveSkillKind
     持续禁锢 = 6,
     小剑阵 = 7,
     四御护罩 = 8,
+    天降打击 = 9,
+    螺旋剑雨 = 10,
 }
 
 /// <summary>

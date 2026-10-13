@@ -20,9 +20,11 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
     public float 刀光最大宽度=3f;
     public bool 关闭场景灯光;
     public float 灯光强度倍率=1f,灯光最大半径;
+    public CombatVfxPalette 调色;
     public void 初始化(int 深度,float 表现缩放=1f,Transform 生命周期根=null)
     {
         block=new MaterialPropertyBlock();depth=深度;born=Time.time;visualScale=Mathf.Max(.001f,表现缩放);owner=生命周期根?生命周期根:transform;
+        if(调色)调色.Apply(gameObject);
         foreach(var light in GetComponentsInChildren<Light>(true))light.intensity*=Mathf.Max(0,灯光强度倍率);
         if(关闭场景灯光){
             foreach(var light in GetComponentsInChildren<Light>(true))light.enabled=false;
@@ -89,7 +91,7 @@ public sealed class ExtremeVfxAdapter : MonoBehaviour
         var go=Instantiate(prefab,parent.position+offset,rotation);go.transform.localScale=(nativeScale??prefab.transform.localScale)*visualScale;
         // 挂到静止的生命周期根，避免移动雷光携带其子雷光产生双倍位移。
         go.transform.SetParent(owner,true);var adapter=go.AddComponent<ExtremeVfxAdapter>();adapter.关闭场景灯光=关闭场景灯光;
-        adapter.灯光强度倍率=灯光强度倍率;adapter.灯光最大半径=灯光最大半径;adapter.初始化(depth+1,visualScale,owner);return go;
+        adapter.灯光强度倍率=灯光强度倍率;adapter.灯光最大半径=灯光最大半径;adapter.调色=调色;adapter.初始化(depth+1,visualScale,owner);return go;
     }
     void Update()
     {

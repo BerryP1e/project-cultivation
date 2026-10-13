@@ -72,3 +72,27 @@ item_treasure_zhenyaohu,镇妖葫·待认主,1,地品,尚未认主的镇妖葫�
 item_lingmu,灵木,999,凡品,蕴含微弱灵气的木材，可用于炼器与营造。,0,,,,
 item_gongfa_lingxu_jianjue,灵虚剑决 秘籍,1,玄品,记载灵虚三式剑招与持剑身法，研读后可修习。,1,学功法,gongfa_lingxu_jianjue,使用后学会功法「灵虚剑决」。,60
 item_gongfa_taichu_longqijue,太初龙栖诀 秘籍,1,天品,记载太初伴龙五式。修习难度为最高档，研读后即可修习。,1,学功法,gongfa_taichu_longqijue,使用后学会功法「太初龙栖诀」。,240
+
+item_home_expansion,洞府拓境令,99,黄品,在洞府周围网格放置一块石台并自动连接通路。,1,摆放物件,home_ground,使用后进入洞府扩建摆放。,100
+item_puppet_station,傀儡基站令,99,黄品,在洞府放置傀儡基站。四格仓库供种田傀儡取种及存放收成。,1,摆放物件,puppet_station,使用后进入基站摆放。,200
+item_home_animal_pen,兽栏令,99,黄品,在洞府放置容量为10的兽栏。放入幼崽和灵植可饲养动物并收取产物。,1,摆放物件,animal_pen,使用后进入兽栏摆放。,160
+item_home_compost_bin,堆肥箱令,99,黄品,在洞府放置堆肥箱。将动物粪便腐熟成可用于灵田的肥料。,1,摆放物件,compost_bin,使用后进入堆肥箱摆放。,120
+item_home_auto_alchemy,自动炼丹炉令,99,玄品,在洞府放置自动炼丹炉。一格主材与三格辅材按已学丹方自动炼制并存入成品格。,1,摆放物件,auto_alchemy,使用后进入自动炼丹炉摆放。,240
+item_home_cub_gou,狗幼崽,99,凡品,可放入兽栏。占用2容量；喜爱回春草；饱食时产出狗奶和粪便。,0,,,,30
+item_home_cub_linghe,灵鹤幼崽,99,黄品,可放入兽栏。占用2容量；喜爱清心莲；饱食时产出灵鹤羽毛和粪便。,0,,,,60
+item_home_cub_muji,母鸡幼崽,99,凡品,可放入兽栏。占用1容量；喜爱凝露花；饱食时产出鸡蛋和粪便。,0,,,,20
+item_home_cub_tuzi,兔子幼崽,99,凡品,可放入兽栏。占用1容量；喜爱回春草；饱食时产出兔毛和粪便。,0,,,,20
+item_home_cub_xiaolu,小鹿幼崽,99,黄品,可放入兽栏。占用3容量；喜爱赤焰芝；饱食时产出鹿茸和粪便。,0,,,,50
+item_home_dog_milk,狗奶,999,凡品,兽栏饲养狗时获得的乳汁。,0,,,,
+item_home_crane_feather,灵鹤羽毛,999,黄品,兽栏灵鹤自然脱落的羽毛。,0,,,,
+item_home_egg,鸡蛋,999,凡品,饱食母鸡在兽栏中产下的鸡蛋。,0,,,,
+item_home_rabbit_fur,兔毛,999,凡品,兽栏兔子换毛时收集的柔软绒毛。,0,,,,
+item_home_deer_antler,鹿茸,999,黄品,兽栏小鹿生长时收集的鹿茸。,0,,,,
+item_home_manure,粪便,999,凡品,兽栏动物定期产出。每3份粪便可在堆肥箱中腐熟成1份肥料。,0,,,,
+item_home_fertilizer,肥料,999,凡品,在灵田交互面板使用。每份推进该植物成熟时间的15%；每株使用间隔0.75游戏日。,0,,,,
+item_ability_jianyu_luo,秋锐 神通玉简,1,地品,记载秋锐的玉简，使用后学会对应主动神通。,1,学主动神通,ability_jianyu_luo,使用后学会秋锐。,120
+item_ability_leiyun_strike,雷陨 神通玉简,1,地品,记载雷陨的玉简，使用后学会对应主动神通。,1,学主动神通,ability_leiyun_strike,使用后学会雷陨。,120
+item_ability_huoyan_yun,火岩陨 神通玉简,1,地品,记载火岩陨的玉简，使用后学会对应主动神通。,1,学主动神通,ability_huoyan_yun,使用后学会火岩陨。,160
+item_ability_jianyu_luohua,剑雨落花 神通玉简,1,天品,记载剑雨落花的玉简，使用后学会对应主动神通。,1,学主动神通,ability_jianyu_luohua,使用后学会剑雨落花。,240
+item_ability_huoyan_zhui,火岩坠 神通玉简,1,天品,记载火岩坠的玉简，使用后学会对应主动神通。,1,学主动神通,ability_huoyan_zhui,使用后学会火岩坠。,240
+item_ability_zhouyu_chuxie,骤雨初歇 神通玉简,1,天品,记载骤雨初歇的玉简，使用后学会对应主动神通。,1,学主动神通,ability_zhouyu_chuxie,使用后学会骤雨初歇。,360

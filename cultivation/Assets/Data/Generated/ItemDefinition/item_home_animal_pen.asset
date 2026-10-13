@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dfe6fcb52b706541aad5cb735cea8bf, type: 3}
+  m_Name: item_home_animal_pen
+  m_EditorClassIdentifier: 
+  "\u7269\u54C1\u540D": "\u517D\u680F\u4EE4"
+  "\u7269\u54C1id": item_home_animal_pen
+  "\u6700\u5927\u5806\u53E0\u6570\u91CF": 99
+  "\u56FE\u6807": {fileID: 21300000, guid: dfbf61b9a260d4a4e9452aa3e3b2a5f6, type: 3}
+  "\u4ECB\u7ECD": "\u5728\u6D1E\u5E9C\u653E\u7F6E\u5BB9\u91CF\u4E3A10\u7684\u517D\u680F\u3002\u653E\u5165\u5E7C\u5D3D\u548C\u7075\u690D\u53EF\u9972\u517B\u52A8\u7269\u5E76\u6536\u53D6\u4EA7\u7269\u3002"
+  "\u54C1\u9636": 1
+  "\u53EF\u4F7F\u7528": 1
+  "\u4F7F\u7528\u6548\u679C": {fileID: 11400000, guid: 11e4ce32cf5696043b2c5090272a02a8, type: 2}
+  "\u5151\u6362\u6D88\u8017\u8D21\u732E": 160

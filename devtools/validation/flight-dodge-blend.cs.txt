@@ -1,0 +1,85 @@
+using System.Reflection;
+using System.IO;
+using UnityEditor;
+System.Collections.IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Run using exec_runtime_script in Play Mode");
+Time.timeScale=1;DialogueUI.关闭();
+foreach(var q in Object.FindObjectsOfType<MonoBehaviour>().Where(c=>c.GetType().Name=="MainQuestTutorial"||c.GetType().Name=="主线开场"||c.GetType().Name=="任务管理器"||c.GetType().Name=="SaveApplier"))q.enabled=false;
+var report=new System.Text.StringBuilder();int count=0;
+void Check(bool ok,string name){if(!ok){File.WriteAllText("../.local/diagnostics/flight-dodge/blend-report.txt",report.ToString());throw new Exception("FAIL "+name);}count++;report.AppendLine("PASS "+name);}
+var flags=BindingFlags.NonPublic|BindingFlags.Instance;
+var root=new GameObject("FlightDodge_QA");root.SetActive(false);root.transform.position=new Vector3(10000,2.4f,10000);
+var model=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),root.transform);model.transform.localPosition=Vector3.zero;model.transform.localRotation=Quaternion.identity;model.transform.localScale=Vector3.one;
+var animator=model.GetComponent<Animator>();animator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var cc=root.AddComponent<CharacterController>();cc.height=1;cc.center=Vector3.up*.5f;cc.radius=.25f;
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=1000;stats.调试数值[AttributeType.MaxSpirit]=1000;stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.MoveSpeed]=1;stats.调试数值[AttributeType.AttackSpeed]=1;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;vitals.过场保护宽限=0;
+var flight=root.AddComponent<YufengFlight>();flight.神通id="isolated_flight_dodge_qa";flight.强制御风=true;flight.升空时长=.01f;flight.打印状态切换=false;
+var actions=root.AddComponent<PlayerAnimationController>();actions.animator=animator;actions.御风=flight;
+var movement=root.AddComponent<PlayerController>();movement.御风=flight;movement.gravity=0;actions.playerController=movement;
+var cameraObject=new GameObject("FlightDodge_QA_camera");movement.cameraTransform=cameraObject.transform;
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="FlightDodge_QA_floor";floor.transform.position=new Vector3(10000,-.5f,10000);floor.transform.localScale=new Vector3(100,1,100);
+GameObject wall=null;root.SetActive(true);
+var dodge=root.GetComponent<PlayerFlightDodge>();dodge.冷却=0;dodge.慢放时长=0;
+void Reset(){dodge.取消();typeof(PlayerFlightDodge).GetField("availableAt",flags).SetValue(dodge,Time.time);root.transform.rotation=Quaternion.identity;cc.enabled=false;root.transform.position=new Vector3(10000,2.4f,10000);cc.enabled=true;Physics.SyncTransforms();}
+try {
+yield return new WaitForSeconds(.2f);
+Check(flight.御风中,"stable flight");
+var update = typeof(PlayerAnimationController).GetMethod("Update", flags);
+string[] names={"前","右前","右","右后","后","左后","左","左前"};
+foreach(float scale in new[]{.6f,1f,1.5f}) foreach(int fps in new[]{30,60,120}) foreach(int index in Enumerable.Range(0,8)) {
+Reset(); actions.playbackScale=scale; movement.visualYawOffset=0;
+animator.speed=scale; animator.Play("Yufeng_Idle",0,0);animator.Update(0);
+var dir=Quaternion.Euler(0,index*45,0)*Vector3.forward;
+Check(dodge.尝试闪避(dir),"start "+names[index]+" fps="+fps+" speed="+scale);
+float time=0,dt=1f/fps,previousBlend=-1,priorPhase=-1; bool started=false,sourceChecked=false;
+while(dodge.闪避中){
+float step=dt;time=Mathf.Min(dodge.时长,time+step);
+dodge.推进(step);
+if(dodge.进度>=dodge.动作衔接起点){dodge.准备衔接(dodge.方向);started=true;}
+if(dodge.进度>=1) movement.接续御风移动(dir);
+dodge.完成本帧();
+update.Invoke(actions,null);animator.Update(step);
+var current=animator.GetCurrentAnimatorStateInfo(0);var next=animator.GetNextAnimatorStateInfo(0);
+if(started){
+Check(animator.GetBool("FlyMoving"),"moving throughout blend time="+time+" direction="+names[index]+" fps="+fps+" scale="+scale+" progress="+dodge.进度+" action="+actions.闪避动作中+" phase="+current.normalizedTime+" speed="+movement.CurrentSpeed);
+Check(Mathf.Abs(animator.GetFloat("FlyX")-dir.x)<.002f&&Mathf.Abs(animator.GetFloat("FlyY")-dir.z)<.002f,"correct directional parameters");
+Check(current.IsName("Yufeng_Forward")||next.IsName("Yufeng_Forward"),"blend never routes through idle");
+if(current.IsName("Action")&&time/dodge.时长>.62f&&!sourceChecked){
+Check(Mathf.Abs(current.normalizedTime-time/dodge.时长)<.09f,"source clock continues at dodge speed during blend"); sourceChecked=true;
+}
+if(animator.IsInTransition(0)&&next.IsName("Yufeng_Forward")){
+float weight=animator.GetAnimatorTransitionInfo(0).normalizedTime;
+Check(weight>=previousBlend-.001f,"increasing blend without restart"); previousBlend=weight;
+}
+var state=current.IsName("Yufeng_Forward")?current:next;
+Check(state.normalizedTime>=priorPhase-.001f,"destination phase never restarts");priorPhase=state.normalizedTime;
+}
+}
+Check(started&&sourceChecked,"middle blend exercised");
+Check(!dodge.闪避中&&!actions.施法占用中,"ownership released at end");
+Check(animator.GetCurrentAnimatorStateInfo(0).IsName("Yufeng_Forward")&&!animator.IsInTransition(0),"dodge endpoint is full locomotion");
+Check(Mathf.Abs(movement.CurrentSpeed-flight.飞行速度)<.001f,"no zero-speed handoff");
+Check(Mathf.Abs(animator.GetFloat("DodgeActionRate")-1)<.001f,"action-only rate restored");
+var clips=animator.GetCurrentAnimatorClipInfo(0);var dominant=clips.OrderByDescending(x=>x.weight).First();
+Check(dominant.clip.name.EndsWith("_"+names[index]),"actual eight-way clip "+dominant.clip.name);
+float phase=animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+update.Invoke(actions,null);animator.Update(dt);
+Check(animator.GetCurrentAnimatorStateInfo(0).normalizedTime>phase,"next frame continues same phase");
+}
+// Visual-yaw compensation must use the dodge direction rather than whichever input is currently held.
+Reset();actions.playbackScale=1;movement.visualYawOffset=90;root.transform.rotation=Quaternion.Euler(0,137,0);
+var rightDirection=root.transform.rotation*Quaternion.Euler(0,-90,0)*Vector3.right;
+Check(dodge.尝试闪避(rightDirection),"rotated facing dodge");
+dodge.推进(.25f);dodge.准备衔接(rightDirection);update.Invoke(actions,null);animator.Update(.01f);
+Check(Mathf.Abs(animator.GetFloat("FlyX")-1)<.002f&&Mathf.Abs(animator.GetFloat("FlyY"))<.002f,"model-yaw compensated right blend");
+Check(dodge.伤害免疫&&actions.闪避动作中,"middle blend retains damage immunity");
+dodge.取消();movement.visualYawOffset=0;actions.playbackScale=1;
+Check(Mathf.Abs(animator.GetFloat("DodgeActionRate")-1)<.001f,"interruption restores multiplier");
+var fx=root.GetComponent<FlightDodgeVfx>();
+Check(fx.颜色.a>.14f&&fx.颜色.a<.35f&&fx.残影寿命>.22f,"moderately stronger fading ghosts");
+report.AppendLine("FLIGHT_DODGE_BLEND_PASS count="+count);
+Directory.CreateDirectory("../.local/diagnostics/flight-dodge");File.WriteAllText("../.local/diagnostics/flight-dodge/blend-report.txt",report.ToString());Debug.Log("FLIGHT_DODGE_BLEND_PASS count="+count);
+} finally {DodgeNearMissFocus.取消(dodge);Time.timeScale=1;UiEscRegistry.SetSceneInputBlocked(root,false);if(root)Object.Destroy(root);if(cameraObject)Object.Destroy(cameraObject);if(floor)Object.Destroy(floor);}
+}
+return Run();

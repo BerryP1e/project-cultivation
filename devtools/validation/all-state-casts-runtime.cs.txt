@@ -28,12 +28,19 @@ for(int slot=0;slot<3;slot++){
 vitals.当前灵气=10000;npcgo.transform.position=player.transform.position+Vector3.forward*12;targeting.Lock(npc,true);float hp=npc.CurrentHealth,rootY=player.transform.position.y;float feet=(float)sampleFeet.Invoke(driver,null);float minFeet=feet;float deadline=Time.time+7;
 Check(caster.TryCast(slot),state+" slot"+slot+" cast accepted");yield return null;
 if(slot==0){
-var water=Object.FindObjectOfType<WaterDragonSkillRunner>();Check(water&&driver.当前动作.name=="水龙炮_施法",state+" water Attack02");
-while(water&&!water.已释放&&Time.time<deadline){Check(!water.当前特效,state+" no beam before43");minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));yield return null;}
-Check(water&&water.已释放&&driver.动作进度>=.43f&&driver.动作进度<.49f,state+" water release43 "+driver.动作进度.ToString("F3"));yield return new WaitForEndOfFrame();
-Check(Vector3.Distance(water.当前特效.transform.position,a.GetBoneTransform(HumanBodyBones.LeftHand).position)<.015f,state+" exact left hand");Shot("cast-"+state+"-water");Check(driver.动作已定住&&driver.施法占用中,state+" water pose held");
-while(water&&!water.正在消散&&Time.time<deadline){minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));yield return null;}
-Check(water&&water.结算次数>0&&npc.CurrentHealth<hp,state+" water damage");Check(water.正在消散&&!driver.动作已定住,state+" water fades/unfreezes");yield return new WaitForSecondsRealtime(.3f);Check(water&&water.当前特效&&water.当前特效.transform.localScale.x<.05f,state+" soft fade");
+var water=Object.FindObjectOfType<WaterDragonSkillRunner>();Check(water&&driver.当前动作==Resources.Load<AnimationClip>(WaterDragonSkillRunner.动作资源路径),state+" water Xuanxiao A3");
+bool sawReverseHit=false,sawAttack=false;float lastHit=1;
+while(water&&!water.已释放&&Time.time<deadline){
+if(water.当前特效)throw new Exception("Beam appeared before dragon breath");
+if(water.当前龙){float hit=water.当前龙.当前被击进度;if(hit>0){if(hit>lastHit+.001f)throw new Exception("Hit is not reversed");lastHit=hit;sawReverseHit=true;}else sawAttack=true;}
+minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));yield return null;}
+Check(water&&water.已释放&&driver.动作进度>=.43f&&driver.动作进度<.49f,state+" breath aligned to player43 "+driver.动作进度.ToString("F3"));yield return new WaitForEndOfFrame();
+Check(sawReverseHit&&sawAttack&&water.当前龙.正在吐息&&Mathf.Abs(water.当前龙.当前攻击进度-.55f)<.001f,state+" reverse Hit / Attack55 held");
+Check(Vector3.Distance(water.当前特效.transform.position,water.炮口)<.015f,state+" exact dragon mouth");Shot("cast-"+state+"-water");Check(!driver.动作已定住&&driver.施法占用中,state+" player animation continues without freeze");
+bool recoveredDuringBreath=false;float startProgress=driver.动作进度;yield return new WaitForSeconds(.15f);Check(driver.动作进度>startProgress+.02f&&!driver.动作已定住,state+" player motion advances during breath");
+while(water&&!water.正在消散&&Time.time<deadline){if(!driver.动作播放中&&water.当前特效)recoveredDuringBreath=true;minFeet=Mathf.Min(minFeet,(float)sampleFeet.Invoke(driver,null));yield return null;}
+Check(recoveredDuringBreath,state+" player natural completion does not cancel dragon breath");
+Check(water&&water.结算次数>0&&npc.CurrentHealth<hp,state+" water damage");Check(water.正在消散&&!driver.动作已定住,state+" water fades/unfreezes");yield return new WaitForSecondsRealtime(.3f);Check(water&&water.当前特效&&water.当前特效.transform.localScale.x<.05f&&water.当前龙&&water.当前龙.当前消融>0&&water.当前龙.当前消融<1,state+" beam soft fade / dragon dissolve");
 while(water&&Time.time<deadline)yield return null;Check(!water,state+" water complete");
 }else{
 var bolt=Object.FindObjectOfType<HomingBoltSkillRunner>();Check(bolt&&bolt.当前球&&!bolt.已放弹&&driver.当前动作.name=="追踪弹_施法",state+" ball at0 / Attack01_short slot"+slot);float gap=0,last=0;bool reachedHalf=false;bool grows=true;

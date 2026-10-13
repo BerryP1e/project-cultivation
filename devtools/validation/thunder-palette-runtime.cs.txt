@@ -1,0 +1,29 @@
+using System.IO;
+using System.Collections;
+using UnityEditor;
+IEnumerator Run(){
+var report=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);report.Add(name);}
+var roots=new List<GameObject>();var reference=CombatVfxPipeline.配置.查找("thunder_a1");var palette=Resources.Load<CombatVfxPalette>("Combat/XuanxiaoA1Palette");
+var origin=new Vector3(26000,3,26000);var cameraGo=new GameObject("PaletteQA_Camera");var camera=cameraGo.AddComponent<Camera>();camera.enabled=false;camera.transform.position=origin+new Vector3(12,12,-16);camera.transform.LookAt(origin+Vector3.up*2);camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.025f,.03f,.045f);camera.farClipPlane=70;
+void Shot(string name){var rt=new RenderTexture(800,650,24);camera.targetTexture=rt;camera.Render();var prior=RenderTexture.active;RenderTexture.active=rt;var tex=new Texture2D(800,650,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,800,650),0,0);tex.Apply();File.WriteAllBytes("../.local/diagnostics/spiral-sword/"+name+".png",tex.EncodeToPNG());RenderTexture.active=prior;camera.targetTexture=null;rt.Release();Object.Destroy(rt);Object.Destroy(tex);}
+try{
+Check(reference.调色==null,"A1 original palette retained");
+foreach(var id in CombatVfxPipeline.雷四式){
+var entry=CombatVfxPipeline.配置.查找(id);var root=CombatVfxPipeline.播放(id,origin,Vector3.down);roots.Add(root);
+if(id!="thunder_a1")Check(entry.调色==palette&&root.GetComponent<ExtremeVfxAdapter>().调色==palette,id+" explicit palette routed through mature entry");
+yield return new WaitForSeconds(.35f);if(id=="thunder_a4")yield return new WaitForSeconds(.4f);
+var adapters=root.GetComponentsInChildren<ExtremeVfxAdapter>();if(id=="thunder_a4")Check(adapters.Length>1,"A4 actual dynamic subeffects spawned");
+if(id!="thunder_a1"){
+Check(adapters.All(a=>a.调色==palette),id+" every dynamic child inherits palette");
+var sources=palette.materials.Select(p=>p.source).ToArray();Check(root.GetComponentsInChildren<Renderer>().SelectMany(r=>r.sharedMaterials).All(m=>!sources.Contains(m)),id+" no old warm-color glowing material remains on live renderers");
+Check(root.GetComponentsInChildren<Light>().All(l=>Vector4.Distance(l.color,palette.lightColor)<.0001f),id+" all root and dynamic lights match A1");
+Check(root.GetComponentsInChildren<ParticleSystem>().Any(p=>p.particleCount>0),id+" native particle animation still active");
+}
+Shot("palette-"+id);Object.Destroy(root);yield return null;
+}
+Check(CombatVfxPipeline.配置.查找("fire_slash_hit").调色==null&&CombatVfxPipeline.配置.查找("meteor_ground").调色==null,"fire and other skill colors unaffected");
+var originalSpark=AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Shared/Materials/ExtremeFX/sparker.mat");Check(originalSpark.mainTexture!=palette.materials.First(p=>p.source==originalSpark).target.mainTexture,"shared warm source texture never overwritten");
+File.WriteAllText("../.local/diagnostics/spiral-sword/palette-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));Debug.Log("THUNDER_PALETTE_PASS "+report.Count);
+}finally{foreach(var root in roots)if(root)Object.Destroy(root);Object.Destroy(cameraGo);}
+}
+return Run();

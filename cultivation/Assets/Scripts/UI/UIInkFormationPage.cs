@@ -52,7 +52,7 @@ public class UIInkFormationPage : MonoBehaviour
         UIBuildUtils.Place(真灵.transform as RectTransform,new Vector2(.735f,.035f),new Vector2(.995f,.96f),Vector2.zero,Vector2.zero);
         真灵.inkCards=false;瀑布流=真灵.gameObject.AddComponent<UIInkWaterfall>();瀑布流.Initialize(真灵);瀑布流.Skip();真灵.RebuildFromSource();
         UIBuildUtils.Place(详情.transform as RectTransform,new Vector2(.015f,.015f),new Vector2(.71f,.32f),Vector2.zero,Vector2.zero);
-        var backing=UIBuildUtils.CreateImage("SpiritInfoInk",详情.transform,Color.white);backing.sprite=InkUITheme.Load("Bag/bag-info-ink");backing.raycastTarget=false;backing.transform.SetAsFirstSibling();UIBuildUtils.Stretch(backing.rectTransform);
+        UICharacterBackdrop.Panel(详情.transform);
         Place(详情.nameText,.055f,.69f,.72f,.91f,24);Place(详情.tierText,.055f,.53f,.25f,.68f,16);Place(详情.kindText,.26f,.53f,.55f,.68f,16);Place(详情.descriptionText,.055f,.16f,.72f,.52f,18);
         if(详情.iconImage!=null)详情.iconImage.gameObject.SetActive(false);
         UIBuildUtils.Place(详情.actionButton.transform as RectTransform,new Vector2(.74f,.29f),new Vector2(.96f,.64f),Vector2.zero,Vector2.zero);UIInkActionButton.Apply(详情.actionButton);

@@ -209,7 +209,7 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = null;
             return true;
         }
-        if(动画!=null && 动画.施法占用中){提示("正在引导施法");return false;}
+        if(动画!=null && 动画.施法占用中){提示(动画.闪避动作中 ? "正在闪避" : "正在引导施法");return false;}
         int 上限 = 充能上限(槽位);
         if (上限 > 1)
         {
@@ -262,10 +262,24 @@ public class ActiveSkillCaster : MonoBehaviour
         {
             if (生命 == null || 生命.IsDead) return false;
             if (锁定 != null && 神通.范围 > 0f && Vector3.Distance(transform.position, 锁定.transform.position) > 神通.范围
-                && 神通.结算方式 != ActiveSkillKind.小剑阵)
+                && 神通.结算方式 != ActiveSkillKind.小剑阵 && 神通.结算方式 != ActiveSkillKind.天降打击 && 神通.结算方式 != ActiveSkillKind.螺旋剑雨)
             { 提示("目标超出施放距离"); return false; }
             if (Resources.Load<GameObject>(神通.特效资源路径) == null)
             { 提示("神通特效资源缺失，未消耗灵力"); return false; }
+            if (神通.结算方式 == ActiveSkillKind.定向水炮 && !WaterDragonSkillRunner.资源就绪())
+            { 提示("吐息龙或施法动作资源缺失，未消耗灵力"); return false; }
+            if (神通.结算方式 == ActiveSkillKind.天降打击)
+            {
+                if (!FallingSpellRunner.资源就绪(神通)) { 提示("天降特效或施法动作资源缺失"); return false; }
+                if (锁定 && Vector3.Distance(transform.position, 锁定.transform.position) > PlayerManualAim.SenseRange(gameObject))
+                { 提示("目标超出神识范围"); return false; }
+            }
+            if (神通.结算方式 == ActiveSkillKind.螺旋剑雨)
+            {
+                if (!SpiralSwordSkillRunner.资源就绪(神通)) { 提示("剑阵或施法动作资源缺失"); return false; }
+                if (锁定 && Vector3.Distance(transform.position, 锁定.transform.position) > PlayerManualAim.SenseRange(gameObject))
+                { 提示("目标超出神识范围"); return false; }
+            }
         }
         if (神通.消耗灵力 > 0f)
         {
@@ -287,6 +301,10 @@ public class ActiveSkillCaster : MonoBehaviour
             焚天神通=神通;焚天动作=动画.当前动作;焚天目标=锁定;焚天落点=落点;
             焚天施法中=true;焚天已召唤=false;
         }
+        bool 天降 = 神通.结算方式 == ActiveSkillKind.天降打击;
+        if (天降 && !FallingSpellRunner.尝试开始(this, 神通, 锁定, 落点)) return false;
+        bool 螺旋 = 神通.结算方式 == ActiveSkillKind.螺旋剑雨;
+        if (螺旋 && !SpiralSwordSkillRunner.尝试开始(this, 神通, 锁定, 落点)) return false;
         if(神通.消耗灵力>0f)生命.扣灵气(神通.消耗灵力);
 
         // ---- 扣次数 / 进冷却 ----
@@ -304,7 +322,7 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = 宿主.AddComponent<BindingChainSkillRunner>();
             持续锁链[槽位].初始化(this, 神通, 锁定, 槽位);
         }
-        else if(!焚天)施放(神通, 锁定,落点);
+        else if(!焚天 && !天降 && !螺旋)施放(神通, 锁定,落点);
         return true;
     }
 

@@ -40,7 +40,7 @@ public sealed class UIInkLawFurnace : MonoBehaviour, IDropHandler, IPointerClick
     {
         if(正在熔炼)return;
         var laws=data.法则碎片.Where(x=>!data.法则装备.Contains(x.id)&&!data.炉中法则.Contains(x.id)).Take(6).ToArray();
-        var positions=laws.Select(x=>{var cell=page.收获弧带.GetComponentsInChildren<UIInkLawItemDrag>().FirstOrDefault(c=>c.法则==x);return RectTransformUtility.WorldToScreenPoint(null,cell?cell.transform.position:page.transform.position);}).ToArray();
+        var positions=laws.Select(x=>{var card=page.法则背包.寻找卡片(x);return RectTransformUtility.WorldToScreenPoint(null,card?card.position:page.transform.position);}).ToArray();
         LawRefinementSystem.全部放入(data);for(int i=0;i<laws.Length;i++)入炉动画(laws[i],positions[i]);
     }
     void 入炉动画(LawFragment law,Vector2 screen)

@@ -3,8 +3,7 @@
 /// <summary>
 /// 2.5D 俯视角角色移动控制。
 /// WASD 相对摄像机方向移动（屏幕上=向远处），Shift 奔跑。
-/// （装了【凭虚御风】或装备了坐骑时，Shift 变成**按一下切换御风 / 坐骑** ——
-/// 两者共用一个键，见 <see cref="YufengFlight"/> 与 <see cref="MountRider"/>）
+/// 御风及坐骑通过按住Tab的行游轮盘切换，Shift仅负责地面奔跑。
 /// 移动交给 CharacterController，自动处理碰撞、台阶与贴地。
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
@@ -77,6 +76,7 @@ public class PlayerController : MonoBehaviour
     float verticalVelocity;
     BasicJiuba01 近战普攻;
     PlayerCombatStats 属性;
+    PlayerFlightDodge 闪避;
     /// <summary>移动属性以 1 为原速，统一影响步行、御风与骑乘。</summary>
     public float 移动速度倍率 => 属性 ? Mathf.Max(0, 属性.当前属性[AttributeType.MoveSpeed]) : 1;
 
@@ -89,17 +89,41 @@ public class PlayerController : MonoBehaviour
         if (目标管理器 == null) 目标管理器 = GetComponent<NpcTargeting>();
         if (cameraTransform == null && Camera.main != null)
             cameraTransform = Camera.main.transform;
+        闪避 = GetComponent<PlayerFlightDodge>() ?? gameObject.AddComponent<PlayerFlightDodge>();
+        if (!GetComponent<PlayerTraversalController>()) gameObject.AddComponent<PlayerTraversalController>();
+        if (!GetComponent<PlayerTraversalWheel>()) gameObject.AddComponent<PlayerTraversalWheel>();
+    }
+
+    void OnDisable()
+    {
+        if (闪避) 闪避.取消();
+        horizontalVelocity = Vector3.zero;
     }
 
     void Update()
     {
+        闪避.检查状态();
         if(CombatHitStop.正在顿帧(transform))return;
+        if (闪避.闪避中)
+        {
+            IsFlying = true; IsRunning = false; MoveDirection = 闪避.方向;
+            var displacement = 闪避.推进(Time.deltaTime);
+            horizontalVelocity = Vector3.zero; CurrentSpeed = 0; Speed01 = 0;
+            ApplyFlightHeight();
+            displacement.y = verticalVelocity * Time.deltaTime;
+            controller.Move(displacement);
+            // 动画提前融合到闪避方向；本帧实体仍只执行闪避位移。
+            if (闪避.进度 >= 闪避.动作衔接起点) 闪避.准备衔接(闪避.方向);
+            // 只在最后一帧交接实际输入速度，按住方向不再从零重新加速。
+            if (闪避.进度 >= 1f) 接续御风移动(输入世界方向());
+            闪避.完成本帧();
+            return;
+        }
         Vector3 desired = ReadMoveDirection(out bool running);
         MoveDirection = desired;
         IsRunning = running;
 
-        // Shift 与【凭虚御风】/ 坐骑**共用一个键**（按一下切换，见 YufengFlight / MountRider）；
-        // 真的骑上 / 飞起来之后，速度改用它们各自那一套
+        // Shift仅控制地面跑步，御风/骑乘仍使用各自速度。
         IsFlying = 御风 != null && 御风.御风流程中;
         bool 飞行中 = 御风 != null && 御风.御风中;
         // 骑乘中：不能起飞（YufengFlight.禁止切换 挡住），高度交给坐骑系统
@@ -142,7 +166,23 @@ public class PlayerController : MonoBehaviour
         if(UiEscRegistry.SceneInputBlocked){horizontalVelocity=Vector3.zero;running=false;return Vector3.zero;}
         running = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-        Vector2 raw = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        return 输入世界方向();
+    }
+
+    public Vector3 输入世界方向() => 相机相对方向(new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")));
+
+    /// <summary>只准备下帧的速度和八向参数，本帧仍只执行闪避的碰撞位移。</summary>
+    public void 接续御风移动(Vector3 direction)
+    {
+        direction.y = 0;
+        MoveDirection = UiEscRegistry.SceneInputBlocked ? Vector3.zero : Vector3.ClampMagnitude(direction, 1);
+        horizontalVelocity = MoveDirection * (御风 ? 御风.飞行速度 : runSpeed) * 移动速度倍率;
+        CurrentSpeed = horizontalVelocity.magnitude;
+        Speed01 = MoveDirection.magnitude;
+    }
+
+    public Vector3 相机相对方向(Vector2 raw)
+    {
         if (raw.sqrMagnitude > 1f) raw.Normalize();   // 斜向不加速
         if (raw.sqrMagnitude < 0.0001f) return Vector3.zero;
 
@@ -257,6 +297,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>近战起手对准目标，保留模型视觉朝向补偿；动作中由原动画转体。</summary>
     public void 对准攻击方向(Vector3 direction)
     {
+        if (闪避 && 闪避.闪避中) return;
         if(CombatHitStop.正在顿帧(transform))return;
         direction.y = 0f;
         if (direction.sqrMagnitude < .0001f) return;

@@ -47,8 +47,8 @@ public class WeaponCarryAnim : MonoBehaviour
     static readonly List<替换项> 灵虚替换 = new List<替换项>
     {
         new 替换项 { 原片段="Armature|Idle_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Idle" },
-        new 替换项 { 原片段="Armature|Walk_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Run" },
-        new 替换项 { 原片段="Armature|Sprint_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Run" },
+        new 替换项 { 原片段="Armature|Walk_Loop", 新片段路径="技能动作/御风八向/灵虚剑决/御风八向_前" },
+        new 替换项 { 原片段="Armature|Sprint_Loop", 新片段路径="技能动作/御风八向/灵虚剑决/御风八向_前" },
     };
     string 已应用功法;
     static readonly List<替换项> 太虚替换 = new List<替换项>

@@ -67,6 +67,9 @@ public static class NpcEffectInventory
         var 文本 = new StringBuilder();
         文本.AppendLine("# 特效资源清单");
         文本.AppendLine();
+        文本.AppendLine("项目神通的派生资产另外集中于 `Assets/resources/Abilities/FallingSpells` 和 `Assets/resources/Abilities/SpiralSwordRain`，由统一战斗特效/接触目录管理；共用现有源网格与贴图，不复制第三方整包。配置见[主动神通第一波](主动神通第一波.md)、[骤雨初歇](骤雨初歇.md)。剑雨落花的施放及命中派生体已取消音效。");
+        文本.AppendLine("骤雨初歇用统一弧长排剑与少量边缘微光形成剑幕，曲线脱阵后固定切向直刺范围落点并插地，不渲染条带线。玄霄A2～A4通过 `Combat/XuanxiaoA1Palette`（含动态子特效）统一为A1雷色；派生材质集中于 `Assets/Art/VFX/Project/XuanxiaoPalette`，源资产保留，见[战斗命中特效管线](战斗命中特效管线.md#31-四式统一a1雷色2026-10-13)。");
+        文本.AppendLine();
         文本.AppendLine("> **管什么**：`Assets/resources/CombatVFX/` 下**全部特效 prefab** 的路径、规模与特征，按分类分节，供挑特效 / 填路径用。");
         文本.AppendLine("> **不管什么**：目录约定、怎么加载、导入新包怎么整理 → [特效系统](特效系统.md)；某个特效怎么配到怪身上 → [飞弹与子弹](飞弹与子弹.md)。");
         文本.AppendLine("> **本文件怎么查**：先看「汇总」定位分类，再进对应小节按名字搜；每节开头有「统一前缀」，表里 `路径` = 前缀 + 表中值。");

@@ -10,11 +10,14 @@ public class MultipleObjectsMake : _ObjectsMakeBase
     public Vector3 m_randomPos;
     public Vector3 m_randomRot;
     public Vector3 m_randomScale;
+    public bool isObjectAttachToParent = true;
+
     float m_Time;
     float m_Time2;
     float m_delayTime;
     float m_count;
     float m_scalefactor;
+
 
     void Start()
     {
@@ -37,7 +40,8 @@ public class MultipleObjectsMake : _ObjectsMakeBase
                 {
                     GameObject m_obj = Instantiate(m_makeObjs[i], m_pos, m_rot);
                     Vector3 m_scale = (m_makeObjs[i].transform.localScale + GetRandomVector2(m_randomScale));
-                    m_obj.transform.parent = this.transform;
+                    if(isObjectAttachToParent)
+                        m_obj.transform.parent = this.transform;
                     m_obj.transform.localScale = m_scale;
                 }
 

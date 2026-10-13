@@ -81,7 +81,7 @@ public class UIInkRealmPage : MonoBehaviour
         UIBuildUtils.Place(bottom,new Vector2(.055f,.07f),new Vector2(.92f,.33f),Vector2.zero,Vector2.zero);
         境界条.Refresh(); // 先让原组件建立信息文字，再布局，避免 Start 重新覆盖。
         var ink=UIBuildUtils.CreateImage("RealmInfoInk",bottom,Color.white); ink.transform.SetAsFirstSibling(); ink.raycastTarget=false;
-        ink.sprite=Resources.Load<Sprite>("UI/InkUI/Bag/bag-info-ink"); UIBuildUtils.Stretch(ink.rectTransform);
+        ink.gameObject.SetActive(false);UICharacterBackdrop.Panel(bottom); UIBuildUtils.Stretch(ink.rectTransform);
         ink.rectTransform.localEulerAngles=new Vector3(0,0,90);
         ink.rectTransform.anchorMin=ink.rectTransform.anchorMax=new Vector2(.5f,.5f);
         ink.rectTransform.sizeDelta=new Vector2(270,1030);

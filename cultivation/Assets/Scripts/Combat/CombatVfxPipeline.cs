@@ -24,6 +24,7 @@ public static class CombatVfxPipeline
         var adapter=go.AddComponent<ExtremeVfxAdapter>();adapter.散布半径=entry.散布半径*size;adapter.关闭场景灯光=entry.关闭场景灯光;
         adapter.灯光强度倍率=entry.灯光强度倍率;adapter.灯光最大半径=entry.灯光最大半径;
         adapter.刀光最大宽度=entry.刀光最大宽度*size;
+        adapter.调色=entry.调色;
         adapter.初始化(0,Mathf.Abs(go.transform.lossyScale.x));
         // 根节点的原生PositionOffset不应把闪光重新推回受击模型内部。
         if(entry.模型外侧显示 && target) go.transform.position=point;

@@ -1,0 +1,44 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+IEnumerator Run()
+{
+    var checks=new List<string>();
+    void Check(bool value,string name){if(!value)throw new Exception(name);checks.Add(name);}
+    foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
+    foreach(var quest in UnityEngine.Object.FindObjectsOfType<任务管理器>())quest.enabled=false;
+    foreach(var dialogue in UnityEngine.Object.FindObjectsOfType<NpcDialogue>())dialogue.enabled=false;
+    foreach(var player in UnityEngine.Object.FindObjectsOfType<PlayerController>())player.enabled=false;
+    时间管理器.取().暂停=true;
+    var world=HomeWorld.取();world.导入(null);yield return null;
+    var boundary=UnityEngine.Object.FindObjectsOfType<HomeBoundary>().Single();
+    var old=boundary.GetComponentsInChildren<HomeBoundaryPiece>().Where(p=>!p.空气墙).ToDictionary(p=>p.键);
+    var far=old.Where(p=>p.Value.transform.position.x<-5).ToDictionary(p=>p.Key,p=>new{instance=p.Value,position=p.Value.transform.position});
+    Check(old.Count>30,"initial visible boundary survives startup");
+    Check(world.扩建(new Vector3(40,0,0)),"scenery does not block expansion");yield return null;
+    Check(UnityEngine.Object.FindObjectsOfType<HomeBoundary>().Single()==boundary,"boundary root survives terrain rebuild");
+    var now=boundary.GetComponentsInChildren<HomeBoundaryPiece>().Where(p=>!p.空气墙).ToDictionary(p=>p.键);
+    Check(far.Count>10&&far.All(p=>now.TryGetValue(p.Key,out var v)&&v==p.Value.instance&&(v.transform.position-p.Value.position).sqrMagnitude<.000001f),"far scenery identity and pose preserved across actual expansion");
+    Check(old.Any(p=>!now.ContainsKey(p.Key))&&now.Count>old.Count,"opening clears scenery and new edge receives scenery");
+    Check(!Physics.RaycastAll(new Vector3(14,1,0),Vector3.right,12).Any(h=>h.collider.name=="家园边界"),"old internal wall removed");
+    foreach(var direction in new[]{Vector2Int.right,Vector2Int.left,Vector2Int.up,Vector2Int.down})
+    {
+        world.导入(new List<Vector2Int>{direction});yield return null;
+        Check(HomeFarmPath.查找(Vector3.zero,HomeWorld.中心(direction),null)!=null,"four-direction connected path "+direction);
+        boundary=UnityEngine.Object.FindObjectsOfType<HomeBoundary>().Single();
+        Check(boundary.GetComponentsInChildren<HomeBoundaryPiece>().Where(p=>!p.空气墙).All(p=>p.gameObject.activeInHierarchy),"boundary remains visible "+direction);
+    }
+    world.导入(null);yield return null;
+    Check(UnityEngine.Object.FindObjectsOfType<HomeBoundary>().Length==1&&boundary.GetComponentsInChildren<HomeBoundaryPiece>().Count(p=>!p.空气墙)==old.Count,"reset has no duplicated baked boundary");
+    var originalScene=SceneManager.GetActiveScene();var temporary=SceneManager.CreateScene("BoundaryLifecycleRegression");SceneManager.SetActiveScene(temporary);world.重建();
+    SceneManager.SetActiveScene(originalScene);world.重建();yield return null;
+    Check(UnityEngine.Object.FindObjectsOfType<HomeBoundary>().Length==1,"return to home reuses restored scene boundary");
+    Check(world.扩建(new Vector3(40,0,0)),"expansion still succeeds after scene return");yield return null;
+    var result=new{passed=checks.Count,checks};
+    System.IO.File.WriteAllText(System.IO.Path.GetFullPath("../.local/diagnostics/home/boundary-runtime-report.json"),Codely.Newtonsoft.Json.JsonConvert.SerializeObject(result,Codely.Newtonsoft.Json.Formatting.Indented));
+}
+return Run();

@@ -4,13 +4,8 @@ using UnityEngine;
 /// <summary>
 /// 被动神通【凭虚御风】的运行时表现。
 ///
-/// 规则：
-///   · 【凭虚御风】处于启用状态时，**按一下 Shift 起飞、再按一下落地**（切换式，不是按住）；
-///     起飞后 Shift 原本的「跑步」仍然是被它顶掉的（和以前一样）；
-///   · 每秒消耗 0.1 灵气，灵气耗尽会自动落地（并把开关也关掉，不会灵气一回来就自己又飞起来）；
-///   · 先播【升空】动画，升空完成后进入【凭虚御风idle】悬浮；
-///   · 悬浮期间移动会以比跑步更快的速度飞行，动画切成【凭虚御风前进】；
-///   · 再按一下 Shift 播【落地】动画，落地后恢复正常行走/跑步。
+/// 规则：通过Tab行游轮盘起飞/落地；维持消耗、原生升降动画和对地高度照常。
+/// 御风与坐骑可同时准备，但实际运行流程互斥，轮盘控制器负责先落地再切换。
 ///
 /// ## 高度是「对地」的（用户定）
 ///
@@ -18,13 +13,6 @@ using UnityEngine;
 /// 上坡下坡会跟着地形升降，始终维持这个离地高度；
 /// **探不到地面（断崖 / 空洞）时沿用上一次探到的地面高度** —— 也就是原地维持一个固定高度。
 /// （以前是记「起飞那一刻的 transform.y」，地形一变就贴地或悬空 ✗）
-///
-/// ## 和坐骑共用一个 Shift 键
-///
-/// Shift 现在是「御风 / 坐骑」**共用的一个键**：**装了坐骑就归坐骑，御风让开**（见
-/// <see cref="读取切换输入"/>）。正常情况下两者不会同时生效 ——
-/// 装备坐骑会自动停用这个被动、启用这个被动会自动取消装备坐骑（`UIPanelData` 里的互斥规则），
-/// 这里那道判断只是数据对不上时的第二道保险。
 ///
 /// 本组件只负责「状态机 + 灵气消耗 + 高度」，移动速度由 PlayerController 读取，
 /// 动画参数由 PlayerAnimationController 读取，互不耦合。
@@ -49,16 +37,9 @@ public class YufengFlight : MonoBehaviour
     [Tooltip("数据源，用于判断该被动是否处于启用状态。留空则视为始终可用")]
     public UIPanelData 面板数据;
 
-    [Header("操作")]
-    [Tooltip("**切换御风的按键**：按一下起飞、再按一下落地。\n\n" +
-             "以前是「按住 Shift 才飞」—— 飞久了要一直按着很累，所以改成切换式。\n" +
-             "只在**地面 / 御风悬浮**这两个稳定状态里响应；升空 / 落地过渡中按了不理会。\n\n" +
-             "★ 这个键**和坐骑共用**（用户定）：装了坐骑时 Shift 归坐骑，这里不响应 —— " +
-             "见 读取切换输入()。")]
-    public KeyCode 切换键 = KeyCode.LeftShift;
-
-    [Tooltip("第二个切换键（键盘左右 Shift 都认）。填 None 表示不要")]
-    public KeyCode 切换键2 = KeyCode.RightShift;
+    // 旧场景字段保留以兼容序列化；不再读取独立切换键。
+    [HideInInspector] public KeyCode 切换键 = KeyCode.None;
+    [HideInInspector] public KeyCode 切换键2 = KeyCode.None;
 
     [Header("引用")]
     public PlayerVitals 灵气;
@@ -92,13 +73,13 @@ public class YufengFlight : MonoBehaviour
     [Header("调试")]
     public bool 打印状态切换 = false;
 
-    [Tooltip("勾上就无视 Shift 一直保持御风，方便调试 / 以后做剧情飞行")]
+    [Tooltip("勾上就一直保持御风，方便调试 / 以后做剧情飞行")]
     public bool 强制御风 = false;
 
     /// <summary>
     /// **禁止切换御风**。骑乘坐骑期间由 <see cref="MountRider"/> 打开 ——
     /// 用户定的规则：**骑乘坐骑时无法开始御风，但也不会掉高度**（高度归坐骑管）。
-    /// 只挡「按 Shift 切换」，已经在御风中的收尾流程照常走完。
+    /// 只挡切换指令，已经在御风中的收尾流程照常走完。
     /// </summary>
     public bool 禁止切换 = false;
 
@@ -199,7 +180,8 @@ public class YufengFlight : MonoBehaviour
         //   放在状态机之前：这样升空 / 悬浮 / 落地三段用的是同一个地面基准。
         if (状态 != FlightState.地面) 维护地面高度();
 
-        bool wantFly = (想飞 || 强制御风) && 神通已启用 && (灵气 == null || 灵气.有灵气);
+        bool wantFly = (想飞 || 强制御风) && 神通已启用 && (灵气 == null || 灵气.有灵气)
+            && !(GetComponent<MountRider>()?.骑乘中 ?? false);
 
         switch (状态)
         {
@@ -238,39 +220,10 @@ public class YufengFlight : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 读「切换御风」的按键：**按一下开、再按一下关**（以前是按住）。
-    ///
-    /// 只在**地面 / 御风悬浮**这两个稳定状态里响应 —— 升空 / 落地过渡中按了不理会，
-    /// 免得刚起飞就被自己取消掉。
-    /// 想「开」的时候要求神通已启用、而且还有灵气；不然这一下就白按（保持关闭），
-    /// 这样不会出现「按了关，灵气回满又自己飞起来」。
-    ///
-    /// ★ Shift 和坐骑**共用一个键**（用户定）：**装了坐骑时这一下归坐骑**，御风让开。
-    /// </summary>
+    // 仅保留调试强制御风；输入由Tab轮盘统一管理。
     void 读取切换输入()
     {
-        if (强制御风) { 想飞 = true; return; }
-        if (UiEscRegistry.SceneInputBlocked) return;
-        if (禁止切换) return;      // 骑乘坐骑期间不许起飞
-        if (按键归坐骑()) return;   // 装了坐骑 → Shift 是坐骑的
-
-        bool 按下 = Input.GetKeyDown(切换键)
-                 || (切换键2 != KeyCode.None && Input.GetKeyDown(切换键2));
-        if (!按下) return;
-
-        切换();
-    }
-
-    /// <summary>
-    /// Shift 这一下是不是该归坐骑。
-    /// 用户定的规则：**Shift 是「御风 / 坐骑」共用的一个键** —— 装了坐骑就骑坐骑。
-    /// （装备坐骑时这个被动已经被自动停用了，这里是数据对不上时的第二道保险。）
-    /// </summary>
-    bool 按键归坐骑()
-    {
-        var d = 解析面板数据();
-        return d != null && d.当前坐骑 != null;
+        if (强制御风 && !(GetComponent<MountRider>()?.骑乘中 ?? false)) 想飞 = true;
     }
 
     /// <summary>
@@ -295,7 +248,7 @@ public class YufengFlight : MonoBehaviour
     {
         if (强制御风) { 想飞 = true; return; }
         if (禁止切换) return;      // 骑乘坐骑期间不许起飞
-        if (按键归坐骑()) return;   // 装了坐骑 → Shift 归坐骑（用户定的共用键）
+        if (GetComponent<MountRider>()?.骑乘中 == true) return; // 同时准备，运行互斥
 
         // 升空 / 落地过渡中不响应 —— 免得刚起飞就被自己取消掉
         if (状态 == FlightState.升空 || 状态 == FlightState.落地) return;

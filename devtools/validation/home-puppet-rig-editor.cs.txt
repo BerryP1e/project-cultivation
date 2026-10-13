@@ -1,0 +1,42 @@
+using UnityEngine.Playables;
+using UnityEngine.Animations;
+if(EditorApplication.isPlaying)throw new Exception("非Play验证傀儡骨架");
+var checks=new List<string>();void Check(bool ok,string text){if(!ok)throw new Exception(text);checks.Add(text);}
+var assets=HomeAssets.取();string path="Assets/TripoModels/种田傀儡/种田傀儡.fbx";
+var imp=(ModelImporter)AssetImporter.GetAtPath(path);var desc=imp.humanDescription;
+Check(desc.human.Count(h=>h.humanName.Contains("Thumb")||h.humanName.Contains("Index")||h.humanName.Contains("Middle")||h.humanName.Contains("Ring")||h.humanName.Contains("Little"))==30,"all thirty finger joints retained");
+var scene=EditorSceneManager.NewPreviewScene();var graph=default(PlayableGraph);float poseError=0,minUpright=1,minShoulderAlignment=1;
+try{
+ var source=AssetDatabase.LoadAssetAtPath<GameObject>(path);var go=UnityEngine.Object.Instantiate(source);UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go,scene);
+ var transforms=go.GetComponentsInChildren<Transform>(true).ToDictionary(t=>t.name,t=>t);
+ foreach(var b in desc.skeleton)if(transforms.TryGetValue(b.name,out var t)){t.localPosition=b.position;t.localRotation=b.rotation;t.localScale=b.scale;}
+ var helper=typeof(Editor).Assembly.GetType("UnityEditor.AvatarSetupTool");var flags=System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Public;
+ var get=helper.GetMethods(flags).Single(m=>m.Name=="GetHumanBones"&&m.GetParameters()[0].ParameterType==typeof(Dictionary<string,string>));
+ var wrappers=get.Invoke(null,new object[]{desc.human.ToDictionary(h=>h.humanName,h=>h.boneName),transforms.Values.ToDictionary(t=>t,t=>true)});
+ poseError=(float)helper.GetMethod("GetPoseError",flags).Invoke(null,new[]{wrappers});Check(poseError<.1f,"avatar uses calibrated bind T-pose instead of first animated frame");
+ UnityEngine.Object.DestroyImmediate(go);
+ go=UnityEngine.Object.Instantiate(assets.傀儡);UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go,scene);
+ var animator=go.GetComponent<Animator>();animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;animator.applyRootMotion=false;
+ Check(animator.avatar&&animator.avatar.isHuman&&animator.avatar.isValid,"prefab references valid corrected humanoid Avatar");
+ foreach(var h in desc.human)Check(go.GetComponentsInChildren<Transform>(true).Any(t=>t.name==h.boneName),"mapped bone exists: "+h.humanName);
+ var hip=animator.GetBoneTransform(HumanBodyBones.Hips);var chest=animator.GetBoneTransform(HumanBodyBones.UpperChest)??animator.GetBoneTransform(HumanBodyBones.Chest);
+ var l=animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);var r=animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+ foreach(var clip in new[]{assets.待机,assets.行走,assets.松土,assets.播种收获,assets.浇水}){
+  Check(clip&&clip.isHumanMotion,"valid humanoid motion: "+clip.name);
+  graph=PlayableGraph.Create("PuppetRigValidation");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+  var playable=AnimationClipPlayable.Create(graph,clip);playable.SetApplyFootIK(true);playable.SetSpeed(1);var output=AnimationPlayableOutput.Create(graph,"Puppet",animator);output.SetSourcePlayable(playable);graph.Play();
+  for(int frame=0;frame<24;frame++){
+   playable.SetTime(clip.length*frame/24f);graph.Evaluate(0);
+   Check(go.GetComponentsInChildren<Transform>(true).All(t=>!float.IsNaN(t.localRotation.x)&&!float.IsNaN(t.localPosition.x)),"finite full pose: "+clip.name+"/"+frame);
+   if(clip==assets.行走||clip==assets.待机){
+    float upright=Vector3.Dot((chest.position-hip.position).normalized,Vector3.up);float alignment=Mathf.Abs(Vector3.Dot((r.position-l.position).normalized,go.transform.right));
+    minUpright=Mathf.Min(minUpright,upright);minShoulderAlignment=Mathf.Min(minShoulderAlignment,alignment);
+    Check(upright>.90f,"locomotion torso stays upright: "+clip.name+"/"+frame);
+    Check(alignment>.90f,"locomotion shoulders face travel direction: "+clip.name+"/"+frame);
+   }
+  }
+  graph.Destroy();
+ }
+ System.IO.File.WriteAllText(System.IO.Path.GetFullPath("../.local/diagnostics/home/puppet-rig-report.json"),Codely.Newtonsoft.Json.JsonConvert.SerializeObject(new{passed=checks.Count,poseError,minUpright,minShoulderAlignment,checks},Codely.Newtonsoft.Json.Formatting.Indented));
+ return new{passed=checks.Count,poseError,minUpright,minShoulderAlignment};
+}finally{if(graph.IsValid())graph.Destroy();EditorSceneManager.ClosePreviewScene(scene);}

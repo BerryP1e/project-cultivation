@@ -140,7 +140,7 @@ public class PlayerVitals : MonoBehaviour
     public bool 已死亡 { get; private set; }
 
     /// <summary>
-    /// **无敌**（= 调试开关 或 重生保护 或 切场景过场 任一开着）。
+    /// **无敌**（调试开关、重生保护、切场景过场、御风闪避任一生效）。
     ///
     /// 【为什么是「或」而不是一个可写字段】有三个来源要叠加：
     /// · <see cref="调试无敌"/> —— F1 调试面板的手动开关（调试期不扣血）
@@ -152,7 +152,15 @@ public class PlayerVitals : MonoBehaviour
     /// 就会互相覆盖 ✗
     /// 现在拆成几个方向明确的来源，读的时候取并集，谁都不覆盖谁。
     /// </summary>
-    public bool 无敌 => 调试无敌 || 保护中 || 过场保护;
+    PlayerFlightDodge 闪避;
+    public bool 无敌
+    {
+        get
+        {
+            if (!闪避) 闪避 = GetComponent<PlayerFlightDodge>();
+            return 调试无敌 || 保护中 || 过场保护 || (闪避 && 闪避.伤害免疫);
+        }
+    }
 
     /// <summary>
     /// **调试用无敌**（F1 面板勾上）。勾上后不扣血，面板关掉也继续生效，
@@ -264,7 +272,11 @@ public class PlayerVitals : MonoBehaviour
     public CombatDamageApplication 应用战斗伤害(float 伤害, DamageNature 属性类型)
     {
         if (已死亡) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.InvalidTarget);
-        if (无敌) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.Immune);
+        if (无敌)
+        {
+            if (伤害 > 0f && !float.IsNaN(伤害) && !float.IsInfinity(伤害) && 闪避) 闪避.收到擦身攻击();
+            return new CombatDamageApplication(0, 0, 0, false, CombatHitState.Immune);
+        }
         if (伤害 <= 0f) return new CombatDamageApplication(0, 0, 0, false, CombatHitState.NoDamage);
 
         float 原伤害 = 伤害;

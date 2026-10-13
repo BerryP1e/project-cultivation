@@ -120,7 +120,16 @@ public class CharacterPanelUI : MonoBehaviour
             SetOpen(!IsOpen);
 
         if (IsOpen && Input.GetKeyDown(closeKey))
-            SetOpen(false);
+            HandleBack();
+    }
+
+    public void HandleBack()
+    {
+        if(CurrentTab==CharacterTab.法则 && tabs.Count>4 && tabs[4].page) {
+            var law=tabs[4].page.GetComponent<UIInkLawPage>();
+            if(law && law.返回上层()){UiEscRegistry.记录关闭();return;}
+        }
+        SetOpen(false);
     }
 
     /// <summary>开关面板</summary>

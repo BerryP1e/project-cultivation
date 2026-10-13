@@ -51,6 +51,9 @@ MonoBehaviour:
   "\u540E\u65B9\u7F29\u653E": {x: 0.40652755, y: 0.4065275, z: 0.40652755}
   "\u6536\u653E\u65F6\u957F": 0.3
   "\u51FA\u62DB\u540E\u6218\u6597\u4FDD\u6301": 1.2
+  "\u8EAB\u4FA7\u9ACB\u9AA8\u504F\u79FB": {x: 0.23337, y: 0.29553, z: -0.40753}
+  "\u8EAB\u4FA7\u65CB\u8F6C": {x: 0.71290714, y: 0.6218548, z: -0.24114136, w: 0.21658938}
+  "\u8EAB\u4FA7\u7F29\u653E": {x: 0.40653, y: 0.40653, z: 0.40653}
 --- !u!1 &2541066671855589452
 GameObject:
   m_ObjectHideFlags: 0
@@ -79,7 +82,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.40652755, y: 0.4065275, z: 0.40652755}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1154609083206736708}

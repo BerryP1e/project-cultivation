@@ -1,0 +1,45 @@
+using System.IO;
+using UnityEditor;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
+var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+var panel=Resources.Load<PanelDatabase>("面板/面板库");var db=QuestDatabase.取();
+foreach(var id in FirstWaveAbilitiesBaker.Ids){
+var skill=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/"+id+".asset");
+Check(skill&&skill.结算方式==ActiveSkillKind.天降打击&&FallingSpellRunner.资源就绪(skill),id+" compiled asset clip and pattern available");
+Check(panel.神通.Contains(skill),id+" shared all-scene panel catalog");
+var book=db.找物品("item_"+id);Check(book&&book.可使用&&book.使用效果 is 学主动神通效果&&book.兑换消耗贡献>0,id+" learnable merit-shop book");
+Check(skill.攻击类别==AttackKind.主动神通&&skill.冷却时间>0&&skill.消耗灵力>0&&skill.命中特效贴地,id+" active damage mana cooldown ground impact configuration");
+var pattern=Resources.Load<GameObject>(skill.特效资源路径).GetComponent<FallingSpellPattern>();
+Check(pattern.数量>0&&pattern.数量<=48&&pattern.飞行粒子.main.maxParticles<=64&&!pattern.飞行粒子.main.loop,id+" bounded projectile budget");
+Check(!pattern.飞行粒子.collision.enabled&&pattern.命中特效&&pattern.命中特效.GetComponentsInChildren<ParticleSystem>().Length>0,id+" authoritative sweep with preserved impact layers");
+Check(pattern.GetComponentsInChildren<ParticleCollisionInstance>(true).Length==0,id+" no legacy collision spawner duplication");
+Check(CombatImpactPipeline.规则(id)!=null,id+" contact policy registered");
+if(id=="ability_leiyun_strike"){
+Check(pattern.GetComponentsInChildren<Transform>(true).All(t=>!t.name.StartsWith("Start")),"thunder has no charging nodes");
+Check(pattern.数量==24&&pattern.间隔>0&&pattern.命中半径>0&&pattern.命中半径<skill.范围,"thunder repeats scattered area strikes rather than one center strike");
+Check(pattern.起点闪光&&!pattern.起点闪光.emission.enabled,"sky flash follows each bolt through manual emission");
+Check(Mathf.Abs(pattern.间隔-.06f)<.0001f&&pattern.接触后留痕时间==.25f,"native storm cadence and bounded cosmetic endpoint life");
+Check(pattern.飞行粒子.noise.enabled&&!pattern.飞行粒子.trails.dieWithParticles&&Mathf.Abs(pattern.飞行粒子.trails.lifetime.constantMax*pattern.飞行粒子.main.startLifetime.constantMax/pattern.飞行粒子.main.simulationSpeed-.25f)<.001f,"lightning trail fade accounts for normalized lifetime and native simulation speed");
+}
+if(id=="ability_jianyu_luo"||id=="ability_jianyu_luohua"){
+Check(skill.神通名称==(id=="ability_jianyu_luo"?"秋锐":"剑雨落花"),"correct skill name with stable identifier "+id);
+var planted=pattern.命中特效.GetComponent<ParticleSystem>();
+Check(!planted.rotationOverLifetime.enabled&&!planted.rotationBySpeed.enabled&&!planted.sizeOverLifetime.enabled&&!planted.sizeBySpeed.enabled&&!planted.noise.enabled&&!planted.velocityOverLifetime.enabled&&planted.main.startSpeed.constantMax==0,"planted sword has no rotation scaling or movement perturbations "+id);
+}
+if(skill.伤害属性==DamageNature.物理){var r=pattern.飞行粒子.GetComponent<ParticleSystemRenderer>();Check(r.renderMode==ParticleSystemRenderMode.Mesh&&r.mesh.name=="Sword2_TipForward","actual sword2 mesh replaces falling sprite or laser");Check(r.mesh.bounds.max.z<.001f&&r.mesh.bounds.size.z>2,"sword tip at particle origin; handle behind flight direction");}
+}
+var source=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx");var actor=Object.Instantiate(source);actor.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);actor.transform.localScale=Vector3.one;
+var animator=actor.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;var graph=PlayableGraph.Create("NewCastQA");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+try{
+foreach(var clip in Resources.LoadAll<AnimationClip>("技能动作/神通施法").Where(c=>c.name.StartsWith("能量"))){
+Check(clip.humanMotion&&!AnimationUtility.GetAnimationClipSettings(clip).loopTime,clip.name+" one-shot humanoid");
+var fingers=AnimationUtility.GetCurveBindings(clip).Count(b=>b.type==typeof(Animator)&&(b.propertyName.Contains("Stretched")||b.propertyName.Contains("Spread")));Check(fingers>=40,clip.name+" finger curves retained");
+var playable=AnimationClipPlayable.Create(graph,clip);playable.SetApplyFootIK(false);var output=AnimationPlayableOutput.Create(graph,"Cast",animator);output.SetSourcePlayable(playable);graph.Play();
+foreach(float phase in new[]{0f,.2f,.4f,.6f,.8f,1f}){playable.SetTime(phase*clip.length);graph.Evaluate(0);foreach(var bone in new[]{HumanBodyBones.Head,HumanBodyBones.LeftUpperArm,HumanBodyBones.RightUpperArm,HumanBodyBones.LeftHand,HumanBodyBones.RightHand}){var q=animator.GetBoneTransform(bone).localRotation;Check(!float.IsNaN(q.x)&&!float.IsInfinity(q.x),clip.name+" actual body/wrist pose "+phase+" "+bone);}}
+graph.DestroyOutput(output);graph.DestroyPlayable(playable);
+if(clip.name.Contains("02")){var original=AssetDatabase.LoadAllAssetsAtPath("Assets/resources/Animation Library/Magical-Knight_Set/Animation/Humanoid/inplace/atk_energy02_inplace.fbx").OfType<AnimationClip>().First(c=>!c.name.StartsWith("__preview"));Check(Mathf.Abs(clip.length-original.length*.5f)<.001f,"energy02 exactly first half");}
+}
+}finally{graph.Destroy();Object.DestroyImmediate(actor);}
+Check(!DataTableImporter.找出未同步的表().Contains("主动神通表")&&!DataTableImporter.找出未同步的表().Contains("物品表"),"modified tables synchronized with generated assets");
+File.WriteAllText("../.local/diagnostics/active-wave1/editor-report.txt","PASS "+checks.Count+"\n"+string.Join("\n",checks));return "FIRST_WAVE_EDITOR_PASS "+checks.Count;

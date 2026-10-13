@@ -18,6 +18,10 @@ public sealed class UIInkLawPage : MonoBehaviour
     public UIInkLawFurnace 炉鼎 { get; private set; }
     public UIInkLawEssenceStream 精粹流 { get; private set; }
     public Image 精粹图标 { get; private set; }
+    public bool 背包已打开 {get;private set;}
+    public bool 熔炼已打开 => furnacePanel && furnacePanel.gameObject.activeSelf;
+    public UIInkLawGrid 法则背包 {get;private set;}
+    RectTransform overview,summaryRows,furnacePanel; Transform details; Button openBag;
     float essencePulse;
     public const float 预览放大倍数 = 1.45f;
     UIPanelData data; Font font; bool built; float nextRender, lastRender, orbitSpeed, speedDamping; bool orbitHeld;
@@ -53,22 +57,22 @@ public sealed class UIInkLawPage : MonoBehaviour
         foreach (Transform child in transform) child.gameObject.SetActive(false);
         var oldImage = GetComponent<Image>(); if (oldImage) oldImage.enabled = false;
         var workspace = Backdrop("LawWorkspace", .005f, .08f, .797f, .97f);
-        workspace.GetComponent<Image>().raycastTarget = false;
+        workspace.gameObject.SetActive(false);
         board = UIBuildUtils.CreateRect("LawOrbit", transform); Place(board, .005f, .43f, .63f, 1.10f);
-        Label("LawTitle", transform, "法 则", 32, .055f, .92f, .58f, .98f);
+        Label("LawTitle", transform, "法 则", 29, .30f, .94f, .70f, .99f);
         preview = UIBuildUtils.CreateRect("Law3D", board).gameObject.AddComponent<RawImage>(); Place(preview.rectTransform, .02f, .035f, .98f, .87f); preview.raycastTarget = true; preview.gameObject.AddComponent<UIInkLawDrag>().初始化(this);
         var owned = UIBuildUtils.CreateRect("LawInventory",transform);Place(owned,0,0,.80f,1);var hit=owned.gameObject.AddComponent<Image>();hit.color=Color.clear;hit.raycastTarget=true;
-        owned.gameObject.AddComponent<UIInkLawInventoryDrop>().初始化(this);收获弧带=owned.gameObject.AddComponent<UIInkLawArc>();收获弧带.初始化(this,font);
+        owned.gameObject.AddComponent<UIInkLawInventoryDrop>().初始化(this);收获弧带=owned.gameObject.AddComponent<UIInkLawArc>();收获弧带.初始化(this,font);owned.gameObject.SetActive(false);
         Label("InventoryTitle",owned,"收 获 法 则",23,.79f,.89f,.995f,.97f);
         empty=Label("EmptyLaw",owned,"暂无未装备法则",18,.25f,.32f,.68f,.42f);empty.raycastTarget=false;
-        var info = UIBuildUtils.CreateRect("LawDetails", transform); Place(info, .785f, .012f, .999f, .985f);
-        var infoInk = UIBuildUtils.CreateImage("LawInfoInk", info, Color.white); infoInk.sprite = InkUITheme.Load("Bag/bag-info-ink"); infoInk.raycastTarget = false; UIBuildUtils.Stretch(infoInk.rectTransform);
+        var info = UIBuildUtils.CreateRect("LawDetails", transform);details=info; Place(info, .75f, .025f, .999f, .985f);
+        var infoInk = UIBuildUtils.CreateImage("LawInfoInk", info, Color.white); infoInk.sprite = InkUITheme.Load("Bag/bag-info-ink"); infoInk.raycastTarget = false; UIBuildUtils.Stretch(infoInk.rectTransform);infoInk.gameObject.SetActive(false);UICharacterBackdrop.Panel(info);
         // 墨底毛边留在文字区外，避免长数值贴着透明边缘。
         infoInk.rectTransform.offsetMin = new Vector2(-24, -12); infoInk.rectTransform.offsetMax = new Vector2(24, 12);
-        icon = UIBuildUtils.CreateImage("LawIcon", info, Color.white); icon.preserveAspect = true; Place(icon.rectTransform, .20f, .80f, .8f, .96f);
-        nameText = Label("LawName", info, "", 24, .07f, .74f, .93f, .80f); scoreText = Label("LawScore", info, "", 18, .08f, .687f, .92f, .737f);
-        realmText = Label("LawRealm", info, "", 18, .08f, .638f, .92f, .687f);
-        var detailRT = UIBuildUtils.CreateRect("DetailScroll", info); Place(detailRT, .04f, .18f, .97f, .63f); detailScroll = detailRT.gameObject.AddComponent<ScrollRect>(); detailScroll.horizontal = false; detailScroll.scrollSensitivity = 28;
+        icon = UIBuildUtils.CreateImage("LawIcon", info, Color.white); icon.preserveAspect = true; Place(icon.rectTransform, .52f, .80f, .94f, .96f);
+        nameText = Label("LawName", info, "", 25, .07f, .92f, .94f, .99f); scoreText = Label("LawScore", info, "", 17, .07f, .85f, .53f, .92f);
+        realmText = Label("LawRealm", info, "", 18, .07f, .79f, .55f, .85f);
+        var detailRT = UIBuildUtils.CreateRect("DetailScroll", info); Place(detailRT, .035f, .18f, .97f, .76f);UICharacterBackdrop.Divider(info,"LawHeaderDivider",.77f); detailScroll = detailRT.gameObject.AddComponent<ScrollRect>(); detailScroll.horizontal = false; detailScroll.scrollSensitivity = 28;
         var detailViewport = UIBuildUtils.CreateRect("Viewport", detailRT); Place(detailViewport, 0, 0, .93f, 1); var ih = detailViewport.gameObject.AddComponent<Image>(); ih.color = Color.clear; detailViewport.gameObject.AddComponent<RectMask2D>();
         detailRows = UIBuildUtils.CreateRect("LawAttributes", detailViewport); detailRows.anchorMin = new Vector2(0, 1); detailRows.anchorMax = Vector2.one; detailRows.pivot = new Vector2(.5f, 1); detailRows.offsetMin = detailRows.offsetMax = Vector2.zero;
         var layout = detailRows.gameObject.AddComponent<VerticalLayoutGroup>(); layout.padding = new RectOffset(6, 3, 4, 8); layout.spacing = 7; layout.childControlWidth = layout.childControlHeight = true; layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
@@ -77,22 +81,74 @@ public sealed class UIInkLawPage : MonoBehaviour
         var bar = barRT.gameObject.AddComponent<Scrollbar>(); bar.direction = Scrollbar.Direction.BottomToTop;
         var handle = UIBuildUtils.CreateImage("Handle", barRT, Color.white); UIBuildUtils.Stretch(handle.rectTransform); bar.handleRect = handle.rectTransform; bar.targetGraphic = handle;
         detailScroll.verticalScrollbar = bar; detailScroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide; InkUITheme.ScrollbarStyle(bar);
-        refine=InkButton("RefineLaw",info,"法则洗练",.11f,.085f,.89f,.15f);refine.onClick.AddListener(洗练);
+        foreach(var title in new[]{nameText,scoreText,realmText}){title.alignment=TextAnchor.MiddleLeft;title.resizeTextForBestFit=true;title.resizeTextMinSize=13;title.resizeTextMaxSize=title.fontSize;}
+        refine=InkButton("RefineLaw",info,"法则洗练",.52f,.07f,.97f,.14f);refine.onClick.AddListener(洗练);
         refineCost=Label("RefineCost",info,"",16,.06f,.035f,.94f,.085f);
-        var furnaceHost=UIBuildUtils.CreateRect("LawFurnace",transform);Place(furnaceHost,.575f,.075f,.788f,.43f);
+        furnacePanel=UIBuildUtils.CreateRect("LawSmeltingPanel",transform);Place(furnacePanel,.29f,.025f,.735f,.36f);UICharacterBackdrop.Panel(furnacePanel).color=new Color(.055f,.10f,.12f,.93f);
+        var furnaceHost=UIBuildUtils.CreateRect("LawFurnace",furnacePanel);Place(furnaceHost,.58f,.08f,.97f,.98f);
         炉鼎=furnaceHost.gameObject.AddComponent<UIInkLawFurnace>();炉鼎.初始化(this,data,font);
-        var insert=InkButton("InsertAllLaws",transform,"一键放入",.14f,.09f,.32f,.16f);insert.onClick.AddListener(()=>炉鼎.全部放入());
-        var smelt=InkButton("SmeltLaws",transform,"开始熔炼",.385f,.09f,.565f,.16f);smelt.onClick.AddListener(()=>炉鼎.开始熔炼());
+        var insert=InkButton("InsertAllLaws",furnacePanel,"一键放入",.04f,.14f,.29f,.34f);insert.onClick.AddListener(()=>炉鼎.全部放入());
+        var smelt=InkButton("SmeltLaws",furnacePanel,"开始熔炼",.32f,.14f,.57f,.34f);smelt.onClick.AddListener(()=>炉鼎.开始熔炼());
         炉鼎.设置按钮(insert,smelt);
+        var closeFurnace=InkButton("CloseLawFurnace",furnacePanel,"收起",.04f,.72f,.22f,.92f);closeFurnace.onClick.AddListener(()=>furnacePanel.gameObject.SetActive(false));
+        var smeltEntry=InkButton("OpenLawFurnace",info,"熔炼法则",.03f,.07f,.49f,.14f);smeltEntry.onClick.AddListener(()=>furnacePanel.gameObject.SetActive(true));
         essence=Label("LawEssence",transform,"",18,.093f,.875f,.36f,.927f);essence.alignment=TextAnchor.MiddleLeft;essence.raycastTarget=false;
         精粹图标=UIBuildUtils.CreateImage("EssenceIcon",transform,Color.white);精粹图标.sprite=Resources.Load<Sprite>("Laws/Crafting/law-essence");精粹图标.preserveAspect=true;精粹图标.raycastTarget=false;Place(精粹图标.rectTransform,.043f,.875f,.086f,.927f);
         var stream=UIBuildUtils.CreateRect("EssenceStream",transform);UIBuildUtils.Stretch(stream);
         精粹流=stream.gameObject.AddComponent<UIInkLawEssenceStream>();精粹流.初始化(精粹图标.sprite,精粹图标.rectTransform,()=>essencePulse=.4f);
-        BuildStage(); built = true; data.Changed += Refresh; Refresh();
+        BuildOverview();BuildStage(); built = true; data.Changed += Refresh; Refresh();切换背包(false);
+    }
+    void BuildOverview()
+    {
+        overview=UIBuildUtils.CreateRect("LawOverview",transform);Place(overview,.015f,.13f,.285f,.85f);UICharacterBackdrop.Panel(overview);
+        var heading=Label("LawOverviewTitle",overview,"法则增益",24,.06f,.91f,.94f,1);heading.alignment=TextAnchor.MiddleLeft;
+        var host=UIBuildUtils.CreateRect("LawSummaryScroll",overview);Place(host,.03f,.02f,.97f,.89f);
+        var scroll=host.gameObject.AddComponent<ScrollRect>();scroll.horizontal=false;scroll.scrollSensitivity=28;
+        var viewport=UIBuildUtils.CreateRect("Viewport",host);UIBuildUtils.Stretch(viewport);viewport.gameObject.AddComponent<Image>().color=Color.clear;viewport.gameObject.AddComponent<RectMask2D>();
+        summaryRows=UIBuildUtils.CreateRect("Rows",viewport);summaryRows.anchorMin=new Vector2(0,1);summaryRows.anchorMax=Vector2.one;summaryRows.pivot=new Vector2(.5f,1);summaryRows.sizeDelta=Vector2.zero;
+        var layout=summaryRows.gameObject.AddComponent<VerticalLayoutGroup>();layout.spacing=5;layout.childControlHeight=layout.childControlWidth=true;layout.childForceExpandHeight=false;
+        summaryRows.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;scroll.content=summaryRows;scroll.viewport=viewport;
+        openBag=InkButton("OpenLawInventory",transform,"法则背包",.025f,.025f,.275f,.105f);openBag.onClick.AddListener(()=>切换背包(true));
+        var list=UIBuildUtils.CreateRect("LawGrid",transform);Place(list,.005f,.12f,.275f,.855f);法则背包=list.gameObject.AddComponent<UIInkLawGrid>();法则背包.初始化(this,font);
+        var back=InkButton("BackToLawOverview",list,"返回总览",.03f,-.12f,.97f,-.025f);back.onClick.AddListener(()=>返回上层());
+    }
+    void 刷新汇总()
+    {
+        foreach(Transform child in summaryRows){child.gameObject.SetActive(false);Destroy(child.gameObject);}
+        var percent=new AttributeSet();var flat=new AttributeSet();AttributeSet basis=null;
+        var stats=FindObjectOfType<PlayerCombatStats>();
+        if(stats&&!stats.使用调试数值){basis=new AttributeSet();if(stats.玩家属性)basis.Add(stats.玩家属性.基础属性);if(stats.当前功法&&stats.功法等级>0)basis.Add(stats.当前功法.GetTotalBonus(stats.功法等级));}
+        LawFragmentSystem.汇总(data,percent,flat,basis);
+        int count=0;
+        for(int i=0;i<AttributeUtil.Count;i++) {
+            var a=(AttributeType)i;if(Mathf.Approximately(percent[a],0)&&Mathf.Approximately(flat[a],0))continue;
+            var row=UIBuildUtils.CreateRect("LawBonusRow",summaryRows);row.gameObject.AddComponent<LayoutElement>().preferredHeight=38;
+            var name=Label("Name",row,AttributeUtil.GetDisplayName(a),17,.03f,0,.54f,1);name.alignment=TextAnchor.MiddleLeft;
+            string value=(percent[a]!=0?"+"+(percent[a]*100).ToString("0.#")+"%":"")+(percent[a]!=0&&flat[a]!=0?" / ":"")+(flat[a]!=0?"+"+显示固定值(a,flat[a]):"");
+            var number=Label("Value",row,value,17,.54f,0,.97f,1);number.alignment=TextAnchor.MiddleRight;number.resizeTextForBestFit=true;number.resizeTextMinSize=13;number.resizeTextMaxSize=17;
+            row.gameObject.AddComponent<Image>().color=new Color(.43f,.56f,.57f,count++%2==0?.12f:.03f);
+        }
+        if(count==0){var hint=Label("NoLawBonus",summaryRows,"装备法则后\n显示其带来的增益",19,0,0,1,1);hint.gameObject.AddComponent<LayoutElement>().preferredHeight=80;}
+    }
+    static string 显示固定值(AttributeType a,float value){var text=AttributeUtil.Format(a,value);return text=="0"&&value!=0?value.ToString("0.#####"):text;}
+    public bool 是否已装备(LawFragment law)=>law!=null&&data.法则装备.Contains(law.id);
+    public bool 是否在炉中(LawFragment law)=>law!=null&&data.炉中法则.Contains(law.id);
+    public void 切换背包(bool open)
+    {
+        if(!built)return;结束拖拽(true);背包已打开=open;
+        overview.gameObject.SetActive(!open);openBag.gameObject.SetActive(!open);法则背包.gameObject.SetActive(open);details.gameObject.SetActive(open);furnacePanel.gameObject.SetActive(false);
+        Place(board,open?.28f:.30f,.04f,open?.745f:.995f,.95f);Place(preview.rectTransform,0,0,1,1);
+        // 装备总览与背包使用同一舞台，仅调整取景留白，不重建人物和六槽。
+        camera3d.fieldOfView=open?37:32;RefreshDetails();
+    }
+    public bool 返回上层()
+    {
+        if(熔炼已打开){furnacePanel.gameObject.SetActive(false);return true;}
+        if(!背包已打开)return false;切换背包(false);return true;
     }
     RectTransform Backdrop(string id, float x0, float y0, float x1, float y1) { var image = UIBuildUtils.CreateImage(id, transform, new Color(.30f,.37f,.34f,.38f)); image.sprite = InkUITheme.Load("SkillsPage/common/panel-inner");image.type=Image.Type.Sliced; Place(image.rectTransform, x0, y0, x1, y1); return image.rectTransform; }
     Text Label(string id, Transform p, string s, int size, float x0, float y0, float x1, float y1) { var t = UIBuildUtils.CreateText(id, p, font, s, size, TextAnchor.MiddleCenter, Ivory);var shadow=t.gameObject.AddComponent<Shadow>();shadow.effectColor=new Color(0,0,0,.8f);shadow.effectDistance=new Vector2(1,-1);Place(t.rectTransform, x0, y0, x1, y1); return t; }
-    Button InkButton(string id,Transform p,string text,float x0,float y0,float x1,float y1){var b=UIBuildUtils.CreateButton(id,p,font,text,22);Place((RectTransform)b.transform,x0,y0,x1,y1);InkUITheme.Button(b);b.GetComponent<UIInkActionButton>()?.设置绘制倍率(new Vector2(.8f,.85f));return b;}
+    Button InkButton(string id,Transform p,string text,float x0,float y0,float x1,float y1){var b=UIBuildUtils.CreateButton(id,p,font,text,22);Place((RectTransform)b.transform,x0,y0,x1,y1);UICharacterBackdrop.StyleButton(b);return b;}
     void 洗练(){var law=当前选择;if(LawRefinementSystem.洗练(data,law)){炉鼎.洗练动效();ToastUI.提示(law.名称+" · 主属性精进");}}
     public void 播放精粹飞行(Vector3 mouth,long amount,float duration){精粹流.发射(mouth,amount,duration);}
     void Update(){if(!精粹图标)return;essencePulse=Mathf.Max(0,essencePulse-Time.unscaledDeltaTime);精粹图标.rectTransform.localScale=Vector3.one*(1+.18f*Mathf.Sin(essencePulse/.4f*Mathf.PI));}
@@ -134,7 +190,7 @@ public sealed class UIInkLawPage : MonoBehaviour
     public void 结束转环() { orbitHeld = false; }
     public float 自动转速 => orbitSpeed;
     public LawFragment 取槽(int slot) => LawFragmentSystem.取槽(data, slot);
-    public void 选择槽(int slot) { 当前槽位 = slot; 当前选择 = 取槽(slot); RefreshDetails(); }
+    public void 选择槽(int slot) { 当前槽位 = slot; 当前选择 = 取槽(slot);切换背包(true); RefreshDetails(); }
     public void 选择(LawFragment law) { 当前选择 = law; RefreshDetails(); }
     public void 开始拖拽(LawFragment law, int slot, PointerEventData e)
     {
@@ -150,7 +206,7 @@ public sealed class UIInkLawPage : MonoBehaviour
     {
         if (!built || !data) return; if (当前选择 != null && !data.法则碎片.Contains(当前选择)) 当前选择 = null;
         var inventory = data.法则碎片.Where(x => !data.法则装备.Contains(x.id)&&!data.炉中法则.Contains(x.id)).OrderByDescending(x => x.评分).ToList(); empty.gameObject.SetActive(inventory.Count == 0);
-        essence.text="法则精粹  "+data.法则精粹.ToString("N0");炉鼎.Refresh();
+        essence.text="法则精粹  "+data.法则精粹.ToString("N0");炉鼎.Refresh();法则背包.设置(data.法则碎片.OrderByDescending(x=>x.评分));刷新汇总();
         if (当前选择 == null && inventory.Count > 0) 当前选择 = inventory[0];收获弧带.设置(inventory); RefreshDetails();
     }
     void RefreshDetails()
@@ -171,7 +227,7 @@ public sealed class UIInkLawPage : MonoBehaviour
             {
                 var row = AttributeView(index++, false);
                 row.Find("Name").GetComponent<Text>().text = AttributeUtil.GetDisplayName(roll.属性);
-                row.Find("Value").GetComponent<Text>().text = roll.大增幅 ? "+" + (roll.数值 * 100).ToString("0.#") + "% 增幅" : "+" + AttributeUtil.Format(roll.属性, roll.数值);
+                row.Find("Value").GetComponent<Text>().text = roll.大增幅 ? "+" + (roll.数值 * 100).ToString("0.#") + "% 增幅" : "+" + 显示固定值(roll.属性, roll.数值);
                 var progress=row.Find("MainProgress").GetComponent<Image>();progress.gameObject.SetActive(roll.主属性);if(roll.主属性)Place(progress.rectTransform,.03f,.02f,Mathf.Lerp(.03f,.98f,LawRefinementSystem.主属性进度(当前选择,roll)),.055f);
             }
         }
@@ -211,7 +267,11 @@ public sealed class UIInkLawPage : MonoBehaviour
         orbitSpeed = reduced ? 0 : Mathf.SmoothDamp(orbitSpeed, held ? 0 : 7, ref speedDamping, held ? .16f : .65f, Mathf.Infinity, delta);
         环角度 = Mathf.Repeat(环角度 + orbitSpeed * delta, 360);
         ring.localRotation = Quaternion.Euler(-18 + Mathf.Sin(time * .35f) * 2, 0, -9 + Mathf.Sin(time * .3f) * 2);
-        var rect = preview.rectTransform.rect; camera3d.aspect = rect.width / rect.height; float scale = GetComponentInParent<Canvas>().scaleFactor; int width = Mathf.Clamp(Mathf.RoundToInt(rect.width * scale), 256, 1024), height = Mathf.Clamp(Mathf.RoundToInt(rect.height * scale), 256, 1024);
+        var rect = preview.rectTransform.rect; camera3d.aspect = rect.width / rect.height;
+        // 窄背包展示区以横向留白决定视野，不能照搬宽总览的固定FOV裁掉左右法则。
+        float vertical=背包已打开?37:32;
+        camera3d.fieldOfView=2*Mathf.Atan(Mathf.Tan(vertical*Mathf.Deg2Rad*.5f)*Mathf.Max(1,1f/camera3d.aspect))*Mathf.Rad2Deg;
+        float scale = GetComponentInParent<Canvas>().scaleFactor; int width = Mathf.Clamp(Mathf.RoundToInt(rect.width * scale), 256, 1024), height = Mathf.Clamp(Mathf.RoundToInt(rect.height * scale), 256, 1024);
         if (!target || target.width != width || target.height != height) { if (target) { target.Release(); Destroy(target); } target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 2 }; target.Create(); camera3d.targetTexture = target; preview.texture = target; }
         for (int s = 0; s < strands.Count; s++) for (int j = 0; j < 72; j++) { float angle = 环角度 * Mathf.Deg2Rad + s * 1.35f + j / 71f * (s == 0 ? 5.6f : 3.5f) + time * (s % 2 == 0 ? .10f : -.16f); float drift = Mathf.Sin(angle * 3 + time * .7f + s) * .025f; strands[s].SetPosition(j, new Vector3(Mathf.Sin(angle) * (2.05f + s * .012f + drift), Mathf.Sin(angle * 2 + time * .5f + s) * (.022f + s * .016f), Mathf.Cos(angle) * (1.28f + s * .013f + drift))); }
         for (int i = 0; i < slotModels.Count; i++)
@@ -226,8 +286,8 @@ public sealed class UIInkLawPage : MonoBehaviour
         }
         人物预览.推进(delta, 环角度, reduced); camera3d.Render();
     }
-    void OnEnable() { if (built) { stage.gameObject.SetActive(true); lastRender = Time.unscaledTime; orbitSpeed = speedDamping = 0; Refresh(); } }
-    void OnDisable() { 结束拖拽(true); orbitHeld = false; orbitSpeed = speedDamping = 0; essencePulse=0; if(精粹图标)精粹图标.rectTransform.localScale=Vector3.one; if (stage) stage.gameObject.SetActive(false); }
+    void OnEnable() { if (built) { 切换背包(false);stage.gameObject.SetActive(true); lastRender = Time.unscaledTime; orbitSpeed = speedDamping = 0; Refresh(); } }
+    void OnDisable() { if(furnacePanel)furnacePanel.gameObject.SetActive(false);结束拖拽(true); orbitHeld = false; orbitSpeed = speedDamping = 0; essencePulse=0; if(精粹图标)精粹图标.rectTransform.localScale=Vector3.one; if (stage) stage.gameObject.SetActive(false); }
     void OnDestroy() { if (data) data.Changed -= Refresh; if (stage) Destroy(stage.gameObject); if (target) { target.Release(); Destroy(target); } foreach (var m in meshes) Destroy(m); foreach (var m in materials) Destroy(m); }
 }
 public sealed class UIInkLawDrag : MonoBehaviour, IDragHandler, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IEndDragHandler
