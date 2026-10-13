@@ -66,7 +66,7 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
         releaseAt=castClip?castClip.length*(falling?falling.出手进度:active&&active.结算方式==ActiveSkillKind.追踪弹?HomingBoltSkillRunner.放飞进度:.45f):.25f;
         cycleLength=Mathf.Max(1,castClip?castClip.length:1)+1;
         if(active&&active.结算方式==ActiveSkillKind.小剑阵)cycleLength=Mathf.Max(cycleLength,active.持续时长+1); // 完整动作/表现之间留一秒，不按真实冷却等待。
-        if(spiral){releaseAt=castClip.length*spiral.出手进度+spiral.布阵时长+spiral.蓄势时长+(volleyClip?volleyClip.length*spiral.第二段出剑进度:0);cycleLength=releaseAt+1.8f+1;BuildSwords();}
+        if(spiral){releaseAt=castClip.length*spiral.出手进度+spiral.布阵时长+spiral.蓄势时长+(volleyClip?volleyClip.length*spiral.第二段出剑进度:0);cycleLength=Mathf.Max(releaseAt+1.8f,releaseAt+(volleyClip?volleyClip.length*(1-spiral.第二段出剑进度):0))+1;BuildSwords();}
         bounds=new Bounds(stage.position+Vector3.up*1.3f,spiral?new Vector3(5.8f,4,6.4f):new Vector3(2.5f,3.6f,6));BeginCycle();
     }
     void BindClip(ref AnimationClipPlayable playable,AnimationClip clip,int slot)
