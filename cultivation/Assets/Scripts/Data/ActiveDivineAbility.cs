@@ -43,6 +43,7 @@ public enum ActiveSkillKind
     四御护罩 = 8,
     天降打击 = 9,
     螺旋剑雨 = 10,
+    伴龙随行 = 11,
 }
 
 /// <summary>

@@ -1,0 +1,43 @@
+using UnityEditor;
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Requires Play");var report=new List<string>();void Check(bool ok,string label){if(!ok)throw new Exception(label);report.Add(label);}
+var root=new GameObject("CheDianFeelQA_Player");root.SetActive(false);root.transform.position=new Vector3(20000,2,20000);
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=root.transform.position-Vector3.up*.5f;floor.transform.localScale=new Vector3(140,1,140);
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=10000;stats.调试数值[AttributeType.MaxSpirit]=10000;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;var flight=root.AddComponent<YufengFlight>();flight.enabled=false;
+var targeter=root.AddComponent<NpcTargeting>();targeter.enabled=false;targeter.受神识范围限制=false;
+var driver=root.AddComponent<CheDianYeTingCompanion>();var stateSetter=typeof(YufengFlight).GetProperty("状态").GetSetMethod(true);
+int oldCapture=Time.captureFramerate;float oldScale=Time.timeScale;GameObject npcRoot=null;NpcDefinition npcDef=null;
+var errors=new List<string>();void Log(string text,string stack,LogType type){if(type==LogType.Error||type==LogType.Exception)errors.Add(text);}Application.logMessageReceived+=Log;
+try{
+Time.timeScale=1;Time.captureFramerate=60;root.SetActive(true);yield return null;var d=driver.Definition;
+Check(d.TransitionSeconds>=1.4f&&d.MoveTransitionSeconds>=1.2f,"Locomotion uses seconds-long blends");
+var feet=driver.Companion.GetComponentsInChildren<Transform>().Where(t=>t.name=="Bip001 L Foot"||t.name=="Bip001 R Foot").ToArray();var minimum=new[]{float.MaxValue,float.MaxValue};
+for(int i=0;i<=90;i++){d.GroundMove.SampleAnimation(driver.Companion,d.GroundMove.length*i/90);for(int f=0;f<feet.Length;f++)minimum[f]=Mathf.Min(minimum[f],feet[f].position.y-driver.Companion.transform.position.y);}
+yield return null;var prior=feet.Select(f=>f.position).ToArray();var priorLocal=feet.Select(f=>driver.Companion.transform.InverseTransformPoint(f.position)).ToArray();var slide=new List<float>();float rateError=0;int samples=0;bool longBlend=false;
+root.transform.position+=Vector3.forward*8;
+for(int i=0;i<360;i++){
+float time=driver.MotionTime;var state=driver.State;yield return null;
+if(driver.State==CheDianYeTingCompanion.MotionState.GroundMove&&driver.BlendProgress<.9f&&driver.BlendProgress>.4f)longBlend=true;
+if(driver.State==CheDianYeTingCompanion.MotionState.GroundMove&&state==driver.State&&driver.BlendProgress>.999f&&driver.Velocity.magnitude>2){float delta=driver.MotionTime-time;if(delta<0)delta+=d.GroundMove.length;rateError=Mathf.Max(rateError,Mathf.Abs(delta/(1f/60)-driver.Velocity.magnitude/d.GroundReferenceSpeed));samples++;
+for(int f=0;f<feet.Length;f++){var pos=feet[f].position;var local=driver.Companion.transform.InverseTransformPoint(pos);if(pos.y-driver.Companion.transform.position.y<minimum[f]+.07f&&local.z<priorLocal[f].z-.0001f)slide.Add(Mathf.Abs((pos.z-prior[f].z)*60));}}
+prior=feet.Select(f=>f.position).ToArray();priorLocal=feet.Select(f=>driver.Companion.transform.InverseTransformPoint(f.position)).ToArray();
+}
+Check(longBlend,"Running acceleration overlaps a visibly long animation transition");Check(samples>30&&rateError<.2f,"Stable travel speed matches gait playback rate: "+rateError);
+Check(slide.Count>20&&slide.Average()<1.3f,"Stance-foot sliding reduced at calibrated speed: "+slide.Average()+" samples="+slide.Count);
+Check(!driver.Following,"Calibrated running eventually reaches side region");
+stateSetter.Invoke(flight,new object[]{YufengFlight.FlightState.御风});flight.强制御风=true;flight.enabled=true;root.transform.position+=Vector3.up*4;
+yield return new WaitForSeconds(6);Check(driver.Airborne,"Long walking/takeoff blend reaches airborne state");
+root.transform.rotation=Quaternion.Euler(0,90,0);root.transform.position+=Vector3.right*3;yield return new WaitForSeconds(6);
+Check(driver.State==CheDianYeTingCompanion.MotionState.AirIdle&&!driver.Following,"Air movement settles into smooth hovering");Check(Quaternion.Angle(driver.Companion.transform.rotation,root.transform.rotation*Quaternion.Euler(d.FacingOffset))<5,"After flight, dragon faces player's direction instead of the player");
+npcRoot=new GameObject("CheDianFeelQA_Target");npcRoot.SetActive(false);npcRoot.transform.position=driver.Companion.transform.position+new Vector3(-4,0,8);npcDef=ScriptableObject.CreateInstance<NpcDefinition>();npcDef.属性[AttributeType.MaxHealth]=10000;var npc=npcRoot.AddComponent<NpcInstance>();npc.定义=npcDef;npcRoot.SetActive(true);yield return null;targeter.Lock(npc,true);yield return new WaitForSeconds(3);
+var aim=AbilityVfxUtility.命中点(npc.transform)-driver.Companion.transform.position;aim.y=0;Check(Vector3.Angle(driver.Companion.transform.forward,aim)<5,"Hovering companion faces the player's shared locked target");
+// Inspect the actual baked reverse motion against an unmodified ordinary-attack reverse pose.
+var source=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(JuLongCoordinateBaker.PrefabPath));source.transform.localScale=d.Scale;var model=Object.Instantiate(d.Companion);model.transform.localScale=d.Scale;
+try{foreach(var b in source.GetComponentsInChildren<MonoBehaviour>())b.enabled=false;foreach(var b in model.GetComponentsInChildren<MonoBehaviour>())b.enabled=false;var raw=AssetDatabase.LoadAssetAtPath<AnimationClip>(JuLongCoordinateBaker.ClipFolder+"/PuTongGongJi.anim");var firstHead=source.GetComponentsInChildren<Transform>().First(t=>t.name=="Bip001 Head");var head=model.GetComponentsInChildren<Transform>().First(t=>t.name=="Bip001 Head");raw.SampleAnimation(source,Mathf.Lerp(3.4f,2.39f,.5f));d.GroundBreathRepeat.SampleAnimation(model,d.GroundBreathRepeat.length*.5f);Check(head.position.z<firstHead.position.z-.08f,"Repeated preparation visibly retracts the head before firing");Check(d.GroundBreathRepeat.length>1.2f,"Repeated preparation has time to build force");}finally{Object.Destroy(source);Object.Destroy(model);}
+Check(errors.Count==0,"No motion/preview errors: "+string.Join(";",errors));File.WriteAllText("../.local/diagnostics/chedian-motion-feel-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));Debug.Log("CHEDIAN_FEEL_PASS "+report.Count+" stanceMean="+slide.Average()+" rateError="+rateError);
+}finally{Application.logMessageReceived-=Log;Time.captureFramerate=oldCapture;Time.timeScale=oldScale;Object.Destroy(root);Object.Destroy(floor);if(npcRoot)Object.Destroy(npcRoot);if(npcDef)Object.Destroy(npcDef);}
+}
+return Run();

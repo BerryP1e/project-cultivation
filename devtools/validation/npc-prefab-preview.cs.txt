@@ -1,0 +1,40 @@
+using UnityEditor;
+using System.IO;
+System.Collections.IEnumerator Run(){
+var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(JuLongCoordinateBaker.PrefabPath);
+var originalController=prefab.GetComponent<Animator>().runtimeAnimatorController;
+var sourcePaths=new[]{JuLongCoordinateBaker.PrefabPath,"Assets/Animations/NPC/JuLong.controller"};
+var originalBytes=sourcePaths.Select(File.ReadAllBytes).ToArray();
+var sceneCount=UnityEngine.SceneManagement.SceneManager.sceneCount;
+var curves=originalController.animationClips.Distinct().ToArray();
+int checks=0;
+using(var preview=new NpcPrefabAnimationPreview(prefab)){
+if(preview.ClipCount!=6)throw new Exception("Six prefab clips must be available");checks++;
+if(preview.PreviewObject==prefab||!UnityEditor.SceneManagement.EditorSceneManager.IsPreviewScene(preview.PreviewObject.scene))throw new Exception("Preview must use its own scene");checks++;
+if(preview.PreviewObject.GetComponentsInChildren<MonoBehaviour>(true).Length!=0||preview.PreviewObject.GetComponentsInChildren<Collider>(true).Length!=0)throw new Exception("Gameplay components remain on preview clone");checks++;
+foreach(var clip in curves){
+preview.SelectClip(clip);preview.Playing=false;preview.SetTime(clip.length*.37f);
+if(Mathf.Abs(preview.Time-clip.length*.37f)>1e-6f)throw new Exception("Scrub mismatch");checks++;
+var frame=preview.Capture(700,500);
+try{
+var colors=frame.GetPixels32();var bg=colors[0];int foreground=colors.Count(c=>Mathf.Abs(c.r-bg.r)+Mathf.Abs(c.g-bg.g)+Mathf.Abs(c.b-bg.b)>45);
+if(foreground<300)throw new Exception("Empty rendered preview: "+clip.name+" "+foreground);
+File.WriteAllBytes("../.local/diagnostics/julong-preview-"+clip.name+".png",frame.EncodeToPNG());Debug.Log(clip.name+" preview PASS pixels="+foreground);checks++;
+}finally{Object.DestroyImmediate(frame);}
+var skin=preview.PreviewObject.GetComponentInChildren<SkinnedMeshRenderer>();var first=new Mesh();var second=new Mesh();try{
+preview.SetTime(clip.length*.21f);skin.BakeMesh(first);preview.SetTime(clip.length*.65f);skin.BakeMesh(second);var a=first.vertices;var b=second.vertices;
+if(!a.Where((p,i)=>Vector3.Distance(p,b[i])>.0001f).Any())throw new Exception("Animation pose is frozen: "+clip.name);checks++;
+}finally{Object.DestroyImmediate(first);Object.DestroyImmediate(second);}
+}
+preview.Loop=false;preview.Playing=true;preview.SetTime(preview.Clip.length-.01f);double wait=EditorApplication.timeSinceStartup;while(EditorApplication.timeSinceStartup-wait<.05)yield return null;preview.Advance();
+if(preview.Playing||Mathf.Abs(preview.Time-preview.Clip.length)>1e-6f)throw new Exception("Non-loop preview must stop at end");checks++;
+preview.Loop=true;preview.Playing=true;preview.SetTime(preview.Clip.length-.01f);wait=EditorApplication.timeSinceStartup;while(EditorApplication.timeSinceStartup-wait<.05)yield return null;preview.Advance();
+if(!preview.Playing||preview.Time>=preview.Clip.length)throw new Exception("Loop preview did not wrap");checks++;
+}
+if(prefab.GetComponent<Animator>().runtimeAnimatorController!=originalController)throw new Exception("Source animator changed");checks++;
+for(int i=0;i<sourcePaths.Length;i++){if(!File.ReadAllBytes(sourcePaths[i]).SequenceEqual(originalBytes[i]))throw new Exception("Source asset changed");checks++;}
+if(UnityEngine.SceneManagement.SceneManager.sceneCount!=sceneCount)throw new Exception("Preview scene leak");checks++;
+var inspector=Editor.CreateEditor(prefab.GetComponent<NpcAnimator>());try{if(!(inspector is NpcAnimatorEditor))throw new Exception("Prefab inspector has no animation preview");checks++;}finally{Object.DestroyImmediate(inspector);}
+Debug.Log("PASS "+checks+" prefab animation preview checks, source assets unchanged");
+}
+return Run();

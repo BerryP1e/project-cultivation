@@ -7,6 +7,8 @@ public class UIInkSkillVolume : MonoBehaviour
     UIActiveSkillBar bar;UIInkSkillStar[] stars;Transform stage;Camera camera3d;RawImage image;RenderTexture target;Mesh ring;Material material;
     Transform[] nodes;Transform[,] rings;SpriteRenderer[] icons;Sprite[] previous;float lastRender;
     PlayerHud hud; UIInkHudSkill[] hudStars; Material[] hudMaterials;
+    MaterialPropertyBlock[] comboBlocks;
+    public bool ComboHighlighted(int slot) => hud != null && hud.施放器 != null && hud.施放器.伴龙追击窗口(slot);
     static int stageSequence;
     public bool 三维就绪=>target!=null && camera3d!=null && nodes!=null;
     public int 三维星位数=>nodes==null?0:nodes.Length;
@@ -25,14 +27,15 @@ public class UIInkSkillVolume : MonoBehaviour
         var cameraObject=new GameObject("SkillVolumeCamera");cameraObject.transform.SetParent(stage,false);cameraObject.transform.localPosition=new Vector3(0,0,-1000);
         camera3d=cameraObject.AddComponent<Camera>();camera3d.enabled=false;camera3d.orthographic=true;camera3d.clearFlags=CameraClearFlags.SolidColor;camera3d.backgroundColor=Color.clear;camera3d.nearClipPlane=.1f;camera3d.farClipPlane=2000;camera3d.cullingMask=1<<31;camera3d.allowHDR=false;camera3d.allowMSAA=true;
         var rect=UIBuildUtils.CreateRect("Volume3D",transform);rect.SetAsFirstSibling();UIBuildUtils.Stretch(rect);image=rect.gameObject.AddComponent<RawImage>();image.raycastTarget=false;
-        nodes=new Transform[stars.Length];rings=new Transform[stars.Length,2];icons=new SpriteRenderer[stars.Length];previous=new Sprite[stars.Length];
+        nodes=new Transform[stars.Length];rings=new Transform[stars.Length,2];icons=new SpriteRenderer[stars.Length];previous=new Sprite[stars.Length];comboBlocks=new MaterialPropertyBlock[stars.Length];
         for(int i=0;i<stars.Length;i++){
+            comboBlocks[i]=new MaterialPropertyBlock();
             nodes[i]=new GameObject("VolumeStar"+i).transform;nodes[i].SetParent(stage,false);
             for(int n=0;n<2;n++){var go=new GameObject("OrbitalRing",typeof(MeshFilter),typeof(MeshRenderer));go.layer=31;go.transform.SetParent(nodes[i],false);go.GetComponent<MeshFilter>().sharedMesh=ring;go.GetComponent<MeshRenderer>().sharedMaterial=material;rings[i,n]=go.transform;}
             var glyph=new GameObject("SkillGlyph",typeof(SpriteRenderer));glyph.layer=31;glyph.transform.SetParent(nodes[i],false);icons[i]=glyph.GetComponent<SpriteRenderer>();
         }
     }
-    static Mesh CreateRing(){
+    public static Mesh CreateRing(){
         const int slices=96,tube=6;var vertices=new Vector3[(slices+1)*(tube+1)];var normals=new Vector3[vertices.Length];var colors=new Color[vertices.Length];var triangles=new int[slices*tube*6];int t=0;
         for(int i=0;i<=slices;i++)for(int j=0;j<=tube;j++){float a=i*2*Mathf.PI/slices,b=j*2*Mathf.PI/tube;int k=i*(tube+1)+j;var radial=new Vector3(Mathf.Cos(a),Mathf.Sin(a),0);normals[k]=radial*Mathf.Cos(b)+Vector3.forward*Mathf.Sin(b);vertices[k]=radial*52+normals[k]*.75f;colors[k]=new Color(.42f,.80f,.72f,.80f);if(i==slices || j==tube)continue;int next=k+tube+1;triangles[t++]=k;triangles[t++]=next;triangles[t++]=k+1;triangles[t++]=k+1;triangles[t++]=next;triangles[t++]=next+1;}
         var mesh=new Mesh{name="InkOrbitalTorus"};mesh.vertices=vertices;mesh.normals=normals;mesh.colors=colors;mesh.triangles=triangles;mesh.RecalculateBounds();return mesh;
@@ -45,16 +48,20 @@ public class UIInkSkillVolume : MonoBehaviour
         float time=UIInkMotion.减少动效?0:Time.unscaledTime;
         for(int i=0;i<nodes.Length;i++){
             Vector3 p=transform.InverseTransformPoint(hud!=null?hudStars[i].视觉位置:stars[i].视觉位置);if(hud!=null)p-=(Vector3)rect.center;p.z=0;nodes[i].localPosition=p;
-            nodes[i].localScale=Vector3.one*(hud!=null?.62f:1);
+            bool combo=ComboHighlighted(i);
+            float pulse=combo ? .5f+.5f*Mathf.Sin(time*8) : 0;
+            nodes[i].localScale=Vector3.one*(hud!=null?.62f:1)*(combo?1.10f+pulse*.035f:1);
             var shift=hud!=null?hudStars[i].视差位移:stars[i].视差位移;nodes[i].localRotation=Quaternion.Euler(-shift.y*1.6f,shift.x*1.6f,0);
             for(int n=0;n<2;n++){rings[i,n].localRotation=Quaternion.Euler(58+n*48,25+n*55,time*(n==0?15:-12)+i*37);rings[i,n].localScale=Vector3.one*(n==0?1:1.12f);}
+            comboBlocks[i].Clear();comboBlocks[i].SetFloat("_ComboGlow",combo?1.4f+pulse*.6f:0);
+            for(int n=0;n<2;n++)rings[i,n].GetComponent<MeshRenderer>().SetPropertyBlock(comboBlocks[i]);
             var slot=hud==null?bar.slots[i]:null;
             var content=hud!=null?(hud.面板数据!=null&&i<hud.面板数据.主动技能.Count?hud.面板数据.主动技能[i] as IPanelEntry:null):slot.Content as IPanelEntry;
             var sprite=UIInkAbilityArt.Icon(content);
             if(sprite!=previous[i]){icons[i].sprite=sprite;previous[i]=sprite;if(sprite!=null){float size=Mathf.Max(sprite.bounds.size.x,sprite.bounds.size.y);icons[i].transform.localScale=Vector3.one*(76/Mathf.Max(.001f,size));}}
             icons[i].color=new Color(1,1,1,hud==null&&UIDragContext.OriginData==bar.data && UIDragContext.OriginSlot==i?.25f:1);
             icons[i].transform.localRotation=Quaternion.Euler(Mathf.Sin(time*.7f+i)*9,Mathf.Sin(time*.5f+i)*16,0);
-            if(hud!=null){if(hudMaterials[i]!=null)hudMaterials[i].SetFloat("_Cooldown",hudStars[i].墨晕比例);hudStars[i].使用三维=true;if(hud.技能格们[i].图标!=null)hud.技能格们[i].图标.enabled=false;}
+            if(hud!=null){if(hudMaterials[i]!=null){hudMaterials[i].SetFloat("_Cooldown",combo?0:hudStars[i].墨晕比例);hudMaterials[i].SetFloat("_ComboGlow",combo?.5f+pulse*.35f:0);}hudStars[i].使用三维=true;if(hud.技能格们[i].图标!=null)hud.技能格们[i].图标.enabled=false;}
             else {if(slot.icon!=null)slot.icon.enabled=false;var orbit=slot.transform.Find("FloatingSurface/Orbit")?.GetComponent<Image>();if(orbit!=null)orbit.enabled=false;}
         }
         if(Time.unscaledTime-lastRender>=1f/30){camera3d.Render();lastRender=Time.unscaledTime;}

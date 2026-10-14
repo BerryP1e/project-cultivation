@@ -1,0 +1,41 @@
+using UnityEditor;
+using UnityEngine.UI;
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Use Play");
+var report=new List<string>();void Check(bool ok,string text){if(!ok)throw new Exception(text);report.Add(text);}
+var root=new GameObject("CheDianAIQA_Player");root.SetActive(false);root.transform.position=new Vector3(17000,2,17000);
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=root.transform.position-Vector3.up*.5f;floor.transform.localScale=new Vector3(120,1,120);
+var panel=root.AddComponent<UIPanelData>();var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=10000;stats.调试数值[AttributeType.MaxSpirit]=10000;var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;
+var movement=root.AddComponent<PlayerController>();movement.gravity=0;movement.enabled=false;
+var flight=root.AddComponent<YufengFlight>();flight.移动=movement;flight.面板数据=panel;flight.升空时长=.3f;flight.落地时长=.3f;
+var loader=root.AddComponent<PlayerAbilityLoader>();loader.面板数据=panel;loader.打印装卸日志=false;
+var ability=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");var wind=AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/ability_pingxu_yufeng.asset");panel.EnsureLists();panel.神通.Add(ability);panel.神通.Add(wind);panel.获得主动(ability);panel.获得被动(wind);panel.SetPassiveEnabled(wind,true);
+var viewGo=new GameObject("CheDianAIQA_View",typeof(RectTransform),typeof(RawImage));var image=viewGo.GetComponent<RawImage>();image.rectTransform.sizeDelta=new Vector2(700,500);var preview=viewGo.AddComponent<UIAbilityPreview>();preview.初始化(image);
+GameObject wall=null;int oldCapture=Time.captureFramerate;float oldScale=Time.timeScale;
+var errors=new List<string>();void Log(string text,string stack,LogType type){if(type==LogType.Error||type==LogType.Exception)errors.Add(text);}Application.logMessageReceived+=Log;
+try{
+Time.timeScale=1;Time.captureFramerate=60;root.SetActive(true);panel.EquipToSlot(0,ability);yield return null;var companion=root.GetComponent<CheDianYeTingCompanion>();
+var position=companion.Companion.transform.position;wall=GameObject.CreatePrimitive(PrimitiveType.Cube);wall.name="CheDianAIQA_Obstacle";wall.transform.position=position+Vector3.forward*3+Vector3.up;wall.transform.localScale=new Vector3(2,3,1);
+root.transform.position+=Vector3.forward*7;Physics.SyncTransforms();float maxSide=0;bool penetrated=false;float maximumSpeed=0;Quaternion prior=companion.Companion.transform.rotation;float maxTurn=0;
+for(int i=0;i<420;i++){
+yield return null;var actor=companion.Companion.transform;maxSide=Mathf.Max(maxSide,Mathf.Abs(actor.position.x-position.x));maximumSpeed=Mathf.Max(maximumSpeed,companion.Velocity.magnitude);maxTurn=Mathf.Max(maxTurn,Quaternion.Angle(prior,actor.rotation));prior=actor.rotation;penetrated|=wall.GetComponent<Collider>().bounds.Contains(actor.position+Vector3.up);
+}
+Check(maxSide>.7f,"Ground AI steers around a blocking object");Check(!penetrated,"Ground AI does not walk its core through the obstacle");Check(companion.Companion.transform.position.z>wall.transform.position.z+1,"Companion passes obstacle and approaches player's side");Check(maximumSpeed<10,"AI moves at bounded running speed");Check(maxTurn<4,"AI has a bounded physical turn rate");Check(!companion.Following&&companion.State==CheDianYeTingCompanion.MotionState.GroundIdle,"AI arrives and idles within a loose side region");
+Object.Destroy(wall);wall=null;flight.切换();bool sawLift=false,sawAir=false;float deadline=Time.time+4.5f;
+while(Time.time<deadline){root.transform.position=new Vector3(root.transform.position.x,2+flight.高度偏移,root.transform.position.z);sawLift|=companion.State==CheDianYeTingCompanion.MotionState.Takeoff;sawAir|=flight.御风中&&(companion.State==CheDianYeTingCompanion.MotionState.AirIdle||companion.State==CheDianYeTingCompanion.MotionState.AirMove);yield return null;}
+Check(sawLift&&sawAir,"Native YufengFlight state machine drives companion takeoff and hover");flight.切换();bool sawLand=false;deadline=Time.time+4;
+while(Time.time<deadline){root.transform.position=new Vector3(root.transform.position.x,2+flight.高度偏移,root.transform.position.z);sawLand|=companion.State==CheDianYeTingCompanion.MotionState.Landing;yield return null;}
+Check(sawLand&&companion.State==CheDianYeTingCompanion.MotionState.GroundIdle,"Native wind landing drives companion landing and ground idle");
+int companions=Object.FindObjectsByType<CheDianYeTingCompanion>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length;
+preview.显示(ability);yield return new WaitForSeconds(.25f);Check(preview.展示渲染器数>0,"Skill UI shows actual companion model");Check(preview.演示木桩.gameObject.activeSelf,"Breath preview includes a target dummy");
+var stage=preview.预览相机.transform.parent;var wing=stage.GetComponentsInChildren<Transform>(true).First(t=>t.name=="Bip001 L UpperArm");var q=wing.localRotation;yield return new WaitForSeconds(.35f);Check(Quaternion.Angle(q,wing.localRotation)>1,"UI companion actively flaps wings");
+Check(Object.FindObjectsByType<CheDianYeTingCompanion>(FindObjectsInactive.Include,FindObjectsSortMode.None).Length==companions,"UI creates no gameplay companion or AI");
+float previewDeadline=Time.realtimeSinceStartup+6;while(!stage.GetComponentsInChildren<LineRenderer>().Any(l=>l.enabled&&l.name=="稳定光芯")&&Time.realtimeSinceStartup<previewDeadline)yield return null;Check(stage.GetComponentsInChildren<LineRenderer>().Any(l=>l.enabled&&l.name=="稳定光芯"),"UI demonstrates real mouth breath without gameplay damage");var rt=(RenderTexture)image.texture;Check(rt&&rt.IsCreated(),"UI companion renders to isolated texture");var old=RenderTexture.active;RenderTexture.active=rt;var shot=new Texture2D(rt.width,rt.height,TextureFormat.RGBA32,false);try{shot.ReadPixels(new Rect(0,0,rt.width,rt.height),0,0);shot.Apply();Check(shot.GetPixels32().Count(c=>c.a>100)>500,"UI contains visible player and dragon");File.WriteAllBytes("../.local/diagnostics/chedian-ui-preview.png",shot.EncodeToPNG());}finally{RenderTexture.active=old;Object.Destroy(shot);}
+preview.显示(wind);yield return null;Check(stage.GetComponentsInChildren<Transform>(true).All(t=>t.name!="Bip001 L UpperArm"),"Switching skill clears companion preview graph/model");
+Check(errors.Count==0,"No runtime or preview component cleanup errors: "+string.Join(";",errors.Take(3)));
+File.WriteAllText("../.local/diagnostics/chedian-ai-ui-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));Debug.Log("CHEDIAN_AI_UI_PASS "+report.Count+" maxTurn="+maxTurn+" speed="+maximumSpeed+" detour="+maxSide);
+}finally{Application.logMessageReceived-=Log;Time.timeScale=oldScale;Time.captureFramerate=oldCapture;Object.Destroy(viewGo);Object.Destroy(root);Object.Destroy(floor);if(wall)Object.Destroy(wall);}
+}
+return Run();

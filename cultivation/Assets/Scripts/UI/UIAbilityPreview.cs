@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -22,10 +23,16 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
     readonly List<Transform> swords=new List<Transform>();
     readonly List<SpiralSwordCurves.SwordFlight> flights=new List<SpiralSwordCurves.SwordFlight>();
     Transform appearanceSource,clonedVisual;PlayableGraph graph;AnimationMixerPlayable mixer;AnimationClipPlayable idlePlayable,castPlayable,volleyPlayable;
+    PlayableGraph companionGraph;AnimationClipPlayable companionPlayable,companionPrevious;AnimationMixerPlayable companionMixer;
+    CheDianYeTingDefinition companionDefinition;Transform companionDragon,companionHead;CheDianBreathVisual companionBreath;CheDianManifestation companionManifest;bool companionShown,companionReturning;
+    AnimationClip companionClip,companionPreviousClip;float companionTime,companionPreviousTime,companionBlend;
+    CheDianPlayerChannel companionPlayerChannel;bool companionFired;
     AnimationClip castClip,volleyClip;ActiveDivineAbility active;DivineAbilityDefinition selected;GameObject source;
     FallingSpellPattern falling;SpiralSwordPattern spiral;SpiralSwordCurves.ArcLengthRibbon ribbon;
     float clock,nextRender,cycleAge,cycleLength=3,yaw,releaseAt;int emitted;bool released,mechanical;
     Bounds bounds;MaterialPropertyBlock swordBlock;Text humanLabel,dummyLabel;
+    Vector3 dummyHome;
+    SkinnedMeshRenderer companionSkin;Vector3[] companionVertices;BoneWeight[] companionWeights;Matrix4x4[] companionBindposes,companionMatrices;
     public void 初始化(RawImage view){image=view;}
     void Build()
     {
@@ -42,13 +49,14 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
         }
         var prefab=Resources.Load<GameObject>("摆设/练功木桩");dummy=prefab?Clone(prefab,stage).transform:new GameObject("PreviewDummy").transform;dummy.SetParent(stage,false);dummy.localPosition=new Vector3(0,0,-2.2f);
         bool found=false;var size=new Bounds();foreach(var r in dummy.GetComponentsInChildren<Renderer>()){if(!found){size=r.bounds;found=true;}else size.Encapsulate(r.bounds);}if(found){float scale=1.45f/Mathf.Max(.1f,size.size.y);dummy.localScale*=scale;dummy.position+=dummy.position-new Vector3(size.center.x,size.min.y,size.center.z);}
+        dummyHome=dummy.localPosition;
         var font=Resources.Load<Font>("Fonts/SimHei")??Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");humanLabel=UIBuildUtils.CreateText("PreviewCasterLabel",image.transform,font,"玩家",16,TextAnchor.MiddleCenter,UICharacterBackdrop.Muted);dummyLabel=UIBuildUtils.CreateText("PreviewDummyLabel",image.transform,font,"木桩",16,TextAnchor.MiddleCenter,UICharacterBackdrop.Muted);foreach(var label in new[]{humanLabel,dummyLabel}){label.raycastTarget=false;label.rectTransform.sizeDelta=new Vector2(90,26);}
         swordBlock=new MaterialPropertyBlock();同步外观(null);
     }
     static GameObject Clone(GameObject prefab,Transform parent)
     {
         var holder=new GameObject("PreviewCloneHolder");holder.transform.SetParent(parent,false);holder.SetActive(false);var clone=Instantiate(prefab,holder.transform,false);
-        foreach(var b in clone.GetComponentsInChildren<MonoBehaviour>(true))DestroyImmediate(b);
+        foreach(var b in clone.GetComponentsInChildren<MonoBehaviour>(true).Reverse())DestroyImmediate(b);
         foreach(var b in clone.GetComponentsInChildren<Collider>(true))DestroyImmediate(b);foreach(var b in clone.GetComponentsInChildren<Rigidbody>(true))DestroyImmediate(b);
         foreach(var b in clone.GetComponentsInChildren<AudioSource>(true))DestroyImmediate(b);foreach(var b in clone.GetComponentsInChildren<Camera>(true))DestroyImmediate(b);foreach(var b in clone.GetComponentsInChildren<Light>(true))DestroyImmediate(b);
         foreach(var node in clone.GetComponentsInChildren<Transform>(true))node.gameObject.layer=31;
@@ -56,18 +64,74 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
     }
     public void 显示(IPanelEntry entry)
     {
-        Build();ClearEffects();selected=entry as DivineAbilityDefinition;active=entry as ActiveDivineAbility;source=null;falling=null;spiral=null;mechanical=selected&&selected.神通id=="ability_pingxu_yufeng";clock=0;循环次数=0;
+        Build();ClearEffects();selected=entry as DivineAbilityDefinition;active=entry as ActiveDivineAbility;source=null;falling=null;spiral=null;mechanical=selected&&(selected.神通id=="ability_pingxu_yufeng"||selected.神通id==CheDianYeTingDefinition.AbilityId);clock=0;循环次数=0;
+        dummy.localPosition=dummyHome;
         var path=active?active.特效资源路径:entry is PassiveDivineAbility passive?passive.特效资源路径:null;if(!string.IsNullOrEmpty(path))source=Resources.Load<GameObject>(path);
         if(selected&&selected.神通id=="ability_leiyun")source=Resources.Load<GameObject>("CombatVFX/CombatMagic/lightning-fx/lightning-cloud");
         falling=source?source.GetComponent<FallingSpellPattern>():null;spiral=source?source.GetComponent<SpiralSwordPattern>():null;
         castClip=active?Resources.Load<AnimationClip>("技能动作/"+active.施法动作):null;if(active&&active.结算方式==ActiveSkillKind.追踪弹)castClip=Resources.Load<AnimationClip>(HomingBoltSkillRunner.动作资源路径);
-        if(active&&!castClip)castClip=Resources.Load<AnimationClip>("技能动作/神通施法/能量02_前半施法");
+        if(active&&!castClip&&!mechanical)castClip=Resources.Load<AnimationClip>("技能动作/神通施法/能量02_前半施法");
         volleyClip=spiral?Resources.Load<AnimationClip>("技能动作/"+spiral.齐射动作):null;BindClip(ref castPlayable,castClip,1);BindClip(ref volleyPlayable,volleyClip,2);
         releaseAt=castClip?castClip.length*(falling?falling.出手进度:active&&active.结算方式==ActiveSkillKind.追踪弹?HomingBoltSkillRunner.放飞进度:.45f):.25f;
         cycleLength=Mathf.Max(1,castClip?castClip.length:1)+1;
         if(active&&active.结算方式==ActiveSkillKind.小剑阵)cycleLength=Mathf.Max(cycleLength,active.持续时长+1); // 完整动作/表现之间留一秒，不按真实冷却等待。
         if(spiral){releaseAt=castClip.length*spiral.出手进度+spiral.布阵时长+spiral.蓄势时长+(volleyClip?volleyClip.length*spiral.第二段出剑进度:0);cycleLength=Mathf.Max(releaseAt+1.8f,releaseAt+(volleyClip?volleyClip.length*(1-spiral.第二段出剑进度):0))+1;BuildSwords();}
         bounds=new Bounds(stage.position+Vector3.up*1.3f,spiral?new Vector3(5.8f,4,6.4f):new Vector3(2.5f,3.6f,6));BeginCycle();
+        bool companion=active&&active.结算方式==ActiveSkillKind.伴龙随行;dummy.gameObject.SetActive(!companion);dummyLabel.gameObject.SetActive(!companion);
+        if(companion)BuildCompanion();
+    }
+    void BuildCompanion()
+    {
+        var definition=Resources.Load<CheDianYeTingDefinition>(CheDianYeTingDefinition.ResourcePath);if(!definition||!definition.Ready)return;
+        companionDefinition=definition;
+        var dragon=Clone(definition.Companion,model);dragon.transform.position=humanRoot.TransformPoint(definition.SideOffset+Vector3.up*.15f);dragon.transform.rotation=humanRoot.rotation;dragon.transform.localScale=definition.Scale;
+        companionDragon=dragon.transform;companionHead=dragon.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name=="Bip001 Head");
+        companionSkin=dragon.GetComponentInChildren<SkinnedMeshRenderer>();if(companionSkin&&companionSkin.sharedMesh.isReadable){companionVertices=companionSkin.sharedMesh.vertices;companionWeights=companionSkin.sharedMesh.boneWeights;companionBindposes=companionSkin.sharedMesh.bindposes;companionMatrices=new Matrix4x4[companionBindposes.Length];}
+        var animator=dragon.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;animator.Rebind();
+        companionGraph=PlayableGraph.Create("AbilityPreview_Companion");companionGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);companionMixer=AnimationMixerPlayable.Create(companionGraph,2);AnimationPlayableOutput.Create(companionGraph,"Dragon",animator).SetSourcePlayable(companionMixer);companionGraph.Play();
+        SetCompanionClip(definition.AirIdle);
+        if(definition.BreathReady){dummy.gameObject.SetActive(true);dummyLabel.gameObject.SetActive(true);dummy.position=dragon.transform.position+humanRoot.forward*7;var facing=dummy.position-dragon.transform.position;facing.y=0;dragon.transform.rotation=Quaternion.LookRotation(facing);cycleLength=.75f+definition.FirstWindupSeconds+definition.BreathDuration+definition.ReturnToGhostSeconds+.75f;
+            companionBreath=new CheDianBreathVisual(definition);companionBreath.Root.transform.SetParent(model,true);foreach(var t in companionBreath.Root.GetComponentsInChildren<Transform>())t.gameObject.layer=31;foreach(var p in companionBreath.Root.GetComponentsInChildren<ParticleSystem>()){var m=p.main;m.useUnscaledTime=true;}}
+        companionManifest=new CheDianManifestation(dragon,definition,companionHead);companionManifest.ShowGhost(true);dragon.SetActive(false);companionShown=companionReturning=companionFired=false;
+        var caster=clonedVisual?clonedVisual.GetComponentsInChildren<Animator>(true).FirstOrDefault(a=>a.isHuman):null;
+        if(caster)companionPlayerChannel=new CheDianPlayerChannel(caster,definition);
+        bounds=new Bounds(Vector3.Lerp(humanRoot.position,dummy.position,.45f)+Vector3.up*1.6f,new Vector3(12,6,13));
+    }
+    void SetCompanionClip(AnimationClip clip)
+    {
+        if(companionClip==clip)return;
+        if(companionPrevious.IsValid()){companionMixer.DisconnectInput(1);companionPrevious.Destroy();}
+        companionPrevious=companionPlayable;companionPreviousClip=companionClip;companionPreviousTime=companionTime;
+        if(companionPrevious.IsValid()){companionMixer.DisconnectInput(0);companionGraph.Connect(companionPrevious,0,companionMixer,1);}
+        companionClip=clip;companionPlayable=AnimationClipPlayable.Create(companionGraph,clip);companionPlayable.SetApplyFootIK(false);companionPlayable.SetApplyPlayableIK(false);companionGraph.Connect(companionPlayable,0,companionMixer,0);companionTime=0;companionBlend=0;
+    }
+    void TickCompanion(float dt)
+    {
+        var d=companionDefinition;if(!d||companionManifest==null)return;
+        float begin=.75f,fire=begin+d.FirstWindupSeconds,end=fire+d.BreathDuration,recovery=end+d.RecoverySeconds,vanish=end;
+        if(cycleAge<begin){if(companionShown){companionManifest.HideImmediately();companionDragon.gameObject.SetActive(false);companionShown=false;companionPlayerChannel?.End();}companionReturning=companionFired=false;companionManifest.Tick(dt,companionDragon.position+Vector3.up*1.4f);return;}
+        if(!companionShown){companionDragon.gameObject.SetActive(true);companionManifest.Reveal(true);companionShown=true;companionPlayerChannel?.Begin();}
+        if(cycleAge>=fire&&!companionFired){companionFired=true;companionPlayerChannel?.Fire();}
+        if(cycleAge>=recovery)companionPlayerChannel?.End();
+        if(cycleAge>=vanish&&!companionReturning){companionReturning=true;companionManifest.Dissolve();}
+        if(companionReturning&&companionManifest.Hidden){companionDragon.gameObject.SetActive(false);companionManifest.ShowGhost(true);}
+        var clip=cycleAge<fire?d.AirBreathStart:cycleAge<end?d.AirBreathLoop:cycleAge<recovery?d.AirBreathEnd:d.AirIdle;
+        SetCompanionClip(clip);float rate=cycleAge<fire?clip.length/d.FirstWindupSeconds:cycleAge<recovery&&cycleAge>=end?clip.length/d.RecoverySeconds:1;
+        companionTime+=dt*rate;companionPlayable.SetTime(clip.isLooping?Mathf.Repeat(companionTime,clip.length):Mathf.Min(companionTime,clip.length));companionBlend+=dt;float weight=companionPrevious.IsValid()?Mathf.SmoothStep(0,1,Mathf.Clamp01(companionBlend/.2f)):1;
+        if(companionPrevious.IsValid()){companionPreviousTime+=dt;companionPrevious.SetTime(companionPreviousClip.isLooping?Mathf.Repeat(companionPreviousTime,companionPreviousClip.length):Mathf.Min(companionPreviousTime,companionPreviousClip.length));}companionMixer.SetInputWeight(0,weight);companionMixer.SetInputWeight(1,1-weight);companionGraph.Evaluate(0);
+        companionManifest.Tick(dt,companionDragon.position+Vector3.up*1.4f);if(companionBreath==null||!companionHead)return;companionBreath.Tick(dt);var mouth=companionHead.TransformPoint(d.MouthOffset);
+        if(cycleAge<fire)companionBreath.ShowCharge(mouth,Mathf.Clamp01((cycleAge-begin)/d.FirstWindupSeconds));
+        else if(cycleAge<end){var point=dummy.position+Vector3.up*.8f;var aim=Quaternion.FromToRotation(companionHead.TransformDirection(Vector3.left),(point-mouth).normalized)*companionHead.rotation;companionHead.rotation=Quaternion.Slerp(companionHead.rotation,aim,.92f);mouth=companionHead.TransformPoint(d.MouthOffset);companionBreath.ShowBeam(mouth,point,Mathf.Clamp01((cycleAge-fire)/.1f));companionBreath.Hit(point);}
+        else companionBreath.Fade(1);
+    }
+    void FitCompanion()
+    {
+        if(!companionSkin||companionVertices==null)return;
+        var bones=companionSkin.bones;for(int i=0;i<companionMatrices.Length;i++)companionMatrices[i]=bones[i].localToWorldMatrix*companionBindposes[i];
+        // Use actual skinned world vertices: BakeMesh repeats a non-unit display scale in this engine.
+        for(int i=0;i<companionVertices.Length;i++){var w=companionWeights[i];var v=companionVertices[i];var p=companionMatrices[w.boneIndex0].MultiplyPoint3x4(v)*w.weight0+companionMatrices[w.boneIndex1].MultiplyPoint3x4(v)*w.weight1+companionMatrices[w.boneIndex2].MultiplyPoint3x4(v)*w.weight2+companionMatrices[w.boneIndex3].MultiplyPoint3x4(v)*w.weight3;bounds.Encapsulate(p);}
+        foreach(var r in humanRoot.GetComponentsInChildren<Renderer>())if(r.enabled&&r.gameObject.activeInHierarchy)bounds.Encapsulate(r.bounds);
+        foreach(var r in dummy.GetComponentsInChildren<Renderer>())if(r.enabled)bounds.Encapsulate(r.bounds);
     }
     void BindClip(ref AnimationClipPlayable playable,AnimationClip clip,int slot)
     {
@@ -75,6 +139,9 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
     }
     void ClearEffects()
     {
+        companionPlayerChannel?.Dispose();companionPlayerChannel=null;companionManifest?.Dispose();companionManifest=null;companionBreath?.Dispose();companionBreath=null;companionDefinition=null;companionClip=null;companionPlayable=default;companionPrevious=default;
+        companionSkin=null;companionVertices=null;companionWeights=null;companionBindposes=null;companionMatrices=null;
+        if(companionGraph.IsValid())companionGraph.Destroy();
         foreach(var v in visuals)if(v.root){v.root.SetActive(false);Destroy(v.root);}visuals.Clear();emissions.Clear();if(model){model.gameObject.SetActive(false);Destroy(model.gameObject);}foreach(var m in ownedMaterials)Destroy(m);ownedMaterials.Clear();swords.Clear();flights.Clear();model=new GameObject("AbilityVisual").transform;model.SetParent(stage,false);
     }
     void BuildSwords()
@@ -97,6 +164,7 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
     }
     void Release()
     {
+        if(mechanical)return;
         released=true;if(!active)return;var destination=dummy.position;
         if(active.结算方式==ActiveSkillKind.追踪弹){var v=Spawn(source,hand?hand.position:humanRoot.position+Vector3.up,Quaternion.identity,.25f,1.5f);if(v!=null){foreach(var ps in v.systems){var m=ps.main;m.simulationSpace=ParticleSystemSimulationSpace.Local;if(ps.name=="sphere-main"||ps.name=="crystals")ps.transform.localPosition=Vector3.zero;}v.from=v.root.transform.position;v.to=destination+Vector3.up*.8f;v.travel=.3f;v.impact=Resources.Load<GameObject>(string.IsNullOrEmpty(active.命中特效路径)?"CombatVFX/CombatMagic/lightning-fx/lightning-explode":active.命中特效路径);v.impactScale=.3f;}return;}
         if(falling||spiral)return;
@@ -107,9 +175,11 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
     void Tick(float dt)
     {
         clock+=dt;cycleAge+=dt;if(cycleAge>=cycleLength)BeginCycle();
+        if(companionGraph.IsValid())TickCompanion(dt);
         if(graph.IsValid()){float phase=cycleAge;float castWeight=castClip&&phase<castClip.length?Mathf.Min(Mathf.Clamp01(phase/.12f),Mathf.Clamp01((castClip.length-phase)/.15f)):0;float volleyWeight=0;
             if(spiral&&volleyClip){float t=cycleAge-(releaseAt-volleyClip.length*spiral.第二段出剑进度);volleyWeight=t>=0&&t<volleyClip.length?Mathf.Min(Mathf.Clamp01(t/.12f),Mathf.Clamp01((volleyClip.length-t)/.15f)):0;volleyPlayable.SetTime(Mathf.Clamp(t,0,volleyClip.length));castWeight*=1-volleyWeight;}
             if(castPlayable.IsValid())castPlayable.SetTime(Mathf.Min(phase,castClip.length));if(idlePlayable.IsValid())idlePlayable.SetTime(clock);mixer.SetInputWeight(0,1-castWeight-volleyWeight);mixer.SetInputWeight(1,castWeight);mixer.SetInputWeight(2,volleyWeight);graph.Evaluate(0);}
+        if(companionPlayerChannel!=null){companionPlayerChannel.AimAt(dummy.position+Vector3.up*.8f);companionPlayerChannel.Tick(dt);}
         if(!released&&cycleAge>=releaseAt)Release();
         if(falling&&released)while(emitted<falling.数量&&cycleAge>=releaseAt+emitted*Mathf.Max(.01f,falling.间隔)){var end=dummy.position+SpiralSwordCurves.AreaOffset(emitted,falling.数量,1.25f);var start=end+Vector3.up*3;var v=Spawn(falling.飞行粒子.gameObject,start,Quaternion.LookRotation(Vector3.down,Vector3.forward),.3f,1.5f);if(v!=null){foreach(var ps in v.systems){var m=ps.main;m.simulationSpace=ParticleSystemSimulationSpace.Local;m.startSpeed=0;var velocity=ps.velocityOverLifetime;velocity.enabled=false;}v.from=start;v.to=end;v.travel=.25f;v.impact=falling.命中特效;v.impactScale=.22f;}emitted++;}
         for(int i=0;i<swords.Count;i++){var sword=swords[i];float u=(i+.5f)/swords.Count;float launch=releaseAt+i*.004f;float flight=(cycleAge-launch)/.55f;sword.gameObject.SetActive(flight<1.8f);if(cycleAge<launch){sword.localPosition=humanRoot.localPosition+ribbon.Evaluate(Mathf.Clamp01(u+Mathf.Sin(clock*.3f)*.005f))*.65f;sword.localRotation=ribbon.SwordRotation(u);}else{sword.localPosition=flights[i].Evaluate(flight);var velocity=flights[i].Velocity(Mathf.Clamp01(flight));if(velocity.sqrMagnitude>.001f)sword.localRotation=Quaternion.LookRotation(velocity,Vector3.up);}float reveal=Mathf.Clamp01((cycleAge-u*spiral.布阵时长)/spiral.单剑显现时长);float edge=Mathf.Min(u,1-u)/spiral.端部虚化比例;float alpha=reveal*Mathf.Lerp(.08f,spiral.剑幕透明度,Mathf.Clamp01(edge));swordBlock.SetColor("_Color",new Color(.77f,.87f,1,alpha));sword.GetComponent<MeshRenderer>().SetPropertyBlock(swordBlock);}
@@ -122,6 +192,7 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
         if(!stage||!image||Time.unscaledTime<nextRender)return;float dt=Mathf.Min(.1f,Time.unscaledTime-nextRender+1f/30);nextRender=Time.unscaledTime+1f/30;if(!UIInkMotion.减少动效)Tick(dt);
         var rect=image.rectTransform.rect;if(rect.width<1||rect.height<1)return;int width=Mathf.Clamp(Mathf.RoundToInt(rect.width),256,1024),height=Mathf.Clamp(Mathf.RoundToInt(rect.height),256,1024);
         if(!target||target.width!=width||target.height!=height){if(target){camera3d.targetTexture=null;target.Release();Destroy(target);}target=new RenderTexture(width,height,24,RenderTextureFormat.ARGB32);target.Create();camera3d.targetTexture=target;image.texture=target;}
+        if(companionGraph.IsValid())FitCompanion();
         var rotation=Quaternion.Euler(40,yaw,0);var extent=bounds.extents;var up=rotation*Vector3.up;var right=rotation*Vector3.right;float vertical=Mathf.Abs(up.x)*extent.x+Mathf.Abs(up.y)*extent.y+Mathf.Abs(up.z)*extent.z;float horizontal=Mathf.Abs(right.x)*extent.x+Mathf.Abs(right.y)*extent.y+Mathf.Abs(right.z)*extent.z;
         camera3d.aspect=width/(float)height;camera3d.orthographicSize=Mathf.Max(vertical,horizontal/camera3d.aspect)*1.04f;camera3d.transform.position=bounds.center+rotation*new Vector3(0,0,-22);camera3d.transform.LookAt(bounds.center);camera3d.Render();Label(humanLabel,humanRoot.position+Vector3.up*1.7f);Label(dummyLabel,dummy.position-Vector3.up*.25f);
     }
@@ -130,5 +201,5 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
     public void OnDrag(PointerEventData e){if(e.button==PointerEventData.InputButton.Left)yaw-=e.delta.x*.2f;}
     void OnEnable(){玩家外观.外观变化+=同步外观;if(stage)stage.gameObject.SetActive(true);同步外观(null);nextRender=Time.unscaledTime;}
     void OnDisable(){玩家外观.外观变化-=同步外观;if(stage)stage.gameObject.SetActive(false);}
-    void OnDestroy(){if(graph.IsValid())graph.Destroy();if(camera3d)camera3d.targetTexture=null;if(stage)Destroy(stage.gameObject);if(target){target.Release();Destroy(target);}foreach(var mat in ownedMaterials)Destroy(mat);}
+    void OnDestroy(){companionPlayerChannel?.Dispose();companionManifest?.Dispose();companionBreath?.Dispose();if(companionGraph.IsValid())companionGraph.Destroy();if(graph.IsValid())graph.Destroy();if(camera3d)camera3d.targetTexture=null;if(stage)Destroy(stage.gameObject);if(target){target.Release();Destroy(target);}foreach(var mat in ownedMaterials)Destroy(mat);}
 }

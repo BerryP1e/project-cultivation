@@ -1,5 +1,5 @@
 Shader "UI/InkCooldown" {
- Properties { [PerRendererData] _MainTex("Icon",2D)="white"{} _Color("Color",Color)=(1,1,1,1) _Cooldown("Ink diffusion",Range(0,1))=0 _ZWrite("Depth write",Float)=0 _ZTest("Depth test",Float)=8 }
+ Properties { [PerRendererData] _MainTex("Icon",2D)="white"{} _Color("Color",Color)=(1,1,1,1) _ComboGlow("Followup highlight",Float)=0 _Cooldown("Ink diffusion",Range(0,1))=0 _ZWrite("Depth write",Float)=0 _ZTest("Depth test",Float)=8 }
  SubShader {
  Tags { "Queue"="Transparent" "RenderType"="Transparent" "IgnoreProjector"="True" "CanUseSpriteAtlas"="False" }
  Cull Off ZWrite [_ZWrite] ZTest [_ZTest] Blend SrcAlpha OneMinusSrcAlpha
@@ -10,7 +10,7 @@ Shader "UI/InkCooldown" {
  #include "UnityCG.cginc"
  struct a {float4 vertex:POSITION;float2 uv:TEXCOORD0;fixed4 color:COLOR;};
  struct v {float4 vertex:SV_POSITION;float2 uv:TEXCOORD0;fixed4 color:COLOR;};
- sampler2D _MainTex;fixed4 _Color;float _Cooldown;
+ sampler2D _MainTex;fixed4 _Color;float _Cooldown,_ComboGlow;
  v vert(a x){v o;o.vertex=UnityObjectToClipPos(x.vertex);o.uv=x.uv;o.color=x.color*_Color;return o;}
  fixed4 frag(v x):SV_Target {
  float k=saturate(_Cooldown),radius=.075*k;
@@ -21,7 +21,7 @@ Shader "UI/InkCooldown" {
  c+=tex2D(_MainTex,uv+float2(radius,radius))*.07;c+=tex2D(_MainTex,uv-float2(radius,radius))*.07;
  c+=tex2D(_MainTex,uv+float2(radius,-radius))*.07;c+=tex2D(_MainTex,uv-float2(radius,-radius))*.07;
  c.rgb=lerp(c.rgb,float3(.18,.24,.22),k*.78);c.a*=lerp(1,.62,k);
- clip(c.a-.015);return c*x.color;
+ c.rgb*=1+_ComboGlow;clip(c.a-.015);return c*x.color;
  }
  ENDCG
  }

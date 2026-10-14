@@ -1,0 +1,56 @@
+using UnityEditor;
+using UnityEngine.UI;
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Requires Play");
+var report=new List<string>();void Check(bool ok,string label){if(!ok){File.WriteAllText("../.local/diagnostics/chedian-runtime-report.txt",string.Join("\n",report));throw new Exception(label);}report.Add(label);}
+var root=new GameObject("CheDianQA_Player");root.SetActive(false);root.transform.position=new Vector3(18000,2,18000);
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="CheDianQA_Ground";floor.transform.position=root.transform.position-Vector3.up*.5f;floor.transform.localScale=new Vector3(300,1,300);
+var panel=root.AddComponent<UIPanelData>();var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=10000;stats.调试数值[AttributeType.MaxSpirit]=10000;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;
+var loader=root.AddComponent<PlayerAbilityLoader>();loader.面板数据=panel;loader.打印装卸日志=false;
+var flight=root.AddComponent<YufengFlight>();flight.面板数据=panel;flight.升空时长=.1f;flight.落地时长=.1f;flight.每秒消耗灵气=0;
+var ability=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");
+var wind=AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/ability_pingxu_yufeng.asset");
+panel.EnsureLists();panel.神通.Add(ability);panel.神通.Add(wind);panel.获得被动(wind);panel.SetPassiveEnabled(wind,true);panel.获得主动(ability);
+var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+var stateSetter=typeof(YufengFlight).GetProperty("状态").GetSetMethod(true);
+void SetFlight(YufengFlight.FlightState state){stateSetter.Invoke(flight,new object[]{state});}
+var errors=new List<string>();void Log(string text,string stack,LogType kind){if(kind==LogType.Error||kind==LogType.Exception)errors.Add(text);}
+float oldTimeScale=Time.timeScale;int oldCapture=Time.captureFramerate;var cameras=new List<GameObject>();var resources=new List<Object>();Application.logMessageReceived+=Log;
+try{
+Time.timeScale=1;Time.captureFramerate=60;root.SetActive(true);flight.enabled=false;yield return null;
+Check(!root.GetComponent<CheDianYeTingCompanion>(),"Learning alone does not summon");panel.EquipToSlot(0,ability);yield return null;
+var companion=root.GetComponent<CheDianYeTingCompanion>();Check(companion&&companion.enabled&&companion.Companion,"Equipment creates companion through PlayerAbilityLoader");
+Check(companion.State==CheDianYeTingCompanion.MotionState.GroundIdle,"Spawn grounded idle");
+var d=companion.Definition;var anchor=root.transform.position+root.transform.rotation*new Vector3(d.SideOffset.x,d.SideOffset.y,d.SideOffset.z);Check(Vector3.Distance(anchor,companion.Companion.transform.position)<.06f,"User side offset retained");Check((companion.Companion.transform.localScale-d.Scale).sqrMagnitude<1e-8f,"Reference scale retained without doubling");
+Check(companion.Companion.GetComponentsInChildren<Collider>().Length==0&&companion.Companion.GetComponents<NpcAnimator>().Length==0,"No companion collider or competing NPC animator");
+var settled=companion.Companion.transform.position;root.transform.position+=Vector3.right*.35f;root.transform.rotation=Quaternion.Euler(0,12,0);yield return new WaitForSeconds(.6f);Check(Vector3.Distance(settled,companion.Companion.transform.position)<.04f&&!companion.Following,"Small player movement/turn does not drag or orbit the dragon");root.transform.rotation=Quaternion.identity;
+for(int i=0;i<95;i++){root.transform.position+=Vector3.forward*.06f;yield return null;}Check(companion.State==CheDianYeTingCompanion.MotionState.GroundMove,"Ground follow uses locomotion");Check(Vector3.Distance(companion.Companion.transform.position,root.transform.position+Vector3.right*d.SideOffset.x+Vector3.forward*d.SideOffset.z+Vector3.up*d.SideOffset.y)<6f,"Ground companion follows at bounded distance with intentional perception lag");
+yield return new WaitForSeconds(4f);Check(companion.State==CheDianYeTingCompanion.MotionState.GroundIdle,"Stop eases back to idle after dragon arrives");
+flight.enabled=true;SetFlight(YufengFlight.FlightState.御风);flight.enabled=true;flight.强制御风=true;root.transform.position+=Vector3.up*flight.飞行高度;
+yield return new WaitForSeconds(.55f);Check(companion.State==CheDianYeTingCompanion.MotionState.Takeoff,"Delayed player rise initiates native takeoff");
+var bone=companion.Companion.GetComponentsInChildren<Transform>().First(t=>t.name=="Bip001 L UpperArm");var prior=bone.localRotation;float maxWingStep=0;bool sawBlend=false;
+float deadline=Time.time+4.5f;while(companion.State==CheDianYeTingCompanion.MotionState.Takeoff&&Time.time<deadline){sawBlend|=companion.BlendProgress>0&&companion.BlendProgress<1;var q=bone.localRotation;maxWingStep=Mathf.Max(maxWingStep,Quaternion.Angle(prior,q));prior=q;yield return null;}
+Check(sawBlend&&companion.State==CheDianYeTingCompanion.MotionState.AirIdle,"Takeoff naturally blends to hovering");yield return new WaitForSeconds(2.8f);
+Check(Mathf.Abs(companion.Companion.transform.position.y-(root.transform.position.y+d.SideOffset.y+d.AirHeightOffset))<.15f,"Companion altitude follows flight");
+bool sawGlide=false,sawBeatAfterGlide=false;float continuousFlight=0;prior=bone.localRotation;for(int i=0;i<650;i++){root.transform.position+=Vector3.forward*.09f;var q=bone.localRotation;maxWingStep=Mathf.Max(maxWingStep,Quaternion.Angle(prior,q));prior=q;sawGlide|=companion.Gliding;sawBeatAfterGlide|=sawGlide&&!companion.Gliding;if(companion.State==CheDianYeTingCompanion.MotionState.AirMove)continuousFlight+=1f/60;yield return null;}Check(companion.State==CheDianYeTingCompanion.MotionState.AirMove,"Air movement selects level flight loop");Check(sawGlide,"Sustained flight transitions from long wing beats into glide");Check(sawBeatAfterGlide,"Gliding periodically returns to active wing beats");Check(continuousFlight>8,"Flight pattern remains airborne and moving through sustained travel");
+yield return new WaitForSeconds(3.2f);Check(companion.State==CheDianYeTingCompanion.MotionState.AirIdle,"Air stop resumes climbing hover after arrival");
+var parked=companion.Companion.transform.position;var pose=bone.localRotation;var motionTime=companion.MotionTime;Time.timeScale=0;yield return new WaitForSecondsRealtime(.15f);Check(companion.Companion.transform.position==parked&&Quaternion.Angle(pose,bone.localRotation)<.001f&&companion.MotionTime==motionTime,"Pause freezes position and animation");Time.timeScale=1;
+flight.强制御风=false;flight.强制落地();root.transform.position-=Vector3.up*flight.飞行高度;yield return new WaitForSeconds(.55f);Check(companion.State==CheDianYeTingCompanion.MotionState.Landing,"Wind end begins landing");
+prior=bone.localRotation;deadline=Time.time+4.5f;while(companion.State==CheDianYeTingCompanion.MotionState.Landing&&Time.time<deadline){var q=bone.localRotation;maxWingStep=Mathf.Max(maxWingStep,Quaternion.Angle(prior,q));prior=q;yield return null;}Check(companion.State==CheDianYeTingCompanion.MotionState.GroundIdle,"Landing ends in grounded idle");yield return new WaitForSeconds(.7f);Check(Mathf.Abs(companion.Companion.transform.position.y-(floor.transform.position.y+.5f+d.SideOffset.y))<.08f,"Ground height restored without source animation travel");
+// Mid-blend reversal keeps the rendered pose continuous, with the outgoing wing beat still advancing.
+SetFlight(YufengFlight.FlightState.御风);flight.强制御风=true;root.transform.position+=Vector3.up*flight.飞行高度;yield return new WaitForSeconds(.55f);Check(companion.State==CheDianYeTingCompanion.MotionState.Takeoff,"Takeoff restarts after grounded state");yield return new WaitForSeconds(.4f);var before=bone.localRotation;flight.强制御风=false;flight.强制落地();float reversalStep=0;for(int k=0;k<34;k++){yield return null;reversalStep=Mathf.Max(reversalStep,Quaternion.Angle(before,bone.localRotation));before=bone.localRotation;}Check(companion.State==CheDianYeTingCompanion.MotionState.Landing&&reversalStep<18,"Interrupted takeoff to landing has no hard pose jump");
+yield return new WaitForSeconds(.25f);before=bone.localRotation;SetFlight(YufengFlight.FlightState.御风);flight.强制御风=true;reversalStep=0;for(int k=0;k<34;k++){yield return null;reversalStep=Mathf.Max(reversalStep,Quaternion.Angle(before,bone.localRotation));before=bone.localRotation;}Check(companion.State==CheDianYeTingCompanion.MotionState.Takeoff&&reversalStep<18,"Landing reversal smoothly resumes takeoff");
+yield return new WaitForSeconds(3.7f);Check(companion.State==CheDianYeTingCompanion.MotionState.AirIdle,"Reversal reaches stable hover");
+root.transform.position+=new Vector3(80,0,80);yield return null;Check(Vector3.Distance(companion.Companion.transform.position,root.transform.position+Vector3.right*d.SideOffset.x+Vector3.forward*d.SideOffset.z+Vector3.up*(d.SideOffset.y+d.AirHeightOffset))<.1f,"World teleport reanchors companion without a long chase");
+float hp=vitals.当前气血,spirit=vitals.当前灵气;var caster=root.AddComponent<ActiveSkillCaster>();caster.面板数据=panel;caster.生命=vitals;caster.战斗属性=stats;caster.快捷键=new KeyCode[0];Check(caster.TryCast(0)&&vitals.当前气血==hp&&Mathf.Abs(vitals.当前灵气-(spirit-ability.消耗灵力))<.01f,"Breath command uses mature resource pipeline");
+panel.交换主动槽(0,1,ability);yield return null;var same=companion.Companion;Check(same&&companion.enabled,"Moving equipment between slots retains one companion");panel.EquipToSlot(1,null);yield return null;yield return null;Check(!companion.enabled&&!companion.Companion&&!same,"Unequipping removes companion immediately");
+panel.EquipToSlot(0,ability);yield return null;Check(companion.enabled&&companion.Companion&&companion.State==CheDianYeTingCompanion.MotionState.AirIdle,"Equipping while already airborne summons hovering companion");
+typeof(PlayerVitals).GetProperty("已死亡").GetSetMethod(true).Invoke(vitals,new object[]{true});yield return null;yield return null;Check(!companion.Companion,"Death clears companion");vitals.复活();yield return null;Check(companion.Companion,"Living owner can respawn equipped companion");
+Check(maxWingStep<35,"No anomalous single-frame wing rotation: "+maxWingStep);Check(errors.Count==0,"No runtime errors: "+string.Join(";",errors.Take(3)));
+File.WriteAllText("../.local/diagnostics/chedian-runtime-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));Debug.Log("CHEDIAN_RUNTIME_PASS "+report.Count+" maxWingFrame="+maxWingStep);
+}finally{Application.logMessageReceived-=Log;Time.timeScale=oldTimeScale;Time.captureFramerate=oldCapture;Object.Destroy(root);Object.Destroy(floor);foreach(var go in cameras)Object.Destroy(go);foreach(var item in resources)Object.Destroy(item);}
+}
+return Run();

@@ -269,6 +269,11 @@ public class BasicJiuba01 : MonoBehaviour
         出手动作中 = false;
         if (刃光 != null) 刃光.停止(true);
     }
+    public void 中断未出手普攻()
+    {
+        出手动作中=false;本轮已结算=true;
+        if(刃光!=null)刃光.停止(true);
+    }
 
     protected virtual void Update()
     {
@@ -280,7 +285,7 @@ public class BasicJiuba01 : MonoBehaviour
         int id = npc != null ? npc.GetInstanceID() : 0;
         if (id != 缓存目标id) { 缓存目标id = id; 缓存 = null; }
 
-        if (动画 && 动画.闪避动作中 && 出手动作中)
+        if (动画 && 动画.施法占用中 && 出手动作中)
         {
             出手动作中 = false; 本轮已结算 = true;
             if (刃光 != null) 刃光.停止(true);

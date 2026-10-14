@@ -46,7 +46,7 @@ public sealed class PlayerManualAim : MonoBehaviour
     {
         if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.SenseRange ?? SenseRange(gameObject);
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
-        if(skill && (skill.结算方式==ActiveSkillKind.追踪弹 || skill.结算方式==ActiveSkillKind.定向水炮) && skill.范围>0)return Mathf.Min(SenseRange(gameObject),skill.范围);
+        if(skill && (skill.结算方式==ActiveSkillKind.追踪弹 || skill.结算方式==ActiveSkillKind.定向水炮 || skill.结算方式==ActiveSkillKind.伴龙随行) && skill.范围>0)return Mathf.Min(SenseRange(gameObject),skill.范围);
         return SenseRange(gameObject);
     }
     float Radius()
@@ -54,6 +54,7 @@ public sealed class PlayerManualAim : MonoBehaviour
         if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
         if(!skill){var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)return dragon.引导范围(落点);var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
+        if(skill.结算方式==ActiveSkillKind.伴龙随行)return GetComponent<CheDianYeTingCompanion>()?.Definition?.BreathRadius ?? .85f;
         if(skill.结算方式==ActiveSkillKind.追踪弹)return 2.5f;
         if(skill.结算方式==ActiveSkillKind.天降打击||skill.结算方式==ActiveSkillKind.螺旋剑雨)return skill.范围;
         return VoxelCombatDamage.AreaRadius(skill);

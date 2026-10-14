@@ -13,3 +13,4 @@ ability_huoyan_yun,火岩陨,地品,1,48,0,召来一枚炽热陨石轰击目标�
 ability_jianyu_luohua,剑雨落花,天品,1,50,0,展开天上剑纹；十六柄灵剑逐次下坠，每剑接触造成物理属性的主动神通伤害。,天降打击,物理,0.8,5.5,11,1,是,0,0,1,Abilities/FallingSpells/MagicSwordRain,,是,,神通施法/能量05_施法,主动神通,0
 ability_huoyan_zhui,火岩坠,天品,1,64,0,召来十四颗流火陨石覆盖落点；每颗接触独立造成特殊属性的范围主动神通伤害。,天降打击,特殊,0.85,7,15,1,是,0,0,1,Abilities/FallingSpells/MeteorRain,,是,,玄霄雷诀/A3,主动神通,0
 ability_zhouyu_chuxie,骤雨初歇,天品,1,90,0,唤椭圆灵剑幕环绕自身；二百八十八柄飞剑曲线脱阵后直刺目标周围四米区域，逐剑接触造成物理属性主动神通伤害。,螺旋剑雨,物理,0.105,4,24,1,是,0,0,1,Abilities/SpiralSwordRain/SpiralSwordRain,,否,,神通施法/能量05_施法,主动神通,0
+ability_chedian_yeting,掣电烨霆,天品,1,24,0,日常鬼火随行；龙身从头到尾凝实，左手引导雷息，四喷威势逐次增强。首发锁定最多四段储备并从零冷却；高亮窗口再次按键即可即时续喷，余段作废。,伴龙随行,特殊,0.38,15,10,4,否,1.725,0,0.23,Abilities/CheDianYeTing/Companion,,否,,,主动神通,0

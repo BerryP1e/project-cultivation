@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbf91cdde3c66bb44b738d027dd76309, type: 3}
+  m_Name: Definition
+  m_EditorClassIdentifier: 
+  Companion: {fileID: 4773365911260678487, guid: d48213fa9a8c02340bf84515f9273f49, type: 3}
+  SideOffset: {x: 4.050743, y: 0.03000614, z: -0.6459469}
+  FacingOffset: {x: 0, y: 0, z: 0}
+  Scale: {x: 2.5, y: 2.5, z: 2.5}
+  GroundIdle: {fileID: 1, guid: bf4181b6d9cae7b4a886adb883d97eba, type: 2}
+  GroundMove: {fileID: 1, guid: 7c9f1f5a183e7ef438d4bbdbf63235c5, type: 2}
+  Takeoff: {fileID: 1, guid: beaafbdf55bb15f46b332b7fe0bd590a, type: 2}
+  FlapLoop: {fileID: 1, guid: 75b7b3750b366d1419525ffcedfd6a46, type: 2}
+  AirIdle: {fileID: 1, guid: 5cc3fd6bd78225b4d81eca43542e65fb, type: 2}
+  AirMove: {fileID: 1, guid: 0031e9d2641b1084aba43204db6271f5, type: 2}
+  Landing: {fileID: 1, guid: 9bd8b87fbab0ff04aa3abebaf6ad70c0, type: 2}
+  AirPowered: {fileID: 1, guid: 21202e607e509a546926ce145578e20a, type: 2}
+  AirGlide: {fileID: 1, guid: b0491de51d6d20e4a94b68410a56bdb8, type: 2}
+  GroundBreathStart: {fileID: 1, guid: dcfea6a274dc37e48a88666cd02f98e1, type: 2}
+  GroundBreathLoop: {fileID: 1, guid: db03f47ed486d174b8ff8f521aef7bd7, type: 2}
+  GroundBreathEnd: {fileID: 1, guid: 1231c66cdae53c34ba41da2411fec8f2, type: 2}
+  GroundBreathRepeat: {fileID: 1, guid: 5eec769dab2653649b2aa38f12758b38, type: 2}
+  AirBreathStart: {fileID: 1, guid: 02c3fc1b0c47d624bbc288bde0050305, type: 2}
+  AirBreathLoop: {fileID: 1, guid: 5c02915ac483ea24cb16660ee7f65fdd, type: 2}
+  AirBreathEnd: {fileID: 1, guid: 3b48445d09f590a47a8ad1b6bd0fdd08, type: 2}
+  AirBreathRepeat: {fileID: 1, guid: 43e864d0a97661e4aa91e512df45d6fa, type: 2}
+  TransitionSeconds: 1.6
+  MoveTransitionSeconds: 1.35
+  FollowStartDistance: 1.65
+  ArriveDistance: 0.65
+  GroundRunSpeed: 2.7
+  GroundCatchupSpeed: 3.8
+  CatchupDistance: 7
+  Acceleration: 2.8
+  Braking: 4.2
+  GroundTurnDegrees: 130
+  AirSpeed: 10
+  AirTurnDegrees: 170
+  ObstacleRadius: 0.45
+  ObstacleLookAhead: 1.4
+  GroundReferenceSpeed: 1.35
+  AirAnimationSpeed: 0.85
+  AirHeightOffset: 0.15
+  TeleportDistance: 28
+  ReactionDelay: 0.45
+  PoweredFlightSeconds: 3.2
+  GlideSeconds: 2.8
+  FlapBurstSeconds: 1.65
+  BreathDuration: 1.725
+  FirstWindupSeconds: 0.58
+  RepeatWindupSeconds: 0.24
+  RecoverySeconds: 0.7
+  ReturnToGhostDelay: 0
+  ReturnToGhostSeconds: 1.6
+  ManifestSeconds: 0.6
+  RepeatRecoveryTime: 1.01
+  BreathRadius: 0.85
+  BreathMaterial: {fileID: 2100000, guid: 8c4be84722539c743afd32f5103fab74, type: 2}
+  BreathPlumeMaterial: {fileID: 2100000, guid: da5ef7f360a3a4f4f8c07f1c0a53de28, type: 2}
+  BreathDistortionMaterial: {fileID: 2100000, guid: c046aed75c7b78545ad799fa5aff5e23, type: 2}
+  BreathImpact: {fileID: 1100027309344398, guid: 46cb2646b77aaac478bc6966dc38bd82, type: 3}
+  BreathDissolveSeconds: 1.3
+  ComboWindowSeconds: 1.3
+  ComboTimeScale: 0.18
+  MouthOffset: {x: -0.22, y: -0.015, z: 0}

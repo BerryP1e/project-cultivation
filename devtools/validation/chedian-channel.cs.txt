@@ -1,0 +1,56 @@
+using UnityEditor;
+using UnityEngine.UI;
+using System.Collections;
+using System.IO;
+IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Requires Play");
+var report=new List<string>();void Check(bool ok,string text){File.WriteAllText("../.local/diagnostics/chedian-channel-report.txt",string.Join("\n",report));if(!ok)throw new Exception(text);report.Add(text);}
+var root=new GameObject("CheDianBreathQA_Player");root.SetActive(false);root.transform.position=new Vector3(19000,2,19000);
+var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.transform.position=root.transform.position-Vector3.up*.5f;floor.transform.localScale=new Vector3(220,1,220);
+var panel=root.AddComponent<UIPanelData>();var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=10000;stats.调试数值[AttributeType.MaxSpirit]=10000;stats.调试数值[AttributeType.Attack]=100;
+var vitals=root.AddComponent<PlayerVitals>();vitals.自动回复=false;
+var loader=root.AddComponent<PlayerAbilityLoader>();loader.面板数据=panel;loader.打印装卸日志=false;
+var flight=root.AddComponent<YufengFlight>();flight.面板数据=panel;flight.强制御风=false;flight.enabled=false;
+var targeting=root.AddComponent<NpcTargeting>();targeting.enabled=false;targeting.受神识范围限制=false;
+var caster=root.AddComponent<ActiveSkillCaster>();caster.面板数据=panel;caster.生命=vitals;caster.战斗属性=stats;caster.目标管理器=targeting;caster.快捷键=new KeyCode[0];caster.打印施法日志=false;
+var ability=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");panel.EnsureLists();panel.获得主动(ability);
+var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;var setFlight=typeof(YufengFlight).GetProperty("状态").GetSetMethod(true);
+var targets=new List<GameObject>();var defs=new List<Object>();
+NpcInstance Npc(Vector3 at){var def=ScriptableObject.CreateInstance<NpcDefinition>();def.属性[AttributeType.MaxHealth]=10000;def.对主角好感度=-50;defs.Add(def);var go=new GameObject("BreathQA_Target");targets.Add(go);go.SetActive(false);go.transform.position=at;var n=go.AddComponent<NpcInstance>();n.定义=def;var c=go.AddComponent<CapsuleCollider>();c.height=2;c.radius=.3f;go.SetActive(true);return n;}
+var errors=new List<string>();void Log(string text,string stack,LogType kind){if(kind==LogType.Error||kind==LogType.Exception)errors.Add(text);}Application.logMessageReceived+=Log;
+var gameCamera=Camera.main;bool cameraEnabled=gameCamera&&gameCamera.enabled;GameObject focusCamera=null;int oldCapture=Time.captureFramerate;float oldScale=Time.timeScale;GameObject wall=null,camGo=null;RenderTexture rt=null;int hits=0;void Hit(CombatHitEvent hit){if(hit.上下文.来源id==CheDianYeTingDefinition.AbilityId)hits++;}
+
+var humanoid=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),root.transform,false);
+var animator=humanoid.GetComponent<Animator>();animator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/PlayerLocomotion.controller");animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+var movement=root.AddComponent<PlayerController>();movement.gravity=0;movement.enabled=false;
+var actions=root.AddComponent<PlayerAnimationController>();actions.animator=animator;actions.playerController=movement;actions.御风=flight;actions.动作锁髋骨高度=false;
+var basic=root.AddComponent<BasicRemoteAttack01>();basic.自动出手=false;basic.动画=actions;
+caster.动画=actions;
+var other=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_fentian_yanshu.asset");panel.获得主动(other);
+try{
+Time.timeScale=1;root.SetActive(true);flight.enabled=false;panel.EquipToSlot(0,ability);panel.EquipToSlot(1,other);yield return null;
+var dragon=root.GetComponent<CheDianYeTingCompanion>();var breath=dragon.Breath;var channel=dragon.PlayerChannel;
+var target=Npc(root.transform.position+Vector3.forward*9);targeting.Lock(target,true);basic.目标管理器=targeting;
+var lease=new GameObject("OtherChannelLease");Check(actions.占用施法(lease),"Existing channel acquired");Check(!caster.TryCast(0)&&caster.剩余充能(0)==4&&!channel.Active,"Other action owner rejects dragon before charges are spent");actions.释放施法(lease);Object.Destroy(lease);
+var sword=root.AddComponent<BasicJiuba01>();sword.enabled=false;typeof(BasicJiuba01).GetProperty("出手动作中").GetSetMethod(true).Invoke(sword,new object[]{true});
+Check(basic.出手()&&basic.出手动作中,"Begin pending basic attack for interruption check");yield return new WaitForSeconds(.03f);
+Check(caster.TryCast(0)&&channel.Active&&actions.施法占用中,"First command owns player channel immediately");Check(!basic.出手动作中,"Pending basic attack cancelled before its missile frame");Check(!sword.出手动作中,"Pending melee contact is cancelled before channel begins");float spirit=vitals.当前灵气;Check(!caster.TryCast(1)&&vitals.当前灵气==spirit,"Other active skill blocked before spending spirit");Check(!actions.PlayAction(Resources.Load<AnimationClip>("技能动作/玄霄雷诀/A3"))&&!basic.手动出手(target.transform.position),"Other action and basic attack cannot interrupt channel");
+float deadline=Time.realtimeSinceStartup+2;while(breath.State!=CheDianYeTingBreath.Phase.Fire&&Time.realtimeSinceStartup<deadline)yield return null;
+Check(breath.State==CheDianYeTingBreath.Phase.Fire&&channel.Recoils==1,"Player recoil starts on same dragon fire phase");yield return new WaitForSeconds(.18f);Check(channel.SampleTime>.85f&&channel.SampleTime<=1.01f,"Recoil samples original A3 backward impulse");
+var chest=animator.GetBoneTransform(HumanBodyBones.Chest);var recoilChest=chest.localRotation;yield return new WaitForSeconds(.5f);Check(channel.SampleTime>.56f&&channel.SampleTime<.65f,"Long spray sustains raised A3 segment rather than lowering arm");Check(Quaternion.Angle(recoilChest,chest.localRotation)>2,"A3 backward impulse visibly differs from held chest pose");
+float AimError(){var arm=animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);var hand=animator.GetBoneTransform(HumanBodyBones.LeftHand);return Vector3.Angle(hand.position-arm.position,breath.AimPoint-arm.position);}
+var sample=(GameObject)typeof(CheDianPlayerChannel).GetField("sampleRoot",flags).GetValue(channel);var sampleAnimator=sample.GetComponent<Animator>();var left=animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);var sampleLeft=sampleAnimator.GetBoneTransform(HumanBodyBones.LeftUpperArm);Check(sampleAnimator.isHuman&&AimError()<1,"Raised left arm aims precisely at breath destination");
+root.transform.rotation=Quaternion.Euler(0,65,0);yield return new WaitForSeconds(.10f);Check(AimError()<1,"Casting arm remains on target after player yaw changes");var right=animator.GetBoneTransform(HumanBodyBones.RightUpperArm);var bodyForward=Vector3.Cross(right.position-left.position,Vector3.up);var toTarget=breath.AimPoint-(right.position+left.position)*.5f;toTarget.y=0;Check(Vector3.Angle(bodyForward,toTarget)<1,"Upper-body shoulder line faces cast target independently of legs");
+typeof(PlayerController).GetProperty("CurrentSpeed").GetSetMethod(true).Invoke(movement,new object[]{4f});yield return new WaitForSeconds(.3f);var leg=animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);var legBefore=leg.localRotation;yield return new WaitForSeconds(.18f);Check(Quaternion.Angle(legBefore,leg.localRotation)>2,"Walking leg animation continues below sustained upper-body cast");Check(AimError()<1,"Walking preserves casting arm aim");
+deadline=Time.realtimeSinceStartup+4;while(!breath.ComboWindow&&Time.realtimeSinceStartup<deadline)yield return null;Check(breath.ComboWindow&&channel.Active&&actions.施法占用中,"Choice slowdown preserves raised-hand channel ownership");Check(!caster.TryCast(1)&&!basic.出手(),"Slow window accepts only corresponding continuation skill");Check(caster.TryCast(0)&&Time.timeScale==1&&channel.Active,"Continuation restores time while retaining same player channel");
+deadline=Time.realtimeSinceStartup+1;while(breath.State!=CheDianYeTingBreath.Phase.Fire&&Time.realtimeSinceStartup<deadline)yield return null;Check(channel.Recoils==2,"Every continuation replays exactly one new player recoil");yield return new WaitForSeconds(.18f);Check(channel.SampleTime>.85f,"Second spray renews visible A3 recoil");
+breath.Cancel();yield return new WaitForSeconds(.8f);Check(!channel.Active&&!actions.施法占用中,"Cancellation releases channel and returns locomotion smoothly");Check(!sample.activeSelf,"Dormant channel sampler stops animation between casts");
+// Switching to air keeps real flight base, without replacing it by the ground A3 legs.
+typeof(ActiveSkillCaster).GetField("充能数",flags).SetValue(caster,new int[]{1,0,0,0,0,0});setFlight.Invoke(flight,new object[]{YufengFlight.FlightState.御风});panel.获得被动(AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/ability_pingxu_yufeng.asset"));flight.强制御风=true;flight.enabled=true;root.transform.position+=Vector3.up*3;
+Check(caster.TryCast(0)&&breath.AirBreath,"Air command chooses air dragon animation and same A3 channel");yield return new WaitForSeconds(.8f);Check(animator.GetBool("Flying")&&channel.Active&&AimError()<1,"Live flight parameters remain active with raised left arm: flying="+animator.GetBool("Flying")+", channel="+channel.Active+", angle="+AimError()+", flight="+flight.状态);
+var time=channel.SampleTime;Time.timeScale=0;yield return new WaitForSecondsRealtime(.15f);Check(channel.SampleTime==time,"Global pause freezes player channel and dragon together");Time.timeScale=1;
+panel.EquipToSlot(0,null);yield return null;yield return null;Check(!actions.施法占用中&&!channel.Active&&!sample,"Unequip releases action lock and destroys sampler skeleton");Check(errors.Count==0,"No channel runtime errors: "+string.Join(";",errors.Take(3)));
+File.WriteAllText("../.local/diagnostics/chedian-channel-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));Debug.Log("CHEDIAN_CHANNEL_PASS "+report.Count);
+}finally{Application.logMessageReceived-=Log;Time.timeScale=oldScale;Object.Destroy(root);Object.Destroy(floor);foreach(var t in targets)Object.Destroy(t);foreach(var d in defs)Object.Destroy(d);}
+}
+return Run();

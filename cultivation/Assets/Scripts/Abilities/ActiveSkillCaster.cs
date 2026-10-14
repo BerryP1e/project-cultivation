@@ -89,6 +89,10 @@ public class ActiveSkillCaster : MonoBehaviour
     readonly int[] 充能数 = new int[6];
     /// <summary>每格上一次"是谁"，用来发现槽位内容被换掉</summary>
     readonly Object[] 充能上次内容 = new Object[6];
+    bool 伴龙储备已初始化;
+    int 伴龙储备;
+    float 伴龙储备冷却;
+    static bool 是伴龙(Object content)=>content is ActiveDivineAbility a&&a.神通id==CheDianYeTingDefinition.AbilityId;
 
     /// <summary>这一格是不是**充能式**（可积攒次数 &gt; 1）</summary>
     int 充能上限(int 槽位)
@@ -115,6 +119,8 @@ public class ActiveSkillCaster : MonoBehaviour
     /// </summary>
     void 同步槽位内容()
     {
+        // 先记住旧星位的真实储备；移动/卸装再装备不能凭空补满四段。
+        for(int i=0;i<充能数.Length;i++)if(是伴龙(充能上次内容[i])){伴龙储备=充能数[i];伴龙储备冷却=冷却剩余[i];伴龙储备已初始化=true;}
         for (int i = 0; i < 充能数.Length; i++)
         {
             var 现在 = 槽位内容(i);
@@ -125,6 +131,11 @@ public class ActiveSkillCaster : MonoBehaviour
             充能上次内容[i] = 现在;
             冷却剩余[i] = 0f;
             充能数[i] = 现在 != null ? 充能上限(i) : 0;
+            if(是伴龙(现在))
+            {
+                if(伴龙储备已初始化){充能数[i]=伴龙储备;冷却剩余[i]=伴龙储备冷却;}
+                else{伴龙储备=充能数[i];伴龙储备冷却=冷却剩余[i];伴龙储备已初始化=true;}
+            }
         }
     }
 
@@ -198,6 +209,8 @@ public class ActiveSkillCaster : MonoBehaviour
 
         var 内容 = 面板数据.主动技能[槽位];
         if (内容 == null) return false;                        // 空槽：静默
+        // Channel ownership applies before toggling another ongoing skill, targeting, or spending resources.
+        if(!是伴龙(内容) && ((GetComponent<CheDianYeTingCompanion>()?.Breath?.Busy ?? false) || (动画&&动画.施法占用中)))return false;
 
         // ---- 冷却 / 充能 ----
         // 充能式技能（可积攒次数 > 1）看"还剩几次"，普通技能退化成原来的"冷却好没好"。
@@ -209,9 +222,13 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = null;
             return true;
         }
-        if(动画!=null && 动画.施法占用中){提示(动画.闪避动作中 ? "正在闪避" : "正在引导施法");return false;}
+        bool 伴龙 = 内容 is ActiveDivineAbility 随行神通 && 随行神通.结算方式 == ActiveSkillKind.伴龙随行;
+        var 伴龙组件=伴龙?GetComponent<CheDianYeTingCompanion>():null;
+        bool 伴龙续段=伴龙组件!=null && (伴龙组件.Breath?.Busy ?? false);
+        if(伴龙续段 && !(伴龙组件.Breath?.ComboWindow ?? false))return false;
+        if(!伴龙 && 动画!=null && 动画.施法占用中){提示(动画.闪避动作中 ? "正在闪避" : "正在引导施法");return false;}
         int 上限 = 充能上限(槽位);
-        if (上限 > 1)
+        if (!伴龙续段 && 上限 > 1)
         {
             if (充能数[槽位] <= 0)
             {
@@ -219,7 +236,7 @@ public class ActiveSkillCaster : MonoBehaviour
                 return false;
             }
         }
-        else if (槽位 < 冷却剩余.Length && 冷却剩余[槽位] > 0f)
+        else if (!伴龙续段 && 槽位 < 冷却剩余.Length && 冷却剩余[槽位] > 0f)
         {
             提示("「" + 取名(内容) + "」冷却中，还需 " + 冷却剩余[槽位].ToString("0.0") + " 秒");
             return false;
@@ -255,10 +272,10 @@ public class ActiveSkillCaster : MonoBehaviour
             {提示("落点超出神识范围");return false;}
             if(神通.结算方式==ActiveSkillKind.持续禁锢){提示("此神通需要可禁锢的目标");return false;}
             锁定=null;
-            GetComponent<PlayerController>()?.对准攻击方向(落点.Value-transform.position);
+            if (!伴龙) GetComponent<PlayerController>()?.对准攻击方向(落点.Value-transform.position);
         }
         // ---- 灵力 ----
-        if (神通.结算方式 >= ActiveSkillKind.定向水炮)
+        if (!伴龙 && 神通.结算方式 >= ActiveSkillKind.定向水炮)
         {
             if (生命 == null || 生命.IsDead) return false;
             if (锁定 != null && 神通.范围 > 0f && Vector3.Distance(transform.position, 锁定.transform.position) > 神通.范围
@@ -305,10 +322,20 @@ public class ActiveSkillCaster : MonoBehaviour
         if (天降 && !FallingSpellRunner.尝试开始(this, 神通, 锁定, 落点)) return false;
         bool 螺旋 = 神通.结算方式 == ActiveSkillKind.螺旋剑雨;
         if (螺旋 && !SpiralSwordSkillRunner.尝试开始(this, 神通, 锁定, 落点)) return false;
+        if (伴龙)
+        {
+            if (!伴龙组件 || !伴龙组件.TryBreath(this, 神通, 锁定, 落点,充能数[槽位]))
+            { 提示("请在龙收势时的星轨高亮窗口接续吐息"); return false; }
+        }
         if(神通.消耗灵力>0f)生命.扣灵气(神通.消耗灵力);
 
         // ---- 扣次数 / 进冷却 ----
-        if (上限 > 1)
+        if(伴龙)
+        {
+            // 首次施放锁定本轮预算，并立刻把冷却储备清零；续段消耗龙持有的预算。
+            if(!伴龙续段){充能数[槽位]=0;冷却剩余[槽位]=神通.冷却时间;}
+        }
+        else if (上限 > 1)
         {
             // 充能式：消耗一次；从"满"掉下来才开始倒计时（满的时候不倒计时）
             充能数[槽位] = Mathf.Max(0, 充能数[槽位] - 1);
@@ -322,7 +349,7 @@ public class ActiveSkillCaster : MonoBehaviour
             持续锁链[槽位] = 宿主.AddComponent<BindingChainSkillRunner>();
             持续锁链[槽位].初始化(this, 神通, 锁定, 槽位);
         }
-        else if(!焚天 && !天降 && !螺旋)施放(神通, 锁定,落点);
+        else if(!焚天 && !天降 && !螺旋 && !伴龙)施放(神通, 锁定,落点);
         return true;
     }
 
@@ -626,6 +653,12 @@ public class ActiveSkillCaster : MonoBehaviour
 
     // ---- ASCII 别名 ----
     public bool TryCast(int slot) => 尝试施放(slot);
+    public bool 伴龙追击窗口(int slot)
+    {
+        var ability = SlotContent(slot) as ActiveDivineAbility;
+        return ability && ability.神通id == CheDianYeTingDefinition.AbilityId
+            && 生命 && 生命.够灵气(ability.消耗灵力) && (GetComponent<CheDianYeTingCompanion>()?.Breath?.ComboWindow ?? false);
+    }
     public bool AcceptsInput() => 接收输入();
     public float CooldownLeft(int slot) => 冷却剩余秒(slot);
     public Object SlotContent(int slot) => 槽位内容(slot);

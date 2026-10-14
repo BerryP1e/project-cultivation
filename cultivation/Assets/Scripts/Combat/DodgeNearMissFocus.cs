@@ -15,7 +15,7 @@ public sealed class DodgeNearMissFocus : MonoBehaviour
 
     public static bool 触发(PlayerFlightDodge player, float seconds, float speed, float closeup)
     {
-        if (!player || !player.伤害免疫 || seconds <= 0 || Time.timeScale <= 0 || UiEscRegistry.SceneInputBlocked || 正在慢放) return false;
+        if (!player || !player.伤害免疫 || seconds <= 0 || Time.timeScale <= 0 || UiEscRegistry.SceneInputBlocked || 正在慢放 || CheDianComboFocus.Active) return false;
         if (!instance)
         {
             var go = new GameObject("DodgeNearMissFocus_Runtime");

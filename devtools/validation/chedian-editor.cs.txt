@@ -1,0 +1,29 @@
+using UnityEditor;
+using System.IO;
+var d=Resources.Load<CheDianYeTingDefinition>(CheDianYeTingDefinition.ResourcePath);int checks=0;var report=new List<string>();
+void Check(bool ok,string message){if(!ok)throw new Exception(message);checks++;}
+Check(d&&d.Ready&&d.BreathReady,"Companion and ground/air breath resources ready");Check(new[]{d.BreathMaterial,d.BreathPlumeMaterial,d.BreathDistortionMaterial}.All(m=>m&&m.shader.isSupported),"All breath flow/plume/distortion shaders supported");
+var ability=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");var book=AssetDatabase.LoadAssetAtPath<ItemDefinition>("Assets/Data/Generated/ItemDefinition/item_ability_chedian_yeting.asset");
+Check(ability&&book&&ability.结算方式==ActiveSkillKind.伴龙随行,"Learning and active ability registered");Check(ability.图标&&book.图标==ability.图标,"Dragon icon and book icon match");
+Check((d.Scale-Vector3.one*2.5f).sqrMagnitude<1e-8f&&(d.SideOffset-new Vector3(4.050743f,.03000614f,-.6459469f)).sqrMagnitude<1e-8f,"Updated 2.5 scale with original side offset retained");
+var display=d.Companion.GetComponentInChildren<SkinnedMeshRenderer>();Check((display.transform.localScale-Vector3.one*2.819921f).sqrMagnitude<1e-8f,"User edited display transform retained");Check(display.sharedMesh.isReadable&&d.Companion.GetComponentsInChildren<Collider>(true).Length==0,"Readable companion mesh, no gameplay collider");
+using(var preview=new NpcPrefabAnimationPreview(d.Companion)){
+Check(preview.ClipCount==17,"Seventeen clips directly previewable on prefab");
+foreach(var clip in new[]{d.GroundIdle,d.GroundMove,d.FlapLoop,d.AirIdle,d.AirMove,d.Takeoff,d.Landing,d.AirPowered,d.AirGlide,d.GroundBreathStart,d.GroundBreathLoop,d.GroundBreathEnd,d.GroundBreathRepeat,d.AirBreathStart,d.AirBreathLoop,d.AirBreathEnd,d.AirBreathRepeat}){
+bool loop=clip.name.EndsWith("Loop")||new[]{d.GroundIdle,d.GroundMove,d.FlapLoop,d.AirIdle,d.AirMove,d.AirPowered,d.AirGlide}.Contains(clip);Check(clip.isLooping==loop,"Loop classification "+clip.name);
+foreach(var b in AnimationUtility.GetCurveBindings(clip)){
+var c=AnimationUtility.GetEditorCurve(clip,b);Check(c.keys.All(k=>!float.IsNaN(k.value)&&!float.IsInfinity(k.value)),"Finite keys "+clip.name);
+if(loop){var first=c.keys[0];var last=c.keys[c.length-1];Check(Mathf.Abs(first.value-last.value)<1e-5f,"Loop value seam "+clip.name+" "+b.path+" "+b.propertyName);Check(Mathf.Abs(first.outTangent-last.inTangent)<1e-5f,"Loop velocity seam "+clip.name);}
+}
+preview.SelectClip(clip);preview.SetTime(clip.length*.5f);var image=preview.Capture(700,500);try{var p=image.GetPixels32();var bg=p[0];Check(p.Count(c=>Mathf.Abs(c.r-bg.r)+Mathf.Abs(c.g-bg.g)+Mathf.Abs(c.b-bg.b)>45)>1200,"Visible non-tiny model "+clip.name);}finally{Object.DestroyImmediate(image);}
+report.Add(clip.name+" length="+clip.length+" loop="+loop);
+}
+preview.SelectClip(d.AirIdle);var head=preview.PreviewObject.GetComponentsInChildren<Transform>().First(t=>t.name=="Bip001 Head");var body=preview.PreviewObject.GetComponentsInChildren<Transform>().First(t=>t.name=="Bip001");var wing=preview.PreviewObject.GetComponentsInChildren<Transform>().First(t=>t.name=="Bip001 L UpperArm");
+var source=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(JuLongCoordinateBaker.PrefabPath));try{
+var original=AssetDatabase.LoadAssetAtPath<AnimationClip>(JuLongCoordinateBaker.ClipFolder+"/JiNengGongJi1.anim");original.SampleAnimation(source,4.08f);var sourceBones=source.GetComponentsInChildren<Transform>();var expected=sourceBones.First(t=>t.name=="Bip001 Head").rotation;
+Quaternion firstHead=Quaternion.identity,firstWing=Quaternion.identity;float headMotion=0,wingMotion=0,maxHeadError=0;
+for(int i=0;i<=60;i++){preview.SetTime(d.AirIdle.length*i/60);if(i==0){firstHead=head.rotation;firstWing=wing.localRotation;}headMotion=Mathf.Max(headMotion,Quaternion.Angle(firstHead,head.rotation));wingMotion=Mathf.Max(wingMotion,Quaternion.Angle(firstWing,wing.localRotation));maxHeadError=Mathf.Max(maxHeadError,Quaternion.Angle(expected,head.rotation));}
+Check(headMotion>.15f,"Hover head must remain alive rather than a frozen pose");Check(wingMotion>35,"Hover has a complete active wing stroke");Check(maxHeadError<22,"Hover head stays near 4.08 pose, no ascent nose-up");report.Add("Hover head motion="+headMotion+" wing stroke="+wingMotion+" head reference max error="+maxHeadError);
+}finally{Object.DestroyImmediate(source);}
+}
+report.Insert(0,"PASS "+checks);File.WriteAllText("../.local/diagnostics/chedian-editor-report.txt",string.Join("\n",report));Debug.Log(string.Join("\n",report));

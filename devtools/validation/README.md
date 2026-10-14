@@ -77,3 +77,9 @@
 角色界面新版：`ui-unified-runtime.cs.txt` 在独立Play验证背包、法则总览/背包分层、筛选、拖拽、熔炼/精粹洗练、原3D星空装备栏及独立表现预览、未选中卡片的真实鼠标拖拽、暂停中的墨流/鼠标搅动、外观柔边底、法宝/坐骑空预览与透明模型；两种分辨率各68项通过，使用临时数据并恢复，不保存场景和存档。`new-ability-icons.cs.txt` 为Editor图标导入与引用检查，真实alpha/不同Sprite/导入参数/神通玉简共25项。旧包裹开场与随机错列的外观断言已由新版规则取代。
 
 `ui-presentation-bugs.cs.txt` 为材质、冰冢长光芒、八种飞弹主体同步/沿路空间、人物对木桩循环、实际粒子与换装专项回归（112项），仅独立Play运行。临时外观会话恢复，不写场景或存档。
+
+`julong-coordinates.cs.txt` 为Editor巨龙整体X轴+90°检查：六段动画各38个时间点、两种生成位置/朝向，真实骨骼和全部蒙皮顶点对照原FBX整体旋转；另比较六个原生控制器状态（包含循环混合），检查时长/循环/事件及碰撞体轴向。3,045,936次位置对照通过，最大蒙皮误差5.48e-6米；不保存场景或存档。报告归 `.local/diagnostics/julong-converted-qa.txt`，重烘焙方法见 `docs/guides/巨龙坐标与动画.md`。
+
+`npc-prefab-preview.cs.txt` 为Editor预制体动画预览28项检查：六片段切换/真实渲染/姿势变化、时间定位、循环与末尾停止、独立PreviewScene及游戏组件隔离、源预制体/控制器不变、销毁清理与自定义Inspector接线。截图归 `.local/diagnostics/julong-preview-*.png`，不保存场景或存档。
+
+掣电烨霆当前入口：`chedian-ghost.cs.txt`（81项）验证日常鬼火、停用预热模型、完整龙从头到尾凝形、末段立即从尾向头加速回收、1.5倍喷射、即时续吐/撤暗幕、单轮四段预算/剩余作废、冷却换槽、暂停清理及70敌人非分配查询溢出，四喷递增电流/龙头电焰与25%～100%四段颤动。`chedian-channel.cs.txt`（29项）使用真实玩家骨架验证A3持续举手、每喷后顿、上半身/左臂独立瞄准、走路/御风混合、远近普攻中断、其他技能锁与续喷穿透。`chedian-ghost-preview.cs.txt`（13项）验证暂停下隔离的鬼火→凝形吐息→回收。`chedian-editor.cs.txt` 保留17段资源/循环/坐标检查（25,245项）。旧实体伴龙配方移至 archive/chedian-solid-companion，只供历史制作参考，不运行于当前玩法。报告归 .local/diagnostics；脚本不保存场景或存档，说明见 docs/guides/掣电烨霆.md。

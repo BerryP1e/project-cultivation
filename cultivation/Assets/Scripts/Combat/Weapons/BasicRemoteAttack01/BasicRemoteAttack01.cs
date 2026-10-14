@@ -171,6 +171,12 @@ public class BasicRemoteAttack01 : MonoBehaviour
 
     float 下次可出手时间;
     bool 本轮已出弹;
+    public void 中断未出手普攻()
+    {
+        if(!出手动作中)return;
+        出手动作中=false;本轮已出弹=true;
+        下次可出手时间=Time.time+实际冷却;
+    }
 
     // ---- ASCII 别名 ----
     public ICombatTarget LockedUnit => 锁定单位;
@@ -204,7 +210,7 @@ public class BasicRemoteAttack01 : MonoBehaviour
         if (id != 缓存目标id) { 缓存目标id = id; 缓存 = null; }
 
         // 闪避打断普攻时丢弃尚未发出的子弹，不能借闪避动作的进度出弹。
-        if (出手动作中 && 动画 && 动画.闪避动作中)
+        if (出手动作中 && 动画 && 动画.施法占用中)
         {
             出手动作中 = false; 本轮已出弹 = true;
             下次可出手时间 = Time.time + 实际冷却;

@@ -5,6 +5,7 @@ using UnityEngine;
 /// 机位角度恒定（yaw / pitch 不变，永不自转），只平滑跟随目标位置。
 /// 场景里靠 OnValidate 实时预览：在 Inspector 里拖 yaw / pitch / distance 就能直接看到效果。
 /// </summary>
+[DefaultExecutionOrder(300)]
 public class TopDownCamera : MonoBehaviour
 {
     [Header("跟随目标")]
@@ -48,6 +49,18 @@ public class TopDownCamera : MonoBehaviour
 
     Camera cam;
     Vector3 followVelocity;
+    Transform breathShakeOwner;
+    Vector3 breathShakeOffset;
+    float breathShakeAge,breathShakeDuration;
+    float breathShakePower;
+    public bool BreathShaking => breathShakeOwner && breathShakeAge<breathShakeDuration;
+    public float BreathShakePower => BreathShaking?breathShakePower:0;
+    public void BeginBreathShake(Transform source,float duration,int tier)
+    {
+        if(source!=target)return;
+        breathShakeOwner=source;breathShakeAge=0;breathShakeDuration=duration;
+        breathShakePower=Mathf.Clamp(tier,1,4)*.25f;
+    }
 
     void Awake()
     {
@@ -67,10 +80,14 @@ public class TopDownCamera : MonoBehaviour
     {
         if (target == null) return;
 
+        // Keep the additive tremor out of the follow spring, so it cannot accumulate camera drift.
+        transform.position-=breathShakeOffset;breathShakeOffset=Vector3.zero;
+
         ApplyProjection();
 
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
         Vector3 lookPoint = target.position + Vector3.up * lookHeight;
+        lookPoint=CheDianComboFocus.CameraPoint(target,lookPoint);
         Vector3 desired = lookPoint - rotation * Vector3.forward * distance;
 
         // 注意：SmoothDamp 内部按 maxSpeed * smoothTime 限制单次位移，
@@ -78,17 +95,29 @@ public class TopDownCamera : MonoBehaviour
         float maxSpeed = maxFollowSpeed > 0f ? maxFollowSpeed : Mathf.Infinity;
 
         transform.position = smoothTime > 0f
-            ? Vector3.SmoothDamp(transform.position, desired, ref followVelocity, smoothTime, maxSpeed)
+            ? Vector3.SmoothDamp(transform.position, desired, ref followVelocity, smoothTime, maxSpeed, CheDianComboFocus.CameraWeight>0 && Time.timeScale>0 ? Time.unscaledDeltaTime : Time.deltaTime)
             : desired;
 
         transform.rotation = rotation;   // 方向恒定
+        if(BreathShaking)
+        {
+            var dragon=breathShakeOwner.GetComponent<CheDianYeTingCompanion>();
+            if(!dragon||!dragon.isActiveAndEnabled||dragon.Breath?.State!=CheDianYeTingBreath.Phase.Fire){breathShakeOwner=null;return;}
+            breathShakeAge+=Time.deltaTime;
+            float envelope=Mathf.Clamp01(breathShakeAge/.08f)*Mathf.Clamp01((breathShakeDuration-breathShakeAge)/.2f)*breathShakePower;
+            float x=Mathf.Sin(breathShakeAge*82)*.035f+Mathf.Sin(breathShakeAge*121)*.012f;
+            float y=Mathf.Sin(breathShakeAge*109)*.028f;
+            breathShakeOffset=(rotation*Vector3.right*x+rotation*Vector3.up*y)*envelope;
+            transform.position+=breathShakeOffset;
+            transform.rotation=rotation*Quaternion.Euler(Mathf.Sin(breathShakeAge*91)*.08f*envelope,0,Mathf.Sin(breathShakeAge*73)*.07f*envelope);
+        }
     }
 
     void ApplyProjection()
     {
         if (cam == null) return;
         cam.orthographic = orthographic;
-        float focus = DodgeNearMissFocus.镜头倍率(target);
+        float focus = DodgeNearMissFocus.镜头倍率(target)*CheDianComboFocus.CameraScale(target);
         if (orthographic) cam.orthographicSize = orthographicSize * focus;
         else cam.fieldOfView = fieldOfView * focus;
     }
@@ -97,6 +126,7 @@ public class TopDownCamera : MonoBehaviour
     public void SnapToTarget()
     {
         if (target == null) return;
+        breathShakeOffset=Vector3.zero;breathShakeOwner=null;
 
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
         transform.rotation = rotation;
@@ -104,6 +134,7 @@ public class TopDownCamera : MonoBehaviour
         followVelocity = Vector3.zero;
         ApplyProjection();
     }
+    void OnDisable(){transform.position-=breathShakeOffset;breathShakeOffset=Vector3.zero;breathShakeOwner=null;}
 
     // 编辑期调参时实时预览，不用进 Play
     void OnValidate()

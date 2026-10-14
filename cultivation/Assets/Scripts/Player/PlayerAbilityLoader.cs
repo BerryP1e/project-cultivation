@@ -64,6 +64,11 @@ public class PlayerAbilityLoader : MonoBehaviour
         new string[] { "basic_lingxu_sword_01", "WeaponCarryAnim" },
     };
 
+    // Active abilities can also own persistent equipment visuals without becoming passive abilities.
+    public static readonly string[][] 主动装备登记 = {
+        new[] { CheDianYeTingDefinition.AbilityId, "CheDianYeTingCompanion" }
+    };
+
     [Header("调试")]
     [Tooltip("装卸组件时打日志")]
     public bool 打印装卸日志 = true;
@@ -123,6 +128,11 @@ public class PlayerAbilityLoader : MonoBehaviour
         面板数据.EnsureLists();
 
         var 需要 = new HashSet<string>();
+        if (面板数据.主动技能 != null)
+            foreach (var slot in 面板数据.主动技能)
+                if (slot is ActiveDivineAbility active)
+                    foreach (var binding in 主动装备登记)
+                        if (binding[0] == active.神通id) 需要.Add(binding[1]);
         if (面板数据.四御已激活 && 面板数据.绝对护罩剩余次数 > 0) 需要.Add("PassiveShieldAbilities");
 
         // ---- 功法提供的普攻方法 ----
@@ -205,6 +215,7 @@ public class PlayerAbilityLoader : MonoBehaviour
     HashSet<string> 表里登记过的能力类名()
     {
         var 名 = new HashSet<string>();
+        foreach (var binding in 主动装备登记) 名.Add(binding[1]);
         foreach (var b in 普攻方法表)
             if (b != null && !string.IsNullOrEmpty(b.组件类名)) 名.Add(b.组件类名);
         foreach (var b in 被动神通表)

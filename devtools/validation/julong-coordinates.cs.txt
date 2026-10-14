@@ -1,0 +1,87 @@
+using UnityEditor;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
+using System.IO;
+var modelPath="Assets/resources/NPC/Mount/JuLong_01/drgon.fbx";
+var prefabPath="Assets/resources/NPC/Mount/JuLong_01/JuLong_01.prefab";
+var sources=AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<AnimationClip>().Where(c=>!c.name.StartsWith("__preview__")).ToArray();
+var source=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(modelPath));
+var actual=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath));
+source.hideFlags=actual.hideFlags=HideFlags.HideAndDontSave;
+foreach(var b in actual.GetComponentsInChildren<MonoBehaviour>(true))Object.DestroyImmediate(b);
+var actualAnimator=actual.GetComponent<Animator>();
+var actualClips=actualAnimator.runtimeAnimatorController.animationClips.Distinct().ToArray();
+bool converted=actualClips.All(c=>AssetDatabase.GetAssetPath(c).Contains("/JuLong_01/Animations/"));
+var rotation=converted?Quaternion.Euler(90,0,0):Quaternion.identity;
+var beforeMesh=new Mesh();var afterMesh=new Mesh();AnimatorOverrideController originalController=null;
+var report=new System.Text.StringBuilder();int checks=0;float worstBone=0,worstVertex=0,worstAngle=0;
+try{
+if(Quaternion.Angle(actual.transform.localRotation,Quaternion.identity)>.001f)throw new Exception("Prefab root rotation is not identity");
+if(actualClips.Length!=6)throw new Exception("Controller must use all six clips");
+foreach(var clip in sources){
+var replacement=actualClips.Single(c=>c.name==clip.name);
+if(Mathf.Abs(clip.length-replacement.length)>1e-5f||clip.frameRate!=replacement.frameRate)throw new Exception("Clip timing changed: "+clip.name);
+var settings=AnimationUtility.GetAnimationClipSettings(clip);var fixedSettings=AnimationUtility.GetAnimationClipSettings(replacement);
+if(settings.loopTime!=fixedSettings.loopTime||settings.loopBlend!=fixedSettings.loopBlend)throw new Exception("Loop settings changed");
+if(AnimationUtility.GetAnimationEvents(clip).Length!=AnimationUtility.GetAnimationEvents(replacement).Length)throw new Exception("Animation events changed");
+var paths=source.GetComponentsInChildren<Transform>(true).Select(t=>AnimationUtility.CalculateTransformPath(t,source.transform)).Where(p=>p!="").ToArray();
+var sourceAnimator=source.GetComponent<Animator>();if(!sourceAnimator)sourceAnimator=source.AddComponent<Animator>();
+sourceAnimator.runtimeAnimatorController=null;actualAnimator.runtimeAnimatorController=null;sourceAnimator.applyRootMotion=actualAnimator.applyRootMotion=false;
+sourceAnimator.cullingMode=actualAnimator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
+sourceAnimator.Rebind();actualAnimator.Rebind();
+var firstGraph=PlayableGraph.Create("DragonSourceQA");var secondGraph=PlayableGraph.Create("DragonConvertedQA");
+try{
+firstGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);secondGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+var first=AnimationClipPlayable.Create(firstGraph,clip);var second=AnimationClipPlayable.Create(secondGraph,replacement);
+AnimationPlayableOutput.Create(firstGraph,"Source",sourceAnimator).SetSourcePlayable(first);AnimationPlayableOutput.Create(secondGraph,"Converted",actualAnimator).SetSourcePlayable(second);firstGraph.Play();secondGraph.Play();
+float maxBone=0,maxVertex=0,maxAngle=0;
+for(int facing=0;facing<2;facing++){
+// Test both asset space and a world-space spawn with yaw and offset. Conversion is in local model space.
+var facingRotation=facing==0?Quaternion.identity:Quaternion.Euler(0,137,0);var origin=facing==0?Vector3.zero:new Vector3(13,5,-9);
+source.transform.SetPositionAndRotation(origin,facingRotation);actual.transform.SetPositionAndRotation(origin,facingRotation);
+for(int step=0;step<=37;step++){
+float t=clip.length*step/37f;first.SetTime(t);second.SetTime(t);firstGraph.Evaluate(0);secondGraph.Evaluate(0);
+foreach(var path in paths){
+var a=source.transform.Find(path);var b=actual.transform.Find(path);if(!b)throw new Exception("Missing transform: "+path);
+var targetPosition=origin+facingRotation*(rotation*source.transform.InverseTransformPoint(a.position));
+var targetRotation=facingRotation*rotation*Quaternion.Inverse(facingRotation)*a.rotation;
+maxBone=Mathf.Max(maxBone,Vector3.Distance(targetPosition,b.position));
+// Identity container nodes intentionally remain identity; actual rig and renderer axes rotate together.
+bool physicalNode=path=="BossLeiLong (merge)/BossLeiLong"||path.StartsWith("BossLeiLong (merge)/BossLeiLong/")||path=="BossLeiLong (merge)/BossLeiLong_MengPi/BossLeiLong";
+if(physicalNode)maxAngle=Mathf.Max(maxAngle,Quaternion.Angle(targetRotation,b.rotation));checks++;
+}
+var aRenderer=source.GetComponentInChildren<SkinnedMeshRenderer>();var bRenderer=actual.GetComponentInChildren<SkinnedMeshRenderer>();
+aRenderer.BakeMesh(beforeMesh);bRenderer.BakeMesh(afterMesh);var av=beforeMesh.vertices;var bv=afterMesh.vertices;
+if(av.Length!=bv.Length)throw new Exception("Skin vertex count changed");
+for(int i=0;i<av.Length;i++){
+var expected=origin+facingRotation*(rotation*source.transform.InverseTransformPoint(aRenderer.transform.TransformPoint(av[i])));
+var result=bRenderer.transform.TransformPoint(bv[i]);maxVertex=Mathf.Max(maxVertex,Vector3.Distance(expected,result));checks++;
+}
+}
+}
+worstBone=Mathf.Max(worstBone,maxBone);worstVertex=Mathf.Max(worstVertex,maxVertex);worstAngle=Mathf.Max(worstAngle,maxAngle);
+report.AppendLine(clip.name+" PASS poses=76 boneError="+maxBone.ToString("G5")+" vertexError="+maxVertex.ToString("G5")+" angleError="+maxAngle.ToString("G5")+" length="+replacement.length+" loop="+fixedSettings.loopTime);
+if(maxBone>.0001f||maxVertex>.0002f||maxAngle>.1f)throw new Exception("Animated pose mismatch: "+clip.name+" bone="+maxBone+" vertex="+maxVertex+" angle="+maxAngle);
+}finally{firstGraph.Destroy();secondGraph.Destroy();}
+}
+if(converted){
+actualAnimator.runtimeAnimatorController=AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Animations/NPC/JuLong.controller");actualAnimator.Rebind();actualAnimator.Update(0);
+source.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);actual.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);
+originalController=new AnimatorOverrideController(actualAnimator.runtimeAnimatorController);originalController.ApplyOverrides(actualClips.Select(c=>new KeyValuePair<AnimationClip,AnimationClip>(c,sources.Single(s=>s.name==c.name))).ToList());
+var originalAnimator=source.GetComponent<Animator>();originalAnimator.runtimeAnimatorController=originalController;originalAnimator.Rebind();originalAnimator.Update(0);
+foreach(var clip in sources){
+actualAnimator.Play(clip.name,0,.37f);actualAnimator.Update(0);
+if(!actualAnimator.GetCurrentAnimatorStateInfo(0).IsName(clip.name))throw new Exception("Controller did not enter "+clip.name);
+originalAnimator.Play(clip.name,0,.37f);originalAnimator.Update(0);
+var aRenderer=source.GetComponentInChildren<SkinnedMeshRenderer>();var bRenderer=actual.GetComponentInChildren<SkinnedMeshRenderer>();aRenderer.BakeMesh(beforeMesh);bRenderer.BakeMesh(afterMesh);var av=beforeMesh.vertices;var bv=afterMesh.vertices;float error=0;
+for(int i=0;i<av.Length;i++){error=Mathf.Max(error,Vector3.Distance(rotation*aRenderer.transform.TransformPoint(av[i]),bRenderer.transform.TransformPoint(bv[i])));checks++;}
+if(error>.0002f)throw new Exception("Controller state pose mismatch: "+clip.name+" "+error);
+report.AppendLine("Controller "+clip.name+" PASS skinError="+error.ToString("G5"));
+}
+var capsule=actual.GetComponent<CapsuleCollider>();var center=rotation*new Vector3(.10667884f,-.64660144f,-.59719574f);
+if(capsule.direction!=2||Vector3.Distance(capsule.center,center)>1e-5f||Mathf.Abs(capsule.radius-1.2135849f)>1e-6f||Mathf.Abs(capsule.height-2.760652f)>1e-6f)throw new Exception("Collider did not receive the same model-space rotation");
+report.AppendLine("Collider PASS: center rotated, longitudinal axis Z, original size retained");
+}
+report.AppendLine("PASS "+checks+" bone/skin comparisons; converted="+converted+" maxBone="+worstBone+" maxVertex="+worstVertex+" maxAngle="+worstAngle);
+File.WriteAllText("../.local/diagnostics/julong-"+(converted?"converted":"baseline")+"-qa.txt",report.ToString());Debug.Log(report.ToString());
+}finally{Object.DestroyImmediate(source);Object.DestroyImmediate(actual);Object.DestroyImmediate(beforeMesh);Object.DestroyImmediate(afterMesh);if(originalController)Object.DestroyImmediate(originalController);}
