@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -13,7 +13,7 @@ public static class QuestDatabaseBuilder
 {
     public const string 库路径 = "Assets/resources/任务/任务库.asset";
 
-    [MenuItem("修仙/任务/收集任务资产", false, 400)]
+    [MenuItem("修仙/资源整理/更新物品索引", false, 400)]
     public static void 收集() => 收集(true);
 
     public static void 收集(bool 打日志)

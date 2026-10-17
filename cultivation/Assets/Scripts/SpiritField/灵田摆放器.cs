@@ -338,6 +338,11 @@ public class 灵田摆放器 : MonoBehaviour
     {
         if (预览 != null) { Destroy(预览); 预览 = null; }
 
+        if(要摆的!=null&&要摆的.id=="home_ground")
+        {
+            预览=GameObject.CreatePrimitive(PrimitiveType.Cube);预览.name="拓境地形预览";Destroy(预览.GetComponent<Collider>());预览.transform.localScale=new Vector3(HomeWorld.扩建边长,.06f,HomeWorld.扩建边长);灵田地块外观.幽灵上色(预览,当前可以,false);return;
+        }
+
         if (是摆设模式 && 要摆的 != null && !string.IsNullOrEmpty(要摆的.模型路径))
         {
             // 摆设：**实例化它自己的 prefab** 当预览（形状一看就知道要摆什么），

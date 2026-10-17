@@ -65,7 +65,7 @@ public static class SectExchangeAssets
     static Sprite AbilityIcon(DivineAbilityDefinition a)
     {
         if(a==null)return null;var art=Sprite("Assets/resources/UI/InkUI/AbilityArt/icon-"+a.神通id.Replace("ability_","ability-"));
-        return art!=null?art:a.图标;
+        return a.图标!=null?a.图标:art;
     }
     public static void RenderIcon(GameObject prefab,string path)
     {

@@ -1,0 +1,11 @@
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+try{
+var folder=SessionState.GetString("WorldMapQA_SaveFolder","");var realFolder=Path.GetFullPath(Path.Combine(Application.persistentDataPath,"saves"));if(string.IsNullOrEmpty(folder)||!string.Equals(Path.GetFullPath(folder),realFolder,StringComparison.OrdinalIgnoreCase))throw new Exception("Validation baseline does not point to real saves. Compare the pre-test backup directly; do not treat sandbox changes as user-save changes.");
+var hashes=new System.Collections.Generic.List<string>();if(Directory.Exists(folder))foreach(var path in Directory.GetFiles(folder,"*.json")){using(var hash=System.Security.Cryptography.SHA256.Create())hashes.Add(Path.GetFileName(path)+":"+Convert.ToBase64String(hash.ComputeHash(File.ReadAllBytes(path))));}
+var expected=SessionState.GetString("WorldMapQA_SaveHashes","").Split(new[]{'\n'},StringSplitOptions.RemoveEmptyEntries);if(!hashes.OrderBy(x=>x,StringComparer.Ordinal).SequenceEqual(expected.OrderBy(x=>x,StringComparer.Ordinal)))throw new Exception("Real save files changed during isolated testing; no automatic restore was performed.");
+}finally{SessionState.EraseString(SaveSystem.验证目录键);}
+var scene=SceneManager.GetActiveScene();if(scene.isDirty)throw new Exception("Test scene unexpectedly dirty");var returnPath=SessionState.GetString("WorldMapQA_ReturnScene",WorldMapEditorBuilder.ScenePath);EditorSceneManager.OpenScene(returnPath,OpenSceneMode.Single);Debug.Log("All save-file hashes unchanged; returned to independent workshop without saving gameplay tests.");

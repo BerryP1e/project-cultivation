@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b917991720ffd9c4ea252c37a631ef3e, type: 3}
+  m_Name: app_goldencore
+  m_EditorClassIdentifier: 
+  id: app_goldencore
+  "\u5916\u89C2\u540D": "\u91D1\u4E39\u7740\u88C5"
+  "\u6A21\u578B\u8D44\u6E90\u8DEF\u5F84": "\u5916\u89C2/GoldenCoreOutfit"
+  "\u6A21\u578B\u9884\u5236\u4F53": {fileID: 0}
+  "\u8863\u670D\u968F\u52A8": {fileID: 11400000, guid: 732f10ce7ee7af447a02e06d3967a53f, type: 2}
+  "\u56FE\u6807": {fileID: 21300000, guid: 791328f36553cd943b17697a17236c95, type: 3}
+  "\u4ECB\u7ECD": "\u94F6\u53D1\u7389\u51A0\u4E0E\u7384\u9752\u91D1\u7EB9\u6CD5\u8863\u3002\u8FBE\u5230\u91D1\u4E39\u5883\u754C\u540E\u6C38\u4E45\u89E3\u9501\uFF0C\u53EF\u81EA\u7531\u6362\u88C5\u3002"
+  "\u9ED8\u8BA4\u62E5\u6709": 0
+  "\u5883\u754C\u89E3\u9501\u7B49\u7EA7": 31
+  "\u89E3\u9501\u6807\u8BB0": 
+  "\u89E3\u9501\u5373\u88C5\u5907": 0

@@ -84,7 +84,7 @@ public static class NpcCreatureSetup
 
     // ---------------------------------------------------------------- 第 1 步
 
-    [MenuItem("Cultivation/非人形生物 (1) 模型转 Generic")]
+    [MenuItem("修仙/NPC 资产/维护/非人形生物 (1) 模型转 Generic")]
     public static void Step1()
     {
         扫描(out var 模型, out _, out _);
@@ -113,7 +113,7 @@ public static class NpcCreatureSetup
 
     // ---------------------------------------------------------------- 第 2 步
 
-    [MenuItem("Cultivation/非人形生物 (2) 动画转 Generic")]
+    [MenuItem("修仙/NPC 资产/维护/非人形生物 (2) 动画转 Generic")]
     public static void Step2()
     {
         扫描(out _, out var 动画, out _);
@@ -142,7 +142,7 @@ public static class NpcCreatureSetup
 
     // ---------------------------------------------------------------- 第 3 步
 
-    [MenuItem("Cultivation/非人形生物 (3) 建控制器 + 挂到 prefab")]
+    [MenuItem("修仙/NPC 资产/维护/非人形生物 (3) 建控制器 + 挂到 prefab")]
     public static void Step3()
     {
         扫描(out _, out var 动画, out var prefabs);
@@ -231,7 +231,7 @@ public static class NpcCreatureSetup
 
     // ---------------------------------------------------------------- 核查
 
-    [MenuItem("Cultivation/非人形生物 (4) 核查")]
+    [MenuItem("修仙/NPC 资产/维护/非人形生物 (4) 核查")]
     public static void Verify()
     {
         扫描(out var 模型, out var 动画, out var prefab);

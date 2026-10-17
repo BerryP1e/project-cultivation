@@ -1,0 +1,27 @@
+using System.Linq;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using Cultivation.WorldAuthoring;
+IEnumerator Run(){
+ var e=Object.FindObjectOfType<WorldMapEditorController>();var original=e.Data.Clone();bool dirty=e.Dirty;var checks=new List<string>();Action<bool,string> Check=(ok,label)=>{if(!ok)throw new Exception(label);checks.Add(label);};
+ try{
+ var d=WorldMapData.Empty("Wall and grass QA");d.rockBoundary=false;d.cloudSea=false;d.Paint(WorldBrush.Ground,Vector3.zero,16,1,.7f,2,0,false);d.Paint(WorldBrush.Grass,Vector3.zero,12,4,.7f,2,0,false);e.SetData(d);e.Data.grassDensity=1;e.world.RefreshGrass();int dense=e.world.GrassCount;e.Data.grassDensity=.25f;e.world.RefreshGrass();int sparse=e.world.GrassCount;Check(dense>sparse*2&&sparse>0,"density preserves varied distribution");e.Data.grassDensity=0;e.world.RefreshGrass();Check(e.world.GrassCount==0,"zero density removes blades without erasing soil");e.Data.grassDensity=1;e.world.RefreshGrass();
+ var stored=(float[])e.Data.grass.Clone();e.Data.Paint(WorldBrush.Surface,Vector3.zero,10,5,.7f,2,0,false,e.palette.groundLayers[0].id);e.world.Mark(new RectInt(0,0,d.resolution,d.resolution));e.world.Flush();int painted=e.world.GrassCount;Check(painted<dense&&stored.SequenceEqual(e.Data.grass),"paint hides grass without destroying recoverable grass layer");e.Data.Paint(WorldBrush.EraseSurface,Vector3.zero,12,10,.7f,2,0,false);e.world.Mark(new RectInt(0,0,d.resolution,d.resolution));e.world.Flush();Check(e.world.GrassCount>painted,"erasing road restores grass");
+ var wall=e.palette.entries.First(x=>x.prefab.name=="SM_wall_modular_03 (2)"||x.label=="wall modular 03 (2)");Check(wall.module&&wall.lockScale,"wall module and locked size available");Check(Mathf.Abs(Vector3.Distance(wall.module.points[0],wall.module.points[1])-4)<.001f,"wall body spans 4m");e.selectedEntry=e.palette.Find(wall.id);e.objectScale=7;Check(e.PlacementScale(wall)==wall.defaultScale,"building ignores global object multiplier");
+ d=e.Data;d.objects.Add(new MapObjectData{instanceId="wall-a",paletteId=wall.id,position=new Vector3(0,.7f,0),scale=1,sizingVersion=1});Check(WorldModuleSnapping.TrySnap(d,e.palette,wall,new Vector3(4.5f,.7f,.2f),0,1,null,out var snap)&&Vector3.Distance(snap,new Vector3(4,.7f,0))<.001f,"straight wall snaps body endpoints");d.objects.Add(new MapObjectData{instanceId="wall-b",paletteId=wall.id,position=snap,scale=1,sizingVersion=1});Check(!WorldModuleSnapping.TrySnap(d,e.palette,wall,new Vector3(4,.7f,0),0,1,null,out _),"occupied port rejects duplicate join");
+ var corner=e.palette.entries.First(x=>x.module&&x.module.family==wall.module.family&&x.module.points.Length==2&&Mathf.Abs(Vector3.Dot(x.module.directions[0],x.module.directions[1]))<.01f);Check(corner.module.points.All(x=>Mathf.Abs(x.magnitude-2)<.001f),"corner arms use 2m grid");Check(e.palette.entries.Count(x=>x.module&&x.module.family!="asian-wall")==22,"original 22 wall and fence variants retained");
+ var newWalls=e.palette.entries.Where(x=>x.module&&x.module.family=="asian-wall").ToArray();Check(newWalls.All(x=>x.libraryHidden),"loose new-pack wall modules are not selectable; existing references remain supported");
+ foreach(var module in newWalls)foreach(float angle in new[]{0f,90f,180f,270f}){
+  var data=WorldMapData.Empty("New wall snap QA");float scale=module.defaultScale;var rotation=Quaternion.Euler(0,angle,0);var origin=new Vector3(0,.7f,0);
+  data.objects.Add(new MapObjectData{instanceId="asian-a",paletteId=module.id,position=origin,yaw=angle,scale=scale,sizingVersion=1});
+  float nextAngle=angle+Vector3.SignedAngle(module.module.directions[0],-module.module.directions[1],Vector3.up);var nextRotation=Quaternion.Euler(0,nextAngle,0);
+  var expected=origin+rotation*(module.module.points[1]*scale)-nextRotation*(module.module.points[0]*scale);
+  Check(WorldModuleSnapping.TrySnap(data,e.palette,module,expected+new Vector3(.23f,0,.19f),nextAngle,scale,null,out var joined)&&Vector3.Distance(joined,expected)<.001f,"new module connects actual scaled ports "+module.label+" at "+angle);
+  Check(module.prefab.GetComponentsInChildren<MeshCollider>(true).Any(x=>x.sharedMesh&&!x.convex),"new module retains mesh collision "+module.label+" at "+angle);
+ }
+ e.world.RebuildObjects();Check(e.world.GrassCount<dense,"solid wall excludes grass");yield return null;
+ File.WriteAllLines("../.local/diagnostics/wall-grass-qa-results.txt",checks.Select(x=>"PASS "+x));Debug.Log("PASS "+checks.Count+" wall and grass checks, density counts "+dense+" / "+sparse);
+ }finally{e.SetData(original,dirty);e.History.Clear();}
+}
+return Run();

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,8 +18,7 @@ public static class CharacterPanelBuilder
     static readonly Vector2 RefResolution = new Vector2(1920f, 1080f);
 
     // 中文菜单给人在编辑器里点；ASCII 菜单给自动化调用（exec 脚本传中文会被编码破坏）
-    [MenuItem("修仙/构建角色面板 UI")]
-    [MenuItem("Cultivation/Build Character Panel UI")]
+    [MenuItem("修仙/UI/维护/构建角色面板 UI")]
     public static void BuildFromMenu()
     {
         Build(true);

@@ -38,8 +38,7 @@ public static class HitFxBuilder
     public const string 基础命中路径 = "CombatVFX/Hits/Hit_Physical";
     public const string 重击命中路径 = "CombatVFX/Hits/Hit_Physical_Heavy";
 
-    [MenuItem("修仙/构建命中特效")]
-    [MenuItem("Cultivation/Build Hit FX")]
+    [MenuItem("修仙/战斗/维护/构建命中特效")]
     public static void BuildFromMenu() => 构建全部();
 
     public static void 构建全部()

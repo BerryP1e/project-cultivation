@@ -15,9 +15,8 @@
 /// ## 为什么不用 URP 的 Volume / Post Processing Stack
 ///
 /// 本工程是 **Built-in**（`GraphicsSettings.m_CustomRenderPipeline = null`），
-/// 且**没装** `com.unity.postprocessing` / URP 包。
-/// 引入 URP 要迁移全部材质与 shader，风险极大；装 PPSv2 包则依赖网络与包解析。
-/// 自写 `OnRenderImage` 是 Built-in 下最省事、最可控、零依赖的路子。
+/// 2026-10-14 已安装 URP 14.1，但正式场景仍使用 Built-in；独立试验场用于评估迁移。
+/// 本组件依赖 `OnRenderImage`，切换管线时需要 RendererFeature 适配。
 ///
 /// ## 挂载
 ///
@@ -100,11 +99,11 @@ public class GameGlobalGrade : MonoBehaviour
     [Tooltip("自动加载的纸纹资源名（相对 Resources）。留空 = 不走自动加载。\n" +
              "用户 2026-10-03 提供的宣纸 → 已用 `修仙/美术/宣纸纸纹预处理` 生成归一化颗粒图放在 " +
              "`Assets/resources/宣纸/宣纸纹理_纸纹.png`")]
-    public string 默认纸纹 = "宣纸/宣纸纹理_纸纹";
+    public string 默认纸纹 = "";
     [Tooltip("纸纹强度：0 = 关。0.15~0.25 有纸的颗粒感；太大就是噪点\n" +
              "⚠️ 2026-10-03 从 0.35 降到 0.18：大面积亮平的墙面会把纸纹整片显出来，用户：「像在摄像头前盖了层宣纸」\n" +
              "（shader 里已按亮度加权：只在中间调最明显，纸白与浓墨处不可见）")]
-    [Range(0f, 1f)] public float 纸纹强度 = 0.18f;
+    [Range(0f, 1f)] public float 纸纹强度 = 0f;
     [Tooltip("纸纹平铺次数（屏幕空间）。纸是不动的，所以 UV 用屏幕坐标。\n" +
              "**1 = 整屏一张纸**（原图不是无缝的，铺开了会看到镜像接缝）；要更细的颗粒再往上加")]
     [Range(0.5f, 40f)] public float 纸纹平铺 = 1f;
@@ -164,7 +163,7 @@ public class GameGlobalGrade : MonoBehaviour
     /// </summary>
     void 自动装纸纹()
     {
-        if (纸纹 != null || string.IsNullOrEmpty(默认纸纹)) return;
+        if (纸纹强度 <= 0 || 纸纹 != null || string.IsNullOrEmpty(默认纸纹)) return;
         纸纹 = Resources.Load<Texture>(默认纸纹);
         if (纸纹 != null) Debug.Log("[全局调色] 已自动装纸纹：" + 默认纸纹 + "（" + 纸纹.width + "x" + 纸纹.height + "）");
         else Debug.LogWarning("[全局调色] Resources 里找不到纸纹「" + 默认纸纹 + "」—— 会退回程序化纸纹兜底");
@@ -228,4 +227,43 @@ public class GameGlobalGrade : MonoBehaviour
 
     // ---- ASCII 别名 ----
     public bool Enabled { get => 启用; set => 启用 = value; }
+
+    public void ApplyWorldStyle()
+    {
+        启用=true;Tonemap=true;Tonemap强度=.30f;Tonemap白点=5;
+        曝光=1.10f;高光=Color.white;中间调=Color.white;
+        暗部=new Color(.008f,.009f,.01f,0);对比度=1.02f;饱和度=1.02f;
+        染色强度=0;墨阶强度=0;留白强度=0;纸纹强度=0;
+        默认纸纹="";纸纹=null;暗角=0;
+    }
+
+    [ContextMenu("画面试验/清朗水墨调色")]
+    public void ApplyClearInkStudy()
+    {
+        Tonemap强度 = .55f;
+        Tonemap白点 = 7f;
+        曝光 = 1.20f;
+        饱和度 = 1.08f;
+        染色强度 = .06f;
+        暗部 = new Color(.022f, .025f, .029f, 0);
+        对比度 = 1.03f;
+        墨阶强度 = .15f;
+        留白强度 = .10f;
+        纸纹强度 = .055f;
+    }
+
+    [ContextMenu("画面试验/恢复原水墨调色")]
+    public void ApplyOriginalInkStudy()
+    {
+        Tonemap强度 = .85f;
+        Tonemap白点 = 11.2f;
+        曝光 = 1.14f;
+        饱和度 = .82f;
+        染色强度 = .22f;
+        暗部 = new Color(.055f, .058f, .062f, 0);
+        对比度 = .97f;
+        墨阶强度 = .35f;
+        留白强度 = .25f;
+        纸纹强度 = .18f;
+    }
 }

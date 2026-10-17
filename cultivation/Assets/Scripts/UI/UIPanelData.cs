@@ -15,6 +15,7 @@ public class UIPanelData : MonoBehaviour
     public List<LawFragment> 法则碎片 = new List<LawFragment>();
     public List<string> 法则装备 = new List<string> { "", "", "", "", "", "" };
     public long 法则精粹;
+    public List<TeleportBookmark> 已访传送点 = new List<TeleportBookmark>();
     public List<string> 炉中法则 = new List<string>();
     public int 变化序号 { get; private set; }
 
@@ -216,6 +217,7 @@ public class UIPanelData : MonoBehaviour
 
     public void EnsureLists()
     {
+        if (已访传送点 == null) 已访传送点 = new List<TeleportBookmark>();
         if (物品 == null) 物品 = new List<ItemDefinition>();
         if (法则碎片 == null) 法则碎片 = new List<LawFragment>();
         if (法则装备 == null) 法则装备 = new List<string>();
@@ -407,6 +409,7 @@ public class UIPanelData : MonoBehaviour
     {
         EnsureLists();
         物品 = new List<ItemDefinition>();
+        已访传送点.Clear(); SpatialTravel.CancelPending();
         法则碎片.Clear(); for (int i = 0; i < 法则装备.Count; i++) 法则装备[i] = "";
         法则精粹 = 0; 炉中法则.Clear();
         已拥有法宝.Clear(); 当前法宝=null; 收服系统已初始化=false;

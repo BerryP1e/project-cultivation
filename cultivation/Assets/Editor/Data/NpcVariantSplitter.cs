@@ -49,7 +49,7 @@ using UnityEngine;
 /// | 攻击 | ×1.6489 |
 /// | 防御 | ×1.6225 |
 /// | 灵力 | ×1.6998 |
-/// | 暴击 | +0.05 | 
+/// | 暴击 | +0.05 |
 /// | 暴击抗性 / 会心抗性 / 真实 / 普攻伤害加成 / 普攻伤害减免 | +0.02 |
 /// | 会心 / 真实伤害 / 闪避 / 冷却缩减 | +0.03 |
 /// | 会心伤害抗性 / 真实抗性 | +0.01 |
@@ -109,7 +109,6 @@ public static class NpcVariantSplitter
     };
 
     [MenuItem("修仙/配置表/NPC 按蒙皮版本拆分并递推数值")]
-    [MenuItem("Cultivation/Tables/Split NPC By Model Variant")]
     public static void 拆分并递推()
     {
         拆分();
@@ -128,7 +127,6 @@ public static class NpcVariantSplitter
     }
 
     [MenuItem("修仙/配置表/NPC 称号按版本命名")]
-    [MenuItem("Cultivation/Tables/Name NPC Variants")]
     public static void 只命名()
     {
         命名();

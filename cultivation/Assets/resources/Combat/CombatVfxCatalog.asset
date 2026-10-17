@@ -53,8 +53,8 @@ MonoBehaviour:
     "\u5916\u4FA7\u7559\u767D": 0.12
     "\u5200\u5149\u6700\u5927\u5BBD\u5EA6": 3
     "\u5173\u95ED\u573A\u666F\u706F\u5149": 0
-    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 1
-    "\u706F\u5149\u6700\u5927\u534A\u5F84": 0
+    "\u706F\u5149\u5F3A\u5EA6\u500D\u7387": 0.15
+    "\u706F\u5149\u6700\u5927\u534A\u5F84": 1.6
     "\u6563\u5E03\u534A\u5F84": 0
     "\u6700\u957F\u5B58\u6D3B": 2
     "\u8C03\u8272": {fileID: 0}
@@ -285,7 +285,7 @@ MonoBehaviour:
     "\u8C03\u8272": {fileID: 0}
   - id: ability_huoyan_zhui_impact
     "\u9884\u5236\u4F53": {fileID: 3509871324827411886, guid: cae9081b39909f944820ad7862ad0024, type: 3}
-    "\u7F29\u653E": 0.75
+    "\u7F29\u653E": 1.5
     "\u65CB\u8F6C\u6B27\u62C9": {x: 0, y: 0, z: 0}
     "\u8DDF\u968F\u6765\u5411": 0
     "\u6A21\u578B\u5916\u4FA7\u663E\u793A": 0

@@ -13,7 +13,7 @@ public sealed class NpcAnimationCatalogBuilder : IPreprocessBuildWithReport
     public int callbackOrder => -100;
     public void OnPreprocessBuild(BuildReport report) => Bake();
 
-    [MenuItem("Cultivation/NPC Assets/Bake Runtime Animation Catalog")]
+    [MenuItem("修仙/NPC 资产/维护/NPC Assets/Bake Runtime Animation Catalog")]
     public static void Bake()
     {
         var controllers = new HashSet<AnimatorController>();

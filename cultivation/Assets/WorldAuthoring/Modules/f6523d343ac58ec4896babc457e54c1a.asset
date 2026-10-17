@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a840fe3bfeae21d4aa90a84ddc52e9b3, type: 3}
+  m_Name: f6523d343ac58ec4896babc457e54c1a
+  m_EditorClassIdentifier: 
+  revision: 1
+  sourceHash: 173d42f6a15cc4dd5d5ba1401097f1be
+  family: temple-fence
+  prefab: {fileID: 3971758777623244708, guid: c23cd5cceb970d14aaabdad1b8b1b8f5, type: 3}
+  points:
+  - {x: -1, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  directions:
+  - {x: -1, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  groundHalfWidth: 0.10355285

@@ -2,7 +2,6 @@
 System.Collections.IEnumerator Run(){
 var menu=Object.FindObjectOfType<PlayerStatsDebugPanel>();bool visible=menu.Visible;
 var marks=对话标记.全部标记();var data=Object.FindObjectOfType<UIPanelData>();var items=data.物品.ToArray();
-var quest=Object.FindObjectOfType<任务管理器>();bool questEnabled=quest!=null && quest.enabled;if(quest!=null)quest.enabled=false;
 var all=炼丹炉.取().全部丹方();var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");var view=Object.Instantiate(prefab).GetComponent<UIInkAlchemyPage>();
 var sb=new System.Text.StringBuilder();void Check(bool ok,string text){if(!ok)throw new System.Exception(text);sb.AppendLine(text+" OK");}
 try{
@@ -37,7 +36,7 @@ view.关闭();menu.Visible=true;yield return new WaitForSecondsRealtime(.3f);
 ScreenCapture.CaptureScreenshot("screenshots/alchemy-debug-"+Screen.width+"x"+Screen.height+".png");yield return null;
 System.IO.File.WriteAllText("screenshots/alchemy-lid-menu-check-"+Screen.width+"x"+Screen.height+".txt",sb.ToString());Debug.Log(sb.ToString());
 }finally{
-view.关闭();Object.Destroy(view.gameObject);menu.Visible=visible;对话标记.清空();foreach(var mark in marks)对话标记.添加(mark);if(quest!=null)quest.enabled=questEnabled;
+view.关闭();Object.Destroy(view.gameObject);menu.Visible=visible;对话标记.清空();foreach(var mark in marks)对话标记.添加(mark);
 }
 }
 return Run();

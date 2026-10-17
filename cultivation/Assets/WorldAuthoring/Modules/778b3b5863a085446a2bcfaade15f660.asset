@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a840fe3bfeae21d4aa90a84ddc52e9b3, type: 3}
+  m_Name: 778b3b5863a085446a2bcfaade15f660
+  m_EditorClassIdentifier: 
+  revision: 1
+  sourceHash: f8414b31d7c6c76483ee9d54d10eb9fd
+  family: garden
+  prefab: {fileID: 6992201497174438288, guid: f1ad29074960d114da9efca458015858, type: 3}
+  points:
+  - {x: -3, y: 0, z: 0}
+  - {x: 3, y: 0, z: 0}
+  directions:
+  - {x: -1, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  groundHalfWidth: 0.30718488

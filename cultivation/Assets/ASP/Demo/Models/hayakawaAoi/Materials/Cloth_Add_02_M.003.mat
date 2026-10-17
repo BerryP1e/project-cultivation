@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &-577248312961153261
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Cloth_Add_02_M.003
+  m_Shader: {fileID: 4800000, guid: 55a54603fab88d940a3374f8ae9f78e8, type: 3}
+  m_Parent: {fileID: 2100000, guid: dc9d6eb6abff4934abafa4640eb70000, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _ALPHATEST_ON
+  - _NORMALMAP
+  - _SPECULAR_LIGHTING_ON
+  - _STYLE_CELSHADING
+  m_InvalidKeywords:
+  - _RECEIVESHADOWS
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: d2ae1689ba78e434b914ff68c655cb8d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: 0b4249da30ae7324bbcf2296e96e1dcc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: d2ae1689ba78e434b914ff68c655cb8d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampMap:
+        m_Texture: {fileID: 2800000, guid: 71a8be6308c0b584fa30e19db4254adf, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SSSRampMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaToMask: 0
+    - _BakeGISource: 0
+    - _EnableSSSRamp: 0
+    - _FlattenAdditionalLighting: 0
+    - _Glossiness: 0.4472136
+    - _MaterialID: 8
+    - _ReceiveASPShadow: 0
+    - _ReceiveOffsetedDepthMap: 0
+    - _RimLightOn: 0
+    - _ShadowColorMode: 0
+    - _WorkflowSpace: 0
+    - _style: 1
+    m_Colors:
+    - _FaceFrontDirection: {r: 0.0000007678469, g: 0.03603113, b: 0.99935067, a: 0}
+    - _FaceRightDirection: {r: 1, g: -0.0000011744269, b: -0.00000072600244, a: 0}
+    - _ReceivedShadowColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []

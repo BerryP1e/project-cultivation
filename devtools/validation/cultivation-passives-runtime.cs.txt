@@ -1,0 +1,117 @@
+using UnityEditor;
+using UnityEngine.UI;
+using System.Collections;
+using System.IO;
+IEnumerator Run() {
+if (!Application.isPlaying) throw new Exception("Requires isolated Play session");
+var report = new List<string>();
+void Check(bool ok, string text) { if (!ok) throw new Exception("FAIL " + text); report.Add(text); File.WriteAllText("../.local/diagnostics/cultivation-passives-report.txt", string.Join("\n", report)); }
+foreach (var save in Object.FindObjectsOfType<SaveApplier>()) save.enabled = false;
+foreach (var pc in Object.FindObjectsOfType<PlayerController>()) foreach (var b in pc.GetComponents<MonoBehaviour>()) b.enabled = false;
+foreach (var ai in Object.FindObjectsOfType<NpcAiBase>()) ai.enabled = false;
+DialogueUI.关闭(); Time.timeScale = 1;
+var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+var roots = new List<GameObject>(); var definitions = new List<Object>();
+var oldCursor=Cursor.visible;var oldLock=Cursor.lockState;
+var root = new GameObject("PassiveTraversalQA_Player"); roots.Add(root); root.SetActive(false); root.transform.position = new Vector3(24000, 2, 24000);
+var panel = root.AddComponent<UIPanelData>(); panel.EnsureLists(); panel.已获得被动神通.Clear(); panel.已停用被动.Clear(); panel.已访传送点.Clear();
+var baseStats = ScriptableObject.CreateInstance<PlayerStatsDefinition>(); definitions.Add(baseStats);
+baseStats.基础属性[AttributeType.MaxHealth] = 1000; baseStats.基础属性[AttributeType.MaxSpirit] = 1000;
+baseStats.基础属性[AttributeType.HealthRegen] = 2; baseStats.基础属性[AttributeType.SpiritRegen] = 3; baseStats.基础属性[AttributeType.MoveSpeed] = 1; baseStats.神识 = 12;
+var cultivation = root.AddComponent<PlayerCultivation>(); cultivation.面板数据 = panel; cultivation.enabled = false;
+var realm = ScriptableObject.CreateInstance<RealmDefinition>(); realm.等级 = 3; realm.累计灵气 = 0; definitions.Add(realm); cultivation.境界表 = new[] { realm }; cultivation.已解锁最高等级 = 3;
+var stats = root.AddComponent<PlayerCombatStats>(); stats.玩家属性 = baseStats; stats.使用调试数值 = false;
+var vitals = root.AddComponent<PlayerVitals>(); vitals.自动回复 = false;
+var loader = root.AddComponent<PlayerAbilityLoader>(); loader.面板数据 = panel; loader.打印装卸日志 = false;
+var targeting = root.AddComponent<NpcTargeting>(); targeting.enabled = false; targeting.受神识范围限制 = true;
+var movement = root.AddComponent<PlayerController>(); movement.gravity = 0;
+var errors = new List<string>(); void Log(string text, string stack, LogType type) { if (type == LogType.Error || type == LogType.Exception) errors.Add(text); }
+Application.logMessageReceived += Log;
+root.SetActive(true); yield return null;
+var control = root.GetComponent<PlayerTraversalController>(); control.面板数据 = panel;
+var wheel = root.GetComponent<PlayerTraversalWheel>(); wheel.模拟输入 = true; wheel.模拟鼠标 = new Vector2(Screen.width*.5f, Screen.height*.5f);
+PassiveDivineAbility Passive(string key) => panel.神通.OfType<PassiveDivineAbility>().Single(x => x.神通id == "ability_" + key);
+var cycle = Passive("zicheng_xunhuan"); var dual = Passive("xingming_shuangxiu"); var sense = Passive("lianxu_rudao"); var pressure = Passive("lingshi_weiya"); var space = Passive("kongjian_tengnuo"); var clone = Passive("shenwai_huashen");
+try {
+Check(cultivation.等级 == 3, "Real realm comparison fixture uses third cultivation level");
+foreach (var key in CultivationPassiveAssets.Keys) {
+ var p = Passive(key); var item = QuestDatabase.取().物品库.Single(x => x.物品id == "item_passive_ability_"+key);
+ Check(p.图标 && item.图标 == p.图标 && item.使用效果 is 学被动神通效果 effect && effect.神通 == p, "Runtime catalog, dedicated icon and direct learning reference: " + key);
+}
+Check(!wheel.已解锁扇区(PlayerTraversalWheel.PressureSector) && !wheel.已解锁扇区(PlayerTraversalWheel.SpaceSector), "New wheel entries remain empty before abilities are learned and enabled");
+var cycleBook=QuestDatabase.取().物品库.Single(x=>x.物品id=="item_passive_ability_zicheng_xunhuan");panel.给物品(cycleBook,1);
+Check(物品使用器.使用(cycleBook,panel,root)&&panel.物品数量(cycleBook)==0&&panel.IsPassiveEnabled(cycle),"Actual learning consumes one owned self-cycle manual and enables the ability");
+Check(!物品使用器.可使用(cycleBook,panel),"Learned passive cannot consume another manual");
+panel.SetPassiveEnabled(cycle,false);
+float h0=stats.当前属性[AttributeType.HealthRegen], s0=stats.当前属性[AttributeType.SpiritRegen], sense0=stats.当前神识;
+panel.SetPassiveEnabled(cycle,true); Check(stats.当前属性[AttributeType.SpiritRegen] == s0*2, "Self-cycle doubles actual regeneration, immediately on panel change");
+Check(stats.当前属性[AttributeType.HealthRegen] == h0, "Self-cycle does not increase health regeneration");
+panel.获得被动(dual); Check(stats.当前属性[AttributeType.SpiritRegen] == s0*3 && stats.当前属性[AttributeType.HealthRegen] == h0*2, "Two percentage regeneration passives stack additively");
+panel.获得被动(sense); Check(stats.当前神识 == sense0*2 && targeting.神识范围 > 4+sense0*.8f, "Sense gain reaches targeting through live combat stats");
+panel.SetPassiveEnabled(sense,false); Check(stats.当前神识 == sense0, "Sense gain is removed on disabling");
+var sourceCopy=baseStats.基础属性[AttributeType.SpiritRegen]; panel.SetPassiveEnabled(dual,false); Check(stats.当前属性[AttributeType.SpiritRegen] == s0*2 && baseStats.基础属性[AttributeType.SpiritRegen] == sourceCopy, "Disabling a passive removes its gain without changing source asset values");
+baseStats.基础属性[AttributeType.SpiritRegen]=0; stats.Recalculate(); Check(stats.当前属性[AttributeType.SpiritRegen] == 0, "Pure percentage gain keeps zero regeneration at zero"); baseStats.基础属性[AttributeType.SpiritRegen]=3; stats.Recalculate();
+vitals.当前灵气=500; vitals.自动回复=true; float before=vitals.当前灵气; yield return new WaitForSeconds(.5f); vitals.自动回复=false;
+Check(vitals.当前灵气 > before+2.7f && vitals.当前灵气 < before+4.2f, "Actual auto-recovery uses doubled spirit rate");
+var runtime=root.GetComponent<CultivationPassiveAbilities>(); Check(runtime && runtime.enabled, "Passive loader wires shared runtime only for enabled effect abilities");
+var motes=root.GetComponentsInChildren<ParticleSystem>().SingleOrDefault(x=>x.name=="自成循环_灵气入体"); Check(motes && motes.particleCount>0 && motes.particleCount<=48, "Actual spirit recovery visibly draws bounded inward motes");
+vitals.当前灵气=1000; Check(vitals.回复灵气(10)==0, "Full spirit causes no recovery event"); yield return new WaitForSeconds(1.2f); Check(motes.particleCount==0, "No spirit recovery means no lingering particle production");
+vitals.当前灵气=500; vitals.回复灵气(10); yield return new WaitForSeconds(.2f); Check(motes.particleCount>0, "Manual restoration also triggers the same recovery visual");
+panel.SetPassiveEnabled(cycle,false); yield return null; Check(!runtime.enabled && !root.GetComponentsInChildren<ParticleSystem>().Any(x=>x.name=="自成循环_灵气入体"), "Disabling self-cycle cleans its particles and event subscription");
+panel.获得被动(pressure); panel.获得被动(clone); panel.获得被动(space); yield return null;
+Check(wheel.已解锁扇区(PlayerTraversalWheel.PressureSector) && wheel.已解锁扇区(PlayerTraversalWheel.CloneSector) && wheel.已解锁扇区(PlayerTraversalWheel.SpaceSector), "Equipped passives unlock three new wheel entries");
+Check(!control.可用(TraversalAction.Clone,out var cloneReason) && cloneReason.Contains("暂未开放"), "Clone is explicitly a reserved disabled action");
+Check(!control.可用(TraversalAction.Pressure,out var noTarget), "Pressure rejects missing locked target");
+NpcInstance Npc(string name, int level, Vector3 position) {
+ var d=ScriptableObject.CreateInstance<NpcDefinition>();definitions.Add(d);d.id=name;d.名字=name;d.境界=level;d.类型=NpcKind.妖魔;d.对主角好感度=-100;d.属性[AttributeType.MaxHealth]=1000;d.属性[AttributeType.Attack]=20;d.属性[AttributeType.MoveSpeed]=2;
+ var go=GameObject.CreatePrimitive(PrimitiveType.Capsule);roots.Add(go);go.name=name;go.SetActive(false);go.transform.position=position;
+ var npc=go.AddComponent<NpcInstance>();npc.定义=d;go.SetActive(true);return npc;
+}
+var lower=Npc("PressureLowerQA",1,root.transform.position+Vector3.forward*4); var equal=Npc("PressureEqualQA",3,root.transform.position+Vector3.right*4); var higher=Npc("PressureHigherQA",4,root.transform.position+Vector3.left*4); yield return null;
+foreach(var npc in new[]{lower,equal,higher}) { var ai=npc.GetComponent<NpcAiBase>(); if(ai) { typeof(NpcAiBase).GetProperty("玩家生命").GetSetMethod(true).Invoke(ai,new object[]{vitals}); if(npc!=lower)ai.enabled=false; } }
+targeting.Lock(equal); Check(!runtime.CanPressure(out _), "Pressure rejects equal realm"); targeting.Lock(higher); Check(!runtime.CanPressure(out _), "Pressure rejects higher realm");
+targeting.Lock(lower); lower.transform.position=root.transform.position+Vector3.forward*100; Check(!runtime.CanPressure(out _), "Pressure rechecks current sense distance at release"); lower.transform.position=root.transform.position+Vector3.forward*4;
+var aiLower=lower.GetComponent<NpcAiBase>(); if(aiLower) aiLower.ForceState(NpcAiState.攻击);
+Check(control.请求(TraversalAction.Pressure), "Wheel action applies pressure to strictly lower locked target");
+var status=lower.GetComponent<NpcWindPressure>(); var movementLock=lower.GetComponent<NpcMovementLock>(); Check(status.生效中 && movementLock.已禁锢 && aiLower.State==NpcAiState.待机, "Pressure interrupts pending attack and obtains an independent movement lock");
+var anchor=lower.transform.position; float health=vitals.当前气血; yield return new WaitForSeconds(.7f);
+Check(Vector3.Distance(lower.transform.position,anchor)<.001f && vitals.当前气血==health && aiLower.State==NpcAiState.待机, "Real AI cannot move or attack during pressure");
+Check(status.GetComponentsInChildren<LineRenderer>().Count(x=>x.enabled)==5, "Five visible descending, widening wind rings follow target root");
+var otherLock=new GameObject("IndependentLockQA");roots.Add(otherLock);movementLock.加锁(otherLock);
+panel.SetPassiveEnabled(pressure,false); yield return null; Check(!status.生效中 && movementLock.已禁锢, "Disabling pressure releases only its own lock"); movementLock.解锁(otherLock);Check(!movementLock.已禁锢,"Unrelated movement-lock ownership remains intact");
+panel.SetPassiveEnabled(pressure,true); yield return null; runtime.Pressure(); typeof(NpcWindPressure).GetField("expires",flags).SetValue(status,Time.time+.15f); yield return new WaitForSeconds(.25f); Check(!status.生效中 && !movementLock.已禁锢, "Pressure expiration restores target movement and attack decisions");
+var book=new TeleportBookmark { 场景=root.scene.name,名称="已访测试点",位置=root.transform.position+Vector3.right*10,朝向=75 };
+SpatialTravel.Record(panel,book);SpatialTravel.Record(panel,book);Check(panel.已访传送点.Count==1,"Recording visited destination deduplicates actual arrivals");
+var copy=SpatialTravel.Copy(panel.已访传送点);copy[0].位置+=Vector3.one;Check(copy[0].位置!=panel.已访传送点[0].位置,"Travel records use deep copies for snapshots");
+var saveData=new SaveData();typeof(SaveSystem).GetMethod("采集面板",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{saveData,panel});
+saveData.已获得被动神通=panel.已获得被动神通.Select(x=>x.神通id).ToList();
+var saved=JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(saveData));Check(saved.已访传送点.Count==1 && saved.已访传送点[0].位置==book.位置,"Visited destinations survive real save capture and JSON roundtrip");
+panel.已访传送点.Clear();typeof(SaveSystem).GetMethod("恢复面板",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{saved,panel});Check(panel.已访传送点.Count==1,"Real save restore brings back visited destinations");
+panel.SetPassiveEnabled(space,true); yield return null;
+Check(SpatialTravel.Travel(control,book) && Vector3.Distance(root.transform.position,book.位置)<.001f,"Spatial shift reaches same-scene visited coordinates through normal movement handoff");
+var menu=UISpatialTravelMenu.Open(control);Check(UiEscRegistry.SceneInputBlocked && menu.GetComponentsInChildren<Button>().Length>=3,"Spatial shift opens task and visited-point child selection and takes input lock");
+Check(menu.Choose(book),"Child selection executes travel while excluding only its own UI lock");yield return null;
+Cursor.visible=false;Check(wheel.打开(wheel.模拟鼠标),"Unlocked spatial skill can open held-Tab wheel");Canvas.ForceUpdateCanvases();
+float angle=(90-(PlayerTraversalWheel.SpaceSector+.5f)*360/PlayerTraversalWheel.SectorCount)*Mathf.Deg2Rad;
+var screenPoint=RectTransformUtility.WorldToScreenPoint(null,wheel.轮盘.TransformPoint(new Vector3(Mathf.Cos(angle)*150,Mathf.Sin(angle)*150,0)));
+wheel.更新指针(screenPoint);Check(wheel.选中扇区==PlayerTraversalWheel.SpaceSector,"Spatial skill occupies its own expected sector");wheel.关闭(true);
+menu=Object.FindObjectOfType<UISpatialTravelMenu>();Check(menu&&!wheel.已打开&&UiEscRegistry.SceneInputBlocked,"Releasing spatial sector closes main wheel and opens child options without dropping input lock");
+yield return new WaitForSecondsRealtime(.25f);
+var captureGo=new GameObject("SpatialMenuQA_Camera");roots.Add(captureGo);var captureCamera=captureGo.AddComponent<Camera>();captureCamera.clearFlags=CameraClearFlags.SolidColor;captureCamera.backgroundColor=new Color(.12f,.16f,.14f);captureCamera.transform.position=root.transform.position+new Vector3(10,10,-10);captureCamera.transform.LookAt(root.transform.position);
+var canvas=menu.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=captureCamera;canvas.planeDistance=1;
+var rt=new RenderTexture(960,720,24);captureCamera.targetTexture=rt;Canvas.ForceUpdateCanvases();captureCamera.Render();var prior=RenderTexture.active;RenderTexture.active=rt;
+var shot=new Texture2D(960,720,TextureFormat.RGB24,false);shot.ReadPixels(new Rect(0,0,960,720),0,0);shot.Apply();File.WriteAllBytes("../.local/diagnostics/spatial-menu.png",shot.EncodeToPNG());RenderTexture.active=prior;captureCamera.targetTexture=null;rt.Release();Object.Destroy(rt);Object.Destroy(shot);
+menu.Close();yield return null;Check(!UiEscRegistry.SceneInputBlockedByOthers(null),"Child menu close releases input ownership");
+Check(!Cursor.visible,"Closing spatial child restores cursor state from before the main wheel");Cursor.visible=oldCursor;
+var inputBlock=new GameObject("ForeignUiLockQA");roots.Add(inputBlock);UiEscRegistry.SetSceneInputBlocked(inputBlock,true);Check(!SpatialTravel.Travel(control,book),"Spatial travel respects foreign UI input ownership");UiEscRegistry.SetSceneInputBlocked(inputBlock,false);yield return null;
+var additive=UnityEngine.SceneManagement.SceneManager.CreateScene("SpatialArrivalQA");var landing=new GameObject("SpatialArrivalPointQA");roots.Add(landing);landing.transform.position=root.transform.position;UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(landing,additive);
+SpatialTravel.PlanArrival(additive.name,landing.name,"跨场景已到达点");int visited=panel.已访传送点.Count;SpatialTravel.CheckArrival(root.transform,panel);Check(panel.已访传送点.Count==visited,"Cross-scene planning does not unlock destination before arrival");
+var oldScene=root.scene;UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root,additive);SpatialTravel.CheckArrival(root.transform,panel);Check(panel.已访传送点.Count==visited+1&&panel.已访传送点.Last().落点名==landing.name,"Actual named arrival in destination scene records its bookmark");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root,oldScene);Object.Destroy(landing);yield return null;yield return UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(additive);
+panel.SetPassiveEnabled(space,false);Check(!control.可用(TraversalAction.SpaceShift,out _),"Spatial shift denies use after passive is disabled");
+panel.SetPassiveEnabled(space,true);
+var dragon=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");Check(AssetDatabase.GetAssetPath(dragon.图标).EndsWith("chedian_yeting-v2.png"),"Dragon skill binds generated artwork rather than old prefab screenshot");
+Check(errors.Count==0,"No runtime errors in passive, pressure or spatial menu flows");
+File.WriteAllText("../.local/diagnostics/cultivation-passives-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));
+} finally {Application.logMessageReceived-=Log;foreach(var go in roots)if(go)Object.Destroy(go);foreach(var d in definitions)if(d)Object.Destroy(d);foreach(var menu in Object.FindObjectsOfType<UISpatialTravelMenu>())menu.Close();SpatialTravel.CancelPending();Cursor.visible=oldCursor;Cursor.lockState=oldLock;Time.timeScale=1;}
+}
+return Run();

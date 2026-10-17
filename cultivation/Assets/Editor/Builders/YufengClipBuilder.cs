@@ -60,8 +60,7 @@ public static class YufengClipBuilder
     static bool hasPoseMoving;
     static bool hasPoseHover;
 
-    [MenuItem("修仙/生成凭虚御风动画片段")]
-    [MenuItem("Cultivation/Bake Yufeng Clips")]
+    [MenuItem("修仙/动画/维护/生成凭虚御风动画片段")]
     public static void Bake()
     {
         var baseClip = LoadClip(Lib1, BaseClipName);

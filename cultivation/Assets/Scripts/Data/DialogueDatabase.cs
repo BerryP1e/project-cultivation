@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -151,54 +151,7 @@ public class DialogueDatabase : ScriptableObject
     ///    不加这条时，按 F 会被同段优先更高的 `dlg_act4_dashi_return` 抢走，阶段13 永远完不成
     ///    （用户实测：反复按 F 都是同一段）。
     /// </summary>
-    DialogueDefinition 当前阶段点名的对话(string npcId, int 分段)
-    {
-        var 任务 = 任务管理器.实例;
-        if (任务 == null) return null;
-
-        DialogueDefinition 点名 = null;
-        string 最好任务 = null;
-        var 在跑 = 任务.进行中的阶段();
-        for (int i = 0; i < 在跑.Count; i++)
-        {
-            var q = 在跑[i];
-            if (q == null || q.类型 != 任务类型.主线) continue;
-            if (q.条件 != 任务条件.对话 || string.IsNullOrWhiteSpace(q.对话id)) continue;
-            if (最好任务 != null && string.CompareOrdinal(q.任务id, 最好任务) <= 0) continue;
-
-            var d = 找到(q.对话id);
-            if (d == null) continue;
-            if (!string.IsNullOrEmpty(d.npcId) && d.npcId != npcId) continue;
-
-            点名 = d;
-            最好任务 = q.任务id;
-        }
-        if (点名 == null) return null;
-
-        // ★★ 「点名」只是**优先**，不能绕过条件（2026-10-02 第二轮，用户实测报的）。
-        //
-        //   现象：把洞府那几段用 `场景_3C_Testbed` 门禁锁上之后，**玩家在宗门传送点还是能
-        //   听完整套洞府台词** —— 因为阶段17「点名」了 `dlg_act5_dongfu_1`，
-        //   而下面第 ① 条是**直接 return 点名**，连 `对话条件.满足` 都没看。
-        //   （引导那一路是按 `满足` 判的，所以当时已经改对了、"！"指传送点，
-        //     可对话本身照样出得来 —— 实测日志：引导=洞府传送点，取段=dlg_act5_dongfu_1。）
-        //
-        //   口径：点名的那段**自己条件不满足**时，就当作"没有点名"，
-        //   回到普通的「同段里挑优先最高的」逻辑（那里本来就会过滤条件）。
-        if (!对话条件.满足(点名)) return null;
-
-        // ① 正好点名这一段
-        if (点名.分段 == 分段) return 点名;
-
-        // ② 点名更靠后的段：这次要的是这棵树的入口段 → 用入口段开场（顺着回答/跳转就能走到点名那段）
-        string 树 = 取树(点名.id);
-        if (分段 < 点名.分段 && 分段 == 最小分段(npcId, 树))
-        {
-            var 入口 = 候选(npcId, 分段, 树);
-            if (入口.Count > 0) return 入口[0];
-        }
-        return null;
-    }
+    DialogueDefinition 当前阶段点名的对话(string npcId, int 分段) { return null; }
 
     /// <summary>这个 NPC 最小的分段号（对话入口），没有就 0</summary>
     public int 最小分段(string npcId)

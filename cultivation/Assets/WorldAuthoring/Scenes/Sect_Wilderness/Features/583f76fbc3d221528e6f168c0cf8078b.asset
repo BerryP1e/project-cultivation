@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa937b4db2b8d974d9a89b2ca7a80870, type: 3}
+  m_Name: 583f76fbc3d221528e6f168c0cf8078b
+  m_EditorClassIdentifier: 
+  id: GlobalObjectId_V1-2-49c7552ab44a53448a672a250316e585-1194053274141876-981957681
+  label: wild to sect
+  kind: Teleporter
+  sourceScene: Sect_Wilderness
+  sourcePath: wild to sect
+  prefab: {fileID: 4755643666846074895, guid: 32a218677d108694a9ba56cb20f032e6, type: 3}
+  role: 0
+  references: []

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa937b4db2b8d974d9a89b2ca7a80870, type: 3}
+  m_Name: b3f4f4854b6ceb02f12cdf08d5c94fb4
+  m_EditorClassIdentifier: 
+  id: GlobalObjectId_V1-2-49c7552ab44a53448a672a250316e585-1767558311-0
+  label: "\u5237\u602A\u533A_02"
+  kind: SpawnZone
+  sourceScene: Sect_Wilderness
+  sourcePath: "\u91CE\u5916\u73AF\u5883/\u5237\u602A\u533A/\u5237\u602A\u533A_02"
+  prefab: {fileID: 613572436806205850, guid: 84b6b60c94433f647b3b7af0a657bc7f, type: 3}
+  role: 0
+  references: []

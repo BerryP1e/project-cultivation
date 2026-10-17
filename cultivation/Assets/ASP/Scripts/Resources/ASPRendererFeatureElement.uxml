@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement style="flex-grow: 1; flex-basis: auto; flex-shrink: 1; flex-direction: column; align-items: stretch; align-self: auto; justify-content: flex-start; height: 20px; width: auto;">
+        <ui:VisualElement name="VisualElement" style="flex-grow: 1; height: 1px; flex-direction: row; align-items: stretch; justify-content: space-between;">
+            <ui:Label tabindex="-1" text="ExampleRendererFeature&#10;" parse-escape-sequences="true" display-tooltip-when-elided="true" view-data-key="Title" name="Title" style="align-items: flex-start; flex-wrap: nowrap;" />
+            <ui:Label tabindex="-1" text="Active" parse-escape-sequences="true" display-tooltip-when-elided="true" view-data-key="Status" name="Status" style="align-items: auto; justify-content: flex-start; align-self: auto; white-space: normal; -unity-text-align: upper-left;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

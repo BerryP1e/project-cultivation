@@ -72,11 +72,16 @@ public static class 摆放物库
         if (缓存 != null) return;
         缓存 = new List<摆放物定义>
         {
-            new 摆放物定义 { id="home_ground", 名="洞府地面", 道具id="item_home_expansion", 模型路径="Home/StonePlatform", 占地边长=34f, 占用边距=0 },
+            new 摆放物定义 { id="home_ground", 名="洞府地面", 道具id="item_home_expansion", 模型路径="", 占地边长=HomeWorld.扩建边长, 占用边距=0 },
             new 摆放物定义 { id="puppet_station", 名="傀儡基站", 道具id="item_puppet_station", 模型路径="Home/PuppetStation", 占地边长=2.8f, 占用边距=.5f },
             new 摆放物定义 { id="animal_pen", 名="兽栏", 道具id="item_home_animal_pen", 模型路径="Home/AnimalPen", 占地边长=8f, 占用边距=.4f },
             new 摆放物定义 { id="compost_bin", 名="堆肥箱", 道具id="item_home_compost_bin", 模型路径="Home/CompostBin", 占地边长=2.2f, 占用边距=.35f },
             new 摆放物定义 { id="auto_alchemy", 名="自动炼丹炉", 道具id="item_home_auto_alchemy", 模型路径="Home/AutoAlchemy", 占地边长=2.4f, 占用边距=.4f },
+            new 摆放物定义 { id="home_alchemy_hall", 名="炼丹阁", 道具id="item_home_alchemy_hall", 模型路径="Home/Facilities/AlchemyHall", 占地边长=18.4f, 占用边距=.6f },
+            new 摆放物定义 { id="home_merit_hall", 名="功德堂", 道具id="item_home_merit_hall", 模型路径="Home/Facilities/MeritHall", 占地边长=15f, 占用边距=.6f },
+            new 摆放物定义 { id="home_technique_hall", 名="传法阁", 道具id="item_home_technique_hall", 模型路径="Home/Facilities/TechniqueHall", 占地边长=17.3f, 占用边距=.6f },
+            new 摆放物定义 { id="home_deacon_hall", 名="执事阁", 道具id="item_home_deacon_hall", 模型路径="Home/Facilities/DeaconHall", 占地边长=23.6f, 占用边距=.6f },
+            new 摆放物定义 { id="home_forge_hall", 名="炼器阁", 道具id="item_home_forge_hall", 模型路径="Home/Facilities/ForgeHall", 占地边长=13.1f, 占用边距=.6f },
             // 灵田地块：外观是程序化土床（见 灵田地块外观），状态由 灵田 管
             new 摆放物定义
             {
@@ -297,6 +302,9 @@ public static class 摆放校验
         foreach (var c in 撞)
         {
             if (c == null || c == 地.collider) continue;
+            // 工坊地形由多个 MeshCollider 分块组成；相邻地面块同样属于地面。
+            var terrain = c.GetComponentInParent<Cultivation.WorldAuthoring.WorldMapRenderer>();
+            if (terrain && terrain.IsGroundCollider(c)) continue;
             if (c is CharacterController) continue;                       // 玩家自己
             if (c.transform.IsChildOf(田 != null ? 田.transform : null)) continue;
             if (摆 != null && c.transform.IsChildOf(摆.transform)) continue;

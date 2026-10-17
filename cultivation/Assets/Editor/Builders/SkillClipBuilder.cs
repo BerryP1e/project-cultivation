@@ -47,8 +47,7 @@ public static class SkillClipBuilder
         new Spec { File = "Standing Taunt Battlecry",    Name = "技能动作4",      Start = 0f,    End = -1f,   Speed = 1f,   Loop = false },
     };
 
-    [MenuItem("修仙/生成技能动作片段")]
-    [MenuItem("Cultivation/Bake Skill Clips")]
+    [MenuItem("修仙/动画/维护/生成技能动作片段")]
     public static void Bake()
     {
         // 1) 素材先转 Humanoid

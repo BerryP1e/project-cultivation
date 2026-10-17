@@ -1,0 +1,10 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+if(SceneManager.GetActiveScene().isDirty)throw new Exception("Active scene has unsaved changes");
+if(!string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Validation save isolation is already active. Run teardown before preparing another session; never replace the original real-save fingerprint with test-save hashes.");
+if(!SessionState.GetString("WorldMapQA_ReturnScene","").EndsWith("RuntimeMapEditor.unity"))SessionState.SetString("WorldMapQA_ReturnScene",WorldMapEditorBuilder.ScenePath);
+var folder=System.IO.Path.Combine(Application.persistentDataPath,"saves");SessionState.SetString("WorldMapQA_SaveFolder",folder);
+var hashes=new System.Collections.Generic.List<string>();if(System.IO.Directory.Exists(folder))foreach(var path in System.IO.Directory.GetFiles(folder,"*.json")){using(var hash=System.Security.Cryptography.SHA256.Create())hashes.Add(System.IO.Path.GetFileName(path)+":"+Convert.ToBase64String(hash.ComputeHash(System.IO.File.ReadAllBytes(path))));}hashes.Sort(StringComparer.Ordinal);SessionState.SetString("WorldMapQA_SaveHashes",string.Join("\n",hashes));
+string sandbox=System.IO.Path.GetFullPath("../.local/diagnostics/world-map-validation/saves");System.IO.Directory.CreateDirectory(sandbox);SessionState.SetString(SaveSystem.验证目录键,sandbox);if(SaveSystem.存档目录!=sandbox)throw new Exception("Save sandbox did not apply");SaveSystem.存档(0,new SaveData{角色名="工坊回归",场景名="3C_Testbed"});
+EditorSceneManager.OpenScene("Assets/Scenes/3C_Testbed.scene",OpenSceneMode.Single);Debug.Log("Prepared real five-scene gameplay validation; saved files fingerprinted without mutation.");

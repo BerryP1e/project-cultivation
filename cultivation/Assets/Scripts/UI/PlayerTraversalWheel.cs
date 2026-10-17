@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -9,6 +9,7 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
     public KeyCode 打开键 = KeyCode.Tab;
     public const int SectorCount = 12;
     public const int FlightSector = 11, MountSector = 0;
+    public const int PressureSector = 1, CloneSector = 2, SpaceSector = 3;
     const float OuterRadius = 200, InnerRadius = 106, Gap = 4;
     sealed class Slot
     {
@@ -29,6 +30,7 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
     Text title, subtitle;
     Image centerIcon;
     float opacity;
+    float nextLabelRefresh;
     Vector2 pressPoint;
     bool pointerMoved, waitingForRelease, wasHeld;
     bool oldCursorVisible;
@@ -37,6 +39,8 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
     public int 选中扇区 { get; private set; } = -1;
     public GameObject 画布 => canvasObject;
     public RectTransform 轮盘 => wheel;
+    public bool 原光标可见 => oldCursorVisible;
+    public CursorLockMode 原光标锁定 => oldCursorLock;
 #if UNITY_EDITOR
     [HideInInspector] public bool 模拟输入, 模拟按住;
     [HideInInspector] public Vector2 模拟鼠标;
@@ -64,6 +68,8 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
         if (已打开)
         {
             更新指针(pointer);
+            if (held && Input.GetMouseButtonDown(0) && 选中扇区 == SpaceSector && 已解锁扇区(SpaceSector))
+            { 关闭(true); waitingForRelease = true; return; }
             if (!held) 关闭(true);
         }
     }
@@ -98,22 +104,33 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
         return Mathf.FloorToInt(angle / step);
     }
     public static TraversalAction 扇区动作(int index)
-        => index == FlightSector ? TraversalAction.Flight : index == MountSector ? TraversalAction.Mount : TraversalAction.None;
+        => index == FlightSector ? TraversalAction.Flight : index == MountSector ? TraversalAction.Mount
+        : index == PressureSector ? TraversalAction.Pressure : index == CloneSector ? TraversalAction.Clone
+        : index == SpaceSector ? TraversalAction.SpaceShift : TraversalAction.None;
+    public bool 已解锁扇区(int index)
+    {
+        var action = 扇区动作(index);
+        if (action == TraversalAction.Flight || action == TraversalAction.Mount) return true;
+        string id = action == TraversalAction.Pressure ? CultivationPassiveAbilities.PressureId
+            : action == TraversalAction.Clone ? CultivationPassiveAbilities.CloneId
+            : action == TraversalAction.SpaceShift ? CultivationPassiveAbilities.SpaceId : null;
+        return id != null && CultivationPassiveAbilities.Find(controller.数据, id);
+    }
     public void 更新指针(Vector2 screenPoint)
     {
         if (!已打开) return;
         if (!pointerMoved && (screenPoint - pressPoint).sqrMagnitude > 36) pointerMoved = true;
         if (!pointerMoved) return;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(wheel, screenPoint, null, out var local);
-        选中扇区 = 扇区位置(local);
-        RefreshLabels();
+        int selection = 扇区位置(local);
+        if (selection != 选中扇区) { 选中扇区 = selection; RefreshLabels(); }
     }
     public void 关闭(bool execute)
     {
         if (!已打开) return;
         var action = 扇区动作(选中扇区);
         // 请求先检查其他UI，忽略本轮盘自己的输入锁；执行后释放锁。
-        if (execute && action != TraversalAction.None) controller.请求(action, this);
+        if (execute && action != TraversalAction.None && 已解锁扇区(选中扇区)) controller.请求(action, this);
         已打开 = false;
         group.blocksRaycasts = false;
         UiEscRegistry.SetSceneInputBlocked(this, false); UiEscRegistry.NotifyClosed();
@@ -133,6 +150,8 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
     void LateUpdate()
     {
         if (!canvasObject || !canvasObject.activeSelf) return;
+        if (已打开 && Time.unscaledTime >= nextLabelRefresh)
+        { nextLabelRefresh = Time.unscaledTime + .2f; RefreshLabels(); }
         float dt = Mathf.Min(.05f, Time.unscaledDeltaTime), blend = 1 - Mathf.Exp(-dt * 18);
         opacity = Mathf.Lerp(opacity, 已打开 ? 1 : 0, blend); group.alpha = opacity;
         if (!已打开 && opacity < .015f) { canvasObject.SetActive(false); opacity = 0; return; }
@@ -142,7 +161,7 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
             var slot = slots[i];
             slot.hover = Mathf.Lerp(slot.hover, 已打开 && 选中扇区 == i ? 1 : 0, blend);
             slot.root.localScale = Vector3.one * (1 + slot.hover * .055f);
-            bool populated = 扇区动作(i) != TraversalAction.None;
+            bool populated = 已解锁扇区(i);
             bool available = populated && controller.可用(扇区动作(i), out _);
             slot.paper.color = Color.Lerp(new Color(.78f, .80f, .75f, populated ? (available ? .8f : .38f) : .32f),
                 new Color(.88f, .88f, .80f, .92f), slot.hover);
@@ -160,13 +179,28 @@ public sealed class PlayerTraversalWheel : MonoBehaviour
         var mount = data ? data.当前坐骑 : null;
         slots[FlightSector].icon.sprite = flight && flight.图标 ? flight.图标 : InkUITheme.Load("Icons/icon-divine-ability");
         slots[MountSector].icon.sprite = InkUITheme.Load("Icons/icon-mount");
+        for (int i = 0; i < slots.Length; i++)
+        {
+            bool unlocked = 已解锁扇区(i); slots[i].icon.enabled = unlocked;
+            if (i == FlightSector || i == MountSector) continue;
+            string id = i == PressureSector ? CultivationPassiveAbilities.PressureId : i == CloneSector ? CultivationPassiveAbilities.CloneId : i == SpaceSector ? CultivationPassiveAbilities.SpaceId : null;
+            var passive = id == null ? null : CultivationPassiveAbilities.Find(data, id);
+            slots[i].icon.sprite = passive ? passive.图标 : null;
+            slots[i].label.text = passive ? i == PressureSector ? "威压" : i == CloneSector ? "化身" : "腾挪" : "";
+        }
         var action = 扇区动作(选中扇区);
-        if (action == TraversalAction.None)
+        if (action == TraversalAction.None || !已解锁扇区(选中扇区))
         {
             title.text = 选中扇区 < 0 ? "行　游" : "";
             subtitle.text = ""; centerIcon.enabled = false; return;
         }
         bool available = controller.可用(action, out string reason);
+        if (action == TraversalAction.Pressure || action == TraversalAction.Clone || action == TraversalAction.SpaceShift)
+        {
+            title.text = action == TraversalAction.Pressure ? "灵势威压" : action == TraversalAction.Clone ? "身外化身" : "空间腾挪";
+            subtitle.text = available ? action == TraversalAction.SpaceShift ? "选择目的地" : "压制锁定目标" : reason;
+            centerIcon.sprite = slots[选中扇区].icon.sprite; centerIcon.enabled = centerIcon.sprite; return;
+        }
         bool active = action == TraversalAction.Flight ? (controller.御风?.御风中 ?? false) : (controller.骑手?.已骑稳 ?? false);
         title.text = action == TraversalAction.Flight ? "凭虚御风" : mount ? mount.DisplayName : "坐骑";
         subtitle.text = available ? (active ? (action == TraversalAction.Flight ? "落地" : "下坐骑") : (action == TraversalAction.Flight ? "御风" : "骑乘")) : reason;

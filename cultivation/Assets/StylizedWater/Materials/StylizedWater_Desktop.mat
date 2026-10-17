@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: StylizedWater_Desktop
+  m_Shader: {fileID: 4800000, guid: 86282aca396e36c47943004c99dcacfd, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _EMISSION
+  m_LightmapFlags: 0
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Normals:
+        m_Texture: {fileID: 2800000, guid: 8e8c3e7a2e1813e43947c6651547f567, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Reflection:
+        m_Texture: {fileID: 8900000, guid: c45765937ebc6e1469253300f2f25cdf, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Shadermap:
+        m_Texture: {fileID: 2800000, guid: 119baba255c673746947e2d7276f7ef7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Cutoff: 0.5
+    - _Depth: 5.2
+    - _Depthdarkness: 0.5
+    - _Fresnelexponent: 4
+    - _Glossiness: 1
+    - _RefractionAmount: 0.1
+    - _RimSize: 2
+    - _Rimfalloff: 0.25
+    - _Rimtiling: 2
+    - _SurfaceHighlight: 0.056
+    - _SurfaceHightlighttiling: 0.75
+    - _Surfacehightlightsize: 0
+    - _Tesselation: 0.1
+    - _Tiling: 0.9
+    - _Transparency: 0.556
+    - _Wavesspeed: 0.75
+    - _Wavesstrength: 0.66
+    - _Worldspacetiling: 0
+    m_Colors:
+    - _FresnelColor: {r: 1, g: 1, b: 1, a: 0.5019608}
+    - _RimColor: {r: 1, g: 1, b: 1, a: 0.941}
+    - _WaterColor: {r: 0, g: 0.503546, b: 1, a: 1}
+  m_BuildTextureStacks: []

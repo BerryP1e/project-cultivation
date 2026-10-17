@@ -106,7 +106,6 @@ public static class InkUI素材导入
         || 名.Contains("bar-") || 名.Contains("tab-");
 
     [MenuItem("修仙/UI/导入 InkUI 素材（Sprite + 九宫格）", false, 900)]
-    [MenuItem("Cultivation/Import InkUI Sprites", false, 900)]
     public static void 导入()
     {
         if (!AssetDatabase.IsValidFolder(根))

@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!1 &8844861097508717938
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 7
+  m_Component:
+  - component: {fileID: 975531091657119381}
+  - component: {fileID: 8772966836486212299}
+  m_Layer: 0
+  m_HasEditorInfo: 1
+  m_Name: 9f8c09a198ba92aa9c5607740f16881a
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &975531091657119381
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8844861097508717938}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8772966836486212299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8844861097508717938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c2d9019ff50d6d428267809ea31e4d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  "\u534A\u5F84": 12
+  "\u989C\u8272": {r: 1, g: 0.35, b: 0.25, a: 1}
+  "\u5237\u602A\u7EC4": 
+  "\u5237\u602A\u7EC4\u8D44\u4EA7": {fileID: 0}
+  "\u602A\u7269\u7B49\u7EA7": 1
+  "\u5C42\u5185\u500D\u7387": 1
+  "\u8865\u6B63\u8868": {fileID: 0}
+  "\u540D\u5B57\u5E26\u7B49\u7EA7": 0
+  "\u6570\u91CF\u500D\u7387": 1
+  "\u5237\u602A\u70B9": []
+  "\u5237\u602A\u7236\u8282\u70B9": {fileID: 0}
+  "\u65E0\u70B9\u6563\u5F00\u534A\u5F84": 6
+  "\u91CD\u751F\u5EF6\u8FDF": 10
+  "\u9996\u5237\u5EF6\u8FDF": 0
+  "\u5B58\u6D3B\u4E0A\u9650": 0
+  "\u81EA\u52A8\u5F00\u59CB": 0

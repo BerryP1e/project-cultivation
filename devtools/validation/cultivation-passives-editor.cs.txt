@@ -1,0 +1,24 @@
+using UnityEditor;
+using System.IO;
+var report = new List<string>();
+void Check(bool ok,string text) { if(!ok)throw new Exception(text);report.Add(text); }
+var catalog = Resources.Load<PanelDatabase>("面板/面板库"); var books=Resources.Load<QuestDatabase>("任务/任务库");
+foreach(var key in CultivationPassiveAssets.Keys.Concat(new[]{"chedian_yeting"})) {
+ var id="ability_"+key;var skill=catalog.神通.Single(x=>x.神通id==id);
+ var book=books.物品库.Single(x=>x.物品id==(key=="chedian_yeting"?"item_":"item_passive_")+id);
+ Check(skill.图标&&book.图标==skill.图标,"Dedicated icon is shared by skill and learning item: "+key);
+ if(key!="chedian_yeting")Check(book.使用效果 is 学被动神通效果 learn&&learn.神通==skill,"Learning reference exists in runtime dependency closure: "+key);
+ var path=AssetDatabase.GetAssetPath(skill.图标);var importer=(TextureImporter)AssetImporter.GetAtPath(path);
+ Check(importer.textureType==TextureImporterType.Sprite&&!importer.mipmapEnabled&&importer.maxTextureSize==512,"Sprite import is bounded and readable on HUD: "+key);
+ var tex=new Texture2D(2,2);try {
+  tex.LoadImage(File.ReadAllBytes(path));var pixels=tex.GetPixels32();int visible=pixels.Count(x=>x.a>32),empty=pixels.Count(x=>x.a==0);
+  Check(visible>pixels.Length*.1f&&empty>pixels.Length*.05f,"Art has a real transparent background and visible subject: "+key);
+ } finally {Object.DestroyImmediate(tex);}
+}
+var cycle=catalog.神通.OfType<PassiveDivineAbility>().Single(x=>x.神通id==CultivationPassiveAbilities.CycleId);
+Check(cycle.灵力回复增幅==1&&cycle.气血回复增幅==0,"Self-cycle uses spirit percentage only");
+var dual=catalog.神通.OfType<PassiveDivineAbility>().Single(x=>x.神通id=="ability_xingming_shuangxiu");Check(dual.气血回复增幅==1&&dual.灵力回复增幅==1,"Dual cultivation uses two percentage gains");
+Check(catalog.神通.OfType<PassiveDivineAbility>().Single(x=>x.神通id=="ability_lianxu_rudao").神识增幅==1,"Sense percentage is data-driven");
+Check(catalog.神通.OfType<PassiveDivineAbility>().Single(x=>x.神通id=="ability_neihua_shijie").介绍.Contains("预留"),"Inner-world skill clearly describes reserved mechanics");
+File.WriteAllText("../.local/diagnostics/cultivation-passives-editor-report.txt","PASS "+report.Count+"\n"+string.Join("\n",report));
+return "PASS "+report.Count;

@@ -15,7 +15,18 @@ public static class SaveSystem
     /// <summary>存档槽位数。UI 上就是一排格子，改这里 UI 会自动跟着变</summary>
     public const int 槽位数 = 5;
 
-    public static string 存档目录 => Path.Combine(Application.persistentDataPath, "saves");
+    public const string 验证目录键 = "Cultivation.Validation.SaveDirectory";
+    public static string 存档目录
+    {
+        get
+        {
+#if UNITY_EDITOR
+            var isolated = UnityEditor.SessionState.GetString(验证目录键, "");
+            if (!string.IsNullOrEmpty(isolated)) return isolated;
+#endif
+            return Path.Combine(Application.persistentDataPath, "saves");
+        }
+    }
 
     public static string 槽位路径(int 槽位) => Path.Combine(存档目录, "slot_" + 槽位 + ".json");
 
@@ -142,7 +153,7 @@ public static class SaveSystem
         {
             角色名 = string.IsNullOrEmpty(角色名) ? "无名散修" : 角色名,
             境界 = "炼气期一层",
-            场景名 = "village",
+            场景名 = "3C_Testbed",
             位置 = Vector3.zero,
             朝向Y = 0f,
             当前气血 = -1f,      // -1 = 用满值
@@ -169,6 +180,7 @@ public static class SaveSystem
         //   「修仙/物品/把能力物品塞进当前场景背包」那个调试菜单），
         //   这里显式清一次，保证新角色背包里什么都没有。
         面板内容全清(数据);
+        HomeFacilityStarter.准备新档(数据);
 
         return 数据;
     }
@@ -256,6 +268,7 @@ public static class SaveSystem
         // 【版本 13 起】宗门贡献（兑换用货币）。加法字段：老档读出来是 0，不用版本门槛
         宗门贡献.从存档设置(数据.是空的 ? 0 : 数据.宗门贡献);
         宗门任务.导入(数据.是空的 ? "" : 数据.宗门任务记录);
+        TowerRealmTreasure.恢复返回点(数据.镇妖阁返回点);
 
         // 【版本 14 起】日常清单。⚠️ **不能在这里直接写**：
         //   本方法是游戏场景加载**之前**跑的（同 364 行那条教训），那时
@@ -278,6 +291,10 @@ public static class SaveSystem
         {
             Debug.Log("[存档] 正在跨场景接力 → 跳过「按存档位置摆放玩家」（落点由切场景过渡负责）");
         }
+        else if (!string.IsNullOrEmpty(数据.场景名) && !string.Equals(数据.场景名, 玩家.scene.name, StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("[存档] 当前直接运行场景与存档场景不同，保留当前出生点，不跨场景套用坐标");
+        }
         else if (数据.位置有效)
         {
             玩家.transform.position = 数据.位置;
@@ -287,7 +304,8 @@ public static class SaveSystem
             // 兼容版本 6 及以前的旧档（那时没有 位置有效 标志，用 zero 当哨兵）
             玩家.transform.position = 数据.位置;
         }
-        玩家.transform.rotation = Quaternion.Euler(0f, 数据.朝向Y, 0f);
+        if (!跨场景数据.正在接力 && (string.IsNullOrEmpty(数据.场景名) || string.Equals(数据.场景名, 玩家.scene.name, StringComparison.OrdinalIgnoreCase)))
+            玩家.transform.rotation = Quaternion.Euler(0f, 数据.朝向Y, 0f);
 
         // 读档替换完整外观记录；场景接力保留会话，不能用上次磁盘快照覆盖新获得的衣服。
         if (!跨场景数据.正在接力)
@@ -384,12 +402,14 @@ public static class SaveSystem
             // 背包 / 法宝 / 灵阵 / 坐骑 / 技能槽 / 停用被动 / 已获真灵 / 经验（版本 5）
             恢复面板(数据, 面板数据);
 
-            // ★ 任务进度不能在这里恢复：`应用到角色` 是游戏场景加载**之前**跑的，
-            //   那时 任务管理器 还不存在。挂起来，等它的 Start() 来取。
-            待恢复任务进度 = 数据.任务进度;
-            待恢复对话标记 = 数据.对话标记;
-            if (!string.IsNullOrEmpty(待恢复任务进度) || !string.IsNullOrEmpty(待恢复对话标记))
-                Debug.Log("[存档] 主线进度已挂起，等 任务管理器 就绪后恢复：[" + 待恢复任务进度 + "]");
+        }
+
+        // 丹方、炼成记录等通用标记独立恢复，不再等待已退役的主线管理器。
+        // 普通传送沿用当前会话，不能用旧存档覆盖刚学会的内容。
+        if (!(跨场景数据.正在接力 && 跨场景数据.HasSnapshot))
+        {
+            对话标记.清空();
+            对话标记.添加一批(数据.对话标记);
         }
 
         // ---- 镇妖塔层数（版本 6）----
@@ -446,15 +466,14 @@ public static class SaveSystem
         //   以前这个字段只在建新档时写过一次 "village"，之后永远是它 ——
         //   于是不管在太虚宗 / 宗门野外 / 镇妖塔存的档，读档**一律回古古镇**，
         //   而 `位置` 是那个场景的坐标 ⇒ 人被扔到古古镇里一个毫不相干的地点。
-        var 场 = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        var 玩家 = GameObject.Find("Player");
+        if (玩家 == null) return;
+        var 场 = 玩家.scene;
         if (!string.IsNullOrEmpty(场.name))
         {
             数据.场景名 = 场.name;
             Debug.Log("[存档] 记录所在场景：" + 数据.场景名);
         }
-
-        var 玩家 = GameObject.Find("Player");
-        if (玩家 == null) return;
 
         数据.位置 = 玩家.transform.position;
         数据.位置有效 = true;                     // ★ 显式标志，不再拿 Vector3.zero 当哨兵
@@ -523,16 +542,8 @@ public static class SaveSystem
         // ---- 背包 / 装备（版本 5）----
         if (战阵面板 != null) 采集面板(数据, 战阵面板);
 
-        // ---- 主线进度 + 对话标记（版本 5）----        // ⚠ 任务进度必须在这里抓：任务管理器会随场景重建，它的静态状态也只在运行时有意义
-        var 任务 = UnityEngine.Object.FindObjectOfType<任务管理器>();
-        if (任务 != null)
-        {
-            数据.任务进度 = 任务.导出进度();
-        }
-        else if (string.IsNullOrEmpty(数据.任务进度))
-        {
-            数据.任务进度 = "";     // 场景里没有任务管理器（例如在主菜单存档）——保留旧值
-        }
+        // 主线字段保留序列化结构但不再写进度；丹方等通用标记继续保存。
+        数据.任务进度 = "";
         var 标记 = 对话标记.全部标记();
         数据.对话标记 = 标记 != null && 标记.Length > 0 ? string.Join(";", 标记) : "";
 
@@ -570,6 +581,7 @@ public static class SaveSystem
         // 宗门贡献（兑换用货币）—— 静态值，直接抄进存档
         数据.宗门贡献 = 宗门贡献.当前;
         数据.宗门任务记录 = 宗门任务.导出();
+        数据.镇妖阁返回点 = TowerRealmTreasure.导出返回点();
 
         // 日常清单（版本 14）—— 同样从静态实例抄
         var 日常 = 日常循环.取();
@@ -590,6 +602,7 @@ public static class SaveSystem
     static void 采集面板(SaveData 数据, UIPanelData 面板)
     {
         面板.EnsureLists();
+        数据.已访传送点 = SpatialTravel.Copy(面板.已访传送点);
 
         数据.法则碎片 = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(new SaveData { 法则碎片 = 面板.法则碎片 })).法则碎片;
         数据.法则装备 = new List<string>(面板.法则装备);
@@ -651,6 +664,7 @@ public static class SaveSystem
         bool 保留背包快照 = 跨场景数据.正在接力 && 跨场景数据.HasSnapshot;
         if (!保留背包快照)
         {
+            面板.已访传送点 = SpatialTravel.Copy(数据.已访传送点);
             LawFragmentSystem.恢复(面板, 数据.法则碎片, 数据.法则装备);
             面板.法则精粹 = System.Math.Max(0, 数据.法则精粹);
             面板.炉中法则 = (数据.炉中法则 ?? new List<string>()).Where(id => 面板.法则碎片.Exists(x => x.id == id) && !面板.法则装备.Contains(id)).Distinct().ToList();
@@ -792,27 +806,10 @@ public static class SaveSystem
         return null;
     }
 
-    // ---------------------------------------------------------------- 任务进度的延迟恢复
+    // ---------------------------------------------------------------- 今日清单的延迟恢复
 
     /// <summary>
-    /// 挂起的任务进度 / 对话标记。`应用到角色` 跑在游戏场景加载之前，
-    /// 那时 任务管理器 还不存在，所以先存这里，由 任务管理器.Start() 来取
-    /// （见 <see cref="取挂起的进度"/>）。
-    /// </summary>
-    public static string 待恢复任务进度 = "";
-    public static string 待恢复对话标记 = "";
-
-    /// <summary>任务管理器就绪后调它，取走挂起的进度（取完即清，只恢复一次）</summary>
-    public static void 取挂起的进度(out string 任务进度, out string 对话标记)
-    {
-        任务进度 = 待恢复任务进度;
-        对话标记 = 待恢复对话标记;
-        待恢复任务进度 = "";
-        待恢复对话标记 = "";
-    }
-
-    /// <summary>
-    /// 挂起的「今日清单」。理由同 <see cref="待恢复任务进度"/>：
+    /// 挂起的「今日清单」，由日常循环自己领取：
     /// `应用到角色` 跑在游戏场景加载**之前**，`日常循环` 那时还不存在
     /// （`取()` 是 null）—— 实测"直接 if (取() != null) 导入"会**静默跳过**。
     /// 所以挂起，由它自己的 `Update` 起来时取走。

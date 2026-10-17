@@ -9,7 +9,6 @@ IEnumerator Run()
 {
     var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
     foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
-    foreach(var quest in UnityEngine.Object.FindObjectsOfType<任务管理器>())quest.enabled=false;
     var clock=时间管理器.取();clock.倍率=0;clock.暂停=false;
     var manager=摆设.取();var prior=manager.导出();var farm=灵田.取();var previousFarm=farm.导出();var bag=UnityEngine.Object.FindObjectOfType<UIPanelData>();
     var oldItems=new List<ItemDefinition>(bag.物品);bag.物品=new List<ItemDefinition>();var db=QuestDatabase.取();var catalog=HomeAnimalCatalog.取();

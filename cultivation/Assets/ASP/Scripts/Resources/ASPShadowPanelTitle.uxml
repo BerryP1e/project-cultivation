@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Foldout text="Foldout">
+        <ui:GroupBox name="GroupBox" style="justify-content: space-between; align-items: stretch; flex-direction: column; align-self: stretch; white-space: normal; text-overflow: clip; -unity-text-align: upper-left; border-top-width: 0; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;">
+            <ui:VisualElement style="flex-grow: 1; align-items: auto; justify-content: space-between; align-self: auto; flex-direction: row; height: auto; width: auto;">
+                <ui:Label tabindex="-1" text="Name&#10;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Name" view-data-key="Name" style="max-width: none; width: 30%; align-items: auto; justify-content: flex-start; align-self: center; -unity-text-align: upper-center; font-size: 18px; -unity-font-style: bold;" />
+                <ui:Label tabindex="-1" text="Action&#10;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Action" view-data-key="Name" style="max-width: none; width: 30%; align-items: auto; justify-content: space-between; align-self: center; -unity-text-align: upper-right; -unity-font-style: bold; font-size: 18px; padding-right: 20px;" />
+            </ui:VisualElement>
+        </ui:GroupBox>
+    </ui:Foldout>
+</ui:UXML>

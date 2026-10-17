@@ -1,0 +1,22 @@
+using System.IO;
+using System.Collections;
+IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Requires Play");
+for(int i=0;i<3;i++)yield return null;
+var camera=Camera.main;
+var grade=camera.GetComponent<GameGlobalGrade>();
+if(!grade)throw new Exception("Grade missing");
+var before=JsonUtility.ToJson(grade);var oldTime=Time.timeScale;var oldTarget=camera.targetTexture;
+var output=Path.GetFullPath(Path.Combine(Application.dataPath,"../../.local/diagnostics"));Directory.CreateDirectory(output);
+var rt=new RenderTexture(1280,800,24,RenderTextureFormat.ARGB32);rt.Create();
+void Capture(string name){camera.targetTexture=rt;camera.Render();var prior=RenderTexture.active;RenderTexture.active=rt;var pixels=new Texture2D(1280,800,TextureFormat.RGB24,false);pixels.ReadPixels(new Rect(0,0,1280,800),0,0);pixels.Apply();File.WriteAllBytes(Path.Combine(output,name+".png"),pixels.EncodeToPNG());RenderTexture.active=prior;Object.Destroy(pixels);}
+try{
+Time.timeScale=0;
+Capture("world-grade-original");
+grade.Tonemap强度=.55f;grade.Tonemap白点=7;grade.曝光=1.20f;grade.饱和度=1.08f;grade.染色强度=.06f;grade.暗部=new Color(.022f,.025f,.029f,0);grade.对比度=1.03f;grade.墨阶强度=.15f;grade.留白强度=.10f;grade.纸纹强度=.055f;
+Capture("world-grade-clear");
+Debug.Log("Same-camera grade comparison saved. Outline remains enabled="+camera.GetComponent<GameGlobalOutline>().enabled);
+Debug.Log("Actual ambient="+RenderSettings.ambientMode+" sky="+(RenderSettings.skybox?RenderSettings.skybox.name:"none")+" probe="+RenderSettings.ambientProbe[0,0]+" sun="+(RenderSettings.sun?RenderSettings.sun.intensity:0));
+}finally{JsonUtility.FromJsonOverwrite(before,grade);Time.timeScale=oldTime;camera.targetTexture=oldTarget;rt.Release();Object.Destroy(rt);}
+}
+return Run();

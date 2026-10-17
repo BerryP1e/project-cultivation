@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a840fe3bfeae21d4aa90a84ddc52e9b3, type: 3}
+  m_Name: 263cdead365f6a84688829b780b9f0ea
+  m_EditorClassIdentifier: 
+  revision: 1
+  sourceHash: 4e76948d20926383d3a1e3ceadaaacb0
+  family: bamboo
+  prefab: {fileID: 1755403219413259734, guid: bdb139c2c2892ac4195b9723b3fdc7bc, type: 3}
+  points:
+  - {x: -1, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  directions:
+  - {x: -1, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  groundHalfWidth: 0.08

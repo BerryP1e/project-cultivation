@@ -26,7 +26,7 @@ public static class NpcAiCleanup
 {
     const string Npc根 = "Assets/resources/NPC";
 
-    [MenuItem("Cultivation/NPC 批量/检查（还剩什么组件）")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 批量/检查（还剩什么组件）")]
     public static void Check()
     {
         var 全部 = 收集();
@@ -55,7 +55,7 @@ public static class NpcAiCleanup
         Debug.Log(sb.ToString());
     }
 
-    [MenuItem("Cultivation/NPC 批量/撤掉 AI（保留基础功能）")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 批量/撤掉 AI（保留基础功能）")]
     public static void Remove()
     {
         var 全部 = 收集();

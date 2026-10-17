@@ -1,6 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
 
-public enum TraversalAction { None, Flight, Mount }
+public enum TraversalAction { None, Flight, Mount, Pressure, Clone, SpaceShift }
 
 /// <summary>行游指令复用御风/骑乘状态机。装备可共存，切换必须等另一流程落地完成。</summary>
 [DisallowMultipleComponent]
@@ -39,11 +39,26 @@ public sealed class PlayerTraversalController : MonoBehaviour
     public bool 可用(TraversalAction action, out string reason)
     {
         reason = "";
-        if (action != TraversalAction.Flight && action != TraversalAction.Mount) return false;
+        if (action == TraversalAction.None) return false;
         if (!Alive) { reason = "无法使用"; return false; }
         if (ActionBusy) { reason = "动作进行中"; return false; }
         if (Transitioning) { reason = "正在切换"; return false; }
         var data = 数据;
+        if (action == TraversalAction.Pressure)
+        {
+            var passives = GetComponent<CultivationPassiveAbilities>();
+            if (!passives) { reason = "尚未启用灵势威压"; return false; }
+            return passives.CanPressure(out reason);
+        }
+        if (action == TraversalAction.Clone || action == TraversalAction.SpaceShift)
+        {
+            if (!CultivationPassiveAbilities.Find(data, action == TraversalAction.Clone ? CultivationPassiveAbilities.CloneId : CultivationPassiveAbilities.SpaceId))
+            { reason = "尚未启用"; return false; }
+            if (action == TraversalAction.Clone) { reason = "身外化身暂未开放"; return false; }
+            if (黑幕字幕.有幕在显示 || DialogueUI.正在显示 || (GetComponent<演出锁>()?.正在锁 ?? false))
+            { reason = "当前无法腾挪"; return false; }
+            return true;
+        }
         if (action == TraversalAction.Flight)
         {
             if (御风 && 御风.御风中) return true;
@@ -73,6 +88,8 @@ public sealed class PlayerTraversalController : MonoBehaviour
         string reason = "";
         if (UiEscRegistry.SceneInputBlockedByOthers(inputOwner) || !可用(action, out reason))
         { if (!string.IsNullOrEmpty(reason)) 数据?.ShowHint(reason); return false; }
+        if (action == TraversalAction.Pressure) return GetComponent<CultivationPassiveAbilities>().Pressure();
+        if (action == TraversalAction.SpaceShift) { UISpatialTravelMenu.Open(this, inputOwner as PlayerTraversalWheel); return true; }
         if (action == TraversalAction.Flight)
         {
             if (御风 && 御风.御风中) { 御风.切换(); return true; }
@@ -107,6 +124,7 @@ public sealed class PlayerTraversalController : MonoBehaviour
     }
     void Update()
     {
+        SpatialTravel.CheckArrival(transform, 数据);
         if (pending == TraversalAction.None) return;
         if (!Alive || Time.time > deadline || !数据 || GetComponent<PlayerController>()?.isActiveAndEnabled != true)
         { 取消待切换(); return; }

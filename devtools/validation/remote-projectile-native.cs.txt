@@ -1,0 +1,48 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires save isolation");
+var owner=GameObject.Find("Player").GetComponent<ActiveSkillCaster>();
+bool done=false;Exception failure=null;var report=new List<string>();
+void Check(bool ok,string text){if(!ok)throw new Exception(text);report.Add(text);}
+IEnumerator Native(){
+ var origin=owner.transform.position+Vector3.up*2;
+ var target=new GameObject("ProjectileQA_MovingTarget");
+ try{
+  foreach(float speed in new[]{9f,18f,30f}){
+   target.transform.position=origin+new Vector3(0,1,65);
+   var bolt=NpcProjectile.发射("CombatVFX/Projectiles/ProjectilesFX/VFX_Prefabs/Projectiles_Particles/VFX_Priest_Projectile_Only",origin,target.transform.position,speed,.65f,0,0,null);
+   bolt.设置追踪飞行(target.transform,speed,720);var core=bolt.GetComponent<ParticleSystem>();var trail=bolt.transform.Find("Trail").GetComponent<ParticleSystem>();
+   var cache=new ParticleSystem.Particle[8];float born=Time.time;
+   try{
+    for(int frame=0;frame<42;frame++){
+     target.transform.position=origin+new Vector3(Mathf.Sin((Time.time-born)*4)*20,1,65);
+     yield return new WaitForEndOfFrame();if(frame<2)continue;
+     foreach(var ps in new[]{core,trail}){
+      int count=ps.GetParticles(cache);Check(count==1,"one native body particle speed="+speed+" frame="+frame+" "+ps.name);
+      Check(Vector3.Distance(cache[0].position,bolt.transform.position)<.055f,"body shares real flight position speed="+speed+" frame="+frame+" "+ps.name);
+     }
+    }
+    var mesh=new Mesh();core.GetComponent<ParticleSystemRenderer>().BakeTrailsMesh(mesh,Camera.main,true);
+    Check(mesh.vertexCount>=8&&mesh.bounds.size.magnitude>.4f,"actual native trail mesh generated through turns speed="+speed);
+    Check(mesh.vertices.All(v=>!float.IsNaN(v.x)&&!float.IsInfinity(v.x)),"trail vertices remain finite speed="+speed);UnityEngine.Object.Destroy(mesh);
+   }finally{if(bolt)UnityEngine.Object.Destroy(bolt.gameObject);}
+  }
+  var slow=NpcProjectile.发射("CombatVFX/Projectiles/ProjectilesFX/VFX_Prefabs/Projectiles_Particles/VFX_Priest_Projectile_Only",origin,origin+Vector3.forward*70,4,.65f,0,0,null);
+  try{yield return new WaitForSeconds(3.1f);yield return new WaitForEndOfFrame();var cache=new ParticleSystem.Particle[8];foreach(var ps in new[]{slow.GetComponent<ParticleSystem>(),slow.transform.Find("Trail").GetComponent<ParticleSystem>()}){int count=ps.GetParticles(cache);Check(count==1&&Vector3.Distance(cache[0].position,slow.transform.position)<.055f,"long flight outlives original two-second burst: "+ps.name);}}
+  finally{if(slow)UnityEngine.Object.Destroy(slow.gameObject);}
+  var remote=CombatVfxPipeline.配置.查找("remote_hit");Check(remote.灯光强度倍率>=.15f&&remote.灯光最大半径==1.6f,"hit flash lighting restored with bounded world radius");
+  var rain=Resources.Load<GameObject>("Abilities/FallingSpells/MeteorRain").GetComponent<FallingSpellPattern>();
+  Check(rain.飞行粒子.GetComponent<ParticleSystemRenderer>().renderMode==ParticleSystemRenderMode.Billboard,"fire rain has visible meteor bodies");
+  Check(rain.飞行粒子.subEmitters.subEmittersCount==3&&rain.飞行粒子.trails.enabled,"fire rain keeps all native subemitters and trail");
+  Check(Mathf.Approximately(rain.命中特效缩放,1.5f)&&Mathf.Approximately(CombatVfxPipeline.配置.查找("ability_huoyan_zhui_impact").缩放,1.5f),"fire rain hit scale agrees with maintained pattern");
+ }finally{UnityEngine.Object.Destroy(target);File.WriteAllLines("../.local/diagnostics/idle-refocus/projectile-report.txt",report);}
+}
+IEnumerator Guard(){var worker=Native();try{while(true){bool next=false;try{next=worker.MoveNext();}catch(Exception ex){failure=ex;break;}if(!next)break;yield return worker.Current;}}finally{(worker as IDisposable)?.Dispose();done=true;}}
+owner.StartCoroutine(Guard());
+IEnumerator Wait(){float limit=Time.realtimeSinceStartup+45;while(!done&&Time.realtimeSinceStartup<limit){EditorApplication.QueuePlayerLoopUpdate();UnityEditorInternal.InternalEditorUtility.RepaintAllViews();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Native projectile check timeout");Debug.Log("REMOTE_PROJECTILE_NATIVE_PASS "+report.Count);}
+return Wait();

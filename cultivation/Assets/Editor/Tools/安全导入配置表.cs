@@ -38,7 +38,6 @@ public static class 安全导入配置表
         面板库收集器.收集();
     }
     [MenuItem("修仙/工具/安全导入配置表（不动场景）", false, 950)]
-    [MenuItem("Cultivation/Safe Import Data Tables", false, 950)]
     public static void 导入()
     {
         // 先警告：有未保存的场景就先存（本工具只保住盘上的字节）

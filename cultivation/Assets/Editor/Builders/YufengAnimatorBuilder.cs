@@ -33,8 +33,7 @@ public static class YufengAnimatorBuilder
     const string SFwd = "Yufeng_Forward";
     const string SLand = "Yufeng_Land";
 
-    [MenuItem("修仙/构建凭虚御风动画状态")]
-    [MenuItem("Cultivation/Build Yufeng Animator")]
+    [MenuItem("修仙/动画/维护/构建凭虚御风动画状态")]
     public static void Build()
     {
         var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);

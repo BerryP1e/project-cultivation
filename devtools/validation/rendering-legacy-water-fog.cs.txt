@@ -1,0 +1,27 @@
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
+using VolumetricFogAndMist;
+var previous=SceneManager.GetActiveScene();
+var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);
+var lights=Object.FindObjectsOfType<Light>();var states=lights.Select(l=>l.enabled).ToArray();
+var materials=new System.Collections.Generic.List<Material>();
+try{
+SceneManager.SetActiveScene(scene);foreach(var l in lights)l.enabled=false;
+RenderSettings.ambientMode=AmbientMode.Flat;RenderSettings.ambientLight=new Color(.5f,.57f,.6f);
+var light=new GameObject("FogQA_Sun").AddComponent<Light>();light.type=LightType.Directional;light.transform.rotation=Quaternion.Euler(48,30,0);light.intensity=1.1f;light.cullingMask=1<<30;
+var ground=GameObject.CreatePrimitive(PrimitiveType.Cube);ground.transform.position=new Vector3(0,-.1f,0);ground.transform.localScale=new Vector3(20,.5f,14);var mat=new Material(Shader.Find("Standard"));materials.Add(mat);mat.color=new Color(.42f,.55f,.29f);ground.GetComponent<Renderer>().sharedMaterial=mat;
+var water=GameObject.CreatePrimitive(PrimitiveType.Plane);water.transform.position=new Vector3(0,-.4f,0);var surfaceMesh=Object.Instantiate(water.GetComponent<MeshFilter>().sharedMesh);surfaceMesh.vertices=surfaceMesh.vertices.Select(v=>v*12).ToArray();surfaceMesh.RecalculateBounds();water.GetComponent<MeshFilter>().sharedMesh=surfaceMesh;
+var waterMat=new Material(AssetDatabase.LoadAssetAtPath<Material>("Assets/StylizedWater/Materials/StylizedWater_Desktop.mat"));materials.Add(waterMat);water.GetComponent<Renderer>().sharedMaterial=waterMat;var waterController=water.AddComponent<StylizedWater>();waterController.getProperties();
+if(!waterController.shadermap || !waterController.normals)throw new Exception("Legacy water missing baked textures");
+if(waterController.hasSubstanceParams)throw new Exception("Removed generator still exposed");
+var camera=new GameObject("BuiltinFogWaterQA").AddComponent<Camera>();camera.enabled=false;camera.cullingMask=1<<30;camera.depthTextureMode=DepthTextureMode.Depth;camera.transform.position=new Vector3(17,13,-24);camera.transform.LookAt(new Vector3(0,0,8));camera.farClipPlane=150;
+var fog=camera.gameObject.AddComponent<VolumetricFog>();fog.density=.12f;fog.height=7;fog.distance=10;fog.distanceFallOff=.3f;fog.alpha=.75f;fog.color=new Color(.69f,.8f,.84f);fog.noiseScale=2;fog.enabled=false;
+foreach(var root in scene.GetRootGameObjects())foreach(var t in root.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+var rt=new RenderTexture(1000,650,24);rt.Create();camera.targetTexture=rt;
+void Capture(string name){camera.Render();var old=RenderTexture.active;RenderTexture.active=rt;var tex=new Texture2D(rt.width,rt.height,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,rt.width,rt.height),0,0);tex.Apply();File.WriteAllBytes("../.local/diagnostics/"+name+".png",tex.EncodeToPNG());RenderTexture.active=old;Object.DestroyImmediate(tex);}
+try{Capture("builtin-water");fog.enabled=true;Capture("builtin-water-fog");}finally{camera.targetTexture=null;rt.Release();Object.DestroyImmediate(rt);}
+Debug.Log("PASS old water baked texture editing; PASS old water render; PASS volumetric fog render (Built-in only).");
+}finally{foreach(var m in materials)Object.DestroyImmediate(m);for(int i=0;i<lights.Length;i++)if(lights[i])lights[i].enabled=states[i];SceneManager.SetActiveScene(previous);EditorSceneManager.CloseScene(scene,true);}

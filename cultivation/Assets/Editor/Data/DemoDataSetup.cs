@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -15,8 +15,7 @@ public static class DemoDataSetup
     const string DemoFolder = "Assets/DemoData";
     const string ScenePath = "Assets/Scenes/3C_Testbed.scene";
 
-    [MenuItem("修仙/一键初始化项目数据")]
-    [MenuItem("Cultivation/Setup Project Data")]
+    [MenuItem("修仙/配置表/初始化项目数据")]
     public static void Setup()
     {
         if (!AssetDatabase.IsValidFolder(DemoFolder))

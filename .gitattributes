@@ -1,0 +1,139 @@
+# Large source art in newly imported packages. Runtime files keep their normal paths.
+# Existing stable art history is not rewritten; install Git LFS before cloning/pulling.
+[attr]unity-lfs filter=lfs diff=lfs merge=lfs -text
+
+# Unity writes empty serialized values with a trailing space.
+*.unity whitespace=-blank-at-eol
+*.scene whitespace=-blank-at-eol
+*.asset whitespace=-blank-at-eol
+*.prefab whitespace=-blank-at-eol
+*.mat whitespace=-blank-at-eol
+*.meta whitespace=-blank-at-eol
+*.controller whitespace=-blank-at-eol
+*.anim whitespace=-blank-at-eol
+*.csv whitespace=cr-at-eol
+*.md whitespace=cr-at-eol
+devtools/**/*.cs.txt whitespace=cr-at-eol
+
+# ASP
+"cultivation/Assets/ASP/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/ASP/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/ASP/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/ASP/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/ASP/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/ASP/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/ASP/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/ASP/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/ASP/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/ASP/**/*.[dD][dD][sS]" unity-lfs
+
+# CloudPack Smooth
+"cultivation/Assets/CloudPack Smooth/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/CloudPack Smooth/**/*.[dD][dD][sS]" unity-lfs
+
+# Rocks
+"cultivation/Assets/Rocks/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/Rocks/**/*.[dD][dD][sS]" unity-lfs
+
+# Stylized Far East
+"cultivation/Assets/Stylized Far East/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/Stylized Far East/**/*.[dD][dD][sS]" unity-lfs
+
+# Stylized Forest
+"cultivation/Assets/Stylized Forest/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/Stylized Forest/**/*.[dD][dD][sS]" unity-lfs
+
+# Stylized Grass Shader
+"cultivation/Assets/Stylized Grass Shader/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/Stylized Grass Shader/**/*.[dD][dD][sS]" unity-lfs
+
+# StylizedWater
+"cultivation/Assets/StylizedWater/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/StylizedWater/**/*.[dD][dD][sS]" unity-lfs
+
+# StylizedWater2
+"cultivation/Assets/StylizedWater2/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/StylizedWater2/**/*.[dD][dD][sS]" unity-lfs
+
+# VolumetricFog
+"cultivation/Assets/VolumetricFog/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/VolumetricFog/**/*.[dD][dD][sS]" unity-lfs
+
+# _AsianArchitecture
+"cultivation/Assets/_AsianArchitecture/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[jJ][pP][gG]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[jJ][pP][eE][gG]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[tT][iI][fF]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[tT][iI][fF][fF]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[eE][xX][rR]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[pP][sS][dD]" unity-lfs
+"cultivation/Assets/_AsianArchitecture/**/*.[dD][dD][sS]" unity-lfs
+
+cultivation/Assets/_AsianArchitecture/Scene.unity unity-lfs
+cultivation/Assets/WorldAuthoring/Materials/GroundTextureLayers.asset unity-lfs

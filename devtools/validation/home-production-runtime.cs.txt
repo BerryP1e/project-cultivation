@@ -11,7 +11,6 @@ IEnumerator Run()
     bool Near(float a,float b)=>Mathf.Abs(a-b)<.002f;
     var catalog=HomeAnimalCatalog.取();Check(catalog&&catalog.动物.Length==5,"runtime catalog loaded");
     foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
-    foreach(var quest in UnityEngine.Object.FindObjectsOfType<任务管理器>())quest.enabled=false;
     var clock=时间管理器.取();clock.暂停=true;
     var manager=摆设.取();var previous=manager.导出();
     var bag=UnityEngine.Object.FindObjectOfType<UIPanelData>();Check(bag,"actual runtime inventory");

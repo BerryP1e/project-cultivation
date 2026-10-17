@@ -1,0 +1,237 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Helmet1 1
+  m_Shader: {fileID: 4800000, guid: 55a54603fab88d940a3374f8ae9f78e8, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _EMISSION
+  - _RECEIVE_SHADOWS_OFF
+  - _SPECULAR_LIGHTING_ON
+  - _STYLE_STYLIZEPBR
+  m_InvalidKeywords:
+  - _HIDDEN
+  - _HIDDENTOGGLE_ON
+  - _HIDDEN_TOGGLE
+  - _OCCLUSIONMAP
+  - _OVERRIDEZTEST
+  - _USE_BRDF_SPECULAR_ON
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    QUEUE: Transparent
+    RenderType: Opaque
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaeMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaesMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: b32317acd69b05a44a52f0d5cc643953, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: 8049cfe1a61a27d4696e0d3d6854392a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FaceShadowMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HairHighlightMaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MatCapReflectionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OSMTexture:
+        m_Texture: {fileID: 2800000, guid: 5f123013813f24d498cee4eb87210152, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ramp:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampMap:
+        m_Texture: {fileID: 2800000, guid: e1222fe608b76fb4c9c0285878d24aae, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampOcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SSSRampMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecularMaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _StandardBrdfLut:
+        m_Texture: {fileID: 2800000, guid: 2d2452a279f7e25419493a46a1c5ee6c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AddPrecomputedVelocity: 0
+    - _AdvanceGroup: 0
+    - _AlphaClip: 0
+    - _AlphaToMask: 0
+    - _BRDFSpecularHighlights: 1
+    - _BakeGISource: 0
+    - _Blend: 0
+    - _BlendModePreserveSpecular: 1
+    - _BumpScale: 1
+    - _ClearCoatMask: 0
+    - _ClearCoatSmoothness: 0
+    - _Cull: 2
+    - _Cutoff: 0.5
+    - _DebugGI: 0
+    - _DepthRimLightOn: 0
+    - _DepthRimLightStrength: 0.1
+    - _DitherTexelSize: 4
+    - _Dithering: 0
+    - _DstBlend: 0
+    - _DstBlendAlpha: 0
+    - _EmissionToggle: 1
+    - _EnableSSSRamp: 0
+    - _EnvironmentReflections: 1
+    - _FOVShiftX: 0
+    - _FOVShiftY: 0
+    - _FaceShadowMapPow: 0.2
+    - _FaceShadowSmoothness: 0
+    - _FlattenAdditionalLighting: 0
+    - _Group0: 0
+    - _Group1: 0
+    - _Group2: 0
+    - _Group3: 0
+    - _Group4: 0
+    - _Group5: 0
+    - _Group6: 0
+    - _Group7: 0
+    - _GroupMatCap: 0
+    - _HairLightCameraRollInfluence: 0
+    - _HairLightFresnelMaskPower: 1
+    - _HairLightStrength: 0
+    - _HairUVSideCut: 0
+    - _IsUsingMatcapReflectMap: 0
+    - _IsUsingOSMTexture: 0
+    - _IsUsingRampOcclusionTexture: 0
+    - _METALLICSPECGLOSSMAP_Toggle: 1
+    - _MatCapReflectionStrength: 1
+    - _MatCapRollStabilize: 1
+    - _MaterialID: 3
+    - _Metallic: 0
+    - _NormalMapOn: 0
+    - _OffsetShadowDistance: 15
+    - _OutlineWidth: 0
+    - _OverrideLightDirToggle: 0
+    - _OverrideZTest: 1
+    - _PBRInfluenceDirectLighting: 0
+    - _PBRMetallic: 1
+    - _PBROcclusionStrength: 1
+    - _PBRSmoothness: 1
+    - _PBRsmoothness: 1
+    - _RampOcclusionStrength: 0
+    - _ReceiveASPShadow: 0
+    - _ReceiveOffsetedDepthMap: 0
+    - _ReceiveShadows: 0
+    - _RimLightAlign: -1
+    - _RimLightOn: 0
+    - _RimLightOverShadow: 0
+    - _RimLightSmoothness: 0.372
+    - _RimLightStrength: 0.251
+    - _ShadowColorMode: 0
+    - _Smoothness: 0
+    - _SmoothnessTextureChannel: 1
+    - _SpecularFalloff: 0.176
+    - _SpecularHighlights: 1
+    - _SpecularOverShadow: 0
+    - _SpecularSize: 0.939
+    - _SpecurlarOverShadow: 0
+    - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
+    - _Stencil: 0
+    - _StencilComp: 4
+    - _StencilFailOp: 0
+    - _StencilOp: 0
+    - _SurfaceTransparent: 0
+    - _SurfaceType: 0
+    - _WorkflowSpace: 1
+    - _ZTest: 4
+    - _ZWrite: 1
+    - _enum: 0
+    - _group0: 0
+    - _group1: 0
+    - _group2: 0
+    - _group3: 0
+    - _group4: 0
+    - _hiddenToggle: 1
+    - _hiddenToggle2: 0
+    - _isUsingOSMTexture: 1
+    - _style: 0
+    - _toggle: 0
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _DepthRimLightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FaceFrontDirection: {r: 0, g: 0, b: -1, a: 0}
+    - _FaceRightDirection: {r: -1, g: 0, b: 0, a: 0}
+    - _FaceUVCtrl: {r: 0, g: 1, b: 0, a: 0}
+    - _FakeLightEuler: {r: 180, g: 0, b: 0, a: 0}
+    - _HairLightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HairUVCtrl: {r: 0, g: 0, b: 1, a: 0}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 0}
+    - _OutlineDistancFade: {r: 50, g: 50, b: 0, a: 0}
+    - _OverrideGIColor: {r: 0.3773585, g: 0, b: 0, a: 1}
+    - _ReceivedShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    - _RimLightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SpecColor: {r: 1, g: 0, b: 0, a: 1}
+    - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SpecularFallOffColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+  m_BuildTextureStacks: []
+--- !u!114 &993712497987510295
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7

@@ -40,7 +40,7 @@ public static class AnimLoopSetup
         "Dig", "Fish", "Hit", "Skill", "Cast",
     };
 
-    [MenuItem("Cultivation/动画/检查循环设置")]
+    [MenuItem("修仙/动画/维护/动画/检查循环设置")]
     public static void Check()
     {
         var sb = new StringBuilder("[AnimLoopSetup] 循环设置检查\n");
@@ -70,7 +70,7 @@ public static class AnimLoopSetup
         Debug.Log(sb.ToString());
     }
 
-    [MenuItem("Cultivation/动画/设循环（全部 NPC 动画）")]
+    [MenuItem("修仙/NPC 资产/维护/动画/设循环（全部 NPC 动画）")]
     public static void Fix()
     {
         var 改过 = new List<string>();

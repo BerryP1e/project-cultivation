@@ -1,0 +1,91 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated saves");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();var player=actor.gameObject;
+bool done=false;Exception failure=null;var checks=new List<string>();
+void Check(bool condition,string message){if(!condition)throw new Exception(message);checks.Add(message);}
+IEnumerator Native(){
+ var previous=actor.当前外观;var movement=player.GetComponent<PlayerController>();bool enabled=movement.enabled;movement.enabled=false;
+ var position=player.transform.position;var rotation=player.transform.rotation;
+ var animator=actor.玩家视觉.GetComponentsInChildren<Animator>(true).First(a=>a.isHuman);
+ var controller=animator.runtimeAnimatorController;var clips=controller.animationClips;
+ var state=animator.cullingMode;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;animator.runtimeAnimatorController=null;
+ var graph=PlayableGraph.Create("GarmentNativeValidation");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+ var output=AnimationPlayableOutput.Create(graph,"NativePlayer",animator);graph.Play();
+ var cameraRoot=new GameObject("GarmentValidationCamera");var camera=cameraRoot.AddComponent<Camera>();camera.enabled=false;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.14f,.17f,.18f);camera.cullingMask=1<<31;camera.orthographic=true;camera.orthographicSize=1.35f;
+ var target=new RenderTexture(512,768,24);camera.targetTexture=target;
+ var layers=new Dictionary<GameObject,int>();foreach(var node in actor.玩家视觉.GetComponentsInChildren<Transform>(true)){layers[node.gameObject]=node.gameObject.layer;node.gameObject.layer=31;}
+ var baked=new Mesh();var baseline=new Mesh();Directory.CreateDirectory("../.local/diagnostics/outfit-cloth");
+ void Capture(string name,SkinnedMeshRenderer body,bool back=false){var centre=body.bounds.center+(back?Vector3.up*.3f:Vector3.zero);camera.orthographicSize=back?.95f:1.35f;camera.transform.position=centre+player.transform.TransformDirection(back?new Vector3(-3,.5f,-4):new Vector3(3,.35f,4));camera.transform.LookAt(centre);camera.Render();var old=RenderTexture.active;RenderTexture.active=target;var texture=new Texture2D(512,768,TextureFormat.RGB24,false);texture.ReadPixels(new Rect(0,0,512,768),0,0);texture.Apply();File.WriteAllBytes("../.local/diagnostics/outfit-cloth/"+name+".png",texture.EncodeToPNG());RenderTexture.active=old;UnityEngine.Object.Destroy(texture);}
+ try {
+  actor.装备(AppearanceDatabase.取().取("app_cunmin"));
+  var villageBody=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();
+  Check(villageBody.bones.Length==78&&!AppearanceDatabase.取().取("app_cunmin").衣服随动,"village outfit retains original body rig without sleeve simulation");
+  foreach(var mode in new[]{"Idle_Loop","Walk_Loop","Sprint_Loop"}){
+   var clip=clips.First(c=>c.name.Contains(mode));var playable=AnimationClipPlayable.Create(graph,clip);output.SetSourcePlayable(playable);playable.SetTime(.3);graph.Evaluate(0);
+   for(int f=0;f<3;f++)yield return new WaitForEndOfFrame();
+   Capture("app_cunmin-"+mode,villageBody);playable.Destroy();
+  }
+  foreach(var id in new[]{"app_player","app_foundation","app_goldencore"}) {
+   var outfit=AppearanceDatabase.取().取(id);Check(actor.装备(outfit),"equip "+id);
+   var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();var rig=body.GetComponent<AppearanceClothRig>();
+   int extra=id=="app_player"?24:42;
+   Check(rig&&rig.衣骨数==extra&&body.bones.Length==78+extra&&body.sharedMesh.bindposes.Length==78+extra,"actual weighted clothing rig "+id);
+   Check(id!="app_player"||outfit.衣服随动.衣骨.All(b=>!b.衣袖),"fitted sleeves never get cloth bones "+id);
+   Check(rig.头发骨数==(id=="app_player"?0:12),"long hair only on foundation and golden core "+id);
+   var skinWeights=body.sharedMesh.boneWeights;Check(skinWeights.All(w=>Mathf.Abs(w.weight0+w.weight1+w.weight2+w.weight3-1)<.0001f),"normalized garment weights "+id);
+   Check(body.sharedMesh.vertexCount==outfit.取模型().GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh.vertexCount,"preserved source geometry "+id);
+   var unchanged=skinWeights.Select((w,i)=>new{w,i}).Where(x=>x.w.boneIndex0<78&&x.w.boneIndex1<78&&x.w.boneIndex2<78&&x.w.boneIndex3<78).Select(x=>x.i).ToArray();
+   float maximum=0;
+   foreach(var mode in new[]{"Idle_Loop","Walk_Loop","Sprint_Loop","普攻_远程_01","御风八向_前"}) {
+    var clip=clips.First(c=>c.name.Contains(mode));var playable=AnimationClipPlayable.Create(graph,clip);playable.SetApplyFootIK(false);output.SetSourcePlayable(playable);rig.重置随动();
+    for(int frame=0;frame<36;frame++) {
+     playable.SetTime(frame/30f);graph.Evaluate(0);
+     if(id!="app_player"){var head=animator.GetBoneTransform(HumanBodyBones.Head);head.rotation=Quaternion.AngleAxis(Mathf.Sin(frame*.14f)*24,player.transform.up)*head.rotation;}
+     player.transform.position=position+new Vector3(Mathf.Sin(frame*.08f)*.3f,mode.Contains("御风")?.35f:0,frame*.025f);
+     player.transform.rotation=rotation*Quaternion.Euler(0,Mathf.Sin(frame*.08f)*25,0);
+     yield return new WaitForEndOfFrame();
+     var bones=body.bones;
+     Check(bones.Skip(78).All(b=>b&&Quaternion.Angle(b.localRotation,outfit.衣服随动.衣骨[Array.IndexOf(bones,b)-78].局部旋转)<=(outfit.衣服随动.衣骨[Array.IndexOf(bones,b)-78].头发?6:outfit.衣服随动.单节限角)+.1f),"bounded garment angles "+id+" "+mode+" "+frame);
+     if(frame==30) {
+      body.BakeMesh(baked);var vertices=baked.vertices;Check(vertices.All(v=>!float.IsNaN(v.x)&&!float.IsInfinity(v.y)&&!float.IsNaN(v.z))&&baked.bounds.size.magnitude<6,"finite native animated mesh "+id+" "+mode);
+      Capture(id+"-"+mode,body);
+      if(id!="app_player")Capture(id+"-"+mode+"-hair-back",body,true);
+      // 同一人体姿态，只归位额外衣骨，确认头手靴等未赋衣骨的顶点不受影响。
+      rig.重置随动();body.BakeMesh(baseline);var rest=baseline.vertices;
+      Check(unchanged.All(i=>Vector3.Distance(vertices[i],rest[i])<.0001f),"protected body vertices unchanged "+id+" "+mode);
+      maximum=Mathf.Max(maximum,vertices.Select((v,i)=>Vector3.Distance(v,rest[i])).Max());
+     }
+    }
+    playable.Destroy();player.transform.SetPositionAndRotation(position,rotation);rig.重置随动();
+   }
+   Check(maximum>.0003f&&maximum<.65f,"actual secondary deformation "+id+" max="+maximum.ToString("F4"));
+   player.transform.position+=new Vector3(40,0,0);yield return new WaitForEndOfFrame();
+   Check(body.bones.Skip(78).Select((b,i)=>Quaternion.Angle(b.localRotation,outfit.衣服随动.衣骨[i].局部旋转)).Max()<.01f,"teleport resets cloth "+id);player.transform.position=position;
+  }
+  for(int i=0;i<12;i++){actor.装备(AppearanceDatabase.取().取(new[]{"app_cunmin","app_player","app_foundation","app_goldencore"}[i%4]));yield return new WaitForEndOfFrame();}
+  var all=actor.玩家视觉.GetComponentsInChildren<Transform>(true).Count(t=>t.name.StartsWith("OutfitCloth_"));Check(all==42,"switching has no orphan garment bones");
+  var current=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();
+  var holder=new GameObject("PreviewBindingValidation");holder.SetActive(false);var clone=UnityEngine.Object.Instantiate(actor.玩家视觉.gameObject,holder.transform);
+  try {foreach(var c in clone.GetComponentsInChildren<MonoBehaviour>(true))UnityEngine.Object.DestroyImmediate(c);var copy=clone.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();AppearanceClothRig.同步预览(current,copy);Check(copy.bones.Length==120&&copy.bones.All(b=>b&&b.IsChildOf(clone.transform)),"preview owns all garment and body bones");actor.装备(AppearanceDatabase.取().取("app_cunmin"));AppearanceClothRig.同步预览(current,copy);Check(copy.bones.Length==78,"preview can change back to unrigged outfit");}
+  finally{UnityEngine.Object.Destroy(holder);}
+  actor.还原();Check(actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r=>r.bones.Length==78),"original body restores base skeleton");
+  File.WriteAllLines("../.local/diagnostics/outfit-cloth/runtime-report.txt",checks);Debug.Log("APPEARANCE_CLOTH_NATIVE_PASS "+checks.Count);
+ }finally {
+  if(graph.IsValid())graph.Destroy();animator.runtimeAnimatorController=controller;animator.cullingMode=state;
+  foreach(var pair in layers)if(pair.Key)pair.Key.layer=pair.Value;
+  actor.装备(previous);player.transform.SetPositionAndRotation(position,rotation);movement.enabled=enabled;
+  UnityEngine.Object.Destroy(baked);UnityEngine.Object.Destroy(baseline);UnityEngine.Object.Destroy(cameraRoot);target.Release();UnityEngine.Object.Destroy(target);
+ }
+}
+IEnumerator Guard(){var routine=Native();try{while(true){object next;try{if(!routine.MoveNext())break;next=routine.Current;}catch(Exception e){failure=e;break;}yield return next;}}finally{(routine as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());
+IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+175;while(!done&&EditorApplication.timeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();UnityEditorInternal.InternalEditorUtility.RepaintAllViews();yield return null;}if(!done)throw new Exception("Native garment validation timeout");if(failure!=null)throw failure;}
+return Wait();

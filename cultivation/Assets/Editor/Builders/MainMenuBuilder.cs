@@ -23,8 +23,7 @@ public static class MainMenuBuilder
     const string ScenePath = "Assets/Scenes/StartScene.scene";
     const string GameScene = "3C_Testbed";
 
-    [MenuItem("修仙/生成开始界面场景")]
-    [MenuItem("Cultivation/Build Main Menu Scene")]
+    [MenuItem("修仙/UI/维护/生成开始界面场景")]
     public static void Build()
     {
         var font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);

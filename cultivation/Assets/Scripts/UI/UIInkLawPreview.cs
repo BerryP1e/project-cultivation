@@ -110,6 +110,9 @@ public sealed class UIInkLawPreview : MonoBehaviour
         clock += reduced ? 0 : delta;
         if (graph.IsValid()) { idlePlayable.SetTime(clock % Mathf.Max(.01f, length)); graph.Evaluate(0); }
         if (actor) actor.localPosition = new Vector3(0, .55f + Mathf.Sin(clock * .95f) * .045f, 0);
+        if (clonedVisual)
+            foreach (var rig in clonedVisual.GetComponentsInChildren<AppearanceClothRig>(true))
+                rig.推进(reduced ? 0 : delta, clock);
         if (!particles || !orbit) return;
         emission += reduced ? 0 : delta * 30;
         while (emission >= 1)
@@ -144,6 +147,7 @@ public sealed class UIInkLawPreview : MonoBehaviour
             var target = destination ? destination.GetComponent<SkinnedMeshRenderer>() : null;
             if (!target || !skin.sharedMesh) continue;
             target.sharedMesh = skin.sharedMesh;
+            AppearanceClothRig.同步预览(skin, target);
             var mats = skin.sharedMaterials;
             foreach (var old in target.sharedMaterials) if (ownedMaterials.Remove(old)) Destroy(old);
             var replacement = new Material[mats.Length];

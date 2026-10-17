@@ -102,6 +102,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (!controller || !controller.enabled) return;
         闪避.检查状态();
         if(CombatHitStop.正在顿帧(transform))return;
         if (闪避.闪避中)

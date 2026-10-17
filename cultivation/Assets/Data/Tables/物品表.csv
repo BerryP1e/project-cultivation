@@ -4,7 +4,7 @@ item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼�
 item_treasure_qingshan_sword,青山剑·待认主,1,地品,尚未认主的青山灵剑，滴血认主后可装备御剑穿敌。,1,获得法宝,treasure_qingshan_sword,滴血认主后获得法宝「青山剑」。,120
 item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。,240
 item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。,60
-item_menpai_bianfu,门派便服,1,凡品,太虚宗发给新弟子的门派便服。穿上它，就有了正式弟子的样子。,1,学外观,app_player,使用后获得外观「修仙者」并立刻换上,
+item_menpai_bianfu,练气着装,1,凡品,初入仙途的青衣着装，衣摆与宽袖随步履轻动。,1,学外观,app_player,使用后获得外观「练气着装」并立刻换上,
 item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。,60
 item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。,120
 item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。,240
@@ -97,3 +97,17 @@ item_ability_jianyu_luohua,剑雨落花 神通玉简,1,天品,记载剑雨落花
 item_ability_huoyan_zhui,火岩坠 神通玉简,1,天品,记载火岩坠的玉简，使用后学会对应主动神通。,1,学主动神通,ability_huoyan_zhui,使用后学会火岩坠。,240
 item_ability_zhouyu_chuxie,骤雨初歇 神通玉简,1,天品,记载骤雨初歇的玉简，使用后学会对应主动神通。,1,学主动神通,ability_zhouyu_chuxie,使用后学会骤雨初歇。,360
 item_ability_chedian_yeting,掣电烨霆 神通玉简,1,天品,记载掣电烨霆的玉简，使用后学会对应主动神通。,1,学主动神通,ability_chedian_yeting,使用后学会掣电烨霆。,360
+item_passive_ability_zicheng_xunhuan,自成循环 心得,1,地品,记载着「自成循环」的修炼心得，读罢即可掌握。,1,学被动神通,ability_zicheng_xunhuan,使用后获得被动神通「自成循环」。,180
+item_passive_ability_lingshi_weiya,灵势威压 心得,1,地品,记载着「灵势威压」的修炼心得，读罢即可掌握。,1,学被动神通,ability_lingshi_weiya,使用后获得被动神通「灵势威压」。,180
+item_passive_ability_xingming_shuangxiu,性命双修 心得,1,地品,记载着「性命双修」的修炼心得，读罢即可掌握。,1,学被动神通,ability_xingming_shuangxiu,使用后获得被动神通「性命双修」。,180
+item_passive_ability_neihua_shijie,内化世界 心得,1,天品,记载着「内化世界」的修炼心得，读罢即可掌握。,1,学被动神通,ability_neihua_shijie,使用后获得被动神通「内化世界」。,240
+item_passive_ability_shenwai_huashen,身外化身 心得,1,天品,记载着「身外化身」的修炼心得，读罢即可掌握。,1,学被动神通,ability_shenwai_huashen,使用后获得被动神通「身外化身」。,240
+item_passive_ability_lianxu_rudao,练虚入道 心得,1,地品,记载着「练虚入道」的修炼心得，读罢即可掌握。,1,学被动神通,ability_lianxu_rudao,使用后获得被动神通「练虚入道」。,180
+item_passive_ability_kongjian_tengnuo,空间腾挪 心得,1,天品,记载着「空间腾挪」的修炼心得，读罢即可掌握。,1,学被动神通,ability_kongjian_tengnuo,使用后获得被动神通「空间腾挪」。,240
+
+item_home_alchemy_hall,炼丹阁令,99,黄品,在洞府摆放炼丹阁，靠近按 F 使用原有功能，可挪动并随存档保存。,1,摆放物件,home_alchemy_hall,使用后预览摆放；右键取消返还。,100
+item_home_merit_hall,功德堂令,99,黄品,在洞府摆放功德堂，靠近按 F 使用原有功能，可挪动并随存档保存。,1,摆放物件,home_merit_hall,使用后预览摆放；右键取消返还。,100
+item_home_technique_hall,传法阁令,99,黄品,在洞府摆放传法阁，靠近按 F 使用原有功能，可挪动并随存档保存。,1,摆放物件,home_technique_hall,使用后预览摆放；右键取消返还。,100
+item_home_deacon_hall,执事阁令,99,黄品,在洞府摆放执事阁，靠近按 F 使用原有功能，可挪动并随存档保存。,1,摆放物件,home_deacon_hall,使用后预览摆放；右键取消返还。,100
+item_home_forge_hall,炼器阁令,99,黄品,在洞府摆放炼器阁。建筑保留，炼器玩法待建设。,1,摆放物件,home_forge_hall,使用后预览摆放；右键取消返还。,100
+item_tower_realm,镇妖阁认主令,1,玄品,认主后在法宝页装备镇妖阁。E 入塔，塔内 E 或死亡返回施放处。,1,获得法宝,treasure_tower_realm,获得法宝镇妖阁。,120

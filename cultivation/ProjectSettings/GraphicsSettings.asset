@@ -26,7 +26,7 @@ GraphicsSettings:
     m_Mode: 1
     m_Shader: {fileID: 102, guid: 0000000000000000f000000000000000, type: 0}
   m_VideoShadersIncludeMode: 2
-  m_LengthOfAlwaysIncludedShadersInInspector: 18
+  m_LengthOfAlwaysIncludedShadersInInspector: 19
   m_AlwaysIncludedShaders:
   - {fileID: 7, guid: 0000000000000000f000000000000000, type: 0}
   - {fileID: 15104, guid: 0000000000000000f000000000000000, type: 0}
@@ -46,6 +46,7 @@ GraphicsSettings:
   - {fileID: 4800000, guid: d5ac4ab956eaa0b479205b4baebdc4f3, type: 3}
   - {fileID: 4800000, guid: 0da148bf8f4705a4a981addf5a4b5960, type: 3}
   - {fileID: 4800000, guid: 8f632e0707e4685488ac38fe22cdd709, type: 3}
+  - {fileID: 4800000, guid: 28158e5f2c5147538203e4c3617b516a, type: 3}
   m_PreloadedShaders: []
   m_PreloadShadersBatchTimeLimit: -1
   m_SpritesDefaultMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
@@ -76,7 +77,8 @@ GraphicsSettings:
   m_LogWhenShaderIsCompiled: 0
   m_NoExactGfxBuffer: 0
   m_DisableClearAlpha: 0
-  m_SRPDefaultSettings: {}
+  m_SRPDefaultSettings:
+    UnityEngine.Rendering.Universal.UniversalRenderPipeline: {fileID: 11400000, guid: e9163d4fbfbd3ae4db0181d754ce7112, type: 2}
   m_LightProbeOutsideHullStrategy: 0
   m_CameraRelativeLightCulling: 0
   m_CameraRelativeShadowCulling: 0

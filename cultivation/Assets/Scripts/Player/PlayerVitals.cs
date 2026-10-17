@@ -9,6 +9,7 @@
 /// </summary>
 public class PlayerVitals : MonoBehaviour
 {
+    public event System.Action<float> 灵气恢复;
     [Header("引用")]
     [Tooltip("属性来源。留空则自动在本体找 PlayerCombatStats")]
     public PlayerCombatStats 属性;
@@ -54,14 +55,14 @@ public class PlayerVitals : MonoBehaviour
         // 特别难查，所以宁可把它放在最上面。
         Update过场保护();
 
-        if (!自动回复) return;
+        if (!自动回复 || 已死亡) return;
         float dt = Time.deltaTime;
 
         float 气血回复 = 属性 != null ? 属性.当前属性[AttributeType.HealthRegen] : 0f;
         float 灵力回复 = 属性 != null ? 属性.当前属性[AttributeType.SpiritRegen] : 0f;
 
         if (气血回复 > 0f) 当前气血 = Mathf.Min(气血上限, 当前气血 + 气血回复 * 回复倍率 * dt);
-        if (灵力回复 > 0f) 当前灵气 = Mathf.Min(灵气上限, 当前灵气 + 灵力回复 * 回复倍率 * dt);
+        if (灵力回复 > 0f) 回复灵气(灵力回复 * 回复倍率 * dt);
     }
 
     /// <summary>灵气是否够扣</summary>
@@ -125,7 +126,9 @@ public class PlayerVitals : MonoBehaviour
         if (点数 <= 0f || 已死亡) return 0f;
         float 前 = 当前灵气;
         当前灵气 = Mathf.Min(灵气上限, 当前灵气 + 点数);
-        return 当前灵气 - 前;
+        float 实际 = 当前灵气 - 前;
+        if (实际 > 0) 灵气恢复?.Invoke(实际);
+        return 实际;
     }
 
     // ------------------------------------------------------------ 受伤

@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 /// <summary>
@@ -42,7 +42,6 @@ public static class 宣纸纸纹预处理
     const float 中点 = 0.5f;
 
     [MenuItem("修仙/美术/宣纸纸纹预处理", false, 810)]
-    [MenuItem("Cultivation/Bake Paper Grain", false, 810)]
     public static void 预处理()
     {
         var 源 = Selection.activeObject as Texture2D;

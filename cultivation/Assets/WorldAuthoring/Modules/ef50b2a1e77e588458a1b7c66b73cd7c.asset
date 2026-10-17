@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a840fe3bfeae21d4aa90a84ddc52e9b3, type: 3}
+  m_Name: ef50b2a1e77e588458a1b7c66b73cd7c
+  m_EditorClassIdentifier: 
+  revision: 1
+  sourceHash: dd5efa7a665866432e38cf7c8cdeee0b
+  family: asian-wall
+  prefab: {fileID: 9102168844183001720, guid: 5b27584d2a9552947958ef81c3c7b9a6, type: 3}
+  points:
+  - {x: -3, y: 0, z: 0}
+  - {x: 3, y: 0, z: 0}
+  directions:
+  - {x: -1, y: 0, z: 0}
+  - {x: 1, y: 0, z: 0}
+  groundHalfWidth: 0.55

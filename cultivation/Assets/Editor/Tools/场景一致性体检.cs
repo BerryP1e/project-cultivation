@@ -45,8 +45,6 @@ public static class 场景一致性体检
         // ⚠️ 用**真实文件名**的大小写：`village.scene` 是小写，
         //    而 Build Settings 里登记成 `Village.scene`（Windows 不区分所以一直没暴露）。
         //    这里按文件名写，比较场景名时再统一转小写，免得踩大小写的坑。
-        "Assets/Scenes/village.scene",
-        "Assets/Scenes/Sect.scene",
         "Assets/Scenes/3C_Testbed.scene",
         "Assets/Scenes/Sect_Wilderness.scene",
         "Assets/Scenes/Demon-Suppressing Tower.scene",
@@ -57,8 +55,8 @@ public static class 场景一致性体检
         var 单 = new List<应备项>();
 
         单.Add(new 应备项 {
-            名字 = "任务管理器", 类型名 = "任务管理器",
-            补齐 = (场景, t) => 场景内新建(场景, "任务管理器", t),
+            名字 = "存读档恢复", 类型名 = "SaveApplier", 挂Player = true,
+            补齐 = (场景, t) => 给玩家挂(场景, t),
         });
         单.Add(new 应备项 {
             名字 = "UIPanelData", 类型名 = "UIPanelData",
@@ -79,8 +77,6 @@ public static class 场景一致性体检
         // 执事阁追踪与悬赏刷怪由场景自举在每个游戏场景补齐；这里也登记供装配报告。
         单.Add(new 应备项 { 名字 = "宗门任务引导", 类型名 = "宗门任务引导",
             补齐 = (场景, t) => 场景内新建(场景, "宗门任务引导", t) });
-        单.Add(new 应备项 { 名字 = "宗门悬赏刷怪", 类型名 = "宗门悬赏刷怪",
-            补齐 = (场景, t) => 场景内新建(场景, "宗门悬赏刷怪", t) });
         单.Add(new 应备项 { 名字 = "法宝控制", 类型名 = "TreasureCaster", 挂Player = true,
             补齐 = (场景, t) => 给玩家挂(场景, t) });
         单.Add(new 应备项 { 名字 = "青山剑法宝", 类型名 = "QingshanSwordTreasure", 挂Player = true,

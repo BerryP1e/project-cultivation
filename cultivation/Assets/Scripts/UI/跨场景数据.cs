@@ -107,10 +107,12 @@ public class 跨场景数据 : MonoBehaviour
         public static MountDefinition 当前坐骑;
         public static List<string> 已学坐骑;
         public static string 任务进度;
+        public static List<TeleportBookmark> 已访传送点;
 
         public static void 拍下(UIPanelData 面板)
         {
             面板.EnsureLists();
+            已访传送点 = SpatialTravel.Copy(面板.已访传送点);
             物品 = new List<ItemDefinition>(面板.物品);
             法则碎片 = new List<LawFragment>(面板.法则碎片); 法则装备 = new List<string>(面板.法则装备);
             炉中法则 = new List<string>(面板.炉中法则); 法则精粹 = 面板.法则精粹;
@@ -128,14 +130,14 @@ public class 跨场景数据 : MonoBehaviour
             当前坐骑 = 面板.当前坐骑;
             已学坐骑 = new List<string>(面板.已学坐骑);
             // 主线进度也一起带走（任务管理器可能在新场景里才 Awake，所以先存成字符串）
-            var 任务 = Object.FindObjectOfType<任务管理器>();
-            任务进度 = 任务 != null ? 任务.导出进度() : 任务进度;
+
             有数据 = true;
         }
 
         public static void 灌回(UIPanelData 面板)
         {
             面板.EnsureLists();
+            面板.已访传送点 = SpatialTravel.Copy(已访传送点);
             面板.物品 = new List<ItemDefinition>(物品);
             LawFragmentSystem.恢复(面板, 法则碎片, 法则装备);
             面板.炉中法则 = new List<string>(炉中法则 ?? new List<string>()); 面板.法则精粹 = 法则精粹;
@@ -157,16 +159,12 @@ public class 跨场景数据 : MonoBehaviour
             面板.RaiseChanged();
 
             // 主线进度：把字符串交给新场景里的任务管理器
-            if (!string.IsNullOrEmpty(任务进度))
-            {
-                var 任务 = Object.FindObjectOfType<任务管理器>();
-                if (任务 != null) 任务.导入进度(任务进度);
-                else Debug.LogWarning("[跨场景] 新场景里没有任务管理器，主线进度暂时没地方放（本场景放一个即可）");
-            }
+
         }
 
         public static void 清空()
         {
+            已访传送点 = null;
             法则碎片 = null; 法则装备 = null;
             炉中法则 = null; 法则精粹 = 0;
             物品 = null; 已学功法 = null; 已获得主动 = null; 已获得被动 = null;

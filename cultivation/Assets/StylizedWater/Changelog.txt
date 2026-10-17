@@ -1,0 +1,59 @@
+v1.22
+Changed:
+- Set Substance to 'Uncompressed' by default for Mobile
+- Improved normal map blending
+- Restored light reflection to its former glory
+
+v1.21
+Added:
+- Shaders can now be modified using ShaderForge.
+- Unity 5.5 support
+- Demo scene with 30 free stylized models
+- Option to randomize seed in inspector
+
+Changed:
+- Improved support for Substance material instances
+- Changing materials shows/hides the new parameters automatically
+- Wave vertex offset now follows the mesh's normal direction, rather than offsetting in the world Y-axis (useful for curved surfaces)
+- Switched from glossiness to roughness type, for better results under low/no light conditions
+- Inspector GUI improvements
+- Substance will generate both texture maps regardless of "Generate all outputs" option
+
+v1.2
+Added:
+- Custom inspector component for ease of use
+- Fresnel color (alpha controls opacity)
+- New mobile shader variant "Basic"
+- Documentation now contains a parameter glossary
+
+Changed:
+- Previous mobile shader is now called "Mobile Advanced"
+- Updated demo scene
+- Set Substance to 'Uncompressed' for Desktop
+- Mobile shader has been tweaked for performance
+
+v1.15
+Added:
+- Fresnel control
+- Multi-light support
+- Rim color alpha now controls intersection amount
+- Support for Unity 5.3.0 and up.
+
+Changed:
+- Fresnel color is now derived from Ambient Light rather than Directional Light
+- UV/WorldSpace tiling values are more logical
+- Reflection intensity is now bound to the glossiness parameter
+- Depth control is more physically correct
+
+v1.1
+Added:
+- Surface highlights.
+
+Removed:
+- Heightmap, since it was not used.
+
+Changed:
+- Name of depth buffer script to avoid conflicts.
+
+v1.0
+Initial release

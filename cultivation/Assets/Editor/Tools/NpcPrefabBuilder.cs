@@ -81,7 +81,7 @@ public static class NpcPrefabBuilder
 
     // ---------------------------------------------------------------- 第 1 步
 
-    [MenuItem("Cultivation/NPC 组合 (1) 模型转 Humanoid")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 组合 (1) 模型转 Humanoid")]
     public static void Step1()
     {
         扫描(out var 模型, out _, out _);
@@ -106,7 +106,7 @@ public static class NpcPrefabBuilder
 
     // ---------------------------------------------------------------- 第 2 步
 
-    [MenuItem("Cultivation/NPC 组合 (2) 动画共享 Avatar")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 组合 (2) 动画共享 Avatar")]
     public static void Step2()
     {
         扫描(out var 模型, out var 动画, out _);
@@ -153,7 +153,7 @@ public static class NpcPrefabBuilder
 
     // ---------------------------------------------------------------- 第 3 步
 
-    [MenuItem("Cultivation/NPC 组合 (3) 建控制器 + 挂到 prefab")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 组合 (3) 建控制器 + 挂到 prefab")]
     public static void Step3()
     {
         扫描(out _, out var 动画, out var prefabs);
@@ -266,7 +266,7 @@ public static class NpcPrefabBuilder
     }
 
     /// <summary>核查：有多少 NPC 已经能用了</summary>
-    [MenuItem("Cultivation/NPC 组合 (4) 核查")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 组合 (4) 核查")]
     public static void Verify()
     {
         扫描(out var 模型, out var 动画, out var prefabs);

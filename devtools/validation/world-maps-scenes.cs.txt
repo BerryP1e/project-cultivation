@@ -1,0 +1,32 @@
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using Cultivation.WorldAuthoring;
+IEnumerator Run(){
+ var prior=SceneManager.GetActiveScene();var checks=new List<string>();Action<bool,string> Check=(ok,label)=>{if(!ok)throw new Exception(label);checks.Add("PASS "+label);};
+ if(prior.isDirty||WorldSceneMigration.Scenes.Contains(prior.name))throw new Exception("Open the clean independent workshop before running additive scene checks.");
+ foreach(var name in WorldSceneMigration.Scenes){
+  var scene=EditorSceneManager.OpenScene("Assets/Scenes/"+name+".scene",OpenSceneMode.Additive);SceneManager.SetActiveScene(scene);
+  try{
+   var roots=scene.GetRootGameObjects();var loader=roots.Select(x=>x.GetComponent<WorldMapLoader>()).First(x=>x);loader.Build();var d=loader.Data;Check(WorldMapConsistency.Check(d,loader.map.palette,loader.bindings.Where(x=>x.target).Select(x=>x.key)).Count==0,name+" consistency");Check(loader.Renderer.ChunkCount>0,name+" generates real mesh chunks");
+   Check(!Physics.GetIgnoreLayerCollision(0,28),name+" ground layer collides with default player");
+   foreach(var feature in d.features){var original=loader.bindings.First(x=>x.key==feature.id).target;Check(original!=null,name+" feature exists: "+feature.label);if(!string.IsNullOrEmpty(feature.objectId)){var item=d.objects.Find(x=>x.instanceId==feature.objectId);Check(Vector3.Distance(original.transform.position,item.position)<.001f,name+" feature follows linked visual");}}
+   foreach(var item in d.objects.Where(x=>x.exactTransform)){var placed=loader.GetComponentsInChildren<MapPlacedObject>().FirstOrDefault(x=>x.instanceId==item.instanceId);if(loader.map.palette.entries[loader.map.palette.Find(item.paletteId)].editorOnly){Check(!placed,name+" editor marker hidden in game");continue;}Check(placed&&Quaternion.Angle(placed.transform.rotation,item.Orientation)<.01f&&Vector3.Distance(placed.transform.lossyScale,item.AxisScale)<.001f,name+" exact source transform retained");}
+   if(name=="Sect"){var heights=d.height.Where((v,i)=>d.land[i]>.5f);Check(heights.Max()-heights.Min()>14,"sect multi-level terrain retained");Check(d.objects.Any(x=>loader.map.palette.entries[loader.map.palette.Find(x.paletteId)].sourcePath.ToLowerInvariant().Contains("taijie")),"sect original stair modules retained");}
+   if(name=="Sect_Wilderness"){Check(d.height.Where((h,i)=>d.land[i]>.5f&&d.water[i]<.01f).All(x=>Mathf.Abs(x)<.0001f),"wilderness dry ground flattened");Check(d.water.Count(x=>x>.5f)>2000,"projected rivers rebuilt");}
+   if(name=="Demon-Suppressing Tower")Check(!d.rockBoundary&&!d.cloudSea&&d.objects.All(x=>loader.map.palette.entries[loader.map.palette.Find(x.paletteId)].editorOnly),"tower replaces floor only");
+   if(name=="3C_Testbed")Check(!roots.SelectMany(x=>x.GetComponentsInChildren<HomeBoundary>(true)).Any(),"home old boundary trees and rocks removed");
+   var camera=roots.SelectMany(x=>x.GetComponentsInChildren<Camera>(true)).First(x=>x.CompareTag("MainCamera"));camera.gameObject.SetActive(true);camera.enabled=true;
+   var rt=new RenderTexture(1280,800,24);var texture=new Texture2D(1280,800,TextureFormat.RGB24,false);var previous=RenderTexture.active;
+   try{camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;texture.ReadPixels(new Rect(0,0,1280,800),0,0);texture.Apply();File.WriteAllBytes("../.local/diagnostics/migrated-"+name+".png",texture.EncodeToPNG());}
+   finally{camera.targetTexture=null;RenderTexture.active=previous;Object.DestroyImmediate(texture);Object.DestroyImmediate(rt);}
+   yield return null;
+  }finally{SceneManager.SetActiveScene(prior);EditorSceneManager.CloseScene(scene,true);}
+ }
+ File.WriteAllLines("../.local/diagnostics/migrated-scene-qa-results.txt",checks);Debug.Log("Passed "+checks.Count+" migrated-scene checks, captured all 5 actual scene cameras");
+}
+return Run();

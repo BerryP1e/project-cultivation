@@ -1,0 +1,260 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &-8382022072174729894
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db4e9ad3e9694425b66636e55d88ae56, type: 3}
+  m_Name: ASPSreenSpaceOutline
+  m_EditorClassIdentifier: 
+  active: 1
+  EnableOutline:
+    m_OverrideState: 1
+    m_Value: 1
+  ApplyFXAA:
+    m_OverrideState: 1
+    m_Value: 1
+  OutlineWidth:
+    m_OverrideState: 1
+    m_Value: 1.5
+  OutlineColor:
+    m_OverrideState: 1
+    m_Value: {r: 0, g: 0, b: 0, a: 1}
+  EnableOuterline:
+    m_OverrideState: 1
+    m_Value: 1
+  EnableMaterialEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  MaterialEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 0.111
+  MaterialEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 15
+  MaterialEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  EnableAlbedoEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  AlbedoEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 0.265
+  AlbedoEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 3.03
+  AlbedoEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  EnableDepthEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  DepthEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 0.095
+  DepthEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 32.1
+  DepthEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  EnableNormalsEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  NormalsEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 0.559
+  NormalsEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 4.17
+  NormalsEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  FadingWeghtByDistance:
+    m_OverrideState: 1
+    m_Value: 1
+  FadingColorByDistance:
+    m_OverrideState: 1
+    m_Value: 1
+  ColorWeightFadingStartEndDistance:
+    m_OverrideState: 1
+    m_Value: {x: 2, y: 15}
+  FadingWidthByDistance:
+    m_OverrideState: 1
+    m_Value: 1
+  WidthFadingStartEndDistance:
+    m_OverrideState: 1
+    m_Value: {x: 4, y: 15}
+  EnableDebugMode:
+    m_OverrideState: 1
+    m_Value: 0
+  DebugBackground:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
+  ScreenSpaceOutlineDebugMode:
+    m_OverrideState: 1
+    m_Value: 6
+--- !u!114 &-2607779722492490893
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a453c28f6a48485f9c40d2a8e393a61c, type: 3}
+  m_Name: ASPToneMap
+  m_EditorClassIdentifier: 
+  active: 1
+  ToneMapType:
+    m_OverrideState: 1
+    m_Value: 1
+  Exposure:
+    m_OverrideState: 1
+    m_Value: 1
+  IgnoreCharacterPixels:
+    m_OverrideState: 1
+    m_Value: 1
+  CharacterPixelsToneMapStrength:
+    m_OverrideState: 1
+    m_Value: 0.3
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
+  m_Name: Main Camera Profile
+  m_EditorClassIdentifier: 
+  components:
+  - {fileID: -8382022072174729894}
+  - {fileID: 1459116235453968967}
+  - {fileID: -2607779722492490893}
+  - {fileID: 4976312532793988561}
+  - {fileID: 4748156116894820384}
+--- !u!114 &1459116235453968967
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b2db86121404754db890f4c8dfe81b2, type: 3}
+  m_Name: Bloom
+  m_EditorClassIdentifier: 
+  active: 1
+  skipIterations:
+    m_OverrideState: 0
+    m_Value: 1
+  threshold:
+    m_OverrideState: 1
+    m_Value: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: 1.41
+  scatter:
+    m_OverrideState: 1
+    m_Value: 0.863
+  clamp:
+    m_OverrideState: 0
+    m_Value: 65472
+  tint:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0.8345491, b: 0.6273585, a: 1}
+  highQualityFiltering:
+    m_OverrideState: 0
+    m_Value: 0
+  downscale:
+    m_OverrideState: 0
+    m_Value: 0
+  maxIterations:
+    m_OverrideState: 0
+    m_Value: 6
+  dirtTexture:
+    m_OverrideState: 0
+    m_Value: {fileID: 0}
+    dimension: 1
+  dirtIntensity:
+    m_OverrideState: 0
+    m_Value: 0
+--- !u!114 &4748156116894820384
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66f335fb1ffd8684294ad653bf1c7564, type: 3}
+  m_Name: ColorAdjustments
+  m_EditorClassIdentifier: 
+  active: 1
+  postExposure:
+    m_OverrideState: 0
+    m_Value: -0.17
+  contrast:
+    m_OverrideState: 0
+    m_Value: 11
+  colorFilter:
+    m_OverrideState: 0
+    m_Value: {r: 1, g: 0.85716367, b: 0.7216981, a: 1}
+  hueShift:
+    m_OverrideState: 0
+    m_Value: 0
+  saturation:
+    m_OverrideState: 1
+    m_Value: 28
+--- !u!114 &4976312532793988561
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97c23e3b12dc18c42a140437e53d3951, type: 3}
+  m_Name: Tonemapping
+  m_EditorClassIdentifier: 
+  active: 0
+  mode:
+    m_OverrideState: 1
+    m_Value: 1
+  neutralHDRRangeReductionMode:
+    m_OverrideState: 0
+    m_Value: 2
+  acesPreset:
+    m_OverrideState: 0
+    m_Value: 3
+  hueShiftAmount:
+    m_OverrideState: 0
+    m_Value: 0
+  detectPaperWhite:
+    m_OverrideState: 0
+    m_Value: 0
+  paperWhite:
+    m_OverrideState: 0
+    m_Value: 300
+  detectBrightnessLimits:
+    m_OverrideState: 0
+    m_Value: 1
+  minNits:
+    m_OverrideState: 0
+    m_Value: 0.005
+  maxNits:
+    m_OverrideState: 0
+    m_Value: 1000

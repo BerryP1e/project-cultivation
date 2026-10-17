@@ -92,6 +92,9 @@ public class PlayerAbilityLoader : MonoBehaviour
     void 补齐内置登记()
     {
         if (被动神通表 == null) 被动神通表 = new List<被动神通绑定>();
+        foreach (string id in new[] { CultivationPassiveAbilities.CycleId, CultivationPassiveAbilities.PressureId })
+            if (!被动神通表.Exists(b => b != null && b.神通id == id))
+                被动神通表.Add(new 被动神通绑定 { 神通id = id, 组件类名 = new[] { "CultivationPassiveAbilities" } });
         string[] 新被动 = { "ability_xieyan", "ability_huzhao_wuli", "ability_huzhao_teshu", "ability_huzhao_shuangchong" };
         foreach (string id in 新被动)
             if (!被动神通表.Exists(b => b != null && b.神通id == id))

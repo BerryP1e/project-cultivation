@@ -23,7 +23,6 @@ IEnumerator Run()
     var home=SceneManager.GetSceneByName("3C_Testbed");SceneManager.SetActiveScene(home);
     foreach(var save in UnityEngine.Object.FindObjectsOfType<SaveApplier>())save.enabled=false;
     for(int i=0;i<SceneManager.sceneCount;i++){var s=SceneManager.GetSceneAt(i);if(s!=home)foreach(var g in s.GetRootGameObjects())g.SetActive(false);}
-    foreach(var q in UnityEngine.Object.FindObjectsOfType<任务管理器>())q.enabled=false;
     foreach(var d in UnityEngine.Object.FindObjectsOfType<NpcDialogue>())d.enabled=false;
     foreach(var player in UnityEngine.Object.FindObjectsOfType<PlayerController>())player.enabled=false;
     时间管理器.取().暂停=true;

@@ -37,7 +37,7 @@ public static class StationSetup
         ("deploy formation point", StationInteractable.StationKind.布阵, true),   // 地面标记，别挡路
     };
 
-    [MenuItem("Cultivation/设施/安装交互")]
+    [MenuItem("修仙/维护工具/设施/安装交互")]
     public static void Install()
     {
         var 报告 = new StringBuilder();
@@ -97,7 +97,7 @@ public static class StationSetup
                   + "\n用法：走近物件 → 出现「右键 XX」提示 → 按右键打开界面");
     }
 
-    [MenuItem("Cultivation/设施/检查")]
+    [MenuItem("修仙/维护工具/设施/检查")]
     public static void Check()
     {
         var sb = new StringBuilder("[StationSetup] 检查\n");
@@ -131,7 +131,7 @@ public static class StationSetup
         Debug.Log(sb.ToString());
     }
 
-    [MenuItem("Cultivation/设施/卸载")]
+    [MenuItem("修仙/维护工具/设施/卸载")]
     public static void Uninstall()
     {
         foreach (var (名, 类, trigger) in 表)

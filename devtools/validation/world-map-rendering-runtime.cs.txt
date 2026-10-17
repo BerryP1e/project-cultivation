@@ -1,0 +1,48 @@
+using System.Collections;
+using System.IO;
+using System.Linq;
+using UnityEngine.Rendering;
+using Cultivation.WorldAuthoring;
+if(!Application.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated Play save directory");
+var host=Object.FindObjectOfType<ActiveSkillCaster>();bool done=false;Exception failure=null;
+var report=new System.Collections.Generic.List<string>();var grabs=new System.Collections.Generic.List<string>();
+void Check(bool condition,string text){if(!condition)throw new Exception(text);report.Add("PASS "+text);}
+IEnumerator Native()
+{
+    var window=EditorWindow.GetWindow(System.Type.GetType("UnityEditor.GameView,UnityEditor"));window.Show();window.Focus();
+    var camera=Camera.main;var player=host.GetComponent<PlayerController>();var panel=host.面板数据;var actions=host.动画;
+    bool move=player.enabled;var keys=host.快捷键;var slots=panel.主动技能.ToList();GameObject targetRoot=null;NpcDefinition definition=null;
+    var folder="../.local/diagnostics/rendering-repair/continuous";Directory.CreateDirectory(folder);
+    void Rendered(Camera c){if(c!=camera)return;var texture=Shader.GetGlobalTexture("_CheDianSceneColour");grabs.Add(Time.frameCount+" camera="+c.pixelWidth+"x"+c.pixelHeight+" capture="+(texture?texture.width+"x"+texture.height:"none"));if(texture&&Shader.GetGlobalFloat("_CheDianSceneColourReady")>.5f)Check(texture.width==c.pixelWidth&&texture.height==c.pixelHeight,"per-camera refraction resolution frame "+Time.frameCount);}
+    IEnumerator Capture(string name){yield return new WaitForEndOfFrame();var image=ScreenCapture.CaptureScreenshotAsTexture();Check(image&&image.width>=1280,"actual Game View frame "+name);File.WriteAllBytes(Path.Combine(folder,name+".png"),image.EncodeToPNG());Object.Destroy(image);}
+    try
+    {
+        Time.timeScale=1;player.enabled=false;host.快捷键=new KeyCode[0];
+        var world=Object.FindObjectOfType<WorldMapLoader>();var point=player.transform.position+Vector3.forward*6;point.y=world.Renderer.GroundHeight(point.x,point.z)+.1f;
+        targetRoot=new GameObject("ContinuousRenderQA_Target");targetRoot.SetActive(false);targetRoot.transform.position=point;definition=ScriptableObject.CreateInstance<NpcDefinition>();definition.属性[AttributeType.MaxHealth]=100000;definition.对主角好感度=-50;var target=targetRoot.AddComponent<NpcInstance>();target.定义=definition;var collider=targetRoot.AddComponent<CapsuleCollider>();collider.center=Vector3.up;collider.height=2;collider.radius=.3f;targetRoot.SetActive(true);host.目标管理器.Lock(target,true);
+        var skill=AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");panel.获得主动(skill);panel.EquipToSlot(0,skill);yield return null;actions.停止动作();host.生命.当前灵气=150;
+        Camera.onPostRender+=Rendered;Check(!GraphicsSettings.currentRenderPipeline,"native gameplay remains Built-in");typeof(ActiveSkillCaster).GetField("充能数",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).SetValue(host,new int[]{4,0,0,0,0,0});Check(host.TryCast(0),"real equipped dragon skill begins");var dragon=host.GetComponent<CheDianYeTingCompanion>();
+        for(int shot=1;shot<=4;shot++)
+        {
+            float deadline=Time.realtimeSinceStartup+6;while(dragon.Breath.State!=CheDianYeTingBreath.Phase.Fire&&Time.realtimeSinceStartup<deadline)yield return null;
+            Check(dragon.Breath.State==CheDianYeTingBreath.Phase.Fire,"spray "+shot+" enters native fire phase");yield return new WaitForSeconds(.25f);
+            for(int frame=0;frame<4;frame++){yield return Capture("spray-"+shot+"-frame-"+frame);}
+            if(shot<4){deadline=Time.realtimeSinceStartup+6;while(!dragon.Breath.ComboWindow&&Time.realtimeSinceStartup<deadline)yield return null;Check(dragon.Breath.ComboWindow&&host.TryCast(0),"native followup "+shot);}
+        }
+        dragon.Breath.Cancel();Check(grabs.Count>20,"continuous render callback sampling");
+        var captureType=typeof(CheDianBreathVisual).Assembly.GetType("CheDianSceneCapture");var captureCount=((System.Collections.IDictionary)captureType.GetField("cameras",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).GetValue(null)).Count;Check(captureCount==0,"all per-camera refraction buffers released after cancellation");
+        Check(camera.GetComponent<GameGlobalGrade>().纸纹强度==0,"paper stays disabled during repeated gameplay");
+        var bloom=camera.GetComponent<GameGlobalBloom>();var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+        var down=(RenderTexture[])typeof(GameGlobalBloom).GetField("降采样",flags).GetValue(bloom);var up=(RenderTexture[])typeof(GameGlobalBloom).GetField("升采样",flags).GetValue(bloom);
+        Check(down!=null&&down.Length==up.Length,"bloom uses a complete pyramid");for(int i=0;i<down.Length;i++)Check(down[i].width==up[i].width&&down[i].height==up[i].height&&down[i].format==RenderTextureFormat.ARGBHalf,"matched HDR bloom level "+i);
+    }
+    finally
+    {
+        Camera.onPostRender-=Rendered;var dragon=host.GetComponent<CheDianYeTingCompanion>();if(dragon)dragon.Breath.Cancel();actions.停止动作();panel.主动技能=slots;player.enabled=move;host.快捷键=keys;if(targetRoot)Object.Destroy(targetRoot);if(definition)Object.Destroy(definition);Time.timeScale=1;
+        File.WriteAllLines(Path.Combine(folder,"report.txt"),report);File.WriteAllLines(Path.Combine(folder,"grab-dimensions.txt"),grabs);
+    }
+}
+IEnumerator Guard(){var worker=Native();try{while(true){bool next=false;try{next=worker.MoveNext();}catch(Exception e){failure=e;break;}if(!next)break;yield return worker.Current;}}finally{(worker as System.IDisposable)?.Dispose();done=true;}}
+host.StartCoroutine(Guard());
+IEnumerator Wait(){float until=Time.realtimeSinceStartup+90;while(!done&&Time.realtimeSinceStartup<until){EditorApplication.QueuePlayerLoopUpdate();UnityEditorInternal.InternalEditorUtility.RepaintAllViews();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Native rendering test timed out");Debug.Log(report.Count+" continuous native game-view checks passed; "+grabs.Count+" render frames sampled; 16 screenshots captured without Camera.Render.");}
+return Wait();

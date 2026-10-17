@@ -1,0 +1,31 @@
+using UnityEditor;
+using UnityEngine.SceneManagement;
+using System.Linq;
+using System.IO;
+using System.Collections;
+using Cultivation.WorldAuthoring;
+IEnumerator Run(){
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated save directory");var report=new System.Collections.Generic.List<string>();void Check(bool ok,string text){if(!ok)throw new Exception(text);report.Add(text);}
+string expectedVillage=AssetDatabase.LoadAssetAtPath<WorldMapAsset>("Assets/WorldAuthoring/Scenes/village/Map.asset").sourceJson;
+Directory.CreateDirectory("../.local/diagnostics/map-repair");
+void Unlock(){foreach(var opening in Object.FindObjectsOfType<主线开场>()){opening.StopAllCoroutines();opening.enabled=false;}if(黑幕字幕.实例&&黑幕字幕.实例.gameObject.activeInHierarchy){黑幕字幕.实例.StopAllCoroutines();黑幕字幕.实例.收起(0);黑幕字幕.实例.gameObject.SetActive(false);}黑幕字幕.强制解锁();}
+foreach(var sceneName in new[]{"3C_Testbed","Sect","Sect_Wilderness","village","Demon-Suppressing Tower"}){
+Time.timeScale=1;跨场景数据.正在接力=false;SaveSystem.当前存档=null;var load=SceneManager.LoadSceneAsync(sceneName);while(!load.isDone){EditorApplication.QueuePlayerLoopUpdate();yield return null;}for(int i=0;i<12;i++){Unlock();EditorApplication.QueuePlayerLoopUpdate();yield return null;}Unlock();
+var player=Object.FindObjectOfType<PlayerController>();player.enabled=false;var cc=player.GetComponent<CharacterController>();cc.enabled=false;var position=player.transform.position+new Vector3(.23f,0,.31f);player.transform.SetPositionAndRotation(position,Quaternion.Euler(0,73,0));
+var saved=SaveSystem.建新档();saved.角色名="地图位置回归";SaveSystem.从角色采集(saved);Check(string.Equals(saved.场景名,sceneName,StringComparison.OrdinalIgnoreCase)&&Vector3.Distance(saved.位置,position)<.0001f,"capture correct player scene and position: "+sceneName);SaveSystem.存档(4,saved);
+if(sceneName=="3C_Testbed"){
+var extra=SceneManager.CreateScene("SaveActiveSceneQA");SceneManager.SetActiveScene(extra);var collected=new SaveData();SaveSystem.从角色采集(collected);Check(collected.场景名==sceneName,"additive active scene cannot corrupt player's save scene");SceneManager.SetActiveScene(player.gameObject.scene);var unload=SceneManager.UnloadSceneAsync(extra);while(!unload.isDone)yield return null;
+var wrong=JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(saved));wrong.场景名="village";wrong.位置=new Vector3(999,999,999);SaveSystem.应用到角色(wrong);Check(Vector3.Distance(player.transform.position,position)<.0001f,"direct launch ignores foreign-scene save coordinates");
+var transit=JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(saved));transit.位置+=Vector3.one*20;transit.朝向Y=210;跨场景数据.正在接力=true;SaveSystem.应用到角色(transit);Check(Vector3.Distance(player.transform.position,position)<.0001f&&Mathf.Abs(Mathf.DeltaAngle(player.transform.eulerAngles.y,73))<1,"ordinary teleport retains destination position and heading instead of save coordinates");跨场景数据.正在接力=false;
+SaveSystem.当前存档=saved;SaveSystem.当前槽位=4;var pause=Object.FindObjectOfType<PauseMenuUI>();typeof(PauseMenuUI).GetMethod("点保存",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(pause,null);yield return new WaitForSecondsRealtime(.55f);var disk=SaveSystem.读档(4);Check(disk.场景名==sceneName&&Vector3.Distance(disk.位置,position)<.0001f,"actual pause save flow records current position and scene");
+}
+load=SceneManager.LoadSceneAsync("StartScene");while(!load.isDone){EditorApplication.QueuePlayerLoopUpdate();yield return null;}for(int i=0;i<3;i++){EditorApplication.QueuePlayerLoopUpdate();yield return null;}
+var menu=Object.FindObjectOfType<MainMenuUI>();Check(menu,"actual main menu exists before reload: "+sceneName);menu.OpenSlots(false);menu.确认中央存档(4);
+float deadline=Time.realtimeSinceStartup+15;while(SceneManager.GetActiveScene().name=="StartScene"&&Time.realtimeSinceStartup<deadline){EditorApplication.QueuePlayerLoopUpdate();yield return null;}
+Check(string.Equals(SceneManager.GetActiveScene().name,sceneName,StringComparison.OrdinalIgnoreCase),"actual menu returns to saved scene: "+sceneName);for(int i=0;i<12;i++){Unlock();EditorApplication.QueuePlayerLoopUpdate();yield return null;}player=Object.FindObjectOfType<PlayerController>();player.enabled=false;
+Check(Vector2.Distance(new Vector2(player.transform.position.x,player.transform.position.z),new Vector2(position.x,position.z))<.06f,"actual reload preserves saved XZ: "+sceneName+" "+position+" -> "+player.transform.position);Check(Mathf.Abs(player.transform.position.y-position.y)<.4f,"actual reload stays on saved floor: "+sceneName);Check(Mathf.Abs(Mathf.DeltaAngle(player.transform.eulerAngles.y,73))<1,"actual reload restores heading: "+sceneName);
+if(sceneName=="village"){var map=Object.FindObjectOfType<WorldMapLoader>();Check(JsonUtility.ToJson(map.Data)==expectedVillage,"actual gameplay loads newly published user map");}
+}
+File.WriteAllLines("../.local/diagnostics/map-repair/save-runtime-report.txt",report);Debug.Log("MAP_SAVE_RUNTIME_PASS "+report.Count);
+}
+return Run();

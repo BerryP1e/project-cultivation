@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -25,6 +25,7 @@ public sealed class CheDianBreathVisual : IDisposable
     float clock, length, visibleLength, dissolveTime, cloudBudget, flameBudget, lastHit = -10;
     Vector3 lastHitPoint;
     bool fired;
+    bool captureHeld;
     int activeStrands=28;
     float density=1, spread=1;
     public CheDianBreathVisual(CheDianYeTingDefinition d)
@@ -59,10 +60,11 @@ public sealed class CheDianBreathVisual : IDisposable
     public void SetTier(int tier)
     {
         Tier=Mathf.Clamp(tier,1,4);
-        density=Tier==1?.70f:Tier==2?1:Tier==3?1.48f:2.05f;
-        spread=Tier==1?.85f:Tier==2?1:Tier==3?1.14f:1.30f;
-        HeadFlameGain=Tier==1?.65f:Tier==2?1:Tier==3?1.65f:2.45f;
-        activeStrands=Tier==1?18:Tier==2?28:Tier==3?36:48;
+        // Final spray stays halfway between the previous second and third effects.
+        density=Tier==1?.70f:Tier==2?1:Tier==3?1.12f:1.24f;
+        spread=Tier==1?.85f:Tier==2?1:Tier==3?1.035f:1.07f;
+        HeadFlameGain=Tier==1?.65f:Tier==2?1:Tier==3?1.1625f:1.325f;
+        activeStrands=Tier==1?18:Tier==2?28:Tier==3?30:32;
         core.widthMultiplier=.45f*spread;halo.widthMultiplier=1.65f*spread;distortion.widthMultiplier=3.5f*spread;
         var emission=sparks.emission;emission.rateOverTime=680*density;
         emission=backFlame.emission;emission.rateOverTime=85*HeadFlameGain;
@@ -70,8 +72,8 @@ public sealed class CheDianBreathVisual : IDisposable
         emission=charge.emission;emission.rateOverTime=75*Mathf.Sqrt(HeadFlameGain);
         var main=backFlame.main;float size=.7f*Mathf.Sqrt(HeadFlameGain);main.startSize=new ParticleSystem.MinMaxCurve(size*.5f,size*1.4f);
         main=backSparks.main;main.startSpeed=12*Mathf.Sqrt(HeadFlameGain);main.startSize=new ParticleSystem.MinMaxCurve(.0225f,.063f*Mathf.Sqrt(HeadFlameGain));
-        var shape=backFlame.shape;shape.angle=27+Mathf.Max(0,Tier-2)*5;shape.radius=.22f*Mathf.Sqrt(HeadFlameGain);
-        shape=backSparks.shape;shape.angle=35+Mathf.Max(0,Tier-2)*5;shape.radius=.18f*Mathf.Sqrt(HeadFlameGain);
+        var shape=backFlame.shape;shape.angle=27+Mathf.Max(0,Tier-2)*1.25f;shape.radius=.22f*Mathf.Sqrt(HeadFlameGain);
+        shape=backSparks.shape;shape.angle=35+Mathf.Max(0,Tier-2)*1.25f;shape.radius=.18f*Mathf.Sqrt(HeadFlameGain);
         for(int i=activeStrands;i<strands.Length;i++)strands[i].enabled=false;
     }
     LineRenderer Beam(string name,float width,Color color,Material material)
@@ -114,7 +116,7 @@ public sealed class CheDianBreathVisual : IDisposable
             // Only the outer mist lingers as a soft bridge; no travelling axial cutoff.
             cloudBudget+=dt*110*density*(1-DissolveAmount);EmitCloud(smoke,ref cloudBudget,false);
             flameBudget+=dt*90*density*Mathf.Clamp01(1-dissolveTime/Mathf.Max(.01f,definition.BreathDissolveSeconds*.55f));EmitCloud(plume,ref flameBudget,true);
-            if(Ended){HideLines();foreach(var ps in systems)ps.Clear();}
+            if(Ended){HideLines();foreach(var ps in systems)ps.Clear();ReleaseCapture();}
             return;
         }
         if(!fired)return;
@@ -147,6 +149,7 @@ public sealed class CheDianBreathVisual : IDisposable
     }
     public void ShowBeam(Vector3 from,Vector3 to,float intensity)
     {
+        if(!captureHeld){CheDianSceneCapture.Acquire(distortion);captureHeld=true;}
         var delta=to-from;length=visibleLength=delta.magnitude;
         Root.transform.SetPositionAndRotation(from,Quaternion.LookRotation(delta.sqrMagnitude>.001f?delta:Vector3.forward));
         fired=true;charge.Stop(false,ParticleSystemStopBehavior.StopEmitting);
@@ -196,9 +199,15 @@ public sealed class CheDianBreathVisual : IDisposable
         // World-fixed contact: moving the muzzle must not drag yesterday's impact along with it.
         var impact=UnityEngine.Object.Instantiate(definition.BreathImpact,point,Quaternion.identity,Root.transform.parent);impact.transform.localScale=Vector3.one*.9f*spread;
         foreach(var t in impact.GetComponentsInChildren<Transform>())t.gameObject.layer=Root.layer;
+        // 每次接触保留原生烟焰层。折射错误由独立场景抓屏处理，不再靠隐藏烟层规避。
+        foreach(var renderer in impact.GetComponentsInChildren<ParticleSystemRenderer>())if(renderer.name.StartsWith("mist-",StringComparison.Ordinal))
+        {
+            renderer.enabled=true;
+        }
         foreach(var light in impact.GetComponentsInChildren<Light>()){light.intensity*=.6f;if(Root.layer==31)light.cullingMask=1<<31;}
         foreach(var ps in impact.GetComponentsInChildren<ParticleSystem>()){var m=ps.main;m.scalingMode=ParticleSystemScalingMode.Hierarchy;m.useUnscaledTime=Root.layer==31;m.stopAction=ParticleSystemStopAction.None;}
         impacts.Add(new Impact{root=impact,born=clock});
     }
-    public void Dispose(){foreach(var impact in impacts)if(impact.root)UnityEngine.Object.Destroy(impact.root);impacts.Clear();if(Root)UnityEngine.Object.Destroy(Root);}
+    void ReleaseCapture(){if(!captureHeld)return;CheDianSceneCapture.Release(distortion);captureHeld=false;}
+    public void Dispose(){ReleaseCapture();foreach(var impact in impacts)if(impact.root)UnityEngine.Object.Destroy(impact.root);impacts.Clear();if(Root)UnityEngine.Object.Destroy(Root);}
 }

@@ -1,0 +1,79 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Cultivation.WorldAuthoring;
+IEnumerator Run(){
+ if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated save directory");
+ var report=new List<string>();void Check(bool ok,string text){if(!ok)throw new Exception(text);report.Add(text);}
+ IEnumerator Frames(int n){for(int i=0;i<n;i++){EditorApplication.QueuePlayerLoopUpdate();yield return null;}}
+ IEnumerator Arrive(string scene){float end=Time.realtimeSinceStartup+30;while((SceneManager.GetActiveScene().name!=scene||黑幕字幕.过渡进行中)&&Time.realtimeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}Check(SceneManager.GetActiveScene().name==scene&&!黑幕字幕.过渡进行中,"arrive "+scene);yield return Frames(15);}
+ var fresh=SaveSystem.建新档("家园整合回归");SaveSystem.当前存档=fresh;SaveSystem.当前槽位=4;SaveSystem.存档(4,fresh);SaveApplier.开始读取存档();
+ var load=SceneManager.LoadSceneAsync("3C_Testbed");while(!load.isDone)yield return null;yield return Frames(15);
+ var player=GameObject.Find("Player");var bag=UnityEngine.Object.FindObjectOfType<UIPanelData>();var renderer=UnityEngine.Object.FindObjectOfType<WorldMapLoader>().Renderer;
+ Check(fresh.版本==24&&fresh.场景名=="3C_Testbed","new version starts in home");
+ Check(UnityEngine.Object.FindObjectsOfType<MonoBehaviour>(true).All(c=>!c||!new[]{"任务管理器","任务引导","主线开场"}.Contains(c.GetType().Name)),"story runtime absent");
+ var recipeItem=bag.物品.First(x=>x&&x.使用效果 is 学丹方效果);var learnRecipe=(学丹方效果)recipeItem.使用效果;
+ Check(learnRecipe.使用(new 物品使用请求{面板=bag,玩家=player,物品=recipeItem})&&炼丹炉.已学会(learnRecipe.丹方id),"actual starter recipe can be learned without story manager");bag.移除物品(recipeItem,1);
+ string recipeFlag=炼丹炉.丹方标记(learnRecipe.丹方id);
+ var original=player.GetComponent<玩家外观>().当前外观;
+ var cultivator=player.GetComponent<PlayerCultivation>();var actor=player.GetComponent<玩家外观>();var db=AppearanceDatabase.取();
+ Check(!actor.已拥有(db.取("app_foundation"))&&!actor.已拥有(db.取("app_goldencore")),"realm outfits locked at level one");
+ foreach(var level in new[]{11,31}){
+  cultivator.已解锁最高等级=level;cultivator.设置总灵气((long)(cultivator.取累计(level-1)*cultivator.难度系数)+1);
+  actor.解锁境界着装();var outfit=db.取(level==11?"app_foundation":"app_goldencore");
+  Check(cultivator.等级==level&&actor.已拥有(outfit),"permanent outfit unlock at realm "+level);
+  Check(actor.当前外观==original,"unlock does not force equipment change "+level);
+  Check(actor.装备(outfit),"actual body swap "+outfit.DisplayName);
+  original=outfit;
+  var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();
+  var mesh=new Mesh();body.BakeMesh(mesh);Check(mesh.vertexCount==outfit.取模型().GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh.vertexCount,"source outfit geometry used "+level);
+  Check(mesh.vertices.All(v=>!float.IsNaN(v.x)&&!float.IsInfinity(v.x))&&mesh.bounds.size.magnitude<8,"finite skinned body in native pose "+level);UnityEngine.Object.Destroy(mesh);
+  Check(Resources.Load<Sprite>("UI/InkUI/Appearance/portrait-"+outfit.id)&&outfit.图标,"portrait and list icon registered "+level);
+ }
+ // Large original-scale halls require a connected platform; exercise the existing expansion API first.
+ int expanded=0;foreach(var p in new[]{new Vector3(-30,0,0),new Vector3(-30,0,-20),new Vector3(-50,0,-20),new Vector3(-30,0,-40),new Vector3(-50,0,-40)}){var point=HomeWorld.取().吸附扩建(p);if(HomeWorld.取().可扩建(point,out _)&&HomeWorld.取().扩建(point))expanded++;yield return Frames(2);}
+ Check(expanded==5&&HomeWorld.取().包含(new Vector3(-40,0,-30),12.4f),"real home expansion creates a connected platform for full-scale halls without covering existing trees");
+ // Place each building through the same public placement path, open its original interaction, then save/restore.
+ foreach(var id in new[]{"home_alchemy_hall","home_merit_hall","home_technique_hall","home_deacon_hall","home_forge_hall"}){
+  摆设.取().导入(new List<摆设状态>());yield return Frames(3);
+  var definition=摆放物库.取(id);int placed=-1;
+  for(int z=-54;z<=10&&placed<0;z+=4)for(int x=-70;x<=6&&placed<0;x+=4){var p=new Vector3(x,renderer.GroundHeight(x,z),z);if(摆设.取().位置可用(id,p,0,out _))placed=摆设.取().放置(id,p,0);}
+  Check(placed>=0,"actual home placement "+id);yield return Frames(4);
+  var instance=UnityEngine.Object.FindObjectsOfType<摆设物件>().First(x=>x.编号==placed);var station=instance.GetComponentInChildren<StationInteractable>();
+  Check(station&&instance.GetComponentsInChildren<Collider>().Any(c=>!c.isTrigger),"building view and solid mesh collision "+id);
+  var controller=player.GetComponent<CharacterController>();controller.enabled=false;player.transform.position=station.transform.position+Vector3.back*Mathf.Max(.5f,station.交互距离-.5f);
+  var interactor=player.GetComponent<StationInteractor>();interactor.打开界面(station);yield return Frames(2);Check(interactor.界面已打开,"original facility interaction opens "+id);interactor.关闭界面();yield return Frames(2);controller.enabled=true;
+  var snapshot=new SaveData();SaveSystem.从角色采集(snapshot);Check(snapshot.摆设.Any(s=>s.类型id==id),"building persists in save "+id);
+ }
+ 摆设.取().导入(new List<摆设状态>());yield return Frames(3);
+ var bounty=宗门任务.全部.First(q=>q.是悬赏&&q.等级==1);Check(宗门任务.接取(bounty.id,out var reason),"accept original wilderness bounty: "+reason);
+ var portal=UnityEngine.Object.FindObjectsOfType<Teleporter>().First(p=>p.选项.Any(o=>o.场景=="Sect_Wilderness"));Check(portal.需要等级==0,"home wilderness portal has no retired story gate");portal.执行(0);yield return Arrive("Sect_Wilderness");
+ Check(玩家外观.当前外观id=="app_goldencore","equipped outfit survives wilderness transfer");
+ var service=UnityEngine.Object.FindObjectOfType<宗门悬赏刷怪>();service.同步();yield return Frames(8);Check(service.当前刷怪区&&service.当前刷怪区.存活数>0,"original wilderness bounty spawns in preserved sites");
+ var monsters=service.当前刷怪区.GetComponentsInChildren<NpcInstance>();Check(monsters.Length>0,"bounty owns native monsters");foreach(var npc in monsters)if(!npc.IsDead)npc.TakeDamage(100000000,true);yield return Frames(3);Check(宗门任务.可交付(bounty),"only actual wilderness kills complete bounty");
+ var back=UnityEngine.Object.FindObjectsOfType<Teleporter>().First(p=>p.选项.Any(o=>o.场景=="3C_Testbed"));back.执行(0);yield return Arrive("3C_Testbed");
+ Check(宗门任务.交付(bounty.id,out reason),"home deacon can claim wilderness bounty: "+reason);
+ Check(!宗门任务.交付(bounty.id,out _),"bounty reward cannot be claimed twice");
+ player=GameObject.Find("Player");var cc=player.GetComponent<CharacterController>();cc.enabled=false;player.GetComponent<PlayerController>().enabled=false;var origin=player.transform.position;player.transform.rotation=Quaternion.Euler(0,73,0);cc.enabled=true;
+ Check(TowerRealmTreasure.使用(player),"equipped treasure enters tower");yield return Arrive(TowerRealmTreasure.塔场景);
+ var tower=UnityEngine.Object.FindObjectOfType<TowerController>();Check(tower&&tower.本层存活数>0,"native tower begins spawning");
+ var towerSave=new SaveData();SaveSystem.从角色采集(towerSave);SaveSystem.存档(4,towerSave);Check(towerSave.镇妖阁返回点!=null,"tower save includes origin");
+ Check(DialogueDefinition.拆标记(towerSave.对话标记).Contains(recipeFlag),"save includes actual learned recipe flag");对话标记.添加("QA_未保存标记");
+ load=SceneManager.LoadSceneAsync("StartScene");while(!load.isDone)yield return null;yield return Frames(4);var menu=UnityEngine.Object.FindObjectOfType<MainMenuUI>();menu.OpenSlots(false);menu.确认中央存档(4);yield return Arrive(TowerRealmTreasure.塔场景);
+ Check(玩家外观.当前外观id=="app_goldencore","saved outfit restores after actual menu load");
+ Check(炼丹炉.已学会(learnRecipe.丹方id)&&对话标记.具备(recipeFlag)&&!对话标记.具备("QA_未保存标记"),"actual menu load restores recipe flags and clears unsaved session flags");
+ UnityEngine.Object.FindObjectOfType<日常循环>().导出(out int dailyDay,out int dailyMask);Check(dailyDay==towerSave.日常_天&&dailyMask==towerSave.日常_掩码,"daily checklist still restores without story manager");
+ Check(TowerRealmTreasure.使用(GameObject.Find("Player")),"tower E exit after menu reload");yield return Arrive("3C_Testbed");player=GameObject.Find("Player");
+ Check(Vector2.Distance(new Vector2(player.transform.position.x,player.transform.position.z),new Vector2(origin.x,origin.z))<.15f,"saved tower exit returns to summon location");Check(Mathf.Abs(Mathf.DeltaAngle(player.transform.eulerAngles.y,73))<2,"exit restores original heading");
+ Check(HomeWorld.取().包含(player.transform.position,.2f),"saved home expansions still support the restored return location");
+ Check(TowerRealmTreasure.使用(player),"enter for lethal damage test");yield return Arrive(TowerRealmTreasure.塔场景);var vitals=UnityEngine.Object.FindObjectOfType<PlayerVitals>();vitals.受到伤害(10000000);yield return Arrive("3C_Testbed");
+ Check(!UnityEngine.Object.FindObjectOfType<PlayerVitals>().IsDead,"real lethal hit exits to a living home player");
+ Check(玩家外观.当前外观id=="app_goldencore","outfit survives real tower death");
+ Directory.CreateDirectory("../.local/diagnostics/idle-refocus");File.WriteAllLines("../.local/diagnostics/idle-refocus/integration-report.txt",report);Debug.Log("HOME_IDLE_INTEGRATION_PASS "+report.Count);
+}
+return Run();

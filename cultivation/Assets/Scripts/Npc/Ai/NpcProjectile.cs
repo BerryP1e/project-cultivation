@@ -88,6 +88,8 @@ public class NpcProjectile : MonoBehaviour
     // ---- 运行时 ----
     ParticleSystem[] 全部粒子;
     ParticleSystem[] 沿路粒子;
+    readonly System.Collections.Generic.List<ParticleSystem> 弹体粒子 = new System.Collections.Generic.List<ParticleSystem>();
+    readonly ParticleSystem.Particle[] 弹体缓存 = new ParticleSystem.Particle[16];
     Vector3 目标点;
     Vector3 飞行方向;
     bool 直线模式;
@@ -120,6 +122,7 @@ public class NpcProjectile : MonoBehaviour
     {
         Vector3 起点 = transform.position;
         目标点 = 到点;
+        飞行方向 = (到点 - 起点).sqrMagnitude > .0001f ? (到点 - 起点).normalized : transform.forward;
         速度 = Mathf.Max(0.5f, 飞行速度);
         已结束 = false;
         已飞距离 = 0f;
@@ -228,12 +231,20 @@ public class NpcProjectile : MonoBehaviour
             if ((ps == GetComponent<ParticleSystem>() && ps.name.StartsWith("VFX_")) || ps.name == "Trail")
             {
                 ps.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                m.simulationSpace = ParticleSystemSimulationSpace.Local;
+                // 必须保留世界空间并写入真实位置。Local 粒子固定在原点时，Unity
+                // 不会把发射器位移记入原生 Trail，拖尾会留在出膛处。
+                m.simulationSpace = ParticleSystemSimulationSpace.World;
                 m.startSpeed = 0f;
+                m.gravityModifier = 0f;
+                弹体粒子.Add(ps);
                 var velocity = ps.velocityOverLifetime; velocity.enabled = false;
                 var inherited = ps.inheritVelocity; inherited.enabled = false;
                 var force = ps.forceOverLifetime; force.enabled = false;
                 var trails = ps.trails; if (trails.enabled) trails.worldSpace = true;
+                // 弹体由根节点带动，零粒子速度不能再作为网格朝向。
+                var renderer = ps.GetComponent<ParticleSystemRenderer>();
+                if (renderer && renderer.renderMode == ParticleSystemRenderMode.Mesh)
+                    renderer.alignment = ParticleSystemRenderSpace.Local;
             }
             m.playOnAwake = true;
             ps.Play(false);
@@ -248,6 +259,13 @@ public class NpcProjectile : MonoBehaviour
     // ============================================================ 每帧
 
     void Update()
+    {
+        Vector3 previous = transform.position;
+        推进飞行();
+        同步弹体粒子(previous);
+    }
+
+    void 推进飞行()
     {
         if (已结束) return;
 
@@ -339,6 +357,30 @@ public class NpcProjectile : MonoBehaviour
 
     float 补发累计;
 
+    void 同步弹体粒子(Vector3 frameStart)
+    {
+        Vector3 velocity = Time.deltaTime > .000001f ? (transform.position - frameStart) / Time.deltaTime : Vector3.zero;
+        foreach (var ps in 弹体粒子)
+        {
+            if (!ps) continue;
+            int count = ps.GetParticles(弹体缓存);
+            if (count == 0) continue; // 首次原生 burst 尚未模拟时，不用空数组覆盖它。
+            for (int i = 0; i < count; i++)
+            {
+                var particle = 弹体缓存[i];
+                // 原生粒子在本帧从逻辑起点走到逻辑终点，真正产生 Trail 顶点。
+                // 直接写终点再把速度归零，Unity 会把它视为静止粒子而不续接拖尾。
+                if ((particle.position - frameStart).sqrMagnitude > .0025f)
+                    particle.position = frameStart;
+                particle.velocity = velocity;
+                // 追踪由逻辑寿命结束；保持原生中段外观，不让两秒 burst 先于飞弹消失。
+                if (!已结束) particle.remainingLifetime = Mathf.Max(particle.remainingLifetime, particle.startLifetime * .5f);
+                弹体缓存[i] = particle;
+            }
+            ps.SetParticles(弹体缓存, count);
+        }
+    }
+
     void 检查闪避擦身(Vector3 next)
     {
         if (!追踪目标) return;
@@ -357,9 +399,20 @@ public class NpcProjectile : MonoBehaviour
         补发累计 -= 次;
         if (次 > 8) 次 = 8;                       // 保险，别一帧喷太多
 
+        Vector3 end = transform.position;
+        Vector3 begin = end - 飞行方向 * 本帧距离;
         for (int i = 0; i < 次; i++)
             foreach (var ps in 沿路粒子)
-                if (ps != null) ps.Emit(1);
+                if (ps != null)
+                {
+                    Vector3 position = Vector3.Lerp(begin, end, (i + .5f) / 次);
+                    var main = ps.main;
+                    if (main.simulationSpace == ParticleSystemSimulationSpace.Local)
+                        position = ps.transform.InverseTransformPoint(position);
+                    else if (main.simulationSpace == ParticleSystemSimulationSpace.Custom && main.customSimulationSpace)
+                        position = main.customSimulationSpace.InverseTransformPoint(position);
+                    ps.Emit(new ParticleSystem.EmitParams { position = position, applyShapeToPosition = true }, 1);
+                }
     }
 
     bool 被拦住了()

@@ -1,8 +1,38 @@
 # 验证配方
 
+## 家园版本当前验收（2026-10-16）
+
+当前正式场景只有洞府、宗门野外和镇妖阁。先 setup 隔离存档，运行后 stop + teardown 核对真实存档。不能直接把历史五场景配方套到当前工程。
+
+| 配方 | 当前覆盖 |
+| --- | --- |
+| home-idle-integration | 五种建筑令实际放置与原交互、拓境、野外悬赏、丹方/每日清单、菜单读档、塔内进出和死亡 |
+| idle-menu-runtime | 真正旧版文件保留、新菜单新档进入洞府和初始建筑令 |
+| appearance-cloth-runtime | 四套实际外观、衣服/长发、转头与站走跑施法御风、预览骨架、换装清理、传送复位及原生截图 |
+| remote-projectile-native | 飞弹主体、持续拖尾真实网格、转向/速度/长飞行与火岩坠原生层 |
+| world-map-rendering-runtime | 四次连续龙吐息、真实 Game View 透明抓屏和缓冲释放 |
+| ability-preview-lifecycle-runtime | 隐藏/打开/销毁预览及动画图生命周期 |
+| world-maps-scenes | 当前三张地图的真实几何、资源和功能绑定 |
+| world-authoring-usability / world-authoring-wall-grass | 工坊可逆笔刷、墙体、草避让和桥岸规则 |
+
+旧 HUD 主线、五场景 Play、旧洞府地面/围挡与宗门石台配方已移至 archive/pre-home-20261016。其余条目保留各主题的制作证据；带日期的旧检查数不代表本轮重复运行。当前结果见 docs/reports/2026-10-16收尾验收.md。
+
+---
+
+## 各系统既有配方与历史证据
+
+
+五场景工坊：`world-maps-scenes.cs.txt` 在停止运行的独立工坊场景中检查五图实际几何、完整变换和功能关联，临时打开的场景不保存。运行检查必须先以 editor 执行 `world-maps-play-setup.cs.txt`：记录真实存档哈希，把 `SaveSystem` 的 Editor 验证目录切到 `.local/diagnostics/world-map-validation/saves` 并创建新测试档。进入 Play 后执行 `world-maps-gameplay.cs.txt`，覆盖五场景、拓境令和独立宗门角色；停止后执行 `world-maps-play-teardown.cs.txt`，核对真实存档、清除隔离设置并返回独立工坊。不要直接在真实存档目录执行塔内检查，塔控自动存档固定写槽位0。`world-authoring-wall-grass.cs.txt` 在工坊Play验证端口吸附、固定建筑尺度、密度和画材质后草的可恢复避让。
+
+渲染兼容：`world-map-rendering-compatibility.cs.txt` 在非 Play 检查筛选后的新包素材／完整建筑、材质、可恢复删除事务及真实雾与透明物体合成（当前 64 项；旧 195 项版本的全零件入库规则已按用户要求取消）。`world-map-rendering-runtime.cs.txt` 在隔离存档的个人洞府 Play 中，实际续接四喷并以 `WaitForEndOfFrame` 捕获原生 Game View，检查每帧折射颜色缓冲尺寸、HDR 辉光层级和退出释放。当前一次 359 帧／16 图／374 项通过；数量受帧率影响。不能以手动 `Camera.Render` 的单张静态图代替持续喷射画面验证；前者曾漏掉命名 GrabPass 的马赛克。停止后必须执行存档 teardown。
+
+存档隔离已激活时禁止重复 setup，避免把沙盒路径和测试档哈希覆盖成“真实存档基线”。teardown 独立核对 `Application.persistentDataPath/saves` 路径及排序后的文件哈希，检查失败也撤销隔离，不擅自恢复或覆盖用户存档。若历史会话基线元数据错误，应从测试前只读备份核对真实文件，不能用当前文件重算后直接宣称未变化。
+
 局部命中反馈：`combat-hit-feedback.cs.txt` 在独立 Play 检查真实玩家/野猪的双方/单方顿帧、自动恢复及施法定格、连续命中限制、免疫和关闭表现、物理特效外侧投影。三套近战的实际接触与渲染继续由 `melee-impact-runtime.cs.txt` 检查。
 
 此目录保留当前玩法、场景、动画、特效和体素相关的可复用 C# 验证片段。用 [Unity 包装器](../unity/README.md) 执行，参数和报告放 `.local/diagnostics`。
+
+工坊收尾：`world-authoring-map-repairs.cs.txt` 在非 Play 验证完整建筑筛选、原贴图与颜色、库删减后的地图引用、三方向跨水摆桥和真实桥面碰撞，当前 444 项。`world-map-fog-depth.cs.txt` 在非 Play 使用非居中的高低三色实体检验真实深度，防止仅检查屏幕中心漏掉雾遮高楼；截图归 `map-repair/fog-asymmetric.png`。`world-map-save-runtime.cs.txt` 在隔离存档 Play 中，实际暂停菜单保存、五次主菜单选档／重新进场，检查五场景位置／朝向、附加场景采集、直接启动异场景、普通传送落点优先及新地图加载，35 项通过；运行开始时读取当前已发布村图 JSON 作为读回基线。停止后必须执行存档 teardown。普通传送不得调用新一局的读档重置。
 
 文件内容决定其运行模式：使用 Editor API 检查资产的选 editor；依赖实际 Player / Coroutine 的选 runtime 并先进入 Play。部分配方会临时移动角色、切换功法或创建测试目标；在独立 Play 回归中执行，结束后停止 Play，不保存测试场景状态。
 
@@ -83,3 +113,12 @@
 `npc-prefab-preview.cs.txt` 为Editor预制体动画预览28项检查：六片段切换/真实渲染/姿势变化、时间定位、循环与末尾停止、独立PreviewScene及游戏组件隔离、源预制体/控制器不变、销毁清理与自定义Inspector接线。截图归 `.local/diagnostics/julong-preview-*.png`，不保存场景或存档。
 
 掣电烨霆当前入口：`chedian-ghost.cs.txt`（81项）验证日常鬼火、停用预热模型、完整龙从头到尾凝形、末段立即从尾向头加速回收、1.5倍喷射、即时续吐/撤暗幕、单轮四段预算/剩余作废、冷却换槽、暂停清理及70敌人非分配查询溢出，四喷递增电流/龙头电焰与25%～100%四段颤动。`chedian-channel.cs.txt`（29项）使用真实玩家骨架验证A3持续举手、每喷后顿、上半身/左臂独立瞄准、走路/御风混合、远近普攻中断、其他技能锁与续喷穿透。`chedian-ghost-preview.cs.txt`（13项）验证暂停下隔离的鬼火→凝形吐息→回收。`chedian-editor.cs.txt` 保留17段资源/循环/坐标检查（25,245项）。旧实体伴龙配方移至 archive/chedian-solid-companion，只供历史制作参考，不运行于当前玩法。报告归 .local/diagnostics；脚本不保存场景或存档，说明见 docs/guides/掣电烨霆.md。
+
+循环与行游被动：`cultivation-passives-editor.cs.txt`验证七被动/玉简/目录与八张透明图标（35项）；`cultivation-passives-runtime.cs.txt`在独立Play验证实际百分比回复/神识、恢复粒子、学习、严格低境界风压禁行禁攻、独立禁锢、Tab子菜单/光标、真实到达记录与保存恢复（56项）。不写正式场景或存档；报告/截图归`.local/diagnostics`。原轮盘333项、龙收敛后四喷81项再次通过。
+
+
+画面升级（2026-10-14）：`rendering-study-editor.cs.txt` 生成独立 URP 样板并渲染三个视角/描边状态，检查管线、光照、抗锯齿与设置文件恢复；`rendering-legacy-water-fog.cs.txt` 在临时 Built-in 场景检查旧水兼容贴图、实际水面与体积雾；`rendering-grade-runtime.cs.txt` 在 Play 中捕获同相机两种调色，随后恢复原参数。运行前先使用旧水兼容贴图烘焙菜单；保留当前正式场景，无需保存它。
+
+`ability-preview-lifecycle-runtime.cs.txt`：检查隐藏神通页面不提前分配预览、打开后重放待展示项，以及显示过和从未打开的页面销毁后的动画图生命周期。
+
+`world-authoring-usability.cs.txt`：独立工坊运行时验证填池恢复地表及撤销/重做、清草、外扩草地纹理、实体草封闭拓扑、整占地水岸禁摆、无效摆放不入历史、自然石根与保留间隙、模型预览及游戏机位切换。临时替换地图后在 finally 恢复原地图，清空测试历史；不写正式场景/命名地图。报告归 `.local/diagnostics/map-ux-validation-results.txt`，测试前仍建议 Ctrl+S 保存当前地图。

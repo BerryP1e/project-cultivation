@@ -302,16 +302,7 @@ public class DialogueUI : MonoBehaviour
     /// </summary>
     void 按下回答(Action 动作)
     {
-        var 任务 = 任务管理器.实例;
-        var 段 = 当前对话段;
-        if (任务 != null && 段 != null)
-        {
-            // ① 对话表自己绑定的任务接线（显式指定，优先）
-            任务.处理对话绑定(段.触发任务, 段.完成任务);
-            // ② 「条件=对话」的任务阶段（按对话id 比对）
-            if (!string.IsNullOrEmpty(当前对话id)) 任务.通知对话(当前对话id, 当前NpcId);
-        }
-        if (动作 != null) 动作();
+        动作?.Invoke();
     }
 
     /// <summary>

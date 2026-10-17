@@ -19,8 +19,7 @@ public static class AvatarMappingFixer
     const string ModelPath = "Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx";
     const string AvatarPath = "Assets/Art/Characters/Tripo/better_player_test/better_player_testAvatar.asset";
 
-    [MenuItem("修仙/修复玩家模型的人形映射")]
-    [MenuItem("Cultivation/Fix Player Avatar Mapping")]
+    [MenuItem("修仙/外观/维护/修复玩家模型的人形映射")]
     public static void Fix()
     {
         var model = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);

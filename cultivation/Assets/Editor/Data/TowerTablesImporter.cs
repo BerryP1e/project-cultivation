@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -34,7 +34,6 @@ public static class TowerTablesImporter
     const string 生成根 = "Assets/Data/Generated";
 
     [MenuItem("修仙/镇妖塔/只导入塔三表（补正/刷怪组/层表）")]
-    [MenuItem("Cultivation/Tower/Import Tower Tables")]
     public static void 导入全部()
     {
         var 报告 = new StringBuilder();

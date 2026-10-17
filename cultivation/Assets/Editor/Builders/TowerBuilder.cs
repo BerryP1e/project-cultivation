@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -137,7 +137,6 @@ public static class TowerBuilder
     }
 
     [MenuItem("修仙/镇妖塔/装配镇妖塔场景")]
-    [MenuItem("Cultivation/Tower/Build Tower Scene")]
     public static void 装配()
     {
         // 先确保打开的是镇妖塔场景 —— 这个 builder 只对它有意义上
@@ -447,7 +446,7 @@ public static class TowerBuilder
         // ★ 进出塔的接线**必须在这里写死**：本方法会**删掉旧的「塔控」节点再重建**，
         //   而这些字段只在 Inspector 上配过的话，重跑一次装配就**静默丢掉了** ——
         //   表现就是「从塔里出去落到了宗门出生点，而不是塔门口那个传送圈」（用户 2026-10-02 报过）。
-        控.塔外场景名 = "Sect";
+        控.塔外场景名 = "3C_Testbed";
         控.塔外落点名 = "sect2 to tower";     // 宗门里那个进塔的传送圈
         控.通关传送点名 = "tower to sect2";   // 本场景里清完怪才出现的那个圈
 

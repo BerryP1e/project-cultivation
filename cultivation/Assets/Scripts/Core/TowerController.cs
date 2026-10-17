@@ -68,13 +68,13 @@ public class TowerController : MonoBehaviour
     public Transform 入塔落点;
 
     [Tooltip("选择「退到塔外」时的去处。**填场景名**（例：Sect）—— 走黑幕过场")]
-    public string 塔外场景名 = "Sect";
+    public string 塔外场景名 = "3C_Testbed";
 
     [Tooltip("退到塔外时的落点名（黑幕过场的落点）。**必须填**！\n" +
              "默认 `sect2 to tower` = 宗门里那个**进塔的传送圈**本身（落点与传送圈同名是允许的：\n" +
              "传送要按 F，站在圈上不会自己触发）。\n" +
              "留空 = 落到目标场景的**默认出生点** —— 用户 2026-10-02 报的 bug 就是这个。")]
-    public string 塔外落点名 = "sect2 to tower";
+    public string 塔外落点名 = "";
 
     [Header("通关传送点（清完怪出现）")]
     [Tooltip("本层清空时**出现**的那个传送点：玩家走上去按 F，选「进入下一层 / 出塔」。\n" +
@@ -88,7 +88,7 @@ public class TowerController : MonoBehaviour
     public string 下一层选项名 = "进入下一层";
 
     [Tooltip("「出塔」那一项在圈上显示的名字")]
-    public string 出塔选项名 = "出塔（回 Sect）";
+    public string 出塔选项名 = "出塔（返回现实）";
 
     [Header("节奏")]
     [Tooltip("玩家死亡后给多少秒做选择（用户定：10 秒）")]
@@ -396,33 +396,10 @@ public class TowerController : MonoBehaviour
     /// </summary>
     public void 退到塔外()
     {
+        if (黑幕字幕.过渡进行中) return;
         停止塔();
         记录进度();
-
-        // ★ 留一个"进来过、并且出来了"的标记（2026-10-02）：主线的「进塔去」那一阶段靠它判定
-        //   （用户要求「进塔后再出来」才算，不是走到塔门就算）。标记进存档，读档也算数。
-        对话标记.添加(出塔标记);
-
-        if (打印日志) Debug.Log("[镇妖塔] 退出塔外 → 场景「" + 塔外场景名 + "」", this);
-
-        if (string.IsNullOrEmpty(塔外场景名))
-        {
-            Debug.LogWarning("[镇妖塔] 没配「塔外场景名」，只停塔不切场景", this);
-            return;
-        }
-
-        string 落点 = 塔外落点名;
-        // ⚠️ 这里**只能**判"填没填"，**不能**顺手判"目标场景里有没有这个落点物体" ——
-        //    落点物体在**目标场景**里，而现在还在塔里，`找场景物体` 一定找不到，
-        //    会打出一条永远出现、且是假警报的 Warning（实测踩过）。
-        //    真要报"找不到落点"，那是切场景之后的事，由 `黑幕字幕.推进场景过渡` 自己报。
-        if (string.IsNullOrEmpty(落点))
-            Debug.LogWarning("[镇妖塔] 没配「塔外落点名」—— 玩家会落在「" + 塔外场景名
-                             + "」的**默认出生点**，而不是塔门口的那个传送点", this);
-
-        var 显示名 = 塔外场景名;
-        // 唯一正路：黑幕字幕.开始场景过渡（它负责黑幕 / 摆位 / 钉进度）
-        黑幕字幕.开始场景过渡(塔外场景名, 显示名, Vector3.zero, 落点);
+        TowerRealmTreasure.返回现实();
     }
 
     // ============================================================ 清空一波
@@ -551,21 +528,11 @@ public class TowerController : MonoBehaviour
 
     void 处理玩家死亡(PlayerVitals 谁)
     {
-        if (!塔运行中) return;                    // 塔外死亡不归塔管
-        if (等待死亡选择) return;
-
-        停止塔(清掉怪: false);                     // 先别清场：玩家还在原地消散演出
+        if (!塔运行中 || 等待死亡选择) return;
         等待死亡选择 = true;
-
-        // 顺便把通关传送点收掉（玩家已经死了，那个选择没意义了）
-        等待通关选择 = false;
+        停止塔();
         隐藏通关传送点();
-
-        if (打印日志) Debug.Log("[镇妖塔] 玩家在第 " + 当前层 + " 层倒下 —— "
-                               + 死亡选择时限 + (当前层 > 1 ? " 秒内选择：出塔 / 返回上一层" : " 秒内选择：出塔"), this);
-
-        死亡倒数开始?.Invoke(死亡选择时限);
-        StartCoroutine(死亡选择倒计时());
+        退到塔外();
     }
 
     IEnumerator 死亡选择倒计时()

@@ -41,6 +41,8 @@ public static class 场景自举
         if (!场景.IsValid() || !场景.isLoaded) return;
         // Isolated voxel experiments must not start game systems or alter story scene flags.
         if (场景.path.StartsWith("Assets/Experiments/Voxel/", System.StringComparison.Ordinal)) return;
+        // The standalone authoring scene owns its camera and UI and never starts gameplay.
+        if (场景.name == "RuntimeMapEditor") return;
 
         // ★ 场景标记要在**任何提前返回之前**维护：它是"我现在在哪个场景"的唯一真相，
         //   连主菜单/过场也该把它翻过去（否则从洞府回主菜单，洞府那几段对话还开着）。
@@ -51,6 +53,8 @@ public static class 场景自举
 
         补单例(场景);
         补玩家与相机(场景);
+        var player = GameObject.Find("Player");
+        if (player && player.scene == 场景 && !player.GetComponent<SaveApplier>()) player.AddComponent<SaveApplier>();
         查装配(场景);
     }
 
@@ -148,13 +152,7 @@ public static class 场景自举
     static void 补单例(Scene 场景)
     {
         HomeWorld.取();
-        if (!场景内有<任务管理器>(场景))
-        {
-            var go = new GameObject("任务管理器");
-            SceneManager.MoveGameObjectToScene(go, 场景);
-            go.AddComponent<任务管理器>();
-            Debug.Log("[场景自举] 「" + 场景.name + "」没有任务管理器 → 已自动补上");
-        }
+
 
         // ---- 纪年 / 灵田（2026-10-01 新增）----
         //
@@ -243,17 +241,17 @@ public static class 场景自举
             //   同样在这里自举补，不写进场景。
             确保组件<GameGlobalBloom>(相机, 场景.name);
 
-            // ★ 画面基线实时预览（F2 切档）。纯调试工具，定下基线后可以删。
-            确保组件<画面基线预览>(相机, 场景.name);
+            // 地图统一画面由 WorldMapLook 配置；不自动挂回旧 F2 基线预览。
 
             // ★ 纪年 HUD（右上角）+ 灵田界面（F4）+ 任务引导（左侧主线追踪）。
             //   同样自举补 —— UI 是「每个场景一份」的重灾区（见 场景一致性与踩坑规律）。
             //   三个都是 ScreenSpaceOverlay 自搭 Canvas，挂相机上只是为了有个不销毁的宿主。
             确保组件<纪年HUD>(相机, 场景.name);
             确保组件<灵田界面>(相机, 场景.name);
-            确保组件<任务引导>(相机, 场景.name);
+
             确保组件<宗门任务引导>(相机, 场景.name);
             确保组件<宗门悬赏刷怪>(相机, 场景.name);
+
 
             // ★ 日常循环（第四阶段）：四件事的状态机（收获 / 炼制 / 打坐 / 入塔）。
             确保组件<日常循环>(相机, 场景.name);

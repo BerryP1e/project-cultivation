@@ -29,7 +29,6 @@ public static class DataTableSyncChecker
     }
 
     [MenuItem("修仙/检查配置表是否已同步")]
-    [MenuItem("Cultivation/Check Data Tables")]
     public static void 检查菜单() => 检查(true);
 
     static void 检查(bool 没问题也报一句)

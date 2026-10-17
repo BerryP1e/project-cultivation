@@ -5142,7 +5142,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.5
+      scalar: 0.85
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -9734,7 +9734,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: b1aee1c6374851e438b41f40031f8d29, type: 2}
   - {fileID: 2100000, guid: 564274271c0dac34e96edb9a9aa5aff1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -9756,7 +9756,7 @@ ParticleSystemRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_RenderMode: 5
+  m_RenderMode: 0
   m_MeshDistribution: 0
   m_SortMode: 3
   m_MinParticleSize: 0
@@ -10024,7 +10024,7 @@ MonoBehaviour:
   "\u98DE\u884C\u901F\u5EA6": 30
   "\u5F39\u4F53\u534A\u5F84": 0.22
   "\u547D\u4E2D\u534A\u5F84": 2.2
-  "\u547D\u4E2D\u7279\u6548\u7F29\u653E": 0.75
+  "\u547D\u4E2D\u7279\u6548\u7F29\u653E": 1.5
 --- !u!1 &7871728464361876572
 GameObject:
   m_ObjectHideFlags: 0

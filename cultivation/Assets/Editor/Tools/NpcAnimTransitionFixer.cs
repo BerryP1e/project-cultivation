@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -37,7 +37,6 @@ public static class NpcAnimTransitionFixer
     public static readonly string[] 控制器目录 = { "Assets/Animations/NPC", "Assets/Animations/NPC_Creature" };
 
     [MenuItem("修仙/NPC 资产/压短动画过渡（起手别再边跑边挥）")]
-    [MenuItem("Cultivation/NPC Assets/Shorten Animator Transitions")]
     public static void 压短全部()
     {
         var 控制器 = new List<AnimatorController>();

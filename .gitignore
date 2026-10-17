@@ -115,3 +115,9 @@ __pycache__/
 
 # Unity MCP script-call generated request payloads; keep source recipes only.
 devtools/validation/*.cs.txt.json
+
+# Workshop recovery drafts and deleted-map recovery stay on this machine.
+maps/source/.last-session.json
+maps/source/.deleted/
+# Completed workshop export requests are local queue receipts.
+maps/export-requests/*.completed.*

@@ -1,0 +1,24 @@
+using UnityEngine.UI;
+using System.Collections;
+IEnumerator Run(){
+if(!Application.isPlaying)throw new Exception("Needs Play");
+var holder=new GameObject("HiddenPreviewLifecycleQA",typeof(RectTransform));holder.SetActive(false);
+var view=holder.AddComponent<RawImage>();view.rectTransform.sizeDelta=new Vector2(480,320);
+var preview=holder.AddComponent<UIAbilityPreview>();preview.初始化(view);
+preview.显示(null);
+if(preview.演示玩家 || preview.预览相机)throw new Exception("Hidden preview allocated before activation");
+Debug.Log("PASS hidden preview allocates neither stage nor graph.");
+holder.SetActive(true);yield return null;
+if(!preview.演示玩家 || !preview.预览相机)throw new Exception("Pending preview did not appear");
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+var graph=(UnityEngine.Playables.PlayableGraph)typeof(UIAbilityPreview).GetField("graph",flags).GetValue(preview);
+if(!graph.IsValid())throw new Exception("Visible preview graph missing");
+Debug.Log("PASS opening page creates the pending preview and graph.");
+var stage=preview.演示玩家.parent.gameObject;
+Object.Destroy(holder);yield return null;yield return null;
+if(graph.IsValid() || stage)throw new Exception("Preview cleanup failed");
+Debug.Log("PASS visible preview cleanup destroys graph and detached stage.");
+var neverActive=new GameObject("NeverActivePreviewQA",typeof(RectTransform));neverActive.SetActive(false);var image=neverActive.AddComponent<RawImage>();var hidden=neverActive.AddComponent<UIAbilityPreview>();hidden.初始化(image);hidden.显示(null);Object.Destroy(neverActive);yield return null;
+Debug.Log("PASS never-opened preview can be destroyed without graph allocation.");
+}
+return Run();

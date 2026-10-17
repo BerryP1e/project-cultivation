@@ -374,7 +374,10 @@ public class Teleporter : MonoBehaviour
     {
         var 点 = 找落点(o.落点, SceneManager.GetActiveScene());
         if (点 == null) { Debug.LogWarning("[传送] 本场景里找不到落点「" + o.落点 + "」", this); return; }
+        RecordDeparture();
         放下玩家(点);
+        SpatialTravel.Record(Object.FindObjectOfType<UIPanelData>(), new TeleportBookmark {
+            场景 = gameObject.scene.name, 名称 = o.名称, 落点名 = 点.name, 位置 = 点.position, 朝向 = 点.eulerAngles.y });
     }
 
     /// <summary>
@@ -394,11 +397,20 @@ public class Teleporter : MonoBehaviour
     /// </summary>
     void 跨场景传送(传送选项 o)
     {
+        if (!Application.CanStreamedLevelBeLoaded(o.场景)) { ToastUI.提示("目的地暂不可到达"); return; }
+        RecordDeparture();
+        SpatialTravel.PlanArrival(o.场景, o.落点, o.名称);
         // 进度先钉住：新场景里的任务管理器会接手这份进度，不会从头再来
-        var 任务 = Object.FindObjectOfType<任务管理器>();
-        if (任务 != null) 任务.切场景前钉进度();
 
-        黑幕字幕.开始场景过渡(o.场景, 任务管理器.取场景显示名(o.场景), Vector3.zero, o.落点);
+
+        黑幕字幕.开始场景过渡(o.场景, SaveApplier.取场景显示名(o.场景), Vector3.zero, o.落点);
+    }
+
+    void RecordDeparture()
+    {
+        SpatialTravel.Record(Object.FindObjectOfType<UIPanelData>(), new TeleportBookmark {
+            场景 = gameObject.scene.name, 名称 = string.IsNullOrEmpty(提示文字) ? name : 提示文字,
+            位置 = transform.position, 朝向 = transform.eulerAngles.y });
     }
 
     static Transform 找落点(string 名, Scene 场景)

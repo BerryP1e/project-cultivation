@@ -1,0 +1,28 @@
+using UnityEditor;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using System.IO;
+using System.Collections;
+IEnumerator Run(){
+AssetDatabase.Refresh();
+var graphics=GraphicsSettings.defaultRenderPipeline;var quality=QualitySettings.renderPipeline;
+var global=GraphicsSettings.GetSettingsForRenderPipeline<UniversalRenderPipeline>();
+var linear=GraphicsSettings.lightsUseLinearIntensity;var temperature=GraphicsSettings.lightsUseColorTemperature;int aa=QualitySettings.antiAliasing;
+var graphicsPath=Path.GetFullPath(Path.Combine(Application.dataPath,"../ProjectSettings/GraphicsSettings.asset"));var qualityPath=Path.GetFullPath(Path.Combine(Application.dataPath,"../ProjectSettings/QualitySettings.asset"));
+var graphicsBytes=File.ReadAllBytes(graphicsPath);var qualityBytes=File.ReadAllBytes(qualityPath);
+Cultivation.RenderingStudy.RenderingStudy.Build();
+var window=EditorWindow.GetWindow<Cultivation.RenderingStudy.RenderingStudyWindow>();
+var active=typeof(Cultivation.RenderingStudy.RenderingStudyWindow).GetField("active",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+foreach(var spec in new[]{0,1,2}){
+window.showOutline=spec!=1;window.characterCloseup=spec!=0;window.outputFile=spec==0?"meadow-urp.png":spec==1?"avatar-urp-no-ink.png":"avatar-urp-ink.png";window.Capture();
+var limit=DateTime.UtcNow.AddSeconds(45);
+while((bool)active.GetValue(window)){if(DateTime.UtcNow>limit)throw new Exception("Study capture timeout");yield return null;}
+if(GraphicsSettings.defaultRenderPipeline!=graphics || QualitySettings.renderPipeline!=quality)throw new Exception("Pipeline not restored");
+if(GraphicsSettings.lightsUseLinearIntensity!=linear || GraphicsSettings.lightsUseColorTemperature!=temperature || QualitySettings.antiAliasing!=aa)throw new Exception("Light/AA not restored");
+if(GraphicsSettings.GetSettingsForRenderPipeline<UniversalRenderPipeline>()!=global)throw new Exception("Global settings not restored");
+if(!graphicsBytes.SequenceEqual(File.ReadAllBytes(graphicsPath)) || !qualityBytes.SequenceEqual(File.ReadAllBytes(qualityPath)))throw new Exception("Project settings bytes changed");
+Debug.Log("PASS capture "+window.outputFile+" and full settings restoration.");
+}
+window.characterCloseup=false;window.outputFile="meadow-urp.png";
+}
+return Run();

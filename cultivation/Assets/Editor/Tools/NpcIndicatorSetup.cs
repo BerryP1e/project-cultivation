@@ -42,7 +42,7 @@ public static class NpcIndicatorSetup
     // 检查
     // ================================================================
 
-    [MenuItem("Cultivation/NPC 批量/检查")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 批量/检查")]
     public static void Check()
     {
         var 全部 = 收集();
@@ -91,7 +91,7 @@ public static class NpcIndicatorSetup
     // 补齐
     // ================================================================
 
-    [MenuItem("Cultivation/NPC 批量/补齐（指示器 + 碰撞体 + NpcInstance + 定义）")]
+    [MenuItem("修仙/NPC 资产/维护/NPC 批量/补齐（指示器 + 碰撞体 + NpcInstance + 定义）")]
     public static void Fix()
     {
         var 定义表 = 建定义索引();

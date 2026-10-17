@@ -1,0 +1,34 @@
+using System.Linq;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.SceneManagement;
+using Cultivation.WorldAuthoring;
+IEnumerator Run(){
+ if(string.IsNullOrEmpty(UnityEditor.SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Run world-maps-play-setup in Editor before entering Play; real saves must remain isolated.");
+ var checks=new List<string>();Action<bool,string> Check=(ok,label)=>{if(!ok)throw new Exception(label);checks.Add("PASS "+label);};SaveSystem.当前槽位=-1;
+ foreach(var name in new[]{"3C_Testbed","village","Sect","Sect_Wilderness","Demon-Suppressing Tower"}){
+  if(SceneManager.GetActiveScene().name!=name){var operation=SceneManager.LoadSceneAsync(name);while(!operation.isDone){UnityEditor.EditorApplication.QueuePlayerLoopUpdate();yield return null;}}
+  for(int i=0;i<12;i++){UnityEditor.EditorApplication.QueuePlayerLoopUpdate();yield return null;}
+  foreach(var opening in Object.FindObjectsOfType<主线开场>()){opening.StopAllCoroutines();opening.enabled=false;}
+  if(黑幕字幕.实例&&黑幕字幕.实例.gameObject.activeInHierarchy){黑幕字幕.实例.StopAllCoroutines();黑幕字幕.实例.收起(0);黑幕字幕.实例.gameObject.SetActive(false);}黑幕字幕.强制解锁();
+  var loader=Object.FindObjectOfType<WorldMapLoader>();var player=Object.FindObjectOfType<PlayerController>();Check(loader&&loader.Data!=null&&player,name+" gameplay and map initialized");Check(loader.Renderer.ChunkCount>0,name+" ground is present");
+  Check(Object.FindObjectsOfType<VoxelMapPilot>().Length==0,name+" obsolete voxel hierarchy manifest does not run");
+  var p=player.transform.position;Check(Physics.Raycast(p+Vector3.up*3,Vector3.down,out var hit,20,1<<28),name+" player stands over generated ground");Check(!UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline,name+" original Built-in gameplay pipeline retained");
+  foreach(var feature in loader.Data.features){var bound=loader.bindings.FirstOrDefault(x=>x.key==feature.id);Check(bound!=null&&bound.target,name+" original feature reference preserved: "+feature.label);}
+  if(name=="3C_Testbed"){
+   var home=HomeWorld.取();var before=loader.Data.land.Count(x=>x>.5f);var saved=new List<Vector2Int>(home.扩建地块);Vector3 next=default;bool found=false;
+   for(int z=-5;z<=5&&!found;z++)for(int x=-5;x<=5&&!found;x++){var candidate=HomeWorld.中心(new Vector2Int(x,z));if(home.可扩建(candidate,out _)){next=candidate;found=true;}}
+   Check(found,"home expansion finds a supported free perimeter position");Check(home.扩建(next),"expansion token generates terrain instead of old prefab");int added=loader.Data.land.Count(x=>x>.5f)-before;Check(added>700&&added<1700,"expansion adds about a quarter of original area: "+(added*.25f).ToString("F1")+"m²");Check(home.包含(next,.5f),"new land supports home placement");Check(!Object.FindObjectsOfType<HomeBoundary>().Any(),"old home boundary never respawns");home.导入(saved);Check(loader.Data.land.Count(x=>x>.5f)==before,"home import rebuilds exact base plus saved expansions");
+  }
+  if(name=="Sect"){
+   foreach(var role in new[]{WorldFeatureRole.MeritExchange,WorldFeatureRole.TechniqueExchange,WorldFeatureRole.Commission}){
+    var template=loader.map.palette.featureTemplates.First(x=>x.role==role);var test=WorldMapData.Empty("Role QA");test.features.Add(new WorldFeatureData{id="role-test",templateId=template.id,label="任意外观与名称",position=new Vector3(180,10,180)});var host=new GameObject("Role test");var runtime=new WorldFeatureRuntime();try{runtime.Build(test,loader.map.palette,host.transform,null);var station=host.GetComponentInChildren<StationInteractable>();Check(station!=null,"assigning "+role+" creates station independently of model name");Check(role==WorldFeatureRole.Commission?host.GetComponentInChildren<执事阁界面>()!=null:host.GetComponentInChildren<功德堂兑换>()!=null,"assigning "+role+" attaches actual gameplay behavior");}finally{runtime.Dispose();Object.Destroy(host);}
+   }
+  }
+  var gameType=System.Type.GetType("UnityEditor.GameView,UnityEditor");var window=UnityEditor.EditorWindow.GetWindow(gameType);window.Show();window.Focus();for(int i=0;i<10;i++){UnityEditor.EditorApplication.QueuePlayerLoopUpdate();window.Repaint();yield return null;}
+  bool captured=false;IEnumerator Capture(){yield return new WaitForEndOfFrame();var texture=ScreenCapture.CaptureScreenshotAsTexture();if(texture){File.WriteAllBytes("../.local/diagnostics/play-map-"+name+".png",texture.EncodeToPNG());Object.Destroy(texture);}captured=true;}player.StartCoroutine(Capture());for(int i=0;i<80&&!captured;i++){UnityEditor.EditorApplication.QueuePlayerLoopUpdate();window.Repaint();yield return null;}Check(captured,name+" actual Game View frame captured");
+ }
+ File.WriteAllLines("../.local/diagnostics/native-five-map-qa-results.txt",checks);Debug.Log("Passed "+checks.Count+" real gameplay scene checks, including home expansion and all original functional bindings");
+}
+return Run();

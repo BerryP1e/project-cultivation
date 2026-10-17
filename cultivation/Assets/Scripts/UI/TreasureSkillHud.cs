@@ -45,7 +45,7 @@ public class TreasureSkillHud : MonoBehaviour, IPointerClickHandler
         icon.sprite=t != null ? t.图标 : null; icon.enabled=t != null && t.图标 != null;
         backdrop.enabled=icon.enabled;
         cooldown.sprite=icon.sprite;
-        label.text=t != null ? t.DisplayName : "未装备法宝";
+        label.text=TowerRealmTreasure.在塔内 ? "E 返回现实" : t != null && t.法宝id==TowerRealmTreasure.法宝id ? "E 进入镇妖阁" : t != null ? t.DisplayName : "未装备法宝";
         float left=caster.CooldownRemaining;
         cooldown.enabled=t != null && icon.sprite != null && left>0;
         cooldown.fillAmount=t != null && t.冷却时间>0 ? Mathf.Clamp01(left/t.冷却时间) : 0;

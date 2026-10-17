@@ -75,7 +75,6 @@ public static class InkUIQa
         {
             guard = true;
             // 截图只检查 UI 状态；停止任务演出和能力装载，避免临时被动攻击场景 NPC。
-            foreach (var intro in UnityEngine.Object.FindObjectsOfType<主线开场>(true)) { intro.StopAllCoroutines(); intro.enabled = false; }
             foreach (var loader in UnityEngine.Object.FindObjectsOfType<PlayerAbilityLoader>(true)) loader.enabled = false;
             foreach (var storm in UnityEngine.Object.FindObjectsOfType<LeiYun>(true)) storm.enabled = false;
             foreach (var storm in UnityEngine.Object.FindObjectsOfType<QianJieLeiYu>(true)) storm.enabled = false;

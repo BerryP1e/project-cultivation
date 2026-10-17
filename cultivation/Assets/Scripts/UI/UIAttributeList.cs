@@ -31,6 +31,14 @@ public class UIAttributeList : MonoBehaviour
     bool clearedSerializedRows;
     int nextRow;
     bool reuseRows;
+    UIPanelData panel;
+    void OnEnable()
+    {
+        panel = GetComponentInParent<UIPanelData>() ?? FindObjectOfType<UIPanelData>();
+        if (panel) panel.Changed += Rebuild;
+        Rebuild();
+    }
+    void OnDisable() { if (panel) panel.Changed -= Rebuild; }
 
     void Start()
     {
@@ -73,19 +81,23 @@ public class UIAttributeList : MonoBehaviour
         }
 
         // 境界 / 神识 / 灵根 / 吐纳速度 是 lore 里独立于 26 项战斗属性的字段，先列出来
+        var stats = GetComponentInParent<PlayerCombatStats>();
+        if (!stats) foreach (var candidate in FindObjectsOfType<PlayerCombatStats>())
+            if (candidate.isActiveAndEnabled) { stats = candidate; break; }
         if (source != null)
         {
             AddRow("境界", source.境界 != null ? source.境界.境界名 : "未设定");
-            AddRow("神识", source.神识.ToString("0.#"));
+            AddRow("神识", (stats ? stats.当前神识 : source.神识).ToString("0.#"));
             AddRow("灵根", FormatRoot(source.灵根));
             AddRow("吐纳速度", source.吐纳速度.ToString("0.#") + " /秒");
         }
 
-        var attrs = source != null ? source.基础属性 : null;
+        var attrs = stats ? stats.当前属性 : source != null ? source.基础属性 : null;
 
         for (int i = 0; i < AttributeUtil.Count; i++)
         {
             var type = (AttributeType)i;
+            if (type == AttributeType.Sense) continue;
             float value = attrs != null ? attrs[type] : 0f;
             if (hideZero && Mathf.Approximately(value, 0f)) continue;
             AddRow(AttributeUtil.GetDisplayName(type), AttributeUtil.Format(type, value));

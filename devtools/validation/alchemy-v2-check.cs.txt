@@ -2,7 +2,6 @@
 using UnityEngine.EventSystems;
 System.Collections.IEnumerator Run(){
 var data=Object.FindObjectOfType<UIPanelData>();var inventory=data.物品.ToList();var marks=对话标记.全部标记();var vitals=Object.FindObjectOfType<PlayerVitals>();float mana=vitals.当前灵气,scale=Time.timeScale;
-var quest=Object.FindObjectOfType<任务管理器>();bool questEnabled=quest!=null && quest.enabled;if(quest!=null)quest.enabled=false;
 var daily=Object.FindObjectOfType<日常循环>();int day=0,dailyMask=0;if(daily!=null)daily.导出(out day,out dailyMask);
 var random=UnityEngine.Random.state;var furnace=炼丹炉.取();var recipe=furnace.取丹方("item_dan_juqi");float chance=recipe.成功率;
 var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/炼丹界面.prefab");var view=Object.Instantiate(prefab).GetComponent<UIInkAlchemyPage>();
@@ -57,7 +56,7 @@ var desc=view.GetComponentsInChildren<ScrollRect>().First(s=>s.name=="RecipeDesc
 try{furnace.取丹方(view.选中丹方).说明=string.Join("\n",Enumerable.Repeat("长丹方介绍应在左侧墨幕中滚动，不越界。",20));view.选择丹方(view.选中丹方);yield return Pause(.9f);Canvas.ForceUpdateCanvases();Check(desc.content.rect.height>desc.viewport.rect.height,"长介绍仍能在左侧墨幕内滚动");}finally{furnace.取丹方(view.选中丹方).说明=original;}
 System.IO.File.WriteAllText("screenshots/alchemy-v2-check-"+Screen.width+"x"+Screen.height+".txt",sb.ToString());Debug.Log(sb.ToString());
 }finally{
-furnace.炼制完成-=callback;view.关闭();Object.Destroy(view.gameObject);recipe.成功率=chance;data.物品=inventory;data.RaiseChanged();vitals.当前灵气=mana;对话标记.清空();foreach(var mark in marks)对话标记.添加(mark);if(daily!=null)daily.导入(day,dailyMask);if(quest!=null)quest.enabled=questEnabled;Time.timeScale=scale;UnityEngine.Random.state=random;
+furnace.炼制完成-=callback;view.关闭();Object.Destroy(view.gameObject);recipe.成功率=chance;data.物品=inventory;data.RaiseChanged();vitals.当前灵气=mana;对话标记.清空();foreach(var mark in marks)对话标记.添加(mark);if(daily!=null)daily.导入(day,dailyMask);Time.timeScale=scale;UnityEngine.Random.state=random;
 }
 }
 return Run();

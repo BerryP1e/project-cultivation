@@ -1,0 +1,28 @@
+Cloud Shading
+
+The custom shader for cloud assets has multiple different features. With these features, you are able to quickly change the look and feel. 
+The shader is made in shadergraph with five subgraphs and two custom functions. 
+
+Shading Features
+For the shading, the shader uses three different elements. A noise texture for small shading variations on the mesh, baked ambient occlusion in the vertex colours for creating depth and a toon ramp for creating stylized shading.
+A single noise texture is triplanar mapped and the parameter 'Tiling' controls the amount of tiling on the mesh. The parameter 'Noise Power' controls the intensity of the noise.
+The baked AO comes from the red channel of the vertex colours and is controlled by the 'AO Strength' for regulating the intensity.
+The subgraph 'Toon Ramp' uses the values from the noise texture and the AO to vary the shading on the mesh. With the 'ToonRamp' texture parameter, the mesh is coloured from the texture based on light value.
+The output of the subgraph is multiplied with the shader parameter _LightColor0. This parameter is used by the directional light to communicate the light intensity and colour to the shader.
+
+Colour
+To colour the cloud meshes, I combined a height gradient and a shading method called 'FuzzyShading'.
+The height gradient is made by using the y-axis of the position in object space. The parameters 'Falloff' and 'Height Offset' control the intensity and the position of the gradient.
+The gradient is then coloured by the parameters 'Base Color' and 'Secondary Color'.
+Afterwards, the coloured gradient is multiplied in the subgraph 'FuzzyShading'. This subgraph creates a shine on the edges and darkens the core of the mesh. The parameters 'Power' and 'Edge Brightness' control the intensity and falloff range of the shine. And the parameter 'Core Darkness' controls the darkening of the core. 
+In the end, the output from the shading and the colouring sections are multiplied together for the final colour output.`
+
+Vertex Position
+To make the clouds move, I use a 3D Simplex noise created by Keijiro to create a smooth 3D world space noise.
+I used the time node to animate the noise going upwards.
+The noise is multiplied by the vertex normals and added to the original vertex position.
+
+For any questions or feedback you can contact me at:
+Quint@emberglitch.com
+
+Please include the package name in the subject for any support tickets.

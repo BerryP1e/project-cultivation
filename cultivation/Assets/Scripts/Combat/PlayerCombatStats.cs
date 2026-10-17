@@ -49,7 +49,7 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     {
         get
         {
-            if (汇总 == null) Recalculate();
+            if (汇总 == null || lawPanel && lawRevision != lawPanel.变化序号) Recalculate();
             return 汇总;
         }
     }
@@ -125,6 +125,9 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
     /// <summary>重新汇总属性。改功法/等级后调用一次即可</summary>
     public void Recalculate()
     {
+        if (!修炼) 修炼 = GetComponent<PlayerCultivation>();
+        lawPanel = GetComponent<UIPanelData>() ?? GetComponent<PlayerAbilityLoader>()?.面板数据
+            ?? (修炼 ? 修炼.面板数据 : null) ?? FindObjectOfType<UIPanelData>();
         var 正常 = new AttributeSet();
 
         if (玩家属性 != null && 玩家属性.基础属性 != null)
@@ -143,8 +146,12 @@ public class PlayerCombatStats : MonoBehaviour, ICombatStats
             var percent = new AttributeSet(); var flat = new AttributeSet();
             if (临时增益 != null) 临时增益.汇总修正(percent, flat);
             if (!lawPanel) lawPanel = 修炼 ? 修炼.面板数据 : FindObjectOfType<UIPanelData>();
+            var passivePercent = new AttributeSet();
+            CultivationPassiveAbilities.汇总属性(lawPanel, 汇总, passivePercent);
             LawFragmentSystem.汇总(lawPanel, percent, flat, 汇总);
             LawFragmentSystem.结算(汇总, percent, flat);
+            for (int i = 0; i < AttributeUtil.Count; i++)
+                汇总[(AttributeType)i] *= 1 + passivePercent[(AttributeType)i];
         }
 
         lawRevision = lawPanel ? lawPanel.变化序号 : -1;

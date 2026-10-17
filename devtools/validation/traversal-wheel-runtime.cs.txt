@@ -4,8 +4,7 @@ using System.Collections;
 using UnityEditor;
 IEnumerator Run(){
 if(!Application.isPlaying)throw new Exception("Use exec_runtime_script");
-Time.timeScale=1;DialogueUI.关闭();foreach(var actor in Object.FindObjectsOfType<NpcInstance>())foreach(var behavior in actor.GetComponentsInChildren<MonoBehaviour>())behavior.enabled=false;foreach(var actor in Object.FindObjectsOfType<PlayerController>())foreach(var behavior in actor.GetComponentsInChildren<MonoBehaviour>())behavior.enabled=false;foreach(var s in Object.FindObjectsOfType<SaveApplier>())s.enabled=false;foreach(var q in Object.FindObjectsOfType<任务管理器>())q.enabled=false;
-var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+Time.timeScale=1;DialogueUI.关闭();foreach(var actor in Object.FindObjectsOfType<NpcInstance>())foreach(var behavior in actor.GetComponentsInChildren<MonoBehaviour>())behavior.enabled=false;foreach(var actor in Object.FindObjectsOfType<PlayerController>())foreach(var behavior in actor.GetComponentsInChildren<MonoBehaviour>())behavior.enabled=false;foreach(var s in Object.FindObjectsOfType<SaveApplier>())s.enabled=false;var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
 var report=new List<string>();void Check(bool ok,string label){if(!ok){File.WriteAllText("../.local/diagnostics/traversal-wheel/runtime-report.txt",string.Join("\n",report));throw new Exception("FAIL "+label);}report.Add(label);}
 var root=new GameObject("FallingSpellQA_Player");root.SetActive(false);root.transform.position=new Vector3(22000,3,22000);
 var model=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"),root.transform);model.transform.localPosition=Vector3.zero;model.transform.localRotation=Quaternion.identity;model.transform.localScale=Vector3.one*1.80072f;

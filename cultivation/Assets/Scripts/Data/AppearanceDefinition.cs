@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **一种外观** —— 玩家可以持有 / 装备的"整个人"。
@@ -30,6 +30,9 @@ public class AppearanceDefinition : ScriptableObject
     [Tooltip("也可以直接填预制体（填了就优先用它，忽略上面的路径）")]
     public GameObject 模型预制体;
 
+    [Tooltip("衣摆和宽袖的附加骨骼蒙皮；不替换人体 Animator。")]
+    public AppearanceClothProfile 衣服随动;
+
     [Header("UI")]
     public Sprite 图标;
 
@@ -39,6 +42,9 @@ public class AppearanceDefinition : ScriptableObject
     [Header("拥有 / 解锁")]
     [Tooltip("勾上 = 开局就拥有并装备（村中少年就是靠它做默认外观）")]
     public bool 默认拥有 = false;
+
+    [Tooltip("达到该境界等级永久解锁；0 表示只通过物品或默认拥有。不会自动替换当前穿戴。")]
+    [Min(0)] public int 境界解锁等级;
 
     [Tooltip("拥有它需要具备的标记（分号分隔，全部满足才算解锁）。\n" +
              "任务完成时写的标记填在这里 —— 主线走到「进入宗门」就会自动解锁并换上")]

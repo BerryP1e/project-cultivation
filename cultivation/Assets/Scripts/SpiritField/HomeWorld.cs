@@ -1,116 +1,79 @@
 ﻿using System.Collections.Generic;
+using Cultivation.WorldAuthoring;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>保存扩建格，按石台外轮廓合并为连续地面；初始地面直接使用场景烘焙结果。</summary>
+/// <summary>洞府拓境直接修改工坊地形；每次约20×20米，约原洞府面积四分之一。</summary>
 public sealed class HomeWorld : MonoBehaviour
 {
-    public const float 网格间距 = 40f;
+    public const float 网格间距=10f;
+    public const float 扩建边长=20f;
     static HomeWorld instance;
-    public List<Vector2Int> 扩建地块 = new List<Vector2Int>();
-    readonly HashSet<Vector2Int> cells = new HashSet<Vector2Int>{Vector2Int.zero};
-    readonly List<GameObject> hidden = new List<GameObject>();
-    GameObject root;
-    HomeBoundary boundary;
-    Transform boundaryParent;
-    int boundaryScene=-1;
-    int sceneHandle = -1;
-    public static HomeWorld 取()
-    {
-        if(instance)return instance;
-        var go=new GameObject("家园地面管理");DontDestroyOnLoad(go);
-        return instance=go.AddComponent<HomeWorld>();
-    }
+    public List<Vector2Int> 扩建地块=new List<Vector2Int>();
+    readonly HashSet<Vector2Int> cells=new HashSet<Vector2Int>();
+    WorldMapLoader loader;
+    int sceneHandle=-1;
+    public static HomeWorld 取(){if(instance)return instance;var root=new GameObject("家园地面管理");DontDestroyOnLoad(root);return instance=root.AddComponent<HomeWorld>();}
     void Awake(){instance=this;}
     public static Vector3 中心(Vector2Int cell)=>new Vector3(cell.x*网格间距,0,cell.y*网格间距);
-    public IEnumerable<Vector2Int> 所有地块 { get { yield return Vector2Int.zero;foreach(var c in 扩建地块)yield return c; } }
+    public IEnumerable<Vector2Int> 所有地块{get{yield return Vector2Int.zero;foreach(var cell in 扩建地块)yield return cell;}}
     public bool 已有(Vector2Int cell)=>cells.Contains(cell);
-    static readonly Vector2Int[] directions={Vector2Int.right,Vector2Int.left,Vector2Int.up,Vector2Int.down};
+    void FindMap(){if(loader&&loader.gameObject.scene==SceneManager.GetActiveScene())return;loader=null;foreach(var root in SceneManager.GetActiveScene().GetRootGameObjects()){var candidate=root.GetComponentInChildren<WorldMapLoader>();if(candidate&&candidate.homeMap){loader=candidate;break;}}}
     public Vector3 吸附扩建(Vector3 position)
     {
-        float best=float.MaxValue;Vector3 result=position;
-        foreach(var c in 所有地块)foreach(var d in directions)
+        FindMap();if(!loader||loader.Data==null)return position;
+        var centre=new Vector2Int(Mathf.RoundToInt(position.x/网格间距),Mathf.RoundToInt(position.z/网格间距));float best=float.MaxValue;Vector3 result=中心(centre);
+        for(int z=-4;z<=4;z++)for(int x=-4;x<=4;x++){var p=中心(centre+new Vector2Int(x,z));p.y=loader.Data.spawn.y;float distance=(p-position).sqrMagnitude;if(distance>=best||!可扩建(p,out _))continue;best=distance;result=p;}
+        result.y=loader.Data.spawn.y;return result;
+    }
+    bool TerrainAllows(Vector3 position,out string reason)
+    {
+        reason="";if(!loader||loader.Data==null){reason="洞府地图尚未加载";return false;}var data=loader.Data;
+        if(Mathf.Abs(position.x)+11>=data.Width*.5f||Mathf.Abs(position.z)+11>=data.Width*.5f){reason="已到地图边界";return false;}
+        int covered=0,total=0;bool connected=false;
+        for(float z=-10;z<=10;z+=1)for(float x=-10;x<=10;x+=1)
         {
-            if(已有(c+d))continue;
-            var p=中心(c+d);float distance=(p-position).sqrMagnitude;
-            if(distance<best){best=distance;result=p;}
+            if(!InPatch(x,z))continue;total++;bool ground=data.HasGround(position.x+x,position.z+z);if(ground)covered++;
+            if(!connected&&(ground||data.HasGround(position.x+x+data.cellSize,position.z+z)||data.HasGround(position.x+x-data.cellSize,position.z+z)||data.HasGround(position.x+x,position.z+z+data.cellSize)||data.HasGround(position.x+x,position.z+z-data.cellSize)))connected=true;
         }
-        return result;
+        if(covered>total*.4f){reason="此处已有太多地面，请移到洞府边缘";return false;}if(!connected){reason="新地须与已有地面相连";return false;}return true;
     }
     public bool 可扩建(Vector3 position,out string reason)
     {
-        reason="";
-        if(!摆放校验.当前场景可摆放){reason="只能扩建个人洞府";return false;}
-        var cell=new Vector2Int(Mathf.RoundToInt(position.x/网格间距),Mathf.RoundToInt(position.z/网格间距));
-        if(Vector3.Distance(position,中心(cell))>.2f){reason="需要对齐家园网格";return false;}
-        if(已有(cell)){reason="此处已有地面";return false;}
-        bool adjacent=false;foreach(var d in directions)if(已有(cell+d))adjacent=true;
-        if(!adjacent){reason="须与已建地面相邻";return false;}
-        foreach(var c in Physics.OverlapBox(position+Vector3.up*2,new Vector3(21,2,21)))
+        reason="";if(!摆放校验.当前场景可摆放){reason="只能扩建个人洞府";return false;}FindMap();if(!TerrainAllows(position,out reason))return false;
+        var cell=new Vector2Int(Mathf.RoundToInt(position.x/网格间距),Mathf.RoundToInt(position.z/网格间距));if((new Vector2(position.x,position.z)-new Vector2(cell.x,cell.y)*网格间距).sqrMagnitude>.04f){reason="需要对齐扩建预览";return false;}
+        foreach(var collider in Physics.OverlapBox(position+Vector3.up*2,new Vector3(9.5f,2,9.5f)))
         {
-            if(c.isTrigger||c is CharacterController||c.GetComponentInParent<HomeSurface>()||c.GetComponentInParent<HomeBoundary>()||c.GetComponentInParent<AirWall>())continue;
-            reason="这里已有「"+c.name+"」";return false;
+            if(collider.isTrigger||collider is CharacterController||collider.gameObject.layer==28||collider.GetComponentInParent<HomeSurface>()||collider.GetComponentInParent<AirWall>())continue;
+            reason="这里已有「"+collider.name+"」";return false;
         }
         return true;
     }
-    public bool 扩建(Vector3 position)
+    static bool InPatch(float x,float z){float qx=Mathf.Max(Mathf.Abs(x)-7,0),qz=Mathf.Max(Mathf.Abs(z)-7,0);return qx*qx+qz*qz<=9;}
+    void Paint(Vector2Int cell)
     {
-        if(!可扩建(position,out _))return false;
-        var cell=new Vector2Int(Mathf.RoundToInt(position.x/网格间距),Mathf.RoundToInt(position.z/网格间距));
-        扩建地块.Add(cell);cells.Add(cell);重建();return true;
-    }
-    void Update()
-    {
-        int handle=SceneManager.GetActiveScene().handle;
-        if(sceneHandle!=handle){sceneHandle=handle;重建();}
-        if(!摆放校验.当前场景可摆放&&SceneManager.GetActiveScene().name!="StartScene"&&SceneManager.GetActiveScene().name!="Transition subtitles")HomeFarmBackground.推进(Time.deltaTime);
-    }
-    public void 导入(List<Vector2Int> imported)
-    {
-        扩建地块=new List<Vector2Int>();cells.Clear();cells.Add(Vector2Int.zero);
-        if(imported!=null)foreach(var c in imported)if(cells.Add(c))扩建地块.Add(c);
-        重建();
-    }
-    public void 重建()
-    {
-        foreach(var g in hidden)if(g)g.SetActive(true);hidden.Clear();
-        if(root){root.SetActive(false);Destroy(root);}root=null;
-        if(boundary&&boundaryScene!=SceneManager.GetActiveScene().handle)
+        var data=loader.Data;var p=中心(cell);float target=data.Sample(data.height,0,0);
+        for(int z=1;z<data.resolution-1;z++)for(int x=1;x<data.resolution-1;x++)
         {
-            if(boundaryParent){boundary.transform.SetParent(boundaryParent,true);boundary.同步(HomeAssets.取(),new[]{Vector2Int.zero});}
-            else {boundary.gameObject.SetActive(false);Destroy(boundary.gameObject);}
-            boundary=null;
+            var point=data.Position(x,z);bool inside=InPatch(point.x-p.x,point.z-p.z);
+            // 相邻拓境地块连接成连续地基，四个圆角不能在中间留下小洞和岩壁。
+            if(!inside)foreach(var other in cells){var q=中心(other);var delta=q-p;
+                if(Mathf.Abs(delta.z)<.01f&&Mathf.Abs(delta.x)<=扩建边长+.01f&&Mathf.Abs(point.z-p.z)<=10
+                    &&point.x>=Mathf.Min(p.x,q.x)&&point.x<=Mathf.Max(p.x,q.x)){inside=true;break;}
+                if(Mathf.Abs(delta.x)<.01f&&Mathf.Abs(delta.z)<=扩建边长+.01f&&Mathf.Abs(point.x-p.x)<=10
+                    &&point.z>=Mathf.Min(p.z,q.z)&&point.z<=Mathf.Max(p.z,q.z)){inside=true;break;}
+            }
+            if(!inside)continue;int i=data.Index(x,z);if(data.land[i]>.5f)continue;data.land[i]=1;data.height[i]=data.dryHeight[i]=target;data.water[i]=0;data.waterHeight[i]=0;
         }
-        if(!摆放校验.当前场景可摆放)return;
-        var assets=HomeAssets.取();if(!assets||!assets.地面||!assets.地面材质||assets.地面内轮廓==null||assets.地面内轮廓.Length<3)return;
-        GameObject authored=null;
-        foreach(var g in SceneManager.GetActiveScene().GetRootGameObjects())foreach(var t in g.GetComponentsInChildren<Transform>())
-            if(t.name=="Ground"&&t.GetComponent<HomeSurface>())authored=t.gameObject;
-        if(!boundary)
-        {
-            boundary=authored?authored.GetComponentInChildren<HomeBoundary>(true):null;
-            boundaryParent=boundary?boundary.transform.parent:null;
-            if(!boundary)boundary=new GameObject("边界围挡").AddComponent<HomeBoundary>();
-            boundary.transform.SetParent(authored?authored.transform.parent:null,true);
-            boundaryScene=SceneManager.GetActiveScene().handle;
-        }
-        boundary.同步(assets,所有地块);
-        if(扩建地块.Count==0&&authored){Physics.SyncTransforms();return;}
-        if(authored){hidden.Add(authored);authored.SetActive(false);}
-        root=new GameObject("家园融合地面");
-        if(扩建地块.Count==0)
-        {
-            var floor=Instantiate(assets.地面,root.transform);floor.name="Ground";
-            var duplicate=floor.GetComponentInChildren<HomeBoundary>();if(duplicate){duplicate.gameObject.SetActive(false);Destroy(duplicate.gameObject);}
-            Physics.SyncTransforms();return;
-        }
-        var mesh=HomeLandMesh.生成(assets,所有地块,out _);
-        root.AddComponent<MeshFilter>().sharedMesh=mesh;root.AddComponent<MeshRenderer>().sharedMaterial=assets.地面材质;
-        root.AddComponent<MeshCollider>().sharedMesh=mesh;root.AddComponent<HomeSurface>().运行网格=mesh;
-        Physics.SyncTransforms();
     }
+    public bool 扩建(Vector3 position){if(!可扩建(position,out _))return false;var cell=new Vector2Int(Mathf.RoundToInt(position.x/网格间距),Mathf.RoundToInt(position.z/网格间距));if(cells.Add(cell))扩建地块.Add(cell);Paint(cell);loader.Rebuild();Physics.SyncTransforms();return true;}
+    void Update(){int handle=SceneManager.GetActiveScene().handle;if(sceneHandle!=handle){sceneHandle=handle;loader=null;重建();}if(!摆放校验.当前场景可摆放&&SceneManager.GetActiveScene().name!="StartScene"&&SceneManager.GetActiveScene().name!="Transition subtitles")HomeFarmBackground.推进(Time.deltaTime);}
+    public void 导入(List<Vector2Int> imported){扩建地块=new List<Vector2Int>();cells.Clear();if(imported!=null)foreach(var cell in imported)if(cells.Add(cell))扩建地块.Add(cell);重建();}
+    public void 重建(){if(!摆放校验.当前场景可摆放)return;FindMap();if(!loader||loader.Data==null)return;loader.ResetTerrainData();foreach(var cell in 扩建地块)Paint(cell);loader.Rebuild();Physics.SyncTransforms();}
     public bool 包含(Vector3 p,float margin=0)
     {
-        var assets=HomeAssets.取();return assets&&assets.地面内轮廓!=null&&assets.地面内轮廓.Length>=3&&HomeLandMesh.距离(assets,cells,new Vector2(p.x,p.z))<=-HomeLandMesh.行走边距-margin;
+        FindMap();if(!loader||loader.Data==null)return false;var data=loader.Data;if(!data.HasGround(p.x,p.z)||data.IsWet(p.x,p.z))return false;
+        // 占地是方形，必须覆盖四角；圆周检查会允许大建筑角部悬在云海上。
+        for(int z=-1;z<=1;z++)for(int x=-1;x<=1;x++){float px=p.x+x*(margin+.25f),pz=p.z+z*(margin+.25f);if(!data.HasGround(px,pz)||data.IsWet(px,pz))return false;}return true;
     }
 }

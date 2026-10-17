@@ -22,7 +22,7 @@ public static class WindowsReleaseBuilder
     const string Output = "Builds/Windows-x64/cultivation.exe";
     const string ReportPath = "Builds/windows-release-report.json";
 
-    [MenuItem("Cultivation/Release/Build Windows x64")]
+    [MenuItem("修仙/发布/Build Windows x64")]
     public static void Schedule()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)

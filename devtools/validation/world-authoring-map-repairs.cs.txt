@@ -1,0 +1,26 @@
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
+using Cultivation.WorldAuthoring;
+var checks=new System.Collections.Generic.List<string>();void Check(bool ok,string text){if(!ok)throw new Exception(text);checks.Add("PASS "+text);}
+if(Application.isPlaying)throw new Exception("Requires stopped Editor");
+var palette=AssetDatabase.LoadAssetAtPath<WorldMapPalette>(WorldMapEditorBuilder.PalettePath);
+Check(palette.entries.Where(x=>!x.libraryHidden&&x.sourcePack=="亚洲建筑"&&(x.category=="建筑"||x.category=="桥道")).Count()==7,"new pack offers seven whole buildings/gates/pavilions/bridges");
+Check(!palette.entries.Any(x=>!x.libraryHidden&&x.sourcePath.StartsWith("Assets/_AsianArchitecture/Prefabs/")&&!Path.GetFileNameWithoutExtension(x.sourcePath).StartsWith("Building")),"loose new building components removed from selectable library");
+foreach(var entry in palette.entries.Where(x=>!x.libraryHidden&&(x.sourcePack=="亚洲建筑"||x.sourcePack=="Far East")&&(x.category=="建筑"||x.category=="桥道"))){int slot=0;foreach(var renderer in entry.prefab.GetComponentsInChildren<Renderer>(true))foreach(var original in renderer.sharedMaterials){var material=entry.materials[slot++];if(!original)continue;Check(material.GetFloat("_TextureSaturation")==1&&material.GetFloat("_TextureContrast")==1&&material.GetFloat("_DetailSoftness")==0,"source colour and sharpness restored: "+entry.label+" / "+original.name);if(original.HasProperty("_Albedo")&&original.GetTexture("_Albedo"))Check(material.GetTexture("_BaseMap")==original.GetTexture("_Albedo"),"custom albedo texture retained: "+entry.label+" / "+original.name);}}
+foreach(int index in palette.boundaryRocks)Check(index>=0&&index<palette.entries.Length&&palette.entries[index].category=="岩石","boundary index remains valid after library pruning");
+foreach(var path in AssetDatabase.FindAssets("t:WorldMapAsset").Select(AssetDatabase.GUIDToAssetPath)){var map=AssetDatabase.LoadAssetAtPath<WorldMapAsset>(path);var data=JsonUtility.FromJson<WorldMapData>(map.sourceJson);foreach(var item in data.objects)if(palette.Find(item.paletteId)<0)throw new Exception("Removed a used asset from "+data.name);Check(true,"all placed object IDs retained: "+data.name);}
+var preview=EditorSceneManager.NewPreviewScene();var host=new GameObject("Bridge placement QA");SceneManager.MoveGameObjectToScene(host,preview);var world=host.AddComponent<WorldMapRenderer>();
+try{
+ foreach(var entry in palette.entries.Where(x=>!x.libraryHidden&&x.IsBridge))foreach(float yaw in new[]{0f,45f,90f}){
+  var d=WorldMapData.Empty("Bridge QA").Expanded(257);float scale=entry.defaultScale;var size=WorldPlacementRules.Footprint(entry,scale);bool alongX=size.x>=size.y;var inverse=Quaternion.Euler(0,-yaw,0);
+  for(int z=0;z<d.resolution;z++)for(int x=0;x<d.resolution;x++){int i=d.Index(x,z);var local=inverse*d.Position(x,z)-new Vector3(entry.FootprintOffset.x,0,entry.FootprintOffset.y)*scale;d.land[i]=1;bool water=Mathf.Abs(alongX?local.x:local.z)<Mathf.Max(.5f,Mathf.Max(size.x,size.y)*.20f);d.water[i]=water?1:0;d.height[i]=water?-1.5f:0;d.waterHeight[i]=-.15f;}
+  Check(WorldPlacementRules.Evaluate(d,entry,Vector3.zero,yaw,scale,true,0,out var placed,out _,out var reason),"bridge crosses water with supported ends: "+entry.label+" yaw "+yaw+" / "+reason);
+  if(yaw==0){world.Configure(palette,d);var root=(GameObject)typeof(WorldMapRenderer).GetMethod("InstantiateEntry",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(world,new object[]{entry,placed,yaw,scale,true,1f,float.NaN});Physics.SyncTransforms();foreach(float end in new[]{-.43f,.43f}){var p=(alongX?new Vector3(size.x*end,0,0):new Vector3(0,0,size.y*end))+new Vector3(entry.FootprintOffset.x,0,entry.FootprintOffset.y)*scale;p.y=8;var hits=root.GetComponentsInChildren<Collider>().Select(c=>{bool found=c.Raycast(new Ray(p,Vector3.down),out var h,20);return new{found,hit=h};}).Where(x=>x.found&&x.hit.normal.y>.55f).ToArray();Check(hits.Length>0&&Mathf.Abs(hits.Max(x=>x.hit.point.y))<.55f,"actual bridge deck connects shore: "+entry.label+" end "+end+" hits="+string.Join(",",hits.Select(x=>x.hit.point.y))+" pos="+placed+" deck="+entry.bridgeDeckHeight);}Object.DestroyImmediate(root);}
+  for(int i=0;i<d.water.Length;i++){d.water[i]=1;d.height[i]=-1.5f;}Check(!WorldPlacementRules.Evaluate(d,entry,Vector3.zero,yaw,scale,true,0,out _,out _,out _),"unsupported bridge heads rejected: "+entry.label+" yaw "+yaw);Check(WorldPlacementRules.Evaluate(d,entry,Vector3.zero,yaw,scale,false,2,out _,out _,out _),"deliberate manual bridge placement remains available: "+entry.label+" yaw "+yaw);
+ }
+ var building=palette.entries.First(x=>x.sourcePack=="Far East"&&x.category=="建筑"&&!x.module);var pond=WorldMapData.Empty();for(int i=0;i<pond.land.Length;i++){pond.land[i]=1;pond.water[i]=1;pond.height[i]=-1.5f;}Check(!WorldPlacementRules.Evaluate(pond,building,Vector3.zero,0,1,true,0,out _,out _,out _),"ordinary building still cannot occupy water");
+}finally{Object.DestroyImmediate(host);EditorSceneManager.ClosePreviewScene(preview);}
+Directory.CreateDirectory("../.local/diagnostics/map-repair");File.WriteAllLines("../.local/diagnostics/map-repair/editor-report.txt",checks);Debug.Log("MAP_REPAIR_EDITOR_PASS "+checks.Count);

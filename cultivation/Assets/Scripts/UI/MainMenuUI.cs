@@ -312,6 +312,11 @@ public class MainMenuUI : MonoBehaviour
         else
         {
             if (数据 == null || 数据.是空的) { 提示一下("该存档位暂无存档"); return; }
+            if (数据.版本 < 24)
+            {
+                提示一下("这是旧 RPG 版本存档，原文件已保留。家园版本请使用空槽新建角色。");
+                return;
+            }
         }
 
         SaveSystem.当前存档 = 数据;
@@ -333,8 +338,10 @@ public class MainMenuUI : MonoBehaviour
 
     void 进游戏(SaveData 数据)
     {
-        // 新存档默认进「古古镇」；老存档里存的 3C_Testbed 是开发测试场景，一并迁到 village
-        string 场景 = (string.IsNullOrEmpty(数据.场景名) || 数据.场景名 == "3C_Testbed") ? "village" : 数据.场景名;
+        // 3C_Testbed 现在是正式个人洞府，必须保留存档所在场景和该场景坐标的对应关系。
+        string 场景 = string.IsNullOrEmpty(数据.场景名) ? "3C_Testbed" : 数据.场景名;
+        if (!Application.CanStreamedLevelBeLoaded(场景)) { 提示一下("此存档的场景已退役，请新建家园存档。"); return; }
+        SaveApplier.开始读取存档();
         Debug.Log("[MainMenu] 进入场景 " + 场景 + "（槽位 " + SaveSystem.当前槽位 + "）");
         SceneManager.LoadScene(场景);
     }

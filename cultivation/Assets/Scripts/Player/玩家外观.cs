@@ -61,9 +61,11 @@ public class 玩家外观 : MonoBehaviour
     public static event System.Action<AppearanceDefinition> 外观变化;
 
     AppearanceDatabase 库;
+    PlayerCultivation 修行;
     SkinnedMeshRenderer 网格;
     Mesh 原网格;
     Material[] 原材质;
+    Transform[] 人体骨;
     readonly System.Collections.Generic.Dictionary<Mesh, Mesh> 兼容网格
         = new System.Collections.Generic.Dictionary<Mesh, Mesh>();
 
@@ -79,6 +81,7 @@ public class 玩家外观 : MonoBehaviour
         {
             原网格 = 网格.sharedMesh;
             原材质 = 网格.sharedMaterials;
+            人体骨 = 网格.bones;
         }
         else Debug.LogWarning("[外观] 在 " + (玩家视觉 != null ? 玩家视觉.name : "?") + " 底下找不到 SkinnedMeshRenderer，换外观会没反应", this);
     }
@@ -112,6 +115,9 @@ public class 玩家外观 : MonoBehaviour
         库 = AppearanceDatabase.取();
         恢复会话拥有记录();
         对话标记.变化 += 处理标记变化;
+        修行 = GetComponent<PlayerCultivation>();
+        if (修行 != null) 修行.等级变化 += 处理境界变化;
+        解锁境界着装();
 
         // ★ 先把上一次会话记下的外观装上（跨场景保持玩家自己换的那身）。
         //   踩过的坑（用户 2026-09-27："我用村中少年的外观进镇妖塔，出来就变成宗门便服了"）：
@@ -230,9 +236,24 @@ public class 玩家外观 : MonoBehaviour
 
     void OnDestroy()
     {
+        if (修行 != null) 修行.等级变化 -= 处理境界变化;
         对话标记.变化 -= 处理标记变化;
         foreach (var mesh in 兼容网格.Values) if (mesh != null) Destroy(mesh);
         兼容网格.Clear();
+    }
+
+    void 处理境界变化(PlayerCultivation player, int before, int after) => 解锁境界着装();
+
+    public void 解锁境界着装()
+    {
+        if (!修行) 修行 = GetComponent<PlayerCultivation>();
+        if (!库) 库 = AppearanceDatabase.取();
+        if (!修行 || !库) return;
+        bool changed = false;
+        foreach (var outfit in 库.全部)
+            if (outfit && outfit.境界解锁等级 > 0 && 修行.等级 >= outfit.境界解锁等级 && !已拥有(outfit))
+                changed |= 获得(outfit, false);
+        if (changed) 外观变化?.Invoke(当前外观);
     }
 
     void 处理标记变化(string 标记, bool 新增)
@@ -279,9 +300,10 @@ public class 玩家外观 : MonoBehaviour
             return false;
         }
 
-        if (!兼容网格.TryGetValue(源网格.sharedMesh, out var aligned))
+        Mesh aligned = 外观.衣服随动 ? 外观.衣服随动.蒙皮 : null;
+        if (aligned == null && !兼容网格.TryGetValue(源网格.sharedMesh, out aligned))
         {
-            try { aligned = AppearanceMeshBinding.创建兼容网格(源网格, 原网格, 网格.bones); }
+            try { aligned = AppearanceMeshBinding.创建兼容网格(源网格, 原网格, 人体骨); }
             catch (System.InvalidOperationException e)
             {
                 Debug.LogWarning("[外观] 无法兼容「" + 外观.DisplayName + "」：" + e.Message, this);
@@ -291,6 +313,7 @@ public class 玩家外观 : MonoBehaviour
         }
         网格.sharedMesh = aligned;
         网格.sharedMaterials = 源网格.sharedMaterials;
+        AppearanceClothRig.应用(网格, 外观.衣服随动, 人体骨);
 
         // 【加固，不是必须】换完网格把包围盒也一起搬过来，并让 Unity 按**蒙皮后的实际顶点**算包围盒。
         //   理由：`SkinnedMeshRenderer.localBounds` 是**跟着渲染体序列化的**，运行时换 `sharedMesh`
@@ -321,6 +344,7 @@ public class 玩家外观 : MonoBehaviour
     {
         if (网格 != null && 原网格 != null)
         {
+            AppearanceClothRig.应用(网格, null, 人体骨);
             网格.sharedMesh = 原网格;
             网格.sharedMaterials = 原材质;
         }

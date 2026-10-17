@@ -1,0 +1,70 @@
+using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using Cultivation.WorldAuthoring;
+using UnityEngine.Rendering;
+using UnityEngine.UI;
+IEnumerator Run()
+{
+    var editor=UnityEngine.Object.FindObjectOfType<WorldMapEditorController>();
+    var original=editor.Data.Clone();var tool=editor.tool;int selected=editor.selectedEntry;
+    var reports=new List<string>();
+    Action<bool,string> Check=(ok,message)=>{if(!ok)throw new Exception(message);reports.Add("PASS "+message);};
+    try
+    {
+        var palette=editor.palette;
+        Check(GraphicsSettings.currentRenderPipeline!=null,"isolated URP active");
+        reports.Add("Palette: "+string.Join(", ",palette.entries.GroupBy(x=>x.category).Select(g=>g.Key+"="+g.Count())));
+        Check(palette.entries.Any(x=>x.category=="树木")&&palette.entries.Count(x=>x.category=="建筑")>10,"new forest and Far East building assets included");
+        var mesh=palette.grassMesh;var tris=mesh.triangles;var edges=new Dictionary<long,int>();
+        for(int i=0;i<tris.Length;i+=3)for(int side=0;side<3;side++){int a=tris[i+side],b=tris[i+(side+1)%3];long key=((long)Math.Min(a,b)<<32)|(uint)Math.Max(a,b);edges[key]=edges.ContainsKey(key)?edges[key]+1:1;}
+        Check(edges.Values.All(x=>x==2),"grass mesh is closed solid geometry, not intersecting alpha cards");
+        Check(palette.grassURP.GetTexture("_BaseMap")==null||palette.grassURP.GetTexture("_BaseMap")==Texture2D.whiteTexture,"grass uses solid silhouettes without blade alpha atlas");
+        reports.Add("Grass mesh vertices="+mesh.vertexCount+" triangles="+tris.Length/3+" ground texture="+palette.groundMaterial.GetTexture("_GrassMap").name);
+        var data=WorldMapData.Empty("QA temporary");data.rockBoundary=false;data.cloudSea=false;
+        data.Paint(WorldBrush.Ground,Vector3.zero,15,1,.7f,2,0,false);
+        data.Paint(WorldBrush.Grass,new Vector3(-4,0,0),3,1,.7f,2,0,false);
+        data.Paint(WorldBrush.Pond,new Vector3(5,0,0),3,1,.7f,1.8f,.35f,false);
+        editor.SetData(data);editor.History.Clear();
+        float before=data.Sample(data.height,5,0);Check(before<-.5f,"pond excavates bed");
+        editor.tool=WorldBrush.FillPond;editor.radius=3.1f;editor.BeginStroke(new Vector3(5,0,0));editor.Stamp(new Vector3(5,0,0),1);editor.EndStroke();
+        Check(!editor.Data.IsWet(5,0)&&Mathf.Abs(editor.Data.Sample(editor.Data.height,5,0)-.7f)<.001f,"fill pond restores original terrain height");
+        editor.Undo();Check(editor.Data.IsWet(5,0),"undo refills water and excavated bed");editor.Redo();Check(!editor.Data.IsWet(5,0),"redo fills pond");
+        editor.tool=WorldBrush.RestoreGround;editor.radius=4;editor.BeginStroke(new Vector3(-4,0,0));editor.Stamp(new Vector3(-4,0,0),1);editor.EndStroke();
+        Check(editor.Data.Sample(editor.Data.grass,-4,0)==0,"restore ground removes grass");editor.Undo();Check(editor.Data.Sample(editor.Data.grass,-4,0)>.9f,"undo restores grass");
+        editor.Data.Paint(WorldBrush.Pond,new Vector3(5,0,0),3,1,.7f,1.8f,.35f,false);editor.world.RebuildAll();
+        Check(editor.world.GrassSoilAt(-.5f,0)>.025f&&editor.Data.Sample(editor.Data.grass,-.5f,0)==0,"grass ground layer extends beyond painted grass field");
+        var rock=palette.entries.First(x=>x.category=="岩石");var point=new Vector3(5,0,0);
+        Vector3 pos;float contact;string reason;
+        Check(!WorldPlacementRules.Evaluate(editor.Data,rock,point,0,.6f,true,0,out pos,out contact,out reason),"pond centre rejects rock");
+        Check(!WorldPlacementRules.Evaluate(editor.Data,rock,new Vector3(7.8f,0,0),30,.8f,true,0,out pos,out contact,out reason),"full footprint rejects shoreline overlap");
+        Check(!WorldPlacementRules.Evaluate(editor.Data,rock,new Vector3(16,0,0),0,.6f,true,0,out pos,out contact,out reason),"void rejects placement");
+        var landPoint=new Vector3(0,0,-5);
+        Check(WorldPlacementRules.Evaluate(editor.Data,rock,landPoint,15,.6f,true,0,out pos,out contact,out reason)&&pos.y<.7f,"natural placement sinks rock root into terrain");
+        Check(WorldPlacementRules.Evaluate(editor.Data,rock,landPoint,15,.6f,false,.5f,out pos,out contact,out reason)&&pos.y>1.19f,"intentional gaps preserve adjustable air space");
+        editor.selectedEntry=Array.IndexOf(palette.entries,rock);editor.objectScale=.6f;editor.placementHeight=0;editor.naturalPlacement=true;
+        int historyCount=editor.History.UndoCount;editor.Place(point);Check(editor.Data.objects.Count==0&&editor.History.UndoCount==historyCount,"invalid placement does not mutate map or undo history");
+        editor.Place(landPoint);Check(editor.Data.objects.Count==1,"valid rock placement commits once");
+        var item=editor.Data.objects[0];Check(editor.world.GroundHeight(landPoint.x,landPoint.z)>.7f,"rock contact gently deforms terrain");
+        editor.PlacementPreview.Show(rock,item.position,item.yaw,item.scale,true);
+        Check(editor.PlacementPreview.Root&&editor.PlacementPreview.Root.GetComponentsInChildren<Renderer>().Length>0,"asset body preview exists");
+        Check(editor.PlacementPreview.Root.GetComponentsInChildren<Collider>().All(c=>!c.enabled),"preview cannot intercept placement raycast");
+        Check(Vector3.Distance(editor.PlacementPreview.Root.transform.position,item.position)<.001f,"preview root and placed pose match");editor.PlacementPreview.Hide();
+        var buttons=UnityEngine.Object.FindObjectsOfType<Button>(true);
+        Check(new[]{"恢复地面","擦草","填水池","贴地融合","保留间隙","编辑 / 游戏视角"}.All(name=>buttons.Any(b=>b.name==name)),"requested UI controls present");
+        var camera=editor.editorCamera;var previousPosition=camera.transform.position;var previousRotation=camera.transform.rotation;float previousFov=camera.fieldOfView;
+        buttons.First(b=>b.name=="编辑 / 游戏视角").onClick.Invoke();
+        Check(editor.GameView&&Mathf.Abs(camera.fieldOfView-40)<.01f&&Mathf.Abs(camera.transform.eulerAngles.x-40)<.01f,"game view button applies real camera parameters");
+        int count=editor.Data.objects.Count;editor.Place(landPoint);Check(editor.Data.objects.Count==count,"game view blocks accidental editing");
+        editor.ToggleGameView();Check(Vector3.Distance(previousPosition,camera.transform.position)<.001f&&Quaternion.Angle(previousRotation,camera.transform.rotation)<.01f&&Mathf.Abs(previousFov-camera.fieldOfView)<.001f,"return restores editor camera exactly");
+        editor.SetData(original.Clone());editor.History.Clear();editor.tool=WorldBrush.Spawn;
+        for(int i=0;i<6;i++){UnityEditor.EditorApplication.QueuePlayerLoopUpdate();yield return null;}
+        reports.Add("Restored user map: "+original.name+" grass="+editor.world.GrassCount+" objects="+original.objects.Count);
+        System.IO.Directory.CreateDirectory("../.local/diagnostics");System.IO.File.WriteAllLines("../.local/diagnostics/map-ux-validation-results.txt",reports);
+        Debug.Log(string.Join("\n",reports));
+    }
+    finally{if(editor.GameView)editor.ToggleGameView();editor.SetData(original);editor.History.Clear();editor.tool=tool;editor.selectedEntry=selected;editor.objectScale=1;editor.radius=3;editor.placementHeight=0;editor.naturalPlacement=true;}
+}
+return Run();

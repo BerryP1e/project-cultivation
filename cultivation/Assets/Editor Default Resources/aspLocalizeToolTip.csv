@@ -1,0 +1,111 @@
+﻿_property_name,_translated_tootip_en,_translated_tootip_zh,_translated_tootip_jp
+_style,,渲染的材質風格，請參照文件詳細說明,
+_Group0,,,
+_AlphaClip,"""Controls whether to enable Alpha Test. Pixels with a texture alpha value (or Dithering) lower than the threshold will be discarded.""","""控制是否開啟Alpha Test。貼圖alpha值(或Dithering)低於筏值的像素會被剃除。""","""アルファテストを有効にするかどうかを制御します。テクスチャのアルファ値（またはディザリング）がしきい値よりも低いピクセルは破棄されます。"""
+_Cutoff,"""The threshold for Alpha Clipping""","""Alpha Clipping的筏值""","""アルファクリッピングのしきい値"""
+_ClipMap,"""Mask for alpha clip. The R channel of the sampled texture will treat as the current alpha.""","""用於Alpha Clip的貼圖，採樣該貼圖的R channel作為當下的alpha""","""アルファクリップ用のマスク。サンプリングされたテクスチャのRチャンネルは、現在のアルファとして扱われます。"""
+_Dithering,"""The strength of the Dither pseudo-transparency effect. Alpha Clipping must be enabled before using this.""","""Dither偽半透明效果的強度，使用前需開啟Alpha Clipping""","""ディザ疑似透明効果の強度。これを使用する前に、アルファクリッピングを有効にする必要があります。"""
+_DitherTexelSize,"""The size of the dither pattern in screen pixel unit.""","""Dither的排列像素大小，偽半透明的塊狀會會隨像素大小變化。""","""ディザパターンの画面ピクセル単位でのサイズ。"""
+_SurfaceType,"""Surface type (transparent or opaque )""","""表面類型(半透明或非半透明材質)""","""サーフェスタイプ（透明または不透明）"""
+_Cull,"""The mesh face to be rendered (Front, Back, Both)""","""欲渲染的mesh face (Front, Back, Both)""","""レンダリングされるメッシュ面（前面、背面、両方）"""
+_FOVShiftX,"""Controls the effect of correcting the perspective projection FOV deformation. The default is 0 for no correction, and adjusting to 1 will approach orthographic projection.""","""控制修正透視投影FOV變形的效果，預設為0為不修正，調整到1則是會趨近於正交投影。""","""パース投影FOVの変形を修正する効果を制御します。デフォルトは修正なしの0で、1に調整すると正投影に近づきます。"""
+_Group1,,,
+_BaseMap,"""Albedo map""","""albedo貼圖""","""アルベドマップ"""
+_BaseColor,"""Base color""","""基礎顏色""","""ベースカラー"""
+_BumpMap,"""Normal map""","""法線貼圖""","""法線マップ"""
+_BumpScale,"""Controls the strength of the normal map, with a range of 0 to 1""","""控制法線貼圖的影響強度，範圍是0到1""","""法線マップの強さを制御します。範囲は0〜1です。"""
+_OSMTexture,"""PBR Map, R Channel - Occlusion. G Channel - Smoothness (1 - Roughness). B Channel - Metallic""","""PBR材質貼圖 - R通道為Occlusion，G通道為光滑度(1 - Roughness)，B通道為Metallic。""","""PBRマテリアルテクスチャ-Rチャンネルはオクルージョン、Gチャンネルは滑らかさ（1-粗さ）、Bチャンネルはメタリックです。"""
+_IsUsingOSMTexture,,,
+_PBRMetallic,"""control the metalness""","""金屬度，當OSM貼圖不存在時可以用此數調整整個材質的金屬度""","""金属度。OSMテクスチャが存在しない場合は、この数値を使用してマテリアル全体の金属度を調整できます。"""
+_PBRSmoothness,"""Smoothness, i.e. (1 - roughness) in PBR of other non-Unity renderers""","""光滑度，即其他非Unity渲染器中PBR的(1 - roughness)。""","""滑らかさ、つまり他の非UnityレンダラーのPBRにおける（1-粗さ）。"""
+_PBROcclusionStrength,"""Controls the strength when sampling the R channel of the OSM map, with a range of 0 to 1""","""控制採樣OSM貼圖R通道時的強度，範圍是0到1""","""OSMマップのRチャンネルをサンプリングする際の強度を制御します。範囲は0〜1です。"""
+_RampOcclusionMap,"""The effect is the same as a regular occlusion map, but the occlusion color will be the leftmost color of the ramp map""","""效果等同一般的Occlusion Map，但是遮蔽顏色會是Ramp Lighting Map的最左端顏色""","""効果は通常のオクルージョンマップと同じですが、オクルージョンカラーはランプマップの左端のカラーになります。"""
+_IsUsingRampOcclusionTexture,,,
+_RampOcclusionStrength,"""Controls the strength when sampling the R channel of the ramp occlusion map, with a range of 0 to 1""","""控制採樣Ramp Occlusion Map的R通道後遮擋的強度，範圍是0到1""","""ランプオクルージョンマップのRチャンネルをサンプリングする際の強度を制御します。範囲は0〜1です。"""
+_EmissionToggle,"""Emission color/map""","""是否開啟自發光效果""","""発光効果を有効にするかどうか"""
+_EmissionMap,"""Whether to enable the emission""","""自發光貼圖/顏色""","""発光マップ/カラー"""
+_EmissionColor,"""emissio color""","""自發光顏色""","""発光色"""
+_Group5,,,
+_FaceShadowMap,,"""基於SDF的臉部陰影筏值貼圖""","""SDFベースの顔の影のしきい値マップ"""
+_FaceUVCtrl,,"""臉部陰影貼圖採樣UV通道""","""顔の影テクスチャサンプリングUVチャネル"""
+_FaceShadowMapPow,,"""臉部陰影對於光照角度變化的敏感度""","""光の角度の変化に対する顔の影の感度"""
+_FaceShadowSmoothness,,"""陰影邊界柔和度""","""影の境界の滑らかさ"""
+_Group2,,,
+_WorkflowSpace,"""Determines whether to use gamma workflow or linear workflow when calculating ramp lighting. For non-StylizePBR materials, either workflow can be used.""","""決定計算ramp lighting時使用gamma workflow或是linear workflow。 對於非StylizePBR的材質來說，使用任意workflow都可以。""","""ランプ照明を計算する際に、ガンマワークフローとリニアワークフローのどちらを使用するかを決定します。 StylizePBR以外のマテリアルの場合、どちらのワークフローも使用できます。"""
+_RampMap,"""A gradient map that controls the brightness and color of the main light source on the material.""","""漸變圖，控制主光源在材質上的光照明暗與顏色。""","""マテリアル上の主光源の明るさと色を制御するグラデーションマップ。"""
+_EnableSSSRamp,"""Controls whether to sample an additional gradient map and overlay a layer of subsurface scattering effects.""","""控制是否採樣額外的漸變圖，並疊加一層次表面散射效果。""","""追加のグラデーションマップをサンプリングし、サーフェス下の散乱効果のレイヤーを重ねるかどうかを制御します。"""
+_SSSRampMap,"""A gradient map used for subsurface scattering, the sampling logic is independent of lighting and uses the normal and view direction of the object.""","""次表面散射用的漸變圖，採樣的邏輯與光照無關而是使用物體的法線與視角。""","""サーフェス下の散乱に使用されるグラデーションマップ。サンプリングロジックは照明とは無関係で、オブジェクトの法線と視線方向を使用します。"""
+_ShadowColorMode,"""Controls how the shadow color behave when receiving shadows from the ShadowMap.""","""控制接收ShadowMap的陰影時，該如何混和陰影的顏色。""","""ShadowMapから影を受け取る際の影の色動作を制御します。"""
+_ReceivedShadowColor,,,
+_PBRInfluenceDirectLighting,"""Controls the blend between Ramp Lighting and direct diffuse from the standard PBR model, with a range of 0 to 1.""","""控制直接光的Ramp Lighting與標準PBR光照之間的混和度，0的話會完全是Ramp Lighting，1的話則是會完全是標準PBR""","""標準PBRモデルからのランプ照明と直接拡散のブレンドを制御します。範囲は0〜1です。"""
+_BakeGISource,"""Controls the environment indirect lighting received by the current pixel. If the scene lighting is baked, the source of indirect GI will be the spherical harmonic lighting information stored in the light probe. If there is no baking, the source of this spherical harmonic lighting will be the skybox.""","""控制當前像素接收的環境光/間接光來源""","""現在のピクセルが受信する環境間接照明を制御します。シーンの照明がベイクされている場合、間接GIのソースは、ライトプローブに格納されている球面調和関数照明情報になります。ベイクがない場合、この球面調和関数照明のソースはスカイボックスになります。"""
+_OverrideGIColor,"""A specified color to replace environment lighting.""","""代替接收到的環境/間接光的指定色""","""環境光を置き換える指定色。"""
+_FlattenAdditionalLighting,"""Whether to flatten the lighting results from additional lights""","""是否扁平化除了主光源外的其他光源的光照計算結果。""","""追加のライトからの照明結果をフラットにするかどうか"""
+_OverrideLightDirToggle,,,
+_FakeLightEuler,,,
+_EnvironmentReflections,"""Whether or not to include indirect specular lighting from the PBR model in indirect GI. (In Unity, the reflection source will be the result of sampling a nearby reflection probe or the skybox if no reflection probe present)""","""Iindirect GI中是否要包含PBR模型內的環境反射(indirect specular lighting)。在Unity中的反射來源會是臨近reflection probe的採樣結果或是天空盒。""","""間接GIにPBRモデルからの間接鏡面反射光を含めるかどうか。（Unityでは、反射ソースは、近くの反射プローブのサンプリング結果、または反射プローブがない場合はスカイボックスになります）"""
+_Group3,,,
+_SpecularHighlights,"""Enable specular highlights.""","""顯示鏡面反射高光。""","""鏡面反射ハイライトを有効にする。"""
+_SpecularMaskMap,"""A mask texture that controls the area where specular highlights are displayed. When the sampled value is 0, no specular highlight is displayed.""","""可控制Specular顯示範圍的Mask貼圖，採樣到的值為0時不顯示specular highlight。""","""鏡面反射ハイライトが表示される領域を制御するマスクテクスチャ。サンプリングされた値が0の場合、鏡面反射ハイライトは表示されません。"""
+_SpecularColor,"""The color of the specular highlight.""","""反射光顏色""","""鏡面反射ハイライトの色。"""
+_SpecularFallOffColor,"""The gradient color at the point of specular highlightfalloff.""","""反射光衰減處的漸層顏色""","""鏡面反射ハイライトフォールオフのポイントでのグラデーションカラー。"""
+_SpecularSize,"""Controls the size of the specular highlight.""","""控制鏡面反射光的影響範圍""","""鏡面反射ハイライトのサイズを制御します。"""
+_SpecularFalloff,"""The softness of the specular highlight falloff. The closer to 0, the more obvious the specular highlight boundary is; the closer to 1, the softer the specular highlight boundary is.""","""反射光衰減的柔和度，越趨近於0反射光邊界越明顯，越趨近於1反射光的邊界越柔和。""","""鏡面反射ハイライトの減衰の柔らかさ。0に近いほど鏡面反射ハイライトの境界がはっきりし、1に近いほど鏡面反射ハイライトの境界が柔らかくなります。"""
+_Group4,,,
+_RimLightOn,"""Whether to enable Fresnel rim lighting""","""是否開啟基於菲涅耳反射的輪廓光""","""フレネルリムライティングを有効にするかどうか"""
+_RimLightMaskMap,"""Mask Texture for rim lighting, sample the mask’s R channel, 0 means no rim lighting at all for that pixel""","""輪廓光的遮罩貼圖，採樣該貼圖的R通道，採樣0代表該pixel不會有輪廓光。""","""リムライティングのマスクテクスチャ。マスクのRチャンネルをサンプリングします。0は、そのピクセルにリムライティングがまったくないことを意味します。"""
+_RimLightStrength,"""Controls the strength of the rim light, with a range of 0 to 1.""","""控制輪廓光的影響範圍，數值範圍0到1。""","""リムライトの強さを制御します。範囲は0〜1です。"""
+_RimLightAlign,"""Controls the alignment between the rim light and the main light source, with a range of -1 to 1. The default value is 0.
+When set to 0, the rim light will appear evenly around the edge of the object.
+When set to 1, the rim light will be in the same direction as the main light source, i.e. the edge of the illuminated area.
+When set to -1, the rim light will be in the opposite direction to the main light source, i.e. the edge of the backlit area.""","""控制輪廓光與主光源的方向關係，數值範圍-1到1，預設為0， 設定為0時，輪廓光會均勻地出現在物體邊緣。 設定為1時，輪廓光會以主光源的照射方向同向，即面光處的邊緣。 設定為-1時，輪廓光會以主光源的反方向同向，即背光處の邊緣。""","""リムライトと主光源との位置合わせを制御します。範囲は-1〜1です。デフォルト値は0です。 0に設定すると、リムライトはオブジェクトの縁の周りに均等に表示されます。 1に設定すると、リムライトは主光源と同じ方向、つまり照らされた領域の縁になります。 -1に設定すると、リムライトは主光源と反対の方向、つまり逆光領域の縁になります。"""
+_RimLightSmoothness,"""Controls the softness of the rim light, with a range of 0 to 1.""","""控制輪廓光邊緣的柔和度，數值範圍0到1""","""リムライトの縁の柔らかさを制御します。範囲は0〜1です。"""
+_RimLightColor,"""Controls the color of the rim light""","""控制輪廓光的顏色""","""リムライトの色を制御します"""
+_DepthRimLightOn,"""Whether to enable rim lighting calculated with the depth buffer.""","""是否開啟利用偏移深度圖計算出的輪廓光""","""深度バッファを使用して計算されたリムライティングを有効にするかどうか"""
+_DepthRimLightColor,"""The color of the depth-based rim light""","""深度偏移輪廓光的顏色""","""深度ベースのリムライトの色"""
+_DepthRimLightStrength,"""The strength of the depth-based rim light""","""深度偏移輪廓光的範圍""","""深度ベースのリムライトの強さ"""
+_RimLightOverShadow,"""The blending strength of the rim light over the shadow,
+When set to 0, the rim light will be covered by the shadow.
+When set to 1, the rim light will override the shadow (similar to emission).""","""輪廓光蓋過陰影處的混和程度， 設定為1則輪廓光會覆蓋陰影(類似emission)， 設定為0則輪廓光會被陰影覆蓋。""","""影に対するリムライトのブレンド強度。 0に設定すると、リムライトは影で覆われます。 1に設定すると、リムライトは影をオーバーライドします（エミッションに似ています）。"""
+_Group6,,,
+_HairHighlightMaskMap,"""Hair highlight mask. Uses the value of the R channel of the sample texture to determine whether the pixel has hair highlights.""","""頭髮高光mask貼圖。採樣貼圖R通道的值來決定該像素是否有頭髮高光。""","""髪のハイライトマスク。サンプルテクスチャのRチャンネルの値を使用して、ピクセルに髪のハイライトがあるかどうかを判断します。"""
+_HairUVCtrl,"""The UV channel used when sampling the hair highlight mask. The default is uv2 (the 3rd uv channel).""","""採樣頭髮高光mask貼圖時所使用的UV通道， 預設為uv2(第三個通道)。""","""髪のハイライトマスクをサンプリングするときに使用されるUVチャネル。デフォルトはuv2（3番目のuvチャネル）です。"""
+_HairLightColor,"""Highlight color.""","""高光顏色。""","""ハイライトカラー。"""
+_HairLightFresnelMaskPower,"""The Fresnel mask power of the viewing direction of the hair highlight. The smaller the value, the more the highlight will be restricted into grazing angle""","""基於観察方向的菲涅耳反射遮罩，數值越小，高光會越限制在物體與觀察方向的邊緣才顯示。","""髪のハイライトの視線方向のフレネルマスク強度。値が小さいほど、ハイライトはグレージング角度に制限されます"""
+_HairLightStrength,"""Highlight Strength""","""高光強度，強度為0不顯示為1則是完全依照採樣mask的值。""","""ハイライトの強度。強度は、0が表示されず、1がサンプリングされたマスク値に完全に従うことを示します。"""
+_HairLightCameraRollInfluence,"""Controls the amount of offset when the highlight is rotated according to the Roll (vertical) direction of the camera.""","""控制高光根據相機的Roll(垂直)方向擺動時，偏移的程度""","""ハイライトがカメラのロール（垂直）方向に従って回転したときのオフセットの量を制御します。"""
+_HairUVSideCut,"""Controls the amount of additional culling from the left and right sides (the x-value of uv) of the highlight from the specified UV channel.""","""控制高光從指定UV通道左右兩側 (uv的x值) 額外剔除的程度。""","""指定されたUVチャネルからのハイライトの左右（uvのx値）からの追加の剔除の量を制御します。"""
+_GroupMatCap,,,
+_IsUsingMatcapReflectMap,,,
+_MatCapReflectionMap,"""MatCap texture.""","""MatCap貼圖。""","""MatCapテクスチャ。"""
+_MatCapReflectionStrength,"""MatCap reflection strength.""","""MapCap反射的強度。""","""MapCap反射の強度。"""
+_MatCapRollStabilize,"""Restricts whether the MatCap reflection will change along with the vertical movement of the view.""","""限制matcap反射是否會隨著觀察的垂直方向產生變化。 0為不限制，1則是完全不會因為觀察垂直方向變化而偏移。""","""matcap反射がビューの垂直方向の動きに伴って変化するかどうかを制限します。 0は制限なし、1はビューの垂直方向の変化によってまったくオフセットされません。"""
+_Group7,,,
+_ReceiveShadows,"""Whether to receive shadows from the Unity default ShadowMap.""","""是否接收來自Unity預設ShadowMap的陰影。""","""UnityのデフォルトのShadowMapから影を受け取るかどうか。"""
+_ReceiveASPShadow,"""Whether to receive shadow from ASP character shadow.""","""是否接收來自ASP的角色陰影。""","""ASPキャラクターの影から影を受け取るかどうか。"""
+_ReceiveOffsetedDepthMap,"""Whether to receive depth offset shadow from ASP material.""","""是否接收ASP材質的深度偏移陰影。""","""ASPマテリアルから深度オフセットシャドウを受け取るかどうか。"""
+_OffsetShadowDistance,"""The offset distance of the depth offset shadow.""","""深度偏移陰影的偏移距離。""","""深度オフセットシャドウのオフセット距離。"""
+_ClearCoatMask,,,
+_ClearCoatSmoothness,,,
+_AdvanceGroup,,,
+_Stencil,"""Stencil ID""","""Stencil ID""","""ステンシルID"""
+_StencilComp,"""Stencil Compare Function""","""Stencil Compare Function""","""ステンシル比較関数"""
+_StencilOp,"""Stencil Pass Operation""","""Stencil Pass Operation""","""ステンシルパス操作"""
+_StencilFailOp,"""Stencil Fail Operation""","""Stencil Fail Operation""","""ステンシル失敗操作"""
+_OverrideZTest,"""Whether to override the default ZTest behavior""","""Whether to override the default ZTest behavior""","""デフォルトのZTest動作をオーバーライドするかどうか"""
+_ZTest,"""The overriden ZTest Behaviour""","""The overriden ZTest Behaviour""","""オーバーライドされたZTestの動作"""
+_EyeGroup,,,
+_EnableParallaxEffect,"Enable parallax effect. you can adjust Parallax Height to create a concave effect after enable this function.
+",啟用視差效果、啟用後可以透過調整Parallax Hight製造凹陷的效果,
+_PupilMask,"Mask of the pupil area, which affects the area and strength of parallax effect. It use R channel to sample the mask value.
+",瞳孔範圍的遮罩，影響視差的範圍與效果，採樣R通道，數值越接近1則效果越強。,
+_ParallaxHeight,"Parallax effect height
+",視差效果高度,
+_eyeStyle,"Determines the eye lighting model. Lambert Lighting - Regular Lambert Diffuse lighting. Flat Lighting - Flattened lighting, each pixel of the object will change uniformly based on the direction of the light source.",決定眼睛的光照模型，有Lambert與Flat兩種模式,
+_SelfUnlitAreaColor,"When using the Flat Lighting mode, override the darkest color by this property",當啟用Flat Lighing時可選擇，控制Flat lighting時背光時的顏色。,
+_UsePupilMask,Whether to use the pupil mask texture to control the reflection area .,是否要使用瞳孔遮照貼圖來控制MatCap反射的範圍,
+_HighLightAlphaClip,Whether to use Alpha Clip for the Highlight texture.,是否對眼睛高光貼圖使用透明度剪裁。,
+_HighlightDarken,Whether to attenuate the intensity of the emission intensity based on the light direction.,是否根據光照方向來減弱自發光的強度。,
+_EyeHighlightMap1,Top Highlight Map,高光貼圖,
+_EyeHighlightRotateDegree,Rotate Degree Along Half Vector,根據半向量(Half Vector)來旋轉高光的最大旋轉角度。,
+_EyeHighlightColor,Top Highlight Color Tint,Highlight Tint顏色(HDR),

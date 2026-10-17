@@ -37,7 +37,7 @@ namespace Cultivation.EditorTools
         const string 炼丹预制体 = 预制体目录 + "/炼丹界面.prefab";
         const string 字体路径 = "Assets/Fonts/SimHei.ttf";
 
-        [MenuItem("工具/主线/④ 生成炼丹界面预制体 + 挂到炼丹阁", false, 63)]
+        [MenuItem("修仙/工具/设施/更新炼丹界面与接线", false, 63)]
         public static void 接线()
         {
             var 报告 = new StringBuilder();
@@ -71,7 +71,7 @@ namespace Cultivation.EditorTools
             Debug.Log($"[设施界面接线] 完成：挂了 {挂上} 处\n{报告}");
         }
 
-        [MenuItem("工具/主线/⑤ 检查设施界面挂了没", false, 64)]
+        [MenuItem("修仙/体检/设施界面引用", false, 64)]
         public static void 检查()
         {
             var sb = new StringBuilder("[设施界面接线] 检查\n");

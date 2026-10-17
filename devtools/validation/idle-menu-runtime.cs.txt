@@ -1,0 +1,23 @@
+using System;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.SceneManagement;
+IEnumerator Run(){
+ if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated save directory");
+ var legacy=SaveSystem.建新档("旧版保护检查");legacy.版本=23;legacy.场景名="village";legacy.刷新时间戳();
+ System.IO.File.WriteAllText(SaveSystem.槽位路径(3),JsonUtility.ToJson(legacy,true),new System.Text.UTF8Encoding(false));
+ string original=System.IO.File.ReadAllText(SaveSystem.槽位路径(3));
+ var load=SceneManager.LoadSceneAsync("StartScene");while(!load.isDone)yield return null;for(int i=0;i<5;i++)yield return null;
+ var menu=UnityEngine.Object.FindObjectOfType<MainMenuUI>();menu.OpenSlots(false);menu.确认中央存档(3);yield return null;
+ if(SceneManager.GetActiveScene().name!="StartScene"||!menu.提示||!menu.提示.text.Contains("旧 RPG"))throw new Exception("Legacy menu guard did not show preserved-file notice");
+ if(System.IO.File.ReadAllText(SaveSystem.槽位路径(3))!=original)throw new Exception("Legacy file was modified");
+ SaveSystem.删档(2);menu.OpenSlots(true);menu.确认中央存档(2);
+ float end=Time.realtimeSinceStartup+30;while(SceneManager.GetActiveScene().name!="3C_Testbed"&&Time.realtimeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}for(int i=0;i<12;i++)yield return null;
+ if(SceneManager.GetActiveScene().name!="3C_Testbed"||SaveSystem.当前槽位!=2||SaveSystem.当前存档.版本!=24)throw new Exception("Actual new-game menu did not enter home");
+ var panel=UnityEngine.Object.FindObjectOfType<UIPanelData>();
+ if(!new[]{"item_home_alchemy_hall","item_home_merit_hall","item_home_technique_hall","item_home_deacon_hall","item_home_forge_hall"}.All(id=>panel.物品.Any(s=>s&&s.物品id==id)))throw new Exception("Actual menu new role lacks building tokens");
+ Debug.Log("IDLE_MENU_PASS legacy guard, preserved legacy bytes, actual new role, home, tokens, version and selected slot");
+}
+return Run();

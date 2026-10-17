@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -16,7 +16,7 @@ using UnityEngine;
 /// </summary>
 public static class UICanvasEditorToggle
 {
-    [MenuItem("修仙/编辑器里显示或隐藏 UI 画布")]
+    [MenuItem("修仙/UI/编辑器里显示或隐藏 UI 画布")]
     public static void Toggle()
     {
         var sc = EditorSceneManager.GetActiveScene();

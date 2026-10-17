@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>只生成法宝资产和原生模型图标，不改动任何场景或原始 FBX。</summary>
 public static class ZhenyaohuAssetBuilder
 {
-    [MenuItem("Cultivation/Treasures/Build Zhenyaohu Assets")]
+    [MenuItem("修仙/法宝/维护/Treasures/Build Zhenyaohu Assets")]
     public static void Build() {
         const string folder="Assets/resources/法宝/镇妖葫";
         Directory.CreateDirectory(folder);

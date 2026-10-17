@@ -33,6 +33,7 @@ public static class CombatVfxAssets
             var physical=catalog.查找(id);physical.模型外侧显示=true;physical.朝向镜头=true;physical.刀光最大宽度=4.5f;
         }
         catalog.查找(CombatVfxPipeline.雷四式[3]).散布半径=5f;
+        var remote=catalog.查找(CombatVfxPipeline.太虚炼气命中);remote.灯光强度倍率=.15f;remote.灯光最大半径=1.6f;
         var lava=catalog.查找(CombatVfxPipeline.火球落地);
         lava.灯光强度倍率=.04f;lava.灯光最大半径=1.5f;
         EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();ThunderPaletteBaker.Build();Debug.Log("[战斗特效] 九项映射已生成；只配置表现，不改伤害公式");

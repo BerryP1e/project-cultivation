@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -57,8 +57,7 @@ public static class HudBuilder
     static readonly Color 幕布线色 = new Color(0.78f, 0.52f, 0.33f, 0.85f);
     static readonly Color 修炼色   = new Color(0.86f, 0.72f, 0.32f, 1f);
 
-    [MenuItem("修仙/生成游戏界面 HUD")]
-    [MenuItem("Cultivation/Build Player HUD")]
+    [MenuItem("修仙/UI/维护/生成游戏界面 HUD")]
     public static void Build()
     {
         var font = AssetDatabase.LoadAssetAtPath<Font>(FontPath);

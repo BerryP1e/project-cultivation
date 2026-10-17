@@ -1,0 +1,263 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: HoseMat 2
+  m_Shader: {fileID: 4800000, guid: 55a54603fab88d940a3374f8ae9f78e8, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _EMISSION
+  - _RECEIVE_SHADOWS_OFF
+  - _RIMLIGHTING_ON
+  - _SPECULAR_LIGHTING_ON
+  - _STYLE_STYLIZEPBR
+  m_InvalidKeywords:
+  - _OCCLUSIONMAP
+  - _OVERRIDEZTEST
+  - _USE_BRDF_SPECULAR_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 2d20e406dde50464c83a631e8a1cb8f1, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: 4867d728cbb6d854ea1ce6e92a8eb8bf, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FaceShadowMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HairHighlightMaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 2d20e406dde50464c83a631e8a1cb8f1, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MatCapReflectionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 2800000, guid: a890d268abef38d418e38db2d4f2e97d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OSMTexture:
+        m_Texture: {fileID: 2800000, guid: ec46c444c5187844fbaffaaf04885a9f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 2800000, guid: f7ed58fdc40821a4e81f559f5f262108, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampMap:
+        m_Texture: {fileID: 2800000, guid: 35fa27f4a6db51e44aea9939770bb4eb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampOcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SSSRampMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecularMaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _StandardBrdfLut:
+        m_Texture: {fileID: 2800000, guid: 2d2452a279f7e25419493a46a1c5ee6c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AddPrecomputedVelocity: 0
+    - _AdvanceGroup: 0
+    - _AlphaClip: 0
+    - _AlphaToMask: 0
+    - _BRDFSpecularHighlights: 1
+    - _BakeGISource: 0
+    - _Blend: 0
+    - _BlendModePreserveSpecular: 1
+    - _BumpScale: 1
+    - _ClearCoatMask: 0
+    - _ClearCoatSmoothness: 0
+    - _Cull: 2
+    - _Cutoff: 0.5
+    - _DebugGI: 0
+    - _DepthRimLightOn: 0
+    - _DepthRimLightStrength: 0.1
+    - _DetailAlbedoMapScale: 1
+    - _DetailNormalMapScale: 1
+    - _DitherTexelSize: 1
+    - _Dithering: 0
+    - _DstBlend: 0
+    - _DstBlendAlpha: 0
+    - _EmissionToggle: 1
+    - _EnableSSSRamp: 0
+    - _EnvironmentReflections: 1
+    - _FOVShiftX: 0
+    - _FOVShiftY: 0
+    - _FaceShadowMapPow: 0.2
+    - _FaceShadowSmoothness: 0
+    - _FlattenAdditionalLighting: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _Group0: 0
+    - _Group1: 0
+    - _Group2: 0
+    - _Group3: 0
+    - _Group4: 0
+    - _Group5: 0
+    - _Group6: 0
+    - _Group7: 0
+    - _GroupMatCap: 0
+    - _HairLightCameraRollInfluence: 0
+    - _HairLightFresnelMaskPower: 1
+    - _HairLightStrength: 1
+    - _HairUVSideCut: 0
+    - _IsUsingMatcapReflectMap: 0
+    - _IsUsingOSMTexture: 0
+    - _IsUsingRampOcclusionTexture: 0
+    - _MatCapReflectionStrength: 1
+    - _MatCapRollStabilize: 1
+    - _MaterialID: 2
+    - _Metallic: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _OffsetShadowDistance: 15
+    - _OutlineWidth: 0
+    - _OverrideLightDirToggle: 0
+    - _OverrideZTest: 1
+    - _PBRInfluenceDirectLighting: 0
+    - _PBRMetallic: 0
+    - _PBROcclusionStrength: 1
+    - _PBRSmoothness: 0.703
+    - _Parallax: 0.02
+    - _QueueOffset: 0
+    - _RampOcclusionStrength: 0
+    - _ReceiveASPShadow: 0
+    - _ReceiveOffsetedDepthMap: 0
+    - _ReceiveShadows: 0
+    - _RimLightAlign: 0
+    - _RimLightOn: 1
+    - _RimLightOverShadow: 0
+    - _RimLightSmoothness: 0
+    - _RimLightStrength: 0.55
+    - _ShadowColorMode: 0
+    - _Smoothness: 0.703
+    - _SmoothnessTextureChannel: 0
+    - _SpecularFalloff: 0.028
+    - _SpecularHighlights: 1
+    - _SpecularOverShadow: 0
+    - _SpecularSize: 0.959
+    - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
+    - _Stencil: 0
+    - _StencilComp: 4
+    - _StencilFailOp: 0
+    - _StencilOp: 0
+    - _Surface: 0
+    - _SurfaceTransparent: 0
+    - _SurfaceType: 0
+    - _UVSec: 0
+    - _WorkflowMode: 1
+    - _WorkflowSpace: 1
+    - _ZTest: 4
+    - _ZWrite: 1
+    - _group0: 0
+    - _group1: 0
+    - _group2: 0
+    - _group3: 0
+    - _group4: 0
+    - _isUsingOSMTexture: 1
+    - _style: 0
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _DepthRimLightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FaceFrontDirection: {r: 0, g: 0, b: -1, a: 0}
+    - _FaceRightDirection: {r: -1, g: 0, b: 0, a: 0}
+    - _FaceUVCtrl: {r: 0, g: 1, b: 0, a: 0}
+    - _FakeLightEuler: {r: 180, g: 0, b: 0, a: 0}
+    - _HairLightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HairUVCtrl: {r: 0, g: 0, b: 1, a: 0}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 0}
+    - _OutlineDistancFade: {r: 50, g: 50, b: 0, a: 0}
+    - _OverrideGIColor: {r: 0, g: 0, b: 0, a: 1}
+    - _ReceivedShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    - _RimLightColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _SpecularColor: {r: 0.7075472, g: 0.7075472, b: 0.7075472, a: 1}
+    - _SpecularFallOffColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+  m_BuildTextureStacks: []
+--- !u!114 &5591562207492417547
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7

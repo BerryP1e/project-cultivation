@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -42,7 +42,7 @@ public static class FirstWaveAbilitiesBaker
         Pattern("Lightning strike", "ThunderFall", 24, .06f, .38f, 1.2f, 1, null, null);
         Pattern("Meteor", "MeteorFall", 1, 0, .42f, 0, 1.25f, null, null);
         Pattern("Magic attack", "MagicSwordRain", 16, .1f, .4f, 1.1f, 1.15f, sword, material);
-        Pattern("Meteor shower", "MeteorRain", 14, .14f, .45f, 2.2f, .75f, null, null);
+        Pattern("Meteor shower", "MeteorRain", 14, .14f, .45f, 2.2f, 1.5f, null, null);
         Clip("atk_energy02_inplace", "能量02_前半施法", .5f);
         Clip("atk_energy03_inplace", "能量03_施法", 1);
         Clip("atk_energy05_inplace", "能量05_施法", 1);
@@ -170,7 +170,17 @@ public static class FirstWaveAbilitiesBaker
                 for (int i = 0; i < sub.subEmittersCount; i++) keep.Add(sub.GetSubEmitterSystem(i).transform);
                 foreach (var t in visual.transform.Cast<Transform>().ToArray()) if (!keep.Contains(t)) UnityEngine.Object.DestroyImmediate(t.gameObject);
             }
-            else { config.命中特效 = ImpactPrefab(originalHit, "MeteorRainHit"); config.弹体半径 = .22f; config.飞行速度 = 30; }
+            else
+            {
+                config.命中特效 = ImpactPrefab(originalHit, "MeteorRainHit"); config.弹体半径 = .22f; config.飞行速度 = 30;
+                // 原 Meteor shower 只有线迹；复用同包陨石弹体，保留原有火焰、烟与拖尾。
+                var renderer = config.飞行粒子.GetComponent<ParticleSystemRenderer>();
+                var trailMaterial = renderer.trailMaterial;
+                renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<GameObject>(Source + "Meteor.prefab").GetComponent<ParticleSystemRenderer>().sharedMaterial;
+                renderer.trailMaterial = trailMaterial;
+                var rainMain = config.飞行粒子.main; rainMain.startSize = .85f;
+            }
             var projectile = config.飞行粒子;
             var pc = projectile.collision; pc.enabled = false; // 实体命中由全段扫掠处理。
             var projectileSub = projectile.subEmitters;

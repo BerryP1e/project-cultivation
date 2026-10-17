@@ -13,6 +13,12 @@ public class PassiveDivineAbility : DivineAbilityDefinition
     [Tooltip("被动神通常驻提供的 26 项属性增益")]
     public AttributeSet 增益 = new AttributeSet();
 
+    [Header("百分比增幅（1 = +100%，同类相加）")]
+    [Min(0)] public float 气血回复增幅;
+    [Min(0)] public float 灵力回复增幅;
+    [Min(0)] public float 神识增幅;
+    [Min(0)] public float 压制持续时间 = 5;
+
     public PassiveSkillKind 结算方式;
     public string 特效资源路径 = "";
     public float 攻击间隔 = 3f;
@@ -26,4 +32,4 @@ public class PassiveDivineAbility : DivineAbilityDefinition
     }
 }
 
-public enum PassiveSkillKind { 属性增益, 邪眼, 物理护罩, 特殊护罩, 双重护罩, 绝对护罩 }
+public enum PassiveSkillKind { 属性增益, 邪眼, 物理护罩, 特殊护罩, 双重护罩, 绝对护罩, 自成循环, 灵势威压, 内化世界, 身外化身, 空间腾挪 }

@@ -27,7 +27,7 @@ public static class FixNpcMaterials
         "Standard",
     };
 
-    [MenuItem("Cultivation/检查 NPC 材质 Shader")]
+    [MenuItem("修仙/NPC 资产/维护/检查 NPC 材质 Shader")]
     public static void Check()
     {
         var 坏的 = 找坏材质();
@@ -37,7 +37,7 @@ public static class FixNpcMaterials
         Debug.Log(sb.ToString());
     }
 
-    [MenuItem("Cultivation/修复 NPC 材质 Shader")]
+    [MenuItem("修仙/NPC 资产/维护/修复 NPC 材质 Shader")]
     public static void Fix()
     {
         var 目标 = Shader.Find(目标Shader名);
@@ -108,7 +108,7 @@ public static class FixNpcMaterials
     /// 匹配规则：材质叫 BaiGuNiangNiang_01，就找同目录/上级目录里
     /// 文件名等于或包含它的贴图（dds/png/tga/bmp）。
     /// </summary>
-    [MenuItem("Cultivation/重新关联 NPC 贴图")]
+    [MenuItem("修仙/NPC 资产/维护/重新关联 NPC 贴图")]
     public static void RelinkTextures()
     {
         var 贴图索引 = new Dictionary<string, Texture>();

@@ -661,6 +661,8 @@ public abstract class NpcAiBase : MonoBehaviour
 
     protected virtual void Update()
     {
+        var pressure = GetComponent<NpcWindPressure>();
+        if (pressure && pressure.生效中 && 自己 && !自己.IsDead) return;
         if(CombatHitStop.正在顿帧(transform)){
             // AI以绝对时间驱动出手节点；同步延后，避免动画暂停但攻击计时继续。
             动作开始时间+=Time.deltaTime;动作结束时间+=Time.deltaTime;

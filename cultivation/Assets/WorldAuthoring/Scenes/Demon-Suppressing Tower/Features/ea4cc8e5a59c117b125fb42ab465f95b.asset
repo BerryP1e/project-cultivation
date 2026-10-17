@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa937b4db2b8d974d9a89b2ca7a80870, type: 3}
+  m_Name: ea4cc8e5a59c117b125fb42ab465f95b
+  m_EditorClassIdentifier: 
+  id: GlobalObjectId_V1-2-efe7e902244b5a9469603231fe28053a-213270774-0
+  label: "\u5237\u602A\u70B9_1_04"
+  kind: SpawnPoint
+  sourceScene: Demon-Suppressing Tower
+  sourcePath: "\u5237\u602A\u533A/\u5237\u602A\u70B9_1_04"
+  prefab: {fileID: 67782507099698298, guid: 3c5edba06f6846a47a2e38960dbfb31c, type: 3}
+  role: 0
+  references: []

@@ -19,7 +19,7 @@ public static class PauseMenuInstaller
     const string 物件名 = "暂停菜单";
     const string 字体路径 = "Assets/Fonts/SimHei.ttf";
 
-    [MenuItem("Cultivation/安装暂停菜单")]
+    [MenuItem("修仙/维护工具/安装暂停菜单")]
     public static void Install()
     {
         var 旧 = GameObject.Find(物件名);
@@ -56,7 +56,7 @@ public static class PauseMenuInstaller
                   + "  场景已保存");
     }
 
-    [MenuItem("Cultivation/卸载暂停菜单")]
+    [MenuItem("修仙/维护工具/卸载暂停菜单")]
     public static void Uninstall()
     {
         var go = GameObject.Find(物件名);

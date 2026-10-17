@@ -17,7 +17,9 @@ public class SaveData
     public bool 收服系统已初始化;
     public string 当前法宝 = "";
     public int 青山剑有效击杀;
-    public const int 当前版本 = 22;   // 22：兽栏、堆肥、自动炼丹与施肥冷却；旧档加法字段补齐。
+    public const int 当前版本 = 24;   // 家园与镇妖阁法宝；保存施放处，读档后仍能返回。
+    public TeleportBookmark 镇妖阁返回点;
+    public List<TeleportBookmark> 已访传送点 = new List<TeleportBookmark>();
     public List<UnityEngine.Vector2Int> 家园扩建 = new List<UnityEngine.Vector2Int>();
 
     [Header("身份")]
@@ -33,7 +35,7 @@ public class SaveData
              "建新档时写死 `\"village\"` 之后再也没更新过 —— 于是不管玩家在\n" +
              "太虚宗 / 宗门野外 / 镇妖塔存的档，读档**一律回到古古镇**，\n" +
              "而 `位置` 是对的（是那个场景里的坐标）⇒ 人被扔到古古镇的某个随机点。")]
-    public string 场景名 = "village";
+    public string 场景名 = "3C_Testbed";
 
     [Tooltip("玩家在场景里的位置")]
     public Vector3 位置 = Vector3.zero;

@@ -19,7 +19,7 @@ public static class PrefabRepair
 {
     const string 动物目录 = "Assets/resources/NPC/Animal";
 
-    [MenuItem("Cultivation/动物 AI/检查所有 prefab 是否可读")]
+    [MenuItem("修仙/维护工具/动物 AI/检查所有 prefab 是否可读")]
     public static void CheckAll()
     {
         var sb = new StringBuilder("[PrefabRepair] prefab 可读性检查\n");
@@ -45,7 +45,7 @@ public static class PrefabRepair
         Debug.Log(sb.ToString());
     }
 
-    [MenuItem("Cultivation/动物 AI/修复 XiaoLu")]
+    [MenuItem("修仙/维护工具/动物 AI/修复 XiaoLu")]
     public static void FixXiaoLu()
     {
         const string 目录 = 动物目录 + "/XiaoLu";

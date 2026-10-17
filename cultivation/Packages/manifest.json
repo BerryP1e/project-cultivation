@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "cn.tuanjie.codely.bridge": "file:../.codely.packages/cn.tuanjie.codely.bridge@1.0.85-785dea6a",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.feature.development": "1.0.1",
+    "com.unity.render-pipelines.universal": "14.1.0",
     "com.unity.textmeshpro": "3.0.9",
     "com.unity.timeline": "1.7.7",
     "com.unity.ugui": "1.0.0",
@@ -36,7 +38,6 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "cn.tuanjie.codely.bridge": "file:../.codely.packages/cn.tuanjie.codely.bridge@1.0.85-785dea6a"
+    "com.unity.modules.xr": "1.0.0"
   }
 }

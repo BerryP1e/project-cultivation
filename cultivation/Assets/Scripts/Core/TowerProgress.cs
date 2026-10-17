@@ -68,8 +68,10 @@ public static class TowerProgress
     /// 塔里存档时玩家可能正在死亡流程里（气血 0），
     /// 全量采集会把「0 血」写进档，读档起来就是个死人。
     /// </summary>
-    public static bool 落盘(int 槽位 = 0)
+    public static bool 落盘(int 槽位 = -1)
     {
+        if (槽位 < 0) 槽位 = SaveSystem.当前槽位;
+        if (槽位 < 0) return false;
         var 数据 = SaveSystem.读档(槽位);
         if (数据 == null) return false;         // 还没开过档 —— 不凭空造一个
 

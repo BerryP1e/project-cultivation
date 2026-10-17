@@ -1,0 +1,31 @@
+using System.IO;
+using System.Linq;
+using Cultivation.WorldAuthoring;
+using UnityEditor.SceneManagement;
+using UnityEngine.Rendering;
+var report=new System.Collections.Generic.List<string>();
+void Check(bool condition,string text){if(!condition)throw new Exception(text);report.Add("PASS "+text);}
+if(Application.isPlaying)throw new Exception("Run while stopped");
+var palette=AssetDatabase.LoadAssetAtPath<WorldMapPalette>(WorldMapEditorBuilder.PalettePath);
+var expected=WorldAuthoringResources.CompleteAssets().Where(x=>x.StartsWith("Assets/_AsianArchitecture/")).ToArray();
+Check(expected.Count(x=>Path.GetFileNameWithoutExtension(x).StartsWith("Building"))==3,"three original whole-building prefabs discovered; loose components excluded");
+foreach(var path in expected){var entry=palette.entries.FirstOrDefault(x=>x.sourcePath==path);Check(entry!=null,"catalogue includes "+Path.GetFileName(path));Check(entry.prefab&&entry.materials.All(m=>m&&m.shader&&m.shader.isSupported),"valid geometry/materials "+entry.label);if(path.ToLowerInvariant().Contains("door"))Check(!entry.module,"door leaf preserves proportions "+entry.label);if(entry.module)Check(entry.module.family=="asian-wall","new walls use separate connection family "+entry.label);}
+string name="QA_delete_"+Guid.NewGuid().ToString("N"),trash=null;
+try{var data=WorldMapData.Empty(name);WorldMapStorage.Save(data);trash=WorldMapStorage.Trash(name);Check(!WorldMapStorage.List().Contains(name)&&File.Exists(trash),"delete removes menu item and retains recoverable bytes");Check(WorldMapStorage.RestoreLastDeleted()==name&&WorldMapStorage.Load(name).name==name,"restore deleted map");}
+finally{var path=WorldMapStorage.PathFor(name);if(File.Exists(path))File.Delete(path);if(trash!=null&&File.Exists(trash))File.Delete(trash);}
+var scene=EditorSceneManager.NewPreviewScene();GameObject root=null,quad=null,cameraRoot=null;RenderTexture rt=null;Texture2D image=null;Material material=null;var previous=RenderTexture.active;
+try{
+    root=new GameObject("Fog compatibility test");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root,scene);
+    var world=root.AddComponent<WorldMapRenderer>();var data=WorldMapData.Empty();data.rockBoundary=false;data.cloudSea=true;data.fogDensity=1.5f;world.Configure(palette,data);world.RebuildAll();
+    quad=GameObject.CreatePrimitive(PrimitiveType.Quad);UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(quad,scene);quad.layer=28;quad.transform.position=new Vector3(0,-.5f,-3);quad.transform.localScale=Vector3.one*2;
+    material=new Material(Shader.Find("Sprites/Default"));material.color=new Color(.02f,.95f,.03f,1);quad.GetComponent<Renderer>().sharedMaterial=material;
+    cameraRoot=new GameObject("Fog test camera",typeof(Camera));UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(cameraRoot,scene);var camera=cameraRoot.GetComponent<Camera>();camera.enabled=false;camera.cullingMask=1<<28;camera.backgroundColor=new Color(.01f,.02f,.03f,1);camera.clearFlags=CameraClearFlags.SolidColor;camera.transform.position=new Vector3(0,5,-12);camera.transform.LookAt(new Vector3(0,-.5f,-3));camera.nearClipPlane=.1f;camera.farClipPlane=100;camera.allowHDR=true;quad.transform.rotation=camera.transform.rotation;
+    rt=new RenderTexture(256,256,24,RenderTextureFormat.ARGBHalf);rt.Create();camera.targetTexture=rt;camera.depthTextureMode=DepthTextureMode.Depth;camera.scene=scene;
+    var fog=cameraRoot.AddComponent<WorldMapCamera>();fog.world=world;typeof(WorldMapCamera).GetMethod("OnPreCull",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(fog,null);camera.Render();
+    image=new Texture2D(256,256,TextureFormat.RGBAFloat,false,true);RenderTexture.active=rt;image.ReadPixels(new Rect(0,0,256,256),0,0);image.Apply();var centre=image.GetPixel(128,128);var background=image.GetPixel(16,16);
+    Check(camera.GetCommandBuffers(CameraEvent.BeforeForwardAlpha).Any(x=>x.name.Contains("mist")),"fog runs before transparent particles");
+    Check(centre.g>.7f&&centre.r<.15f,"foreground transparent effect retains colour through cloud sea: "+centre);
+    Check(background.r>.1f,"cloud sea remains visible behind transparent effect: "+background);
+    File.WriteAllBytes("../.local/diagnostics/rendering-repair/transparent-over-fog.png",image.EncodeToPNG());
+}finally{RenderTexture.active=previous;if(image)Object.DestroyImmediate(image);if(material)Object.DestroyImmediate(material);if(rt){rt.Release();Object.DestroyImmediate(rt);}EditorSceneManager.ClosePreviewScene(scene);}
+File.WriteAllLines("../.local/diagnostics/rendering-repair/editor-compatibility-report.txt",report);Debug.Log(report.Count+" editor compatibility checks passed.");

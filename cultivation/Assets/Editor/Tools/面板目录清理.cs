@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -27,8 +27,6 @@ public static class 面板目录清理
 {
     static readonly string[] 游戏场景 =
     {
-        "Assets/Scenes/village.scene",
-        "Assets/Scenes/Sect.scene",
         "Assets/Scenes/3C_Testbed.scene",
         "Assets/Scenes/Sect_Wilderness.scene",
         "Assets/Scenes/Demon-Suppressing Tower.scene",

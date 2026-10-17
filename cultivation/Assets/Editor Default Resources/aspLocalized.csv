@@ -1,0 +1,103 @@
+﻿_property_name,_translated_name_en,_translated_name_zh,_translated_name_jp
+_style,Toon Shading Style,卡通渲染風格,トゥーン描画タイプ
+_Group0,Surface Options,表面選項,表面オプション
+_AlphaClip,Alpha Clipping,透明度裁剪,アルファクリッピング
+_Cutoff,Alpha Clipping Threshold,透明度裁剪閾值,アルファクリッピングしきい値
+_ClipMap,Clip Map,剪切貼圖,アルファクリッピング　マップ
+_Dithering,Dithering Factor,Dither偽半透筏值,ディザリングしきい値
+_DitherTexelSize,Dither Pixel Size,Dither偽半透像素大小,ディザリングピクセルサイズ
+_SurfaceType,Surface Type,表面類型,表面タイプ
+_Cull,Render Face,渲染面,表面の向き
+_FOVShiftX,Perspective FOV Offset,透視 FOV 偏移,FoVの打ち消し
+_Group1,Albedo/Normal/Emission/ORM,Albedo/Normal/Emission/ORM,アルベド/ノーマル/エミッション/ORM
+_BaseMap,Albedo,Albedo,アルベド
+_BaseColor,Color,顏色,カラー
+_BumpMap,Normal Map,法線貼圖,ノーマル　マップ
+_BumpScale,Normal Map Scale,法線貼圖強度,ノーマル　マップスケール
+_OSMTexture,Occlusion/Smoothness/Metallic Map,遮蔽/光滑度/金屬度貼圖,オクルージョン/スムースネス/メタリック　マップ
+_IsUsingOSMTexture,_IsUsingOSMTexture,_IsUsingOSMTexture,_IsUsingOSMTexture
+_PBRMetallic,Metallic,金屬度,メタリック
+_PBRSmoothness,Smoothness,光滑度,スムースネス
+_PBROcclusionStrength,Occlusion Strength,遮蔽強度,オクルージョン強度
+_RampOcclusionMap,Ramp Occlusion Map,漸變光照遮蔽貼圖,ランプオクルージョン　マップ
+_IsUsingRampOcclusionTexture,_IsUsingRampOcclusionTexture,_IsUsingRampOcclusionTexture,_IsUsingRampOcclusionTexture
+_RampOcclusionStrength,Ramp Occlusion Strength,漸變光照遮蔽強度,ランプオクルージョン強度
+_EmissionToggle,Enable Emission,啟用自發光,エミッション有効
+_EmissionMap,Emission,自發光,エミッション
+_EmissionColor,Emission Color,自發光顏色,エミッションカラー
+_Group5,Face Setup,臉部設定,面設定
+_FaceShadowMap,Face Shadow Map,臉部陰影貼圖,面影　マップ
+_FaceUVCtrl,Face Shadow Map UV (Default = UV1),臉部陰影貼圖UV（默認為UV1）,面影　マップUV（デフォルト = UV1）
+_FaceShadowMapPow,Face Shadow Map Power,臉部陰影貼圖強度,面影　マップパワー
+_FaceShadowSmoothness,Face Shadow Smoothness,臉部陰影光滑度,面影スムースネス
+_Group2,Diffuse / Lighting Behavior,漫反射/光照模型,ディフューズ/ライティング挙動
+_WorkflowSpace,Workflow Space,工作流程空間,ワークフロー空間
+_RampMap,Ramp Lighting Map,漸變光照光照貼圖,Ramp　マップ
+_EnableSSSRamp,SSS Ramp Layer,SSS漸變光照,SSS Ramp レイヤー
+_SSSRampMap,SSS Ramp Map,SSS漸變光照貼圖,SSS Ramp 　マップ
+_ShadowColorMode,Received Shadow Behavior,接收陰影行為,影挙動
+_ReceivedShadowColor,Received Shadow Color,接收陰影顏色,影カラー
+_PBRInfluenceDirectLighting,PBR Influence On Direct Lighting,PBR光照對漸變光照的比重,PBRによる直接光の影響
+_BakeGISource,Indirect GI Source,間接照明來源,間接GIソース
+_OverrideGIColor,Override GI Color,覆寫間接照明顏色,GIカラー上書き
+_FlattenAdditionalLighting,Flatten Additional Lighting,扁平化其他多光源,追加ライティングをフラット化
+_OverrideLightDirToggle,Override Light Dir,覆寫光照方向,光照方向上書き
+_FakeLightEuler,Fake Light Euler Angles,,
+_EnvironmentReflections,Environment Reflections,環境反射,環境反射
+_Group3,Specular Highlight,鏡面高光,スペキュラーハイライト
+_SpecularHighlights,Enable Specular Highlights,啟用鏡面高光,スペキュラーハイライト有効
+_SpecularMaskMap,Specular Mask,鏡面遮罩,スペキュラーマスク
+_SpecularColor,Specular Color,鏡面顏色,スペキュラーカラー
+_SpecularFallOffColor,Specular FallOff Color,鏡面衰減顏色,スペキュラーフォールオフカラー
+_SpecularSize,Specular Size,鏡面高光大小,スペキュラーサイズ
+_SpecularFalloff,Specular Falloff,鏡面高光衰減,スペキュラーフォールオフ
+_Group4,Rim Lighting,輪廓光照,リムライト
+_RimLightOn,Enable Fresnel Rim lighting,啟用菲涅爾輪廓光照,フレネルリムライト有効
+_RimLightMaskMap,Rim Mask Map,輪廓光遮罩貼圖,リムライトマスク　マップ
+_RimLightStrength,Fresnel Rim Strength,菲涅爾輪廓光強度,フレネルリム強度
+_RimLightAlign,Fresnel Rim Light Align,菲涅爾輪廓光照對齊,フレネルリムライトアライメント
+_RimLightSmoothness,Fresnel Rim Light Smoothness,菲涅爾輪廓光照光滑度,フレネルリムライトスムースネス
+_RimLightColor,Fresnel Rim Light Color,菲涅爾輪廓光照顏色,フレネルリムライトカラー
+_DepthRimLightOn,Enable Depth-Based Rim lighting,啟用基於深度的輪廓光照,深度リムライト有効化
+_DepthRimLightColor,Depth Rim Light Color,基於深度的輪廓光照顏色,深度リムライト色
+_DepthRimLightStrength,Depth Rim Light Strength,基於深度的輪廓光照強度,深度リムライト強度
+_RimLightOverShadow,Rim Light Over Shadow,輪廓光 - 覆蓋陰影程度,リムライトオーバーシャドウ
+_Group6,Hair Ring Highlight,頭髮環狀高光,髪の輪状ハイライト
+_HairHighlightMaskMap,Hair Highlight Mask,頭髮高光遮罩,髪ハイライトマスク
+_HairUVCtrl,Hair Highlight Map UV (Default = UV2),頭髮高光貼圖UV（默認為UV2）,髪ハイライト　マップUV（デフォルト = UV2）
+_HairLightColor,Hair Highlight Color,頭髮高光顏色,髪ハイライトカラー
+_HairLightFresnelMaskPower,Hair Highlight Fresnel Mask Power,頭髮高光菲涅爾遮罩強度,髪ハイライトフレネルマスクパワー
+_HairLightStrength,Hair Highlight Strength,頭髮高光強度,髪ハイライト強度
+_HairLightCameraRollInfluence,Hair Highlight Camera Roll Influence,頭髮高光相機滾動影響,髪ハイライトカメラロール影響
+_HairUVSideCut,Cut Offset From UV Sides,從UV側面剪切偏移,UV側面からのカットオフセット
+_GroupMatCap,Matcap Reflection,Matcap反射,マッチョップ反射
+_IsUsingMatcapReflectMap,_IsUsingMatcapReflectMap,使用Matcap反射貼圖?,_IsUsingMatcapReflectMap
+_MatCapReflectionMap,Matcap reflection map,Matcap反射貼圖,マッチョップ反射　マップ
+_MatCapReflectionStrength,Matcap reflection Strength,Matcap反射強度,マッチョップ反射強度
+_MatCapRollStabilize,Matcap Camera Roll Stabilize,Matcap之於鏡頭旋轉的穩定度,マッチョップカメラロール安定化
+_Group7,Shadow,陰影,影
+_ReceiveShadows,Receive Built-In Shadows,接收內建陰影貼圖,内蔵影を受信
+_ReceiveASPShadow,Receive Extra Shadow From ASP ShadowMap,接收來自ASP陰影貼圖的人物陰影,ASPシャドウ　マップからの追加の影を受信
+_ReceiveOffsetedDepthMap,Receive Extra Shadow From Offsetted Depth Map,接收來自偏移深度貼圖的偏移深度陰影,オフセットされた深さ　マップからの追加の影を受信
+_OffsetShadowDistance,Depth Offset Shadow Pixel Distance,偏移深度陰影的偏移距離,深度オフセット影ピクセル距離
+_ClearCoatMask,_ClearCoatMask,_ClearCoatMask,_ClearCoatMask
+_ClearCoatSmoothness,_ClearCoatSmoothness,_ClearCoatSmoothness,_ClearCoatSmoothness
+_AdvanceGroup,Advance Setup (ZTest/Stencil),進階選項（深度測試/Stencil）,高度な設定（Zテスト/ステンシル）
+_Stencil,Stencil ID,Stencil ID,ステンシルID
+_StencilComp,Stencil Compare Function,Stencil比較函數,ステンシル比較関数
+_StencilOp,Stencil Pass Operation,Stencil Pass操作,ステンシルパス操作
+_StencilFailOp,Stencil Fail Operation,Stencil Fail操作,ステンシル失敗操作
+_OverrideZTest,Override ZTest,覆寫深度測試行為,Zテスト上書き
+_ZTest,ZTest,深度測試,Zテスト
+_EyeGroup,,,
+_EnableParallaxEffect,Enable Parallax Effect,啟用視差貼圖效果,
+_PupilMask,Pupil Mask,瞳孔遮罩貼圖,
+_ParallaxHeight,Parallax Height,視差效果高度,
+_eyeStyle,Eye Lighting Mode,眼睛光照模式,
+_SelfUnlitAreaColor,Darkest Flat Color,背光色,
+_UsePupilMask,Mask MatCap Reflection By Pupil Mask,使用瞳孔遮罩限制MatCap反射範圍,
+_HighLightAlphaClip,Is Highlight Texture Alpha Clip,對眼睛高光貼圖使用透明度剪裁,
+_HighlightDarken,Darken Emission along light direction,根據光照方向衰減高光強度,
+_EyeHighlightMap1,Top Highlight Map,高光貼圖,
+_EyeHighlightRotateDegree,Rotate Degree Along Half Vector,根據光照方向的高光效果旋轉角度,
+_EyeHighlightColor,Top Highlight Color Tint,眼睛高光顏色,

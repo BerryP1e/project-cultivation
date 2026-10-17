@@ -1,5 +1,7 @@
 # 争渡：工作区入口
 
+当前玩法已收缩为洞府／宗门野外／镇妖阁，详见 [家园与镇妖阁](docs/design/家园与镇妖阁.md)。古古村、宗门主场景及主线已退役，不按历史文档重建。存档 v24，按新建角色验证。
+
 Unity/Tuanjie 工程在 `cultivation/`，文档唯一入口是 [docs/INDEX.md](docs/INDEX.md)。开工先查 [工作规范](docs/ai/工作规范.md)、[工程与工具链](docs/ai/工程与工具链.md)，再按 INDEX 找对应系统。玩法以用户当前指令和设计文档为准。
 
 - 引擎：Tuanjie 2022.3.61t14，Built-in；源码 `.cs`、配置 `.csv` 使用 UTF-8 BOM。

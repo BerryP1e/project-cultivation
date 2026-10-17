@@ -158,8 +158,8 @@ public class 黑幕字幕 : MonoBehaviour
     /// 调用后由黑幕自己把它跑完（跨场景安全）。
     /// </summary>
     public static void 开始场景过渡(string 场景名, string 显示名, Vector3 落点 = default(Vector3),
-                                    int 淡入档数 = 24, int 淡出档数 = 24)
-        => 开始场景过渡(场景名, 显示名, 落点, null, 淡入档数, 淡出档数);
+                                    int 淡入档数 = 24, int 淡出档数 = 24, bool 有坐标落点 = false)
+        => 开始场景过渡(场景名, 显示名, 落点, null, 淡入档数, 淡出档数, 有坐标落点);
 
     /// <summary>
     /// 开始一次切场景过渡（**任意宿主**可调：任务表切场景 / 传送点 / 传送门…）。
@@ -168,7 +168,7 @@ public class 黑幕字幕 : MonoBehaviour
     /// </summary>
     /// <param name="落点名">按名字在新场景里找落点（传送点用）；与 <paramref name="落点"/> 二选一</param>
     public static void 开始场景过渡(string 场景名, string 显示名, Vector3 落点, string 落点名,
-                                    int 淡入档数 = 24, int 淡出档数 = 24)
+                                    int 淡入档数 = 24, int 淡出档数 = 24, bool 有坐标落点 = false)
     {
         var c = 确保();
         // 过渡期间不许自动收幕（三个标记都要清，见 下落并停留不收起 / 显示场景名 的说明）
@@ -193,7 +193,7 @@ public class 黑幕字幕 : MonoBehaviour
         {
             目标场景 = 场景名,
             落点 = 落点,
-            有落点 = 落点 != Vector3.zero,
+            有落点 = 有坐标落点 || 落点 != Vector3.zero,
             落点名 = 落点名,
             淡入档数 = 淡入档数,
             淡出档数 = 淡出档数,
@@ -239,14 +239,14 @@ public class 黑幕字幕 : MonoBehaviour
                 // 落点两种给法：直接坐标（任务表）或按名字在新场景里找（传送点）
                 if (string.IsNullOrEmpty(s.落点名) && s.有落点)
                 {
-                    任务管理器.请求落点(s.落点);
+                    SaveApplier.请求落点(s.落点);
                 }
                 else if (!string.IsNullOrEmpty(s.落点名))
                 {
                     var 点 = 找场景物体(s.落点名);
                     if (点 != null)
                     {
-                        任务管理器.请求落点(点.position, 0f);   // 0 秒接管 = 直接钉上去
+                        SaveApplier.请求落点(点.position, 0f);   // 0 秒接管 = 直接钉上去
                         Debug.Log("[切场景] 落点「" + s.落点名 + "」→ " + 点.position.ToString("F2"));
                     }
                     else
@@ -257,7 +257,7 @@ public class 黑幕字幕 : MonoBehaviour
                 break;
 
             case 2:      // 等落点摆好（最多 3 秒）
-                if (任务管理器.落点进行中_公开 && Time.unscaledTime < s.摆位死线) return;
+                if (SaveApplier.落点进行中_公开 && Time.unscaledTime < s.摆位死线) return;
                 s.段位 = 3;
                 break;
 
@@ -274,7 +274,7 @@ public class 黑幕字幕 : MonoBehaviour
                 }
                 if (Time.unscaledTime - s.字打完时刻 < 字打完后停留) return;
                 // 兜底：也不能早于"从起幕算起的最短停留"（防止场景名还没看清就切）
-                if (Time.unscaledTime - s.起算时刻 < 任务管理器.场景名最短停留) return;
+                if (Time.unscaledTime - s.起算时刻 < SaveApplier.场景名最短停留) return;
                 Debug.Log("[切场景] ⑤ 开始淡出（起幕起共 " + (Time.unscaledTime - s.起算时刻).ToString("F2")
                     + "s，字打完后又停 " + 字打完后停留.ToString("F1") + "s）");
                 收起();
@@ -288,7 +288,7 @@ public class 黑幕字幕 : MonoBehaviour
                 过渡 = null;
                 跨场景数据.正在接力 = false;     // ★ 接力结束，存档位置恢复生效
                 强制解锁();
-                任务管理器.清演出中();
+
                 break;
         }
     }
@@ -550,7 +550,7 @@ public class 黑幕字幕 : MonoBehaviour
                 Debug.Log("[黑幕] 自动收幕（" + 因 + "，淡出 " + 收幕淡出步数 + " 档）t=" + Time.unscaledTime.ToString("F2"));
                 立即收掉(收幕淡出步数);
                 强制解锁();
-                任务管理器.清演出中();      // 黑幕收掉 = 演出结束，放行阶段推进
+                      // 黑幕收掉 = 演出结束，放行阶段推进
             }
         }
 

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -23,12 +23,14 @@ public static class 外观库生成器
     const string 生成目录 = "Assets/Data/Generated/AppearanceDefinition";
     const string 手建目录 = "Assets/resources/外观";
 
-    static readonly string[] 表头 = { "id", "外观名", "模型资源路径", "介绍", "默认拥有", "解锁标记", "解锁即装备" };
+    static readonly string[] 表头 = { "id", "外观名", "模型资源路径", "介绍", "默认拥有", "解锁标记", "解锁即装备", "境界解锁等级" };
 
     static readonly string[][] 默认行 =
     {
-        new[] { "app_cunmin", "村中少年", "NPC/Human/成男村民/成男村民", "还没踏入仙途时的样子。", "1", "", "1" },
-        new[] { "app_player", "修仙者", "外观/修仙者", "正式踏入仙途之后的样子。", "0", "q_入宗门_完成", "1" },
+        new[] { "app_cunmin", "村中少年", "NPC/Human/成男村民/成男村民", "朴素的初始着装。", "1", "", "1", "0" },
+        new[] { "app_player", "练气着装", "外观/修仙者", "正式踏入仙途之后的样子。", "0", "", "1", "0" },
+        new[] { "app_foundation", "筑基着装", "外观/FoundationOutfit", "青衫宽袖，筑基有成。", "0", "", "0", "11" },
+        new[] { "app_goldencore", "金丹着装", "外观/GoldenCoreOutfit", "玄衣垂带，金丹有成。", "0", "", "0", "31" },
     };
 
     [MenuItem("修仙/外观/生成外观表", false, 500)]
@@ -43,7 +45,7 @@ public static class 外观库生成器
         var 文 = new System.Text.StringBuilder();
         文.Append(string.Join(",", 表头)).Append("\n");
         foreach (var r in 默认行) 文.Append(string.Join(",", r)).Append("\n");
-        System.IO.File.WriteAllText(表路径, 文.ToString(), new System.Text.UTF8Encoding(false));
+        System.IO.File.WriteAllText(表路径, 文.ToString(), new System.Text.UTF8Encoding(true));
         AssetDatabase.Refresh();
         Debug.Log("[外观] 已写出 " + 表路径 + "（" + 默认行.Length + " 行 × " + 表头.Length + " 列）");
     }
@@ -115,7 +117,12 @@ public static class 外观库生成器
     public static void 一键()
     {
         生成表();
-        EditorApplication.ExecuteMenuItem("修仙/从配置表生成资产");
+        DataTableImporter.ImportTables(false, new[] { "外观表" });
         收集();
+        var reference = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/外观/修仙者.prefab")
+            .GetComponentInChildren<SkinnedMeshRenderer>(true);
+        foreach (var id in new[] { "app_player", "app_foundation", "app_goldencore" })
+            OutfitClothBaker.Bake(AppearanceDatabase.取().取(id), reference);
+        AssetDatabase.SaveAssets();
     }
 }

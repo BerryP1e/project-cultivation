@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa937b4db2b8d974d9a89b2ca7a80870, type: 3}
+  m_Name: 831b55c26a5e2c7ef5d0a9333c80f94b
+  m_EditorClassIdentifier: 
+  id: GlobalObjectId_V1-2-efe7e902244b5a9469603231fe28053a-1564820973-0
+  label: "\u5854\u5237\u602A\u533A"
+  kind: SpawnZone
+  sourceScene: Demon-Suppressing Tower
+  sourcePath: "\u5237\u602A\u533A/\u5854\u5237\u602A\u533A"
+  prefab: {fileID: 5781673373415155650, guid: d8ce482cabea9fb48a3efe1a4d0e1389, type: 3}
+  role: 0
+  references:
+  - ownerPath: 
+    ownerType: SpawnZone
+    propertyPath: "\u5237\u602A\u7236\u8282\u70B9"
+    targetKey: GlobalObjectId_V1-2-efe7e902244b5a9469603231fe28053a-1817527188-0
+    targetPath: 
+    targetType: UnityEngine.Transform
+    ownerIndex: 0
+    targetIndex: 0

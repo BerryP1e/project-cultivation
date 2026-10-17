@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -439,6 +439,14 @@ public static class CheDianYeTingBaker
     }
     static void Icon(GameObject companion, AnimationClip pose)
     {
+        const string painted = "Assets/resources/UI/InkUI/AbilityArt/icon-ability-chedian_yeting-v2.png";
+        if (File.Exists(painted))
+        {
+            var art = AssetDatabase.LoadAssetAtPath<Sprite>(painted);
+            var skill = AssetDatabase.LoadAssetAtPath<ActiveDivineAbility>("Assets/Data/Generated/ActiveDivineAbility/ability_chedian_yeting.asset");
+            var item = AssetDatabase.LoadAssetAtPath<ItemDefinition>("Assets/Data/Generated/ItemDefinition/item_ability_chedian_yeting.asset");
+            if (art && skill && item) { skill.图标 = item.图标 = art; EditorUtility.SetDirty(skill); EditorUtility.SetDirty(item); return; }
+        }
         const string path = "Assets/resources/UI/InkUI/AbilityArt/icon-ability-chedian_yeting.png";
         using (var preview = new NpcPrefabAnimationPreview(companion))
         {

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -200,6 +200,7 @@ public class GameGlobalOutline : MonoBehaviour
         掩码材质.SetFloat("_CamFar", Mathf.Max(1f, 相机.farClipPlane));
         foreach (var e in 玩家渲染体) if (e.渲染体 != null) 命令.DrawRenderer(e.渲染体, e.材质, 0, 0);
         foreach (var e in 其他渲染体) if (e.渲染体 != null) 命令.DrawRenderer(e.渲染体, e.材质, 0, 0);
+        命令.SetRenderTarget(BuiltinRenderTextureType.CameraTarget);
     }
 
     void OnRenderImage(RenderTexture 源, RenderTexture 目标)

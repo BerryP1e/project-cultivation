@@ -1,0 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using Cultivation.WorldAuthoring;
+using UnityEngine.Rendering;
+var e=Object.FindObjectOfType<WorldMapEditorController>();int checks=0;
+void Require(bool value,string label){if(!value)throw new Exception(label);checks++;}
+Require(GraphicsSettings.currentRenderPipeline==e.palette.editorPipeline,"Dedicated URP missing");
+Require(Object.FindObjectsOfType<PlayerController>().Length==0,"Game actors leaked into authoring scene");
+var roundtrip=JsonUtility.FromJson<WorldMapData>(JsonUtility.ToJson(e.Data));roundtrip.Validate();Require(roundtrip.land.Length==e.Data.land.Length,"Map round-trip failed");
+Require(e.world.ChunkCount==64,"Chunks missing after reload");Require(e.palette.groundMaterial.GetTexture("_BaseMap")!=null,"Ground texture missing");
+var flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance;
+var rims=(List<GameObject>)typeof(WorldMapRenderer).GetField("rim",flags).GetValue(e.world);
+Require(rims.Count>0,"Boundary missing");for(int i=0;i<rims.Count;i++)Require(rims[i].name!=rims[(i+1)%rims.Count].name,"Adjacent repeated rock "+i);
+var chunks=(IDictionary)typeof(WorldMapRenderer).GetField("chunks",flags).GetValue(e.world);
+int roots=0,covered=0,total=0;var samples=new List<Vector3>();
+foreach(DictionaryEntry chunk in chunks)
+{
+    var type=chunk.Value.GetType();var batches=(List<Matrix4x4[]>)type.GetField("grassBatches",flags).GetValue(chunk.Value);
+    foreach(var batch in batches)foreach(var matrix in batch){var p=matrix.GetColumn(3);Require(p.y+e.palette.grassMesh.bounds.min.y*matrix.lossyScale.y<e.Data.Sample(e.Data.height,p.x,p.z)-.015f,"Grass root floats");Require(!e.Data.IsWet(p.x,p.z),"Grass inside pond");roots++;}
+    var side=(Mesh)type.GetField("side",flags).GetValue(chunk.Value);var sideVertices=side.vertices;for(int i=0;i+3<sideVertices.Length;i+=4)Require(Mathf.Abs(sideVertices[i+1].y-sideVertices[i+2].y)<.66f,"Long stretched sidewall");
+    foreach(var edge in (List<Vector3[]>)type.GetField("edges",flags).GetValue(chunk.Value))samples.Add((edge[0]+edge[1])*.5f);
+}
+Require(roots==e.world.GrassCount,"Grass batches out of sync");
+var temporary=new List<MeshCollider>();
+try
+{
+    foreach(var rock in rims)foreach(var filter in rock.GetComponentsInChildren<MeshFilter>()){var collider=filter.gameObject.AddComponent<MeshCollider>();collider.sharedMesh=filter.sharedMesh;temporary.Add(collider);}
+    Physics.SyncTransforms();foreach(var p in samples){total++;if(Physics.Raycast(p+Vector3.up*6,Vector3.down,12,1<<29))covered++;}
+    Debug.Log("Actual rock mesh coverage="+covered+"/"+total+" = "+(100f*covered/total).ToString("F2")+"%");
+    Require(covered>=total*.98f,"Rock rim contains uncovered land edge");
+}
+finally{foreach(var collider in temporary)Object.Destroy(collider);}
+Require(e.world.GetComponentsInChildren<Transform>().Length>0,"Geometry missing");
+foreach(var t in e.world.GetComponentsInChildren<Transform>())Require(t.name!="Cloud volume"&&t.name!="Void cloud sea","Legacy cloud bodies or flat sea remain");
+Debug.Log("Visual authoring checks passed="+checks+" grass roots="+roots+" boundary="+rims.Count);

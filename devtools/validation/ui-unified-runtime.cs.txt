@@ -8,7 +8,7 @@ yield return new WaitForSecondsRealtime(.5f);
 var report=new List<string>();void Check(bool ok,string label){File.WriteAllText("../.local/diagnostics/ui-unified/report.txt",string.Join("\n",report));if(!ok)throw new Exception("FAIL "+label);report.Add(label);}
 var ui=Object.FindObjectsOfType<CharacterPanelUI>(true).FirstOrDefault();if(!ui)throw new Exception("Character UI not found");var data=ui.GetComponent<UIPanelData>();
 foreach(var actor in Object.FindObjectsOfType<PlayerController>())foreach(var b in actor.GetComponents<MonoBehaviour>())b.enabled=false;
-foreach(var b in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x is SaveApplier||x is 任务管理器||x.GetType().Name=="MainQuestTutorial"))b.enabled=false;
+foreach(var b in Object.FindObjectsOfType<MonoBehaviour>().Where(x=>x is SaveApplier))b.enabled=false;
 DialogueUI.关闭();foreach(var debug in Object.FindObjectsOfType<PlayerStatsDebugPanel>())debug.Visible=false;
 var items=data.物品;var laws=data.法则碎片;var equipment=data.法则装备;var furnace=data.炉中法则;var essence=data.法则精粹;var learnedActive=data.已获得主动神通;var learnedPassive=data.已获得被动神通;var disabled=data.已停用被动;var skills=data.主动技能;var mountCatalog=data.坐骑;var learnedMounts=data.已学坐骑;var currentMount=data.当前坐骑;var treasureCatalog=data.法宝;var ownedTreasures=data.已拥有法宝;var currentTreasure=data.当前法宝;
 var errors=new List<string>();void OnLog(string message,string trace,LogType type){if(type==LogType.Error||type==LogType.Exception)errors.Add(message);}Application.logMessageReceived+=OnLog;

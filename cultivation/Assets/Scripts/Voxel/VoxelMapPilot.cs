@@ -74,6 +74,9 @@ public sealed class VoxelMapPilot : MonoBehaviour
     public static VoxelMapPilot 安装(Scene scene)
     {
         if(!Application.isPlaying || !scene.IsValid() || !scene.isLoaded)return null;
+        // Workshop maps replace the meshes and their hierarchy. The former pilot manifest is
+        // tied to the retired models; applying it would scan thousands of stale tree paths.
+        foreach(var root in scene.GetRootGameObjects())if(root.GetComponent<Cultivation.WorldAuthoring.WorldMapLoader>())return null;
         foreach(var root in scene.GetRootGameObjects())
         {var existing=root.GetComponent<VoxelMapPilot>();if(existing)return existing;}
         var settings=Resources.Load<VoxelMapPilotSettings>("Voxel/MapPilots/"+scene.name);

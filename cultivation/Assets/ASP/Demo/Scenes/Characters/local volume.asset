@@ -1,0 +1,184 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
+  m_Name: local volume
+  m_EditorClassIdentifier: 
+  components:
+  - {fileID: 7419423869833908324}
+  - {fileID: 4671674920049329421}
+--- !u!114 &4671674920049329421
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db4e9ad3e9694425b66636e55d88ae56, type: 3}
+  m_Name: ASPSreenSpaceOutline
+  m_EditorClassIdentifier: 
+  active: 1
+  EnableOutline:
+    m_OverrideState: 1
+    m_Value: 1
+  ApplyFXAA:
+    m_OverrideState: 1
+    m_Value: 1
+  OutlineWidth:
+    m_OverrideState: 1
+    m_Value: 1
+  OutlineColor:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0, b: 0, a: 1}
+  EnableOuterline:
+    m_OverrideState: 1
+    m_Value: 1
+  EnableMaterialEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  MaterialEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 1
+  MaterialEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 5
+  MaterialEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  EnableAlbedoEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  AlbedoEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 1
+  AlbedoEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 5
+  AlbedoEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  EnableDepthEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  DepthEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 1
+  DepthEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 20
+  DepthEdgeBias:
+    m_OverrideState: 1
+    m_Value: 2
+  EnableNormalsEdge:
+    m_OverrideState: 1
+    m_Value: 1
+  NormalsEdgeThreshold:
+    m_OverrideState: 1
+    m_Value: 1
+  NormalsEdgeWeight:
+    m_OverrideState: 1
+    m_Value: 1
+  NormalsEdgeBias:
+    m_OverrideState: 1
+    m_Value: 3
+  FadingWeghtByDistance:
+    m_OverrideState: 1
+    m_Value: 1
+  FadingColorByDistance:
+    m_OverrideState: 1
+    m_Value: 1
+  ColorWeightFadingStartEndDistance:
+    m_OverrideState: 1
+    m_Value: {x: 2, y: 15}
+  FadingWidthByDistance:
+    m_OverrideState: 1
+    m_Value: 0
+  WidthFadingStartEndDistance:
+    m_OverrideState: 1
+    m_Value: {x: 2, y: 15}
+  EnableDebugMode:
+    m_OverrideState: 0
+    m_Value: 0
+  DebugBackground:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
+  ScreenSpaceOutlineDebugMode:
+    m_OverrideState: 1
+    m_Value: 7
+--- !u!114 &7419423869833908324
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7211a7c703a24a01a3ffbdef92f986df, type: 3}
+  m_Name: ASPScreenSpaceLensFlare
+  m_EditorClassIdentifier: 
+  active: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: 0.61
+  tintColor:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0.7716981, b: 0.4292453, a: 1}
+  bloomMip:
+    m_OverrideState: 0
+    m_Value: 1
+  firstFlareIntensity:
+    m_OverrideState: 1
+    m_Value: 2
+  secondaryFlareIntensity:
+    m_OverrideState: 0
+    m_Value: 2
+  warpedFlareIntensity:
+    m_OverrideState: 0
+    m_Value: 2
+  warpedFlareScale:
+    m_OverrideState: 0
+    m_Value: {x: 1, y: 1}
+  samples:
+    m_OverrideState: 0
+    m_Value: 1
+  sampleDimmer:
+    m_OverrideState: 0
+    m_Value: 0.5
+  vignetteEffect:
+    m_OverrideState: 0
+    m_Value: 1
+  startingPosition:
+    m_OverrideState: 0
+    m_Value: 1.25
+  scale:
+    m_OverrideState: 0
+    m_Value: 1.5
+  streaksIntensity:
+    m_OverrideState: 1
+    m_Value: 5.92
+  streaksLength:
+    m_OverrideState: 1
+    m_Value: 1
+  streaksOrientation:
+    m_OverrideState: 1
+    m_Value: -24.1
+  streaksThreshold:
+    m_OverrideState: 1
+    m_Value: 0.503
+  resolution:
+    m_OverrideState: 0
+    m_Value: 4
+  chromaticAbberationIntensity:
+    m_OverrideState: 0
+    m_Value: 0

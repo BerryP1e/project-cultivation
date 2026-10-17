@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PaleGround
+  m_Shader: {fileID: 4800000, guid: 543e526748799f942be072c9db2c5b5b, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 7f44820bdfbfb424cae4398c7cdf2a36, type: 3}
+        m_Scale: {x: 0.9, y: 0.9}
+        m_Offset: {x: 0, y: 0}
+    - _GrassMap:
+        m_Texture: {fileID: 2800000, guid: 0bbb44ba4e73a3f4c9b7215a22abd143, type: 3}
+        m_Scale: {x: 0.22, y: 0.22}
+        m_Offset: {x: 0, y: 0}
+    - _PaintControl:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainLayers:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BoundaryBlend: 1
+    - _Cull: 2
+    - _Cutoff: 0
+    - _GrassBlend: 1
+    - _GrassMapExposure: 1.7
+    - _GrassMapSaturation: 0.35
+    - _NoiseStrength: 0.025
+    - _PaintEnabled: 0
+    - _RockBlend: 0
+    - _RockRootHeight: -999
+    - _RootMoss: 0
+    - _TextureContrast: 0.55
+    - _TextureExposure: 1.85
+    - _TextureSaturation: 0.1
+    - _TextureStrength: 0.58
+    - _WindStrength: 0
+    m_Colors:
+    - _BaseColor: {r: 0.73, g: 0.73, b: 0.69, a: 1}
+    - _GrassColor: {r: 0.7, g: 0.78, b: 0.65, a: 1}
+    - _PaintRect: {r: 0, g: 0, b: 1, a: 1}
+  m_BuildTextureStacks: []
