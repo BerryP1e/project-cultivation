@@ -1,5 +1,8 @@
 ﻿id,外观名,模型资源路径,介绍,默认拥有,解锁标记,解锁即装备,境界解锁等级
 app_cunmin,村中少年,NPC/Human/成男村民/成男村民,还没踏入仙途时的样子。,1,,1,0
 app_player,练气着装,外观/修仙者,正式踏入仙途之后的样子。,0,,1,0
-app_foundation,筑基着装,外观/FoundationOutfit,玉白衣襟与青碧长袍。达到筑基境界后永久解锁，可自由换装。,0,,0,11
-app_goldencore,金丹着装,外观/GoldenCoreOutfit,银发玉冠与玄青金纹法衣。达到金丹境界后永久解锁，可自由换装。,0,,0,31
+app_foundation,筑基着装,外观/FoundationOutfit,玉白衣襟与青碧长袍。达到筑基时获得学习物品，使用后永久解锁。,0,,0,11
+app_goldencore,金丹着装,外观/GoldenCoreOutfit,银发玉冠与玄青金纹法衣。达到金丹时获得学习物品，使用后永久解锁。,0,,0,21
+app_nascent,元婴着装,外观/NascentOutfit,玉冠银发与青金长袍。达到元婴时获得学习物品，使用后永久解锁。,0,,0,31
+app_divinity,化神着装,外观/DivinityOutfit,青白道袍与银发长绦。达到化神时获得学习物品，使用后永久解锁。,0,,0,41
+app_integration,合体着装,外观/IntegrationOutfit,月白浅青法袍与层叠流苏。达到合体时获得学习物品，使用后永久解锁。,0,,0,61

@@ -37,7 +37,28 @@ public static class WindowsReleaseBuilder
     // Also available through -executeMethod WindowsReleaseBuilder.Build in batch mode.
     public static void Build()
     {
-        var result = new Result { status = "Building", executable = Path.GetFullPath(Output) };
+        var args = Environment.GetCommandLineArgs();
+        int releaseIndex = Array.IndexOf(args, "-releaseDirectory");
+        if (releaseIndex >= 0 && releaseIndex + 1 >= args.Length)
+            throw new ArgumentException("Missing -releaseDirectory value");
+        BuildToDirectory(releaseIndex >= 0 ? args[releaseIndex + 1] : null);
+    }
+
+    /// <summary>Use an isolated output from editor automation as well as batch mode.</summary>
+    public static void BuildToDirectory(string releaseDirectory)
+    {
+        string output = Output, reportPath = ReportPath;
+        // Keep the last playable release until a clean build succeeds.
+        if (!string.IsNullOrEmpty(releaseDirectory))
+        {
+            string directory = Path.GetFullPath(releaseDirectory);
+            string builds = Path.GetFullPath("Builds") + Path.DirectorySeparatorChar;
+            if (!directory.StartsWith(builds, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Release directory must stay inside this project's Builds directory");
+            output = Path.Combine(directory, "cultivation.exe");
+            reportPath = Path.Combine(directory, "windows-release-report.json");
+        }
+        var result = new Result { status = "Building", executable = Path.GetFullPath(output) };
         try
         {
             result.scenes = EditorBuildSettings.scenes.Where(s => s.enabled)
@@ -60,11 +81,11 @@ public static class WindowsReleaseBuilder
             }
             graphics.ApplyModifiedPropertiesWithoutUndo();
             AssetDatabase.SaveAssets();
-            Directory.CreateDirectory(Path.GetDirectoryName(Output));
-            Write(result);
+            Directory.CreateDirectory(Path.GetDirectoryName(output));
+            Write(result, reportPath);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 scenes = result.scenes,
-                locationPathName = Output,
+                locationPathName = output,
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.None
             });
@@ -86,15 +107,15 @@ public static class WindowsReleaseBuilder
         finally
         {
             result.finishedUtc = DateTime.UtcNow.ToString("o");
-            Write(result);
+            Write(result, reportPath);
             Debug.Log("[WindowsRelease] " + JsonUtility.ToJson(result));
         }
         if (Application.isBatchMode) EditorApplication.Exit(result.status == "Succeeded" ? 0 : 1);
     }
 
-    static void Write(Result result)
+    static void Write(Result result, string reportPath)
     {
         Directory.CreateDirectory("Builds");
-        File.WriteAllText(ReportPath, JsonUtility.ToJson(result, true));
+        File.WriteAllText(reportPath, JsonUtility.ToJson(result, true));
     }
 }

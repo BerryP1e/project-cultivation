@@ -1,16 +1,7 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// **一种外观** —— 玩家可以持有 / 装备的"整个人"。
-///
-/// 设计（用户 2026-09-27）：
-///   · 外观 = **整套 `Player_Visual`**（模型 + 骨骼 + Animator），不是只换一张网格 ——
-///     因为要换的正是「成男村民 ↔ 修仙者」这种完全不同的模型。
-///   · 主线没踏入仙途之前用「村中少年（= 成男村民模型）」，主线进宗门之后才换成现在的玩家模型。
-///     这个切换**不需要任务系统写任何代码**：任务完成时写的标记 = 这里的 <see cref="解锁标记"/>。
-///
-/// 表：`Assets/Data/Tables/外观表.csv` → `修仙/从配置表生成资产` → 本类型的资产。
-/// 模型用**资源路径**给（`Assets/resources/` 下不带扩展名），因为 CSV 里没法直接引用预制体。
+/// <summary>外观网格、材质与随动配置；沿用玩家人体 Animator。模型按资源路径或直接引用加载。
+/// 默认外观直接拥有，境界着装先赠送对应学习物品，使用后才拥有并装备。
 /// </summary>
 [CreateAssetMenu(fileName = "外观_", menuName = "修仙/外观", order = 30)]
 public class AppearanceDefinition : ScriptableObject
@@ -43,14 +34,13 @@ public class AppearanceDefinition : ScriptableObject
     [Tooltip("勾上 = 开局就拥有并装备（村中少年就是靠它做默认外观）")]
     public bool 默认拥有 = false;
 
-    [Tooltip("达到该境界等级永久解锁；0 表示只通过物品或默认拥有。不会自动替换当前穿戴。")]
+    [Tooltip("达到该境界等级赠送一次对应的学外观物品；使用物品后才解锁。0 表示不按境界赠物。")]
     [Min(0)] public int 境界解锁等级;
 
-    [Tooltip("拥有它需要具备的标记（分号分隔，全部满足才算解锁）。\n" +
-             "任务完成时写的标记填在这里 —— 主线走到「进入宗门」就会自动解锁并换上")]
+    [Tooltip("兼容其他外观的条件标记（分号分隔）；当前两套境界着装不通过此字段解锁。")]
     public string 解锁标记 = "";
 
-    [Tooltip("解锁后是否立刻换上（默认外观 / 剧情给的外观一般勾上）")]
+    [Tooltip("默认或标记解锁时是否换上；学习物品的换装由学外观效果控制")]
     public bool 解锁即装备 = true;
 
     /// <summary>现在解锁了吗（标记齐了 / 或者本来就是默认拥有）</summary>

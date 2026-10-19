@@ -57,6 +57,8 @@ Shader "Cultivation/OutlineComposite"
             sampler2D _MaskTex;
             sampler2D _IDTex;
             float4 _MaskTex_TexelSize;
+            UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+            float _UseSceneDepth,_SceneCameraFar,_UseRootFade;
 
             fixed4 _PlayerColor;
             fixed4 _OtherColor;
@@ -113,6 +115,20 @@ Shader "Cultivation/OutlineComposite"
 
                 // 背景像素（组 0）不画线：线只贴在角色**内侧**，不然角色外一圈会糊在场景上
                 if (cid <= 0.001) return col;
+                float rootFade=_UseRootFade>.5?tex2D(_IDTex,i.uv).g:1;
+                if(rootFade<.001)return col;
+                if(_UseSceneDepth>.5){
+                    float raw=SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture,i.uv);
+                    float sceneDepth=LinearEyeDepth(raw);
+                    if(unity_OrthoParams.w>.5){
+                        #if defined(UNITY_REVERSED_Z)
+                        raw=1-raw;
+                        #endif
+                        sceneDepth=lerp(_ProjectionParams.y,_ProjectionParams.z,raw);
+                    }
+                    float maskDepth=cen.a*_SceneCameraFar;
+                    if(sceneDepth+max(.008,maskDepth*.001)<maskDepth)return col;
+                }
 
                 // 毛笔的"提按"：近处按得重（线粗）、远处提起来（线细）
                 float pressScale = lerp(1.0, 1.0 - _WidthByDepth, saturate(cen.a));
@@ -148,6 +164,7 @@ Shader "Cultivation/OutlineComposite"
                 // 软化：把"是/不是边"变成 0~1，抗锯齿；远处墨色更淡（浓淡）
                 float inkFade = lerp(1.0, 1.0 - _InkFade, saturate(cen.a));
                 float a = smoothstep(1.0 - _Soft, 1.0, e) * _Strength * inkFade;
+                a*=rootFade;
                 if (a <= 0.001) return col;
 
                 // 线色按**中心像素属于哪一组**选（玩家暖金、其他冷蓝）。⚠️ 变量别叫 line —— HLSL 保留字

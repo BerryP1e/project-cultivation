@@ -266,6 +266,7 @@ public static class JiubaMotionBaker
     static void Save(AnimationClip result, string name)
     {
         HandMotionRetargeting.Apply(result);
+        JiubaHandPoseBaker.Apply(result);
         string path = Folder + name + ".anim";
         var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         if (existing != null) { EditorUtility.CopySerialized(result, existing); EditorUtility.SetDirty(existing); UnityEngine.Object.DestroyImmediate(result); }

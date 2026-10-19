@@ -4,7 +4,9 @@ item_gongfa_taixu_lianqi,太虚炼气诀 秘籍,1,玄品,记载着「太虚炼�
 item_treasure_qingshan_sword,青山剑·待认主,1,地品,尚未认主的青山灵剑，滴血认主后可装备御剑穿敌。,1,获得法宝,treasure_qingshan_sword,滴血认主后获得法宝「青山剑」。,120
 item_active_ability_fentian_yanshu,焚天炎术 神通玉简,1,天品,刻着「焚天炎术」的玉简，神识一触即可领悟。,1,学主动神通,ability_fentian_yanshu,使用后获得主动神通「焚天炎术」。,240
 item_passive_ability_pingxu_yufeng,凭虚御风 心得,1,玄品,记载着「凭虚御风」的修炼心得，读罢即可掌握。,1,学被动神通,ability_pingxu_yufeng,使用后获得被动神通「凭虚御风」。,60
-item_menpai_bianfu,练气着装,1,凡品,初入仙途的青衣着装，衣摆与宽袖随步履轻动。,1,学外观,app_player,使用后获得外观「练气着装」并立刻换上,
+item_menpai_bianfu,练气着装,1,凡品,初入仙途的青衣着装，衣摆随步履轻动。,1,学外观,app_player,使用后获得外观「练气着装」并立刻换上,
+item_outfit_foundation,筑基着装,1,玄品,玉白衣襟与青碧长袍。使用后解锁对应着装，可自由换装。,1,学外观,app_foundation,使用后获得外观「筑基着装」并立刻换上,
+item_outfit_goldencore,金丹着装,1,地品,银发玉冠与玄青金纹法衣。使用后解锁对应着装，可自由换装。,1,学外观,app_goldencore,使用后获得外观「金丹着装」并立刻换上,
 item_gongfa_xuanxiao_leijue,玄霄雷决 秘籍,1,玄品,记载着「玄霄雷决」的功法秘籍，研读之后即可修习。,1,学功法,gongfa_xuanxiao_leijue,使用后学会功法「玄霄雷决」。,60
 item_active_ability_leidong_qianshan,雷动千闪 神通玉简,1,地品,刻着「雷动千闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_leidong_qianshan,使用后获得主动神通「雷动千闪」。,120
 item_active_ability_shunlei_tianshan,瞬雷天闪 神通玉简,1,天品,刻着「瞬雷天闪」的玉简，神识一触即可领悟。,1,学主动神通,ability_shunlei_tianshan,使用后获得主动神通「瞬雷天闪」。,240
@@ -111,3 +113,7 @@ item_home_technique_hall,传法阁令,99,黄品,在洞府摆放传法阁，靠�
 item_home_deacon_hall,执事阁令,99,黄品,在洞府摆放执事阁，靠近按 F 使用原有功能，可挪动并随存档保存。,1,摆放物件,home_deacon_hall,使用后预览摆放；右键取消返还。,100
 item_home_forge_hall,炼器阁令,99,黄品,在洞府摆放炼器阁。建筑保留，炼器玩法待建设。,1,摆放物件,home_forge_hall,使用后预览摆放；右键取消返还。,100
 item_tower_realm,镇妖阁认主令,1,玄品,认主后在法宝页装备镇妖阁。E 入塔，塔内 E 或死亡返回施放处。,1,获得法宝,treasure_tower_realm,获得法宝镇妖阁。,120
+item_spirit_array_talisman,浮世万象认主符,1,玄品,使用后使法宝浮世万象认主。装备后右键编排灵阵，E 施放。,1,获得法宝,treasure_spirit_array_talisman,获得法宝浮世万象。,120
+item_outfit_nascent,元婴着装,1,地品,玉冠银发与青金长袍。使用后解锁对应着装，可自由换装。,1,学外观,app_nascent,使用后获得外观「元婴着装」并立刻换上,
+item_outfit_divinity,化神着装,1,天品,青白道袍与银发长绦。使用后解锁对应着装，可自由换装。,1,学外观,app_divinity,使用后获得外观「化神着装」并立刻换上,
+item_outfit_integration,合体着装,1,天品,月白浅青法袍与层叠流苏。使用后解锁对应着装，可自由换装。,1,学外观,app_integration,使用后获得外观「合体着装」并立刻换上,

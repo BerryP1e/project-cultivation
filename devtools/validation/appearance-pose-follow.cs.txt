@@ -1,0 +1,68 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.Playables;
+using UnityEngine.Animations;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated Play");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Test(){
+ var old=actor.当前外观;var position=actor.transform.position;var rotation=actor.transform.rotation;
+ var move=actor.GetComponent<PlayerController>();bool enabled=move.enabled;
+ var animator=actor.玩家视觉.GetComponentInChildren<Animator>();var controller=animator.runtimeAnimatorController;
+ var graph=PlayableGraph.Create("PoseFollowVerification");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);var output=AnimationPlayableOutput.Create(graph,"Pose",animator);graph.Play();
+ var profile=AppearanceDatabase.取().取("app_goldencore").衣服随动;
+ try{
+  move.enabled=false;animator.runtimeAnimatorController=null;
+  OutfitPoseFollowExperiment.停用试穿();actor.装备(AppearanceDatabase.取().取("app_goldencore"));
+  for(int f=0;f<40;f++){EditorApplication.QueuePlayerLoopUpdate();yield return new WaitForEndOfFrame();}
+  var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(r=>r.GetComponent<AppearanceClothRig>());
+  var rig=body.GetComponent<AppearanceClothRig>();if(rig.当前配置!=profile)throw new Exception("Production outfit profile did not apply");rig.enabled=false;
+  if(actor.GetComponentsInChildren<Cloth>().Length!=0)throw new Exception("Native Cloth unexpectedly active");
+  var clip=AnimationClipPlayable.Create(graph,controller.animationClips.First(c=>c.name.EndsWith("御风八向_前")));clip.SetApplyFootIK(false);output.SetSourcePlayable(clip);clip.SetTime(.35);graph.Evaluate(0);
+  var bodyScales=body.bones.Take(78).Select(b=>b.localScale).ToArray();
+  Quaternion[] baseline=null;float maxAngle=0,maxDifference=0;float motion=0,curve=0,settledStep=0,hemMedianHeight=0,lowering=0;
+  foreach(bool rotated in new[]{false,true}){
+   actor.transform.position=position;actor.transform.rotation=rotated?Quaternion.AngleAxis(70,Vector3.up)*rotation:rotation;
+   rig.重置随动();
+   var restSurface=rig.GetComponentInChildren<MeshFilter>();var restPoints=profile.布料蒙皮.vertices;var restWeights=profile.布料蒙皮.boneWeights;
+   float RestHemWeight(BoneWeight w)=>(w.boneIndex0>=78&&w.boneIndex0<102?w.weight0:0)+(w.boneIndex1>=78&&w.boneIndex1<102?w.weight1:0)+(w.boneIndex2>=78&&w.boneIndex2<102?w.weight2:0)+(w.boneIndex3>=78&&w.boneIndex3<102?w.weight3:0);
+   var rigidPoints=restSurface.sharedMesh.vertices;var rigidHeights=Enumerable.Range(0,restPoints.Length).Where(i=>restPoints[i].z<.18f&&RestHemWeight(restWeights[i])>.95f).Select(i=>restSurface.transform.TransformPoint(rigidPoints[i]).y-body.bones[21].position.y).OrderBy(v=>v).ToArray();
+   float rigidMedian=rigidHeights[rigidHeights.Length/2];
+   var before=body.bones.Skip(78).Select(b=>b.localRotation).ToArray();
+   for(int f=0;f<120;f++){
+    actor.transform.position=position+actor.transform.forward*(f/60f*5);
+    rig.推进(1f/60,f/60f);maxAngle=Mathf.Max(maxAngle,rig.最大随动偏角);
+   }
+   var after=body.bones.Skip(78).Select(b=>b.localRotation).ToArray();
+   var surface=rig.GetComponentInChildren<MeshFilter>();var fabric=profile.布料蒙皮;var verts=fabric.vertices;var ww=fabric.boneWeights;
+   float HemWeight(BoneWeight w)=>(w.boneIndex0>=78&&w.boneIndex0<102?w.weight0:0)+(w.boneIndex1>=78&&w.boneIndex1<102?w.weight1:0)+(w.boneIndex2>=78&&w.boneIndex2<102?w.weight2:0)+(w.boneIndex3>=78&&w.boneIndex3<102?w.weight3:0);
+   var rendered=surface.sharedMesh.vertices;var heights=Enumerable.Range(0,verts.Length).Where(i=>verts[i].z<.18f&&HemWeight(ww[i])>.95f).Select(i=>surface.transform.TransformPoint(rendered[i]).y-body.bones[21].position.y).OrderBy(v=>v).ToArray();
+   if(heights.Length<20)throw new Exception("Not enough actual hem vertices for direction check");
+   hemMedianHeight=heights[heights.Length/2];
+   lowering=rigidMedian-hemMedianHeight;
+   if(hemMedianHeight>-.15f)throw new Exception("Rendered lower hem still lifted as a plate: median height="+hemMedianHeight);
+   if(lowering<.08f)throw new Exception("Rendered hem did not bend down from rigid pose: lowering="+lowering);
+   Debug.Log("HEM_ANGLES "+string.Join(",",Enumerable.Range(0,24).Select(i=>Quaternion.Angle(profile.衣骨[i].局部旋转,after[i]).ToString("F2"))));
+   var deflections=(Vector3[])typeof(AppearanceClothRig).GetField("姿态偏移",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(rig);File.WriteAllLines("../.local/diagnostics/hem-segment-state.txt",Enumerable.Range(0,24).Select(i=>i+" offset="+deflections[i].ToString("F6")+" rotation="+after[i].ToString("F6")));
+   for(int i=0;i<24;i+=3){float root=Quaternion.Angle(profile.衣骨[i].局部旋转,after[i]);float tip=Quaternion.Angle(profile.衣骨[i+2].局部旋转,after[i+2]);curve=Mathf.Max(curve,tip-root);}
+   if(!rotated){baseline=after;motion=rig.最大随动偏角;}
+   else maxDifference=after.Select((q,i)=>Quaternion.Angle(q,baseline[i])).Max();
+   rig.推进(0,2);if(body.bones.Skip(78).Where((b,i)=>Quaternion.Angle(b.localRotation,after[i])>.001f).Any())throw new Exception("Pause changed garment");
+   for(int f=120;f<300;f++){var previous=body.bones.Skip(78).Select(b=>b.localRotation).ToArray();rig.推进(1f/60,f/60f);if(f>=290)settledStep=Mathf.Max(settledStep,body.bones.Skip(78).Select((b,i)=>Quaternion.Angle(previous[i],b.localRotation)).Max());}
+   if(settledStep>.3f)throw new Exception("Garment kept jerking after stopping: "+settledStep);
+  }
+  if(maxAngle>profile.衣摆末端限角+.1f||motion<.5f||curve<2)throw new Exception("Missing flexible curvature or unbounded secondary motion angle="+maxAngle+" limit="+profile.衣摆末端限角+" motion="+motion+" curve="+curve);
+  if(maxDifference>.15f)throw new Exception("Whole-character rotation changed local cloth simulation: "+maxDifference);
+  if(body.bones.Take(78).Where((b,i)=>(b.localScale-bodyScales[i]).sqrMagnitude>1e-10f).Any())throw new Exception("Body bone scale changed from animated baseline");
+  var source=AppearanceDatabase.取().取("app_goldencore").取模型().GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh;
+  if(source.vertexCount!=6708||source.triangles.Length/3!=4780)throw new Exception("Source mesh changed");
+  Debug.Log("POSE_FOLLOW_PASS productionProfile=True nativeCloth=False angle="+maxAngle+" movementResponse="+motion+" yawRotationDifference="+maxDifference+" rootToTipBend="+curve+" hemMedianHeight="+hemMedianHeight+" loweringFromRigid="+lowering+" settledFrameStep="+settledStep+" pauseStable=True sourcePreserved=True");
+ }finally{
+  OutfitPoseFollowExperiment.停用试穿();graph.Destroy();animator.runtimeAnimatorController=controller;actor.transform.SetPositionAndRotation(position,rotation);actor.装备(null);actor.装备(old);move.enabled=enabled;
+ }
+}
+IEnumerator Guard(){var r=Test();try{while(true){object n;try{if(!r.MoveNext())break;n=r.Current;}catch(Exception e){failure=e;break;}yield return n;}}finally{(r as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double until=EditorApplication.timeSinceStartup+90;while(!done&&EditorApplication.timeSinceStartup<until){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Pose test timeout");}return Wait();

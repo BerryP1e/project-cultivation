@@ -417,7 +417,9 @@ namespace Cultivation.WorldAuthoring
                 else{var box=holder.AddComponent<BoxCollider>();box.center=Vector3.up*entry.bounds.size.y*.5f;box.size=entry.bounds.size;}
             }
             foreach(var t in holder.GetComponentsInChildren<Transform>(true))t.gameObject.layer=29;
-            holder.AddComponent<WorldInkTarget>();return holder;
+            var inkTarget=holder.AddComponent<WorldInkTarget>();inkTarget.树木=entry.category=="树木";
+            if(inkTarget.树木){inkTarget.接地高度=float.IsNaN(rootPlane)?position.y:rootPlane;inkTarget.根部淡化高度=Mathf.Clamp(bounds.size.y*.06f,.18f,.65f);}
+            return holder;
         }
         void ClearObjects(List<GameObject> list){foreach(var go in list)if(go){go.SetActive(false);DisposeGenerated(go);}list.Clear();}
         void Clear()

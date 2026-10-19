@@ -117,6 +117,8 @@ public class GameGlobalOutline : MonoBehaviour
 
     void OnDestroy()
     {
+        释放列表材质(玩家渲染体);
+        释放列表材质(其他渲染体);
         if (掩码材质 != null) Destroy(掩码材质);
         if (合成材质 != null) Destroy(合成材质);
     }
@@ -140,6 +142,8 @@ public class GameGlobalOutline : MonoBehaviour
     /// <summary>收一遍"要描的人"：玩家（`PlayerVitals`）+ 所有 `NpcInstance`</summary>
     void 收列表()
     {
+        释放列表材质(玩家渲染体);
+        释放列表材质(其他渲染体);
         玩家渲染体.Clear();
         其他渲染体.Clear();
 
@@ -161,7 +165,7 @@ public class GameGlobalOutline : MonoBehaviour
     {
         foreach (var r in 根.GetComponentsInChildren<Renderer>(true))
         {
-            if (r == null || !r.enabled || !r.gameObject.activeInHierarchy) continue;
+            if (!可描边(r)) continue;
             if (r is ParticleSystemRenderer) continue;              // 粒子/拖尾不进掩码（会把法术也算成角色）
             if (r is TrailRenderer || r is LineRenderer) continue;
             // 一个渲染体一份材质实例：组 ID 走材质属性（CommandBuffer.DrawRenderer 没有 MPB 重载）
@@ -169,6 +173,20 @@ public class GameGlobalOutline : MonoBehaviour
             m.SetFloat("_ID", 组);
             放哪.Add(new 条目 { 渲染体 = r, 材质 = m });
         }
+    }
+
+    static bool 可描边(Renderer r)
+    {
+        if (!r || !r.enabled || r.forceRenderingOff || !r.gameObject.activeInHierarchy) return false;
+        // 遮挡剪影是显示辅助，不是角色表面；不能再次进入风格描边掩码。
+        for (var t = r.transform; t; t = t.parent)
+            if (t.name.StartsWith("遮挡描边", System.StringComparison.Ordinal)) return false;
+        return true;
+    }
+
+    static void 释放列表材质(List<条目> entries)
+    {
+        foreach (var entry in entries) if (entry.材质) Destroy(entry.材质);
     }
 
     void 释放RT()
@@ -198,8 +216,8 @@ public class GameGlobalOutline : MonoBehaviour
         命令.SetRenderTarget(new RenderTargetIdentifier[] { 法线深度图, ID图 }, 法线深度图.depthBuffer);
         命令.ClearRenderTarget(true, true, new Color(0.5f, 0.5f, 0.5f, 1f));   // 法线=0、深度=远
         掩码材质.SetFloat("_CamFar", Mathf.Max(1f, 相机.farClipPlane));
-        foreach (var e in 玩家渲染体) if (e.渲染体 != null) 命令.DrawRenderer(e.渲染体, e.材质, 0, 0);
-        foreach (var e in 其他渲染体) if (e.渲染体 != null) 命令.DrawRenderer(e.渲染体, e.材质, 0, 0);
+        foreach (var e in 玩家渲染体) if (可描边(e.渲染体) && (相机.cullingMask & (1 << e.渲染体.gameObject.layer)) != 0) 命令.DrawRenderer(e.渲染体, e.材质, 0, 0);
+        foreach (var e in 其他渲染体) if (可描边(e.渲染体) && (相机.cullingMask & (1 << e.渲染体.gameObject.layer)) != 0) 命令.DrawRenderer(e.渲染体, e.材质, 0, 0);
         命令.SetRenderTarget(BuiltinRenderTextureType.CameraTarget);
     }
 

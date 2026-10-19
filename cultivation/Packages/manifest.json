@@ -1,8 +1,12 @@
 {
   "dependencies": {
     "cn.tuanjie.codely.bridge": "file:../.codely.packages/cn.tuanjie.codely.bridge@1.0.85-785dea6a",
+    "com.unity.burst": "1.8.29",
     "com.unity.collab-proxy": "2.12.4",
+    "com.unity.collections": "2.5.8",
     "com.unity.feature.development": "1.0.1",
+    "com.unity.mathematics": "1.3.3",
+    "com.unity.postprocessing": "3.4.0",
     "com.unity.render-pipelines.universal": "14.1.0",
     "com.unity.textmeshpro": "3.0.9",
     "com.unity.timeline": "1.7.7",

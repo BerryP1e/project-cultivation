@@ -34,7 +34,7 @@ var actual=movement.相机相对方向(v);var expected=Quaternion.Euler(0,yaw,0)
 Check(Vector3.Distance(actual,expected)<.001f,"camera-relative input yaw="+yaw+" "+v);
 }}
 foreach(var dir in new[]{Vector3.forward,Vector3.left,Vector3.right,Vector3.back,new Vector3(1,0,1),new Vector3(-1,0,-1)}){
-Reset();Check(dodge.尝试闪避(dir),"start dodge "+dir);var expected=dir.z<-.5f?dodge.动作.自由手.后闪:dir.x>.5f?dodge.动作.自由手.右旋:dodge.动作.自由手.左旋;
+Reset();Check(dodge.尝试闪避(dir),"start dodge "+dir);var local=dir.normalized;var expected=local.z>.5f?dodge.动作.自由手.前旋:local.z<-.5f?dodge.动作.自由手.后闪:local.x>0?dodge.动作.自由手.右旋:dodge.动作.自由手.左旋;
 Check(actions.当前动作==expected,"direction clip "+dir);
 float health=vitals.当前气血;
 foreach(var spec in new[]{AttackSpec.物理普通攻击,AttackSpec.特殊普通攻击,AttackSpec.物理主动神通,AttackSpec.特殊主动神通,AttackSpec.物理被动神通,AttackSpec.特殊被动神通}){

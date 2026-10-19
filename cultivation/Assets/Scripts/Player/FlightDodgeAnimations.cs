@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 
-public enum FlightDodgeDirection { Left, Right, Back }
+public enum FlightDodgeDirection { Left, Right, Back, Forward }
 
-/// <summary>共享动作目录：前闪/左闪共用左旋，持械变体只调整肩臂腕指。</summary>
+/// <summary>四向御风闪避；前闪有独立的前倾旋身，持械变体保留各自握持。</summary>
 [CreateAssetMenu(menuName = "修仙/御风闪避动作")]
 public sealed class FlightDodgeAnimations : ScriptableObject
 {
@@ -11,8 +11,8 @@ public sealed class FlightDodgeAnimations : ScriptableObject
     public class Set
     {
         public string 功法id;
-        public AnimationClip 左旋, 右旋, 后闪;
-        public AnimationClip 取(FlightDodgeDirection kind) => kind == FlightDodgeDirection.Back ? 后闪 : kind == FlightDodgeDirection.Right ? 右旋 : 左旋;
+        public AnimationClip 左旋, 右旋, 后闪, 前旋;
+        public AnimationClip 取(FlightDodgeDirection kind) => kind == FlightDodgeDirection.Forward ? 前旋 : kind == FlightDodgeDirection.Back ? 后闪 : kind == FlightDodgeDirection.Right ? 右旋 : 左旋;
     }
     public Set 自由手;
     public Set[] 持械;

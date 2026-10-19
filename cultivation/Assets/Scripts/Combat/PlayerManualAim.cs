@@ -44,14 +44,14 @@ public sealed class PlayerManualAim : MonoBehaviour
     }
     float Range()
     {
-        if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.SenseRange ?? SenseRange(gameObject);
+        if(选择槽位==-2)return SpiritArrayTalisman.Equipped(FindObjectOfType<UIPanelData>())?SenseRange(gameObject):GetComponent<QingshanSwordTreasure>()?.SenseRange ?? SenseRange(gameObject);
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
         if(skill && (skill.结算方式==ActiveSkillKind.追踪弹 || skill.结算方式==ActiveSkillKind.定向水炮 || skill.结算方式==ActiveSkillKind.伴龙随行) && skill.范围>0)return Mathf.Min(SenseRange(gameObject),skill.范围);
         return SenseRange(gameObject);
     }
     float Radius()
     {
-        if(选择槽位==-2)return GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
+        if(选择槽位==-2)return SpiritArrayTalisman.Equipped(FindObjectOfType<UIPanelData>())?SpiritArrayRules.阵半径:GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
         if(!skill){var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)return dragon.引导范围(落点);var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
         if(skill.结算方式==ActiveSkillKind.伴龙随行)return GetComponent<CheDianYeTingCompanion>()?.Definition?.BreathRadius ?? .85f;
@@ -64,7 +64,10 @@ public sealed class PlayerManualAim : MonoBehaviour
         if(!可接收输入 || 有锁定)return false;
         bool cast=false;
         if(slot>=0)cast=caster && caster.手动施放(slot,point);
-        else if(slot==-2)cast=GetComponent<QingshanSwordTreasure>()?.TryCastUltimateAt(point) ?? false;
+        else if(slot==-2){
+            var data=FindObjectOfType<UIPanelData>();
+            cast=SpiritArrayTalisman.Equipped(data)?SpiritArrayTalisman.Cast(gameObject,data,point):GetComponent<QingshanSwordTreasure>()?.TryCastUltimateAt(point) ?? false;
+        }
         else
         {
             var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)cast=dragon.手动出手(point);
@@ -99,6 +102,10 @@ public sealed class PlayerManualAim : MonoBehaviour
         }
         ring.positionCount=65;
         var aimPoint=point;
+        if(选择槽位==-2&&SpiritArrayTalisman.Equipped(FindObjectOfType<UIPanelData>())){
+            var origin=transform.position+Vector3.up*1.1f;normal=point-origin;
+            normal=normal.sqrMagnitude>.001f?normal.normalized:transform.forward;point=origin+normal*1.1f;
+        }
         var dragon=选择槽位==-1?GetComponent<BasicTaichuDragon01>():null;
         if(dragon&&dragon.enabled&&dragon.引导式(point)<2){point=transform.position;normal=Vector3.up;}
         if(frost&&frost.enabled&&frost.下次式==3){point=transform.position;normal=Vector3.up;}

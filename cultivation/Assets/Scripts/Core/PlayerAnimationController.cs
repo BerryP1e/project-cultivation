@@ -122,6 +122,7 @@ public class PlayerAnimationController : MonoBehaviour
     bool 网格已收集;
     Mesh 烘焙网格;
     System.Collections.Generic.List<int>[] 候选索引;
+    Mesh[] 采样源网格;
     readonly System.Collections.Generic.List<Vector3> 顶点缓存 = new System.Collections.Generic.List<Vector3>(8192);
 
     int 动作参数Hash;
@@ -496,6 +497,9 @@ public class PlayerAnimationController : MonoBehaviour
             {
                 var s = 取样网格[i];
                 if (s == null || !s.enabled || !s.gameObject.activeInHierarchy) continue;
+                if(采样源网格==null||采样源网格.Length!=取样网格.Length)采样源网格=new Mesh[取样网格.Length];
+                if(候选索引==null||候选索引.Length!=取样网格.Length)候选索引=new System.Collections.Generic.List<int>[取样网格.Length];
+                if(采样源网格[i]!=s.sharedMesh){候选索引[i]=收集脚部顶点(s);采样源网格[i]=s.sharedMesh;}
 
                 // A hand-held weapon has no foot-weighted vertices. An empty selection means
                 // exclude this renderer, never use its entire mesh (otherwise sword tips move
@@ -539,7 +543,7 @@ public class PlayerAnimationController : MonoBehaviour
     System.Collections.Generic.List<int> 收集脚部顶点(SkinnedMeshRenderer s)
     {
         var 结果 = new System.Collections.Generic.List<int>(1024);
-        if (s == null || animator == null) return 结果;
+        if (s == null || !s.enabled || animator == null) return 结果;
 
         var mesh = s.sharedMesh;
         var 骨 = s.bones;
@@ -561,9 +565,12 @@ public class PlayerAnimationController : MonoBehaviour
             }
         }
         if (判据.Count == 0) return 结果;
+        bool[] 使用中=null;
+        if(mesh.isReadable){使用中=new bool[mesh.vertexCount];foreach(int index in mesh.triangles)使用中[index]=true;}
 
         for (int v = 0; v < 权重.Length; v++)
         {
+            if(使用中!=null&&!使用中[v])continue; // 外袍已拆到独立表面，旧顶点不能继续充当脚底。
             var w = 权重[v];
             int 主 = 0;
             float 最大 = -1f;
@@ -589,10 +596,12 @@ public class PlayerAnimationController : MonoBehaviour
                 取样网格 = animator.GetComponentsInChildren<SkinnedMeshRenderer>(true);
 
             候选索引 = new System.Collections.Generic.List<int>[取样网格 != null ? 取样网格.Length : 0];
+            采样源网格=new Mesh[候选索引.Length];
             int 合计 = 0;
             for (int i = 0; i < 候选索引.Length; i++)
             {
                 候选索引[i] = 收集脚部顶点(取样网格[i]);
+                采样源网格[i]=取样网格[i]?取样网格[i].sharedMesh:null;
                 合计 += 候选索引[i].Count;
             }
             网格已收集 = true;

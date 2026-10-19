@@ -29,8 +29,11 @@ public static class 外观库生成器
     {
         new[] { "app_cunmin", "村中少年", "NPC/Human/成男村民/成男村民", "朴素的初始着装。", "1", "", "1", "0" },
         new[] { "app_player", "练气着装", "外观/修仙者", "正式踏入仙途之后的样子。", "0", "", "1", "0" },
-        new[] { "app_foundation", "筑基着装", "外观/FoundationOutfit", "青衫宽袖，筑基有成。", "0", "", "0", "11" },
-        new[] { "app_goldencore", "金丹着装", "外观/GoldenCoreOutfit", "玄衣垂带，金丹有成。", "0", "", "0", "31" },
+        new[] { "app_foundation", "筑基着装", "外观/FoundationOutfit", "青衫宽袖。达到筑基时获得学习物品，使用后解锁。", "0", "", "0", "11" },
+        new[] { "app_goldencore", "金丹着装", "外观/GoldenCoreOutfit", "玄衣垂带。达到金丹时获得学习物品，使用后解锁。", "0", "", "0", "21" },
+        new[] { "app_nascent", "元婴着装", "外观/NascentOutfit", "青金长袍。达到元婴时获得学习物品，使用后解锁。", "0", "", "0", "31" },
+        new[] { "app_divinity", "化神着装", "外观/DivinityOutfit", "青白道袍。达到化神时获得学习物品，使用后解锁。", "0", "", "0", "41" },
+        new[] { "app_integration", "合体着装", "外观/IntegrationOutfit", "月白浅青法袍。达到合体时获得学习物品，使用后解锁。", "0", "", "0", "61" },
     };
 
     [MenuItem("修仙/外观/生成外观表", false, 500)]
@@ -121,7 +124,7 @@ public static class 外观库生成器
         收集();
         var reference = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/外观/修仙者.prefab")
             .GetComponentInChildren<SkinnedMeshRenderer>(true);
-        foreach (var id in new[] { "app_player", "app_foundation", "app_goldencore" })
+        foreach (var id in new[] { "app_player", "app_foundation", "app_goldencore", "app_nascent", "app_divinity", "app_integration" })
             OutfitClothBaker.Bake(AppearanceDatabase.取().取(id), reference);
         AssetDatabase.SaveAssets();
     }

@@ -17,7 +17,7 @@ public class SaveData
     public bool 收服系统已初始化;
     public string 当前法宝 = "";
     public int 青山剑有效击杀;
-    public const int 当前版本 = 24;   // 家园与镇妖阁法宝；保存施放处，读档后仍能返回。
+    public const int 当前版本 = 25;   // 灵阵编排；默认资产只读，玩家序列独立保存。
     public TeleportBookmark 镇妖阁返回点;
     public List<TeleportBookmark> 已访传送点 = new List<TeleportBookmark>();
     public List<UnityEngine.Vector2Int> 家园扩建 = new List<UnityEngine.Vector2Int>();
@@ -112,6 +112,8 @@ public class SaveData
 
     [Tooltip("拥有的灵阵 id")]
     public List<string> 灵阵 = new List<string>();
+    public List<SpiritArrayProgram> 灵阵编排 = new List<SpiritArrayProgram>();
+    public string 当前灵阵编排="array_program_1";
 
     [Tooltip("拥有的坐骑 id")]
     public List<string> 坐骑 = new List<string>();

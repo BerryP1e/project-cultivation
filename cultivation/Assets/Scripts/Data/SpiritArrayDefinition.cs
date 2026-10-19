@@ -26,6 +26,10 @@ public enum ArrayTriggerCondition
 [CreateAssetMenu(fileName = "SpiritArray_", menuName = "修仙/灵阵父类", order = 6)]
 public class SpiritArrayDefinition : ScriptableObject, IPanelEntry
 {
+    [Header("序列施法")]
+    public SpiritArrayProgram 默认编排;
+    public Material 阵纹材质;
+    public Material 灵光材质;
     [Header("lore 字段 · 基本信息")]
     [Tooltip("灵阵名称")]
     public string 灵阵名称 = "新灵阵";

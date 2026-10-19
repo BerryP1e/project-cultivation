@@ -1,0 +1,15 @@
+﻿using System;
+using UnityEngine;
+using UnityEditor;
+if(EditorApplication.isPlaying)throw new Exception("Editor only");
+var shader=Shader.Find("Cultivation/Bloom");if(!shader||ShaderUtil.ShaderHasError(shader))throw new Exception("Bloom shader invalid");
+var material=new Material(shader);var source=new Texture2D(16,16,TextureFormat.RGBAFloat,false,true);var pixels=new Color[256];
+for(int y=0;y<16;y++)for(int x=0;x<16;x++)pixels[y*16+x]=x>8?new Color(4,2,1,1):Color.black;
+pixels[17]=new Color(float.NaN,float.PositiveInfinity,0,1);source.SetPixels(pixels);source.Apply();
+var rt=new RenderTexture(16,16,0,RenderTextureFormat.ARGBFloat);rt.Create();var read=new Texture2D(16,16,TextureFormat.RGBAFloat,false,true);var previous=RenderTexture.active;
+try{
+ material.SetFloat("_Threshold",1);material.SetFloat("_SoftKnee",.45f);Graphics.Blit(source,rt,material,0);RenderTexture.active=rt;read.ReadPixels(new Rect(0,0,16,16),0,0);read.Apply();
+ foreach(var c in read.GetPixels())if(float.IsNaN(c.r)||float.IsNaN(c.g)||float.IsNaN(c.b)||float.IsInfinity(c.r)||float.IsInfinity(c.g)||float.IsInfinity(c.b))throw new Exception("Invalid HDR value reached bloom pyramid");
+ if(read.GetPixel(12,8).r<1)throw new Exception("Valid bright bloom lost");
+ Debug.Log("BLOOM_FINITE_PASS NaN/Inf rejected before blur; valid HDR highlights retained");
+}finally{RenderTexture.active=previous;rt.Release();UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(source);UnityEngine.Object.DestroyImmediate(read);UnityEngine.Object.DestroyImmediate(material);}

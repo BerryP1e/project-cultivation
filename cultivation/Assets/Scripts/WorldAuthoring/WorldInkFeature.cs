@@ -37,7 +37,8 @@ namespace Cultivation.WorldAuthoring
         {
             public RTHandle source;
             readonly Material mask, occluder, composite;
-            readonly Dictionary<Material,Material> cutoutMasks=new Dictionary<Material,Material>();
+            readonly Dictionary<(Material,bool),Material> cutoutMasks=new Dictionary<(Material,bool),Material>();
+            readonly Plane[] planes=new Plane[6];
             RenderTexture normalTexture,idTexture;
             readonly int normals = Shader.PropertyToID("_StudyInkNormals");
             readonly int ids = Shader.PropertyToID("_StudyInkIds");
@@ -94,21 +95,22 @@ namespace Cultivation.WorldAuthoring
                     cmd.SetRenderTarget(new RenderTargetIdentifier[] {normalTexture,idTexture},normalTexture);
                     mask.SetFloat("_CamFar", data.cameraData.camera.farClipPlane);
                     occluder.SetFloat("_CamFar",data.cameraData.camera.farClipPlane);
-                    var planes=GeometryUtility.CalculateFrustumPlanes(data.cameraData.camera);
+                    GeometryUtility.CalculateFrustumPlanes(data.cameraData.camera,planes);
                     foreach (var subject in subjects)
                     {
                         if(!subject.isActiveAndEnabled)continue;
-                        foreach (var renderer in subject.Renderers)
+                        var renderers=subject.Renderers;var sources=subject.材质列表;
+                        for(int ri=0;ri<renderers.Length;ri++)
                         {
-                            if (!renderer||!renderer.enabled || renderer is ParticleSystemRenderer||!GeometryUtility.TestPlanesAABB(planes,renderer.bounds)) continue;
-                            for (int submesh = 0; submesh < renderer.sharedMaterials.Length; ++submesh)
+                            var renderer=renderers[ri];if (!renderer||!renderer.enabled || renderer is ParticleSystemRenderer||(data.cameraData.camera.cullingMask&(1<<renderer.gameObject.layer))==0||!GeometryUtility.TestPlanesAABB(planes,renderer.bounds)) continue;
+                            var materials=sources[ri];for (int submesh = 0; submesh < materials.Length; ++submesh)
                             {
-                                var sourceMaterial=renderer.sharedMaterials[submesh];var draw=subject.occluder?occluder:mask;
-                                if(!subject.occluder && sourceMaterial && sourceMaterial.HasProperty("_Cutoff") && sourceMaterial.GetFloat("_Cutoff")>0)
+                                var sourceMaterial=materials[submesh];bool onlyDepth=subject.仅遮挡(sourceMaterial);var draw=onlyDepth?occluder:mask;
+                                if(sourceMaterial && sourceMaterial.HasProperty("_Cutoff") && sourceMaterial.GetFloat("_Cutoff")>0)
                                 {
-                                    if(!cutoutMasks.TryGetValue(sourceMaterial,out draw))
+                                    var key=(sourceMaterial,onlyDepth);if(!cutoutMasks.TryGetValue(key,out draw))
                                     {
-                                        draw=new Material(mask);draw.SetTexture("_BaseMap",sourceMaterial.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",sourceMaterial.GetFloat("_Cutoff"));draw.SetFloat("_Cull",sourceMaterial.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",sourceMaterial.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",sourceMaterial.GetTextureOffset("_BaseMap"));cutoutMasks[sourceMaterial]=draw;
+                                        draw=new Material(onlyDepth?occluder:mask);draw.SetTexture("_BaseMap",sourceMaterial.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",sourceMaterial.GetFloat("_Cutoff"));draw.SetFloat("_Cull",sourceMaterial.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",sourceMaterial.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",sourceMaterial.GetTextureOffset("_BaseMap"));cutoutMasks[key]=draw;
                                     }
                                     draw.SetFloat("_CamFar",data.cameraData.camera.farClipPlane);
                                 }

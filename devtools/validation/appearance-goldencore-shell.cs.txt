@@ -1,0 +1,122 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated Play");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var old=actor.当前外观;var position=actor.transform.position;var rotation=actor.transform.rotation;
+ var move=actor.GetComponent<PlayerController>();bool moveEnabled=move.enabled;
+ var animation=actor.GetComponent<PlayerAnimationController>();if(animation.外部驱动御风)throw new Exception("External animation already active");
+ float capture=Time.captureDeltaTime;var cameraGo=new GameObject("GarmentCompleteReviewCamera");var camera=cameraGo.AddComponent<Camera>();camera.enabled=false;camera.orthographic=true;camera.orthographicSize=1.12f;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.35f,.37f,.38f);camera.cullingMask=1<<31;camera.nearClipPlane=.01f;camera.farClipPlane=60;var rt=new RenderTexture(640,800,24);camera.targetTexture=rt;
+ var folder=Path.GetFullPath("../.local/diagnostics/robe-shell-review");Directory.CreateDirectory(folder);
+ var stages=new[]{"stand","hover","forward","turn","stop","land"};var counts=new[]{90,90,150,120,120,90};
+ string worst="";float maxPenetration=0,frontPenetration=0,maxSurfaceMotion=0,maxSeam=0,pairChange=0,heldPairChange=0,heldBodyChange=0;var samples=new List<Vector3[]>();var heldSamples=new List<Vector3[]>();var stateNames=new HashSet<string>();int movingFrame=0;
+ try{
+  Time.captureDeltaTime=1f/60;move.enabled=false;
+  OutfitPoseFollowExperiment.停用试穿();actor.装备(AppearanceDatabase.取().取("app_goldencore"));
+  for(int i=0;i<40;i++)yield return new WaitForEndOfFrame();
+  var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(r=>r.GetComponent<AppearanceClothRig>());
+  var rig=body.GetComponent<AppearanceClothRig>();var profile=rig.当前配置;
+  if(!profile.姿态空间随动||!rig.enabled||profile!=actor.当前外观.衣服随动)throw new Exception("Production profile / normal LateUpdate not active");
+  var surface=rig.GetComponentInChildren<MeshFilter>();
+  var fields=BindingFlags.NonPublic|BindingFlags.Instance;
+  var progress=(float[])typeof(AppearanceClothRig).GetField("衣摆进度",fields).GetValue(rig);
+  var hemWeight=(float[])typeof(AppearanceClothRig).GetField("衣摆权重",fields).GetValue(rig);
+  var phase=(float[])typeof(AppearanceClothRig).GetField("衣摆相位",fields).GetValue(rig);
+  var ids=Enumerable.Range(0,progress.Length).Where(i=>progress[i]>.65f&&hemWeight[i]>.9f&&Mathf.Cos(phase[i])>.35f&&profile.布料同点[i]==i).ToArray();
+  if(ids.Length<12)throw new Exception("Back panel selection too small");ids=ids.Where((v,i)=>i%Math.Max(1,ids.Length/24)==0).Take(24).ToArray();
+  var frontIds=Enumerable.Range(0,progress.Length).Where(i=>progress[i]>.45f&&hemWeight[i]>.95f&&Mathf.Cos(phase[i])<-.25f&&profile.布料同点[i]==i).Where((v,i)=>i%3==0).Take(24).ToArray();
+  if(frontIds.Length<8)throw new Exception("Front panel selection too small");
+  var frontSamples=new List<Vector3[]>();var heldFrontSamples=new List<Vector3[]>();float frontFlex=0,heldFrontFlex=0;
+  var animator=animation.animator;
+  var relativePosition=position;
+  for(int stage=0;stage<stages.Length;stage++){
+   // 飞行路径可能越过浮岛边缘；落地造型回原地面夹具检查，不把空中待机当贴地画面。
+   if(stage==5)relativePosition=position;
+   bool flying=stage>0&&stage<5;animation.设置外部御风(flying,stage==2||stage==3);
+   if(stage==1)animation.触发升空();if(stage==5)animation.触发落地();
+   for(int frame=0;frame<counts[stage];frame++){
+    float speed=stage==2?9*Mathf.Clamp01(frame/30f):stage==3?9:stage==4?9*(1-Mathf.Clamp01(frame/30f)):0;
+    if(stage==3)actor.transform.rotation=Quaternion.AngleAxis(90f/counts[stage],Vector3.up)*actor.transform.rotation;
+    move.接续御风移动(actor.transform.forward*(speed/9));
+    relativePosition+=actor.transform.forward*(speed/60f);
+    float height=stage==0?0:stage==1?2.4f*Mathf.Clamp01(frame/45f):stage==5?2.4f*(1-Mathf.Clamp01(frame/45f)):2.4f;
+    actor.transform.position=new Vector3(relativePosition.x,position.y+height,relativePosition.z);
+    yield return new WaitForEndOfFrame();
+    if(rig.当前配置!=profile)throw new Exception("Unexpected profile replacement");
+    var points=surface.sharedMesh.vertices;var normals=surface.sharedMesh.normals;
+    var skeleton=(Vector3[])typeof(AppearanceClothRig).GetField("布料骨架顶点",fields).GetValue(rig);
+    for(int i=0;i<points.Length;i++){
+     if(float.IsNaN(points[i].x)||float.IsInfinity(points[i].sqrMagnitude)||float.IsNaN(normals[i].sqrMagnitude))throw new Exception("Non-finite cloth surface");
+     maxSurfaceMotion=Mathf.Max(maxSurfaceMotion,Vector3.Distance(points[i],skeleton[i]));
+     maxSeam=Mathf.Max(maxSeam,Vector3.Distance(points[i],points[profile.布料同点[i]]));
+    }
+    for(int i=0;i<points.Length;i++)if(hemWeight[i]>.95f&&progress[i]>.10f){
+     var world=surface.transform.TransformPoint(points[i]);float scale=Mathf.Abs(rig.transform.lossyScale.x);
+     int[,] pairs={{1,23},{3,4},{4,5},{12,13},{13,15}};float[] radii={.060f,.045f,.035f,.045f,.035f};
+     for(int c=0;c<5;c++){var a=body.bones[pairs[c,0]].position;var axis=body.bones[pairs[c,1]].position-a;var nearest=a+axis*Mathf.Clamp01(Vector3.Dot(world-a,axis)/Mathf.Max(1e-8f,axis.sqrMagnitude));float depth=(radii[c]+.008f)*scale-Vector3.Distance(world,nearest);if(depth>maxPenetration)worst=stages[stage]+" frame="+frame+" vertex="+i+" c="+c+" limit="+profile.布料顶点约束[i]+" phase="+phase[i];maxPenetration=Mathf.Max(maxPenetration,depth);if(Mathf.Cos(phase[i])<-.25f)frontPenetration=Mathf.Max(frontPenetration,depth);}
+    }
+    if(maxSurfaceMotion>.20f||maxSeam>.00001f)throw new Exception("Surface deformation broke envelope/seam: "+maxSurfaceMotion+" / "+maxSeam);
+    if(stage==2&&frame>=30&&frame%5==0){samples.Add(ids.Select(i=>surface.transform.TransformPoint(points[i])).ToArray());frontSamples.Add(frontIds.Select(i=>surface.transform.TransformPoint(points[i])).ToArray());}
+    if(frame==counts[stage]-1){
+     ScreenCapture.CaptureScreenshot(Path.Combine(folder,stages[stage]+"-gameview.png"));
+     foreach(var clip in animator.GetCurrentAnimatorClipInfo(0))if(clip.weight>.1f)stateNames.Add(stages[stage]+":"+clip.clip.name);
+    }
+    if(frame==counts[stage]-1||((stage==2||stage==3||stage==4)&&frame%6==0)){
+     var objects=actor.玩家视觉.GetComponentsInChildren<Transform>(true).Select(t=>new{node=t.gameObject,layer=t.gameObject.layer}).ToArray();foreach(var item in objects)item.node.layer=31;
+     try{
+      foreach(var view in new[]{"front","back","side"}){
+      var centre=body.bounds.center;camera.transform.position=centre+actor.transform.TransformDirection((view=="front"?new Vector3(0,.1f,4):view=="back"?new Vector3(0,.1f,-4):new Vector3(4,.1f,0)));camera.transform.LookAt(centre);camera.Render();
+      var previous=RenderTexture.active;RenderTexture.active=rt;var img=new Texture2D(640,800,TextureFormat.RGB24,false);img.ReadPixels(new Rect(0,0,640,800),0,0);img.Apply();File.WriteAllBytes(Path.Combine(folder,stages[stage]+"-"+frame.ToString("000")+"-"+view+".png"),img.EncodeToPNG());UnityEngine.Object.Destroy(img);RenderTexture.active=previous;}movingFrame++;
+     }finally{foreach(var item in objects)if(item.node)item.node.layer=item.layer;}
+    }
+   }
+  }
+  for(int a=0;a<ids.Length;a++)for(int b=a+1;b<ids.Length;b++){
+   var lengths=samples.Select(frame=>Vector3.Distance(frame[a],frame[b])).ToArray();pairChange=Mathf.Max(pairChange,lengths.Max()-lengths.Min());
+  }
+  // 将人物动画停在真实前飞帧上，继续平移和 LateUpdate，排除只是身体在动的假阳性。
+  animation.设置外部御风(true,true);Quaternion[] heldBody=null;
+  for(int frame=0;frame<210;frame++){
+   if(frame==60)animation.定住动作(true);
+   move.接续御风移动(actor.transform.forward);relativePosition+=actor.transform.forward*(9f/60);
+   actor.transform.position=new Vector3(relativePosition.x,position.y+2.4f,relativePosition.z);
+   yield return new WaitForEndOfFrame();
+   if(frame==61)heldBody=body.bones.Take(78).Select(b=>b.localRotation).ToArray();
+   if(frame>=90){
+    for(int i=0;i<78;i++){var q=body.bones[i].localRotation;var p=heldBody[i];heldBodyChange=Mathf.Max(heldBodyChange,Mathf.Abs(q.x-p.x)+Mathf.Abs(q.y-p.y)+Mathf.Abs(q.z-p.z)+Mathf.Abs(q.w-p.w));}
+    if(frame%5==0){var points=surface.sharedMesh.vertices;heldSamples.Add(ids.Select(i=>surface.transform.TransformPoint(points[i])).ToArray());heldFrontSamples.Add(frontIds.Select(i=>surface.transform.TransformPoint(points[i])).ToArray());}
+   }
+  }
+  animation.定住动作(false);
+  for(int a=0;a<ids.Length;a++)for(int b=a+1;b<ids.Length;b++){
+   var lengths=heldSamples.Select(frame=>Vector3.Distance(frame[a],frame[b])).ToArray();heldPairChange=Mathf.Max(heldPairChange,lengths.Max()-lengths.Min());
+  }
+  for(int a=0;a<frontIds.Length;a++)for(int b=a+1;b<frontIds.Length;b++){
+   var lengths=frontSamples.Select(frame=>Vector3.Distance(frame[a],frame[b])).ToArray();frontFlex=Mathf.Max(frontFlex,lengths.Max()-lengths.Min());
+   lengths=heldFrontSamples.Select(frame=>Vector3.Distance(frame[a],frame[b])).ToArray();heldFrontFlex=Mathf.Max(heldFrontFlex,lengths.Max()-lengths.Min());
+  }
+  if(heldFrontFlex<.010f)throw new Exception("Front panels nearly rigid with held body: "+heldFrontFlex);
+  if(heldBodyChange>.00001f)throw new Exception("Held-body control changed: "+heldBodyChange);
+  if(heldPairChange<.025f)throw new Exception("Held back panel still nearly rigid: "+heldPairChange);
+  if(pairChange<.025f)throw new Exception("Back panel still moving nearly rigidly: "+pairChange);
+  if(!stateNames.Any(n=>n.StartsWith("forward:")&&n.Contains("御风")))throw new Exception("Real Animator never entered forward flight");
+  // 真正暂停时不推进表面；这里直接检查同一时刻 dt=0 不改顶点。
+  var paused=surface.sharedMesh.vertices;rig.推进(0,Time.time);var afterPause=surface.sharedMesh.vertices;
+  if(paused.Where((v,i)=>(v-afterPause[i]).sqrMagnitude>1e-12f).Any())throw new Exception("Paused surface changed");
+  if(actor.GetComponentsInChildren<Cloth>().Length!=0)throw new Exception("Native Cloth active");
+  File.WriteAllText(Path.Combine(folder,"penetration.txt"),maxPenetration+" front="+frontPenetration+" "+worst);if(maxPenetration>.006f)throw new Exception("Garment penetrates leg capsule: "+maxPenetration+" front="+frontPenetration+" "+worst);
+  var report=new{passed=true,maxPenetration,frontPenetration,frontFlex,heldFrontFlex,productionProfile=true,normalAnimator=true,normalLateUpdate=true,motionFrames=movingFrame,backPanelSampleCount=ids.Length,backPanelPairDistanceChange=pairChange,heldBodyChange,heldBackPanelPairDistanceChange=heldPairChange,maxSurfaceMotion,maxSeam,states=stateNames.ToArray(),pauseStable=true};
+  var json=JsonConvert.SerializeObject(report,Formatting.Indented);File.WriteAllText(Path.Combine(folder,"results.json"),json);Debug.Log("GOLDENCORE_COMPLETE_REVIEW "+json);
+ }finally{
+  animation.定住动作(false);animation.设置外部御风(false,false);OutfitPoseFollowExperiment.停用试穿();move.接续御风移动(Vector3.zero);actor.transform.SetPositionAndRotation(position,rotation);actor.装备(null);actor.装备(old);move.enabled=moveEnabled;Time.captureDeltaTime=capture;UnityEngine.Object.Destroy(cameraGo);rt.Release();UnityEngine.Object.Destroy(rt);
+ }
+}
+IEnumerator Guard(){var r=Run();try{while(true){object n;try{if(!r.MoveNext())break;n=r.Current;}catch(Exception e){failure=e;break;}yield return n;}}finally{(r as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double until=EditorApplication.timeSinceStartup+150;while(!done&&EditorApplication.timeSinceStartup<until){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Complete review timeout");}return Wait();

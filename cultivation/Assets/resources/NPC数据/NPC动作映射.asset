@@ -1234,27 +1234,27 @@ MonoBehaviour:
     actions:
     - name: ZhanLi
       index: 0
-      clip: {fileID: -8861705643629993270, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      clip: {fileID: 7400000, guid: 6099322815e8c214e931d15854931105, type: 2}
       statePath: Base Layer.ZhanLi
     - name: XingZou
       index: 1
-      clip: {fileID: 4761516253837273642, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      clip: {fileID: 7400000, guid: 0f8245d7368ceda49bdd4df09309d474, type: 2}
       statePath: Base Layer.XingZou
     - name: PuTongGongJi
       index: 2
-      clip: {fileID: -5958666899366826995, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      clip: {fileID: 7400000, guid: 3b67ee0b478af444c8bff352c26b3991, type: 2}
       statePath: Base Layer.PuTongGongJi
     - name: JiNengGongJi1
       index: 3
-      clip: {fileID: 2911413264191128045, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      clip: {fileID: 7400000, guid: c32b28a1f91873048b49c001de6b9fe5, type: 2}
       statePath: Base Layer.JiNengGongJi1
     - name: JiNengGongJi2
       index: 4
-      clip: {fileID: 7100561207116417463, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      clip: {fileID: 7400000, guid: b6502d6586073024796e308cf492f5ad, type: 2}
       statePath: Base Layer.JiNengGongJi2
     - name: SiWang
       index: 5
-      clip: {fileID: -8878685067223734105, guid: 67d9041b990f5814995d3213173f0b02, type: 3}
+      clip: {fileID: 7400000, guid: 9783e2a7ce5a638498963b8b30e4c26b, type: 2}
       statePath: Base Layer.SiWang
   - controller: {fileID: 9100000, guid: 3cacc95569bcc4e45b7cf9770cc14799, type: 2}
     usesActionParameter: 1

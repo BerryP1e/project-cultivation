@@ -1,0 +1,39 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEditor;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated saves");
+var data=UnityEngine.Object.FindObjectOfType<UIPanelData>();data.EnsureLists();var saved=data.灵阵编排.Select(p=>p.Copy()).ToList();
+var root=new GameObject("ArrayLifecycleQA");root.SetActive(false);root.transform.position=new Vector3(8000,200,8000);
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.MaxHealth]=100;stats.调试数值[AttributeType.MaxSpirit]=10000;
+var life=root.AddComponent<PlayerVitals>();var source=root.AddComponent<ActiveSkillCaster>();source.enabled=false;root.SetActive(true);life.enabled=false;life.当前气血=100;life.当前灵气=1000;source.生命=life;source.战斗属性=stats;source.面板数据=data;
+var caster=root.AddComponent<SpiritArrayCaster>();var definition=SpiritArrayRules.Templates.First();var checks=new List<string>();
+var flags=BindingFlags.Instance|BindingFlags.NonPublic;var gatesField=typeof(SpiritArrayCaster).GetField("gates",flags);var boltsField=typeof(SpiritArrayCaster).GetField("bolts",flags);
+IList Gates()=>(IList)gatesField.GetValue(caster);IList Bolts()=>(IList)boltsField.GetValue(caster);
+T Field<T>(object o,string name)=>(T)o.GetType().GetField(name).GetValue(o);
+void Check(bool pass,string name){if(!pass)throw new Exception(name);checks.Add("PASS "+name);}
+void Cast(params SpiritArrayNode[] nodes){caster.enabled=false;caster.enabled=true;SpiritArrayRules.Store(data,new SpiritArrayProgram{id=definition.灵阵id,名称="速度与消散验证",序列=nodes.ToList()});if(!caster.TryCast(source,definition,null,out var error))throw new Exception(error);}
+IEnumerator Wait(float seconds){float end=Time.time+seconds;while(Time.time<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}}
+float Opacity(GameObject node){var block=new MaterialPropertyBlock();node.GetComponentsInChildren<MeshRenderer>().First(r=>r.name!="ActivationWave").GetPropertyBlock(block);return block.GetFloat("_Opacity");}
+IEnumerator Run(){try{
+ yield return null;
+ Cast(new SpiritArrayNode{操作=SpiritArrayOp.生成灵弹,延迟=0});yield return Wait(.4f);
+ Check(Bolts().Count==1,"emitter produces live projectile");var bolt=Bolts()[0];var speed=Field<Vector3>(bolt,"velocity").magnitude;
+ Check(Mathf.Abs(speed-27.6f)<.001f,"base projectile speed is exactly 12 x 2.3");
+ var before=Field<Vector3>(bolt,"point");float at=Time.time;yield return Wait(.15f);var after=Field<Vector3>(bolt,"point");Check(Mathf.Abs(Vector3.Distance(before,after)/(Time.time-at)-27.6f)<.15f,"actual continuous movement uses increased speed");
+ var gate=Gates()[0];Check(Field<bool>(gate,"completed"),"emitter completes after actual emission");float expiry=Field<float>(gate,"expires");Check(expiry-Time.time<1&&expiry-Time.time>.5f,"completion schedules one-second disappearance");
+ var node=GameObject.Find("SpiritArray_生成灵弹");float early=Opacity(node);yield return Wait(.25f);float middle=Opacity(node);Check(middle<early&&middle>0,"completed array visibly fades instead of abruptly vanishing");yield return Wait(.7f);Check(caster.ActiveGates==0&&!node,"completed emitter removed after fade");
+ Cast(new SpiritArrayNode{操作=SpiritArrayOp.生成灵弹,延迟=2});yield return Wait(1.5f);Check(caster.ActiveGates==1&&caster.ActiveProjectiles==0&&!Field<bool>(Gates()[0],"completed"),"delayed emitter remains while function is pending");yield return Wait(1f);Check(caster.ActiveProjectiles==1&&Field<bool>(Gates()[0],"completed"),"delayed emitter starts fading only after firing");yield return Wait(1f);Check(caster.ActiveGates==0,"delayed emitter also clears one second after completion");
+ Cast(new SpiritArrayNode{操作=SpiritArrayOp.生成灵弹,延迟=.7f},new SpiritArrayNode{操作=SpiritArrayOp.加速,参数=2});yield return Wait(1.2f);
+ Check(caster.AppliedModifiers>0&&Mathf.Abs(Field<Vector3>(Bolts()[0],"velocity").magnitude-55.2f)<.001f,"high-speed swept crossing retains acceleration multiplier");
+ Check(Gates().Cast<object>().All(g=>Field<bool>(g,"completed")),"modifier completes on successful function trigger");yield return Wait(1.1f);Check(caster.ActiveGates==0,"all triggered node types disappear after one-second fade");
+ Cast(new SpiritArrayNode{操作=SpiritArrayOp.多重施法,子阵=new List<SpiritArrayNode>{new SpiritArrayNode{操作=SpiritArrayOp.顺序打包,子阵=new List<SpiritArrayNode>{SpiritArrayNode.Create(SpiritArrayOp.生成灵弹),SpiritArrayNode.Create(SpiritArrayOp.强化)}}}});yield return Wait(.15f);var multi=Gates()[0];Check(!Field<bool>(multi,"completed")&&float.IsPositiveInfinity(Field<float>(multi,"expires")),"multi stays present while child sequence unfolds");yield return Wait(.65f);Check(Field<bool>(multi,"completed"),"multi completes after full child sequence");yield return Wait(1f);Check(!Gates().Contains(multi),"multi ritual also fades and clears");
+ Directory.CreateDirectory("../.local/diagnostics/spirit-array");File.WriteAllLines("../.local/diagnostics/spirit-array/lifecycle.txt",checks);Debug.Log("ARRAY_LIFECYCLE_PASS "+checks.Count);
+}finally{data.灵阵编排=saved;UnityEngine.Object.Destroy(root);}}
+bool done=false;Exception failure=null;IEnumerator Guard(){var it=Run();try{while(true){object value;try{if(!it.MoveNext())break;value=it.Current;}catch(Exception e){failure=e;break;}yield return value;}}finally{(it as IDisposable)?.Dispose();done=true;}}
+UnityEngine.Object.FindObjectOfType<玩家外观>().StartCoroutine(Guard());
+IEnumerator UntilDone(){double end=EditorApplication.timeSinceStartup+60;while(!done&&EditorApplication.timeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Lifecycle test timeout");}return UntilDone();

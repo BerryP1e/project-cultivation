@@ -8,8 +8,10 @@ namespace Cultivation.WorldAuthoring
     public sealed class WorldMapInk : MonoBehaviour
     {
         public WorldMapRenderer world;
+        public bool 场景深度遮挡=true;
         Camera camera3d;CommandBuffer commands;RenderTexture normals,ids;Material mask,occluder,composite;
-        readonly Dictionary<Material,Material> cutouts=new Dictionary<Material,Material>();
+        readonly Dictionary<(Material,bool,WorldInkTarget),Material> cutouts=new Dictionary<(Material,bool,WorldInkTarget),Material>();
+        readonly Plane[] planes=new Plane[6];
         void OnPreCull()
         {
             if(GraphicsSettings.currentRenderPipeline||!world||world.Data==null)return;
@@ -23,17 +25,20 @@ namespace Cultivation.WorldAuthoring
             }
             int width=Mathf.Max(1,camera3d.pixelWidth),height=Mathf.Max(1,camera3d.pixelHeight);if(!normals||normals.width!=width||normals.height!=height){ReleaseTargets();normals=RenderTexture.GetTemporary(width,height,24,RenderTextureFormat.ARGBHalf);normals.filterMode=FilterMode.Bilinear;ids=RenderTexture.GetTemporary(width,height,0,RenderTextureFormat.ARGB32);ids.filterMode=FilterMode.Point;}
             commands.Clear();commands.SetRenderTarget(ids);commands.ClearRenderTarget(false,true,Color.clear);commands.SetRenderTarget(normals);commands.ClearRenderTarget(true,true,new Color(.5f,.5f,.5f,1));commands.SetRenderTarget(new RenderTargetIdentifier[]{normals,ids},normals);
-            mask.SetFloat("_CamFar",camera3d.farClipPlane);occluder.SetFloat("_CamFar",camera3d.farClipPlane);var planes=GeometryUtility.CalculateFrustumPlanes(camera3d);
+            mask.SetFloat("_CamFar",camera3d.farClipPlane);occluder.SetFloat("_CamFar",camera3d.farClipPlane);GeometryUtility.CalculateFrustumPlanes(camera3d,planes);
             foreach(var subject in WorldInkTarget.Active)
             {
                 if(!subject||!subject.isActiveAndEnabled)continue;
-                foreach(var renderer in subject.Renderers)
+                var renderers=subject.Renderers;var sources=subject.材质列表;
+                for(int ri=0;ri<renderers.Length;ri++)
                 {
-                    if(!renderer||!renderer.enabled||renderer is ParticleSystemRenderer||!GeometryUtility.TestPlanesAABB(planes,renderer.bounds))continue;
-                    var materials=renderer.sharedMaterials;for(int sub=0;sub<materials.Length;sub++)
+                    var renderer=renderers[ri];if(!renderer||!renderer.enabled||renderer is ParticleSystemRenderer||(camera3d.cullingMask&(1<<renderer.gameObject.layer))==0||!GeometryUtility.TestPlanesAABB(planes,renderer.bounds))continue;
+                    var materials=sources[ri];for(int sub=0;sub<materials.Length;sub++)
                     {
-                        var original=materials[sub];var draw=subject.occluder?occluder:mask;
-                        if(!subject.occluder&&original&&original.HasProperty("_Cutoff")&&original.GetFloat("_Cutoff")>0){if(!cutouts.TryGetValue(original,out draw)){draw=new Material(mask);draw.SetTexture("_BaseMap",original.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",original.GetFloat("_Cutoff"));draw.SetFloat("_Cull",original.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",original.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",original.GetTextureOffset("_BaseMap"));cutouts[original]=draw;}draw.SetFloat("_CamFar",camera3d.farClipPlane);}commands.DrawRenderer(renderer,draw,sub,0);
+                        var original=materials[sub];bool onlyDepth=subject.仅遮挡(original);var draw=onlyDepth?occluder:mask;
+                        // 叶片只挡住后方墨线，不参与深度/法线内部描边；仍沿源alpha裁剪，不能画成整张卡片。
+                        bool alpha=original&&original.HasProperty("_Cutoff")&&original.GetFloat("_Cutoff")>0;var root=!onlyDepth&&subject.根部淡化高度>0?subject:null;
+                        if(original&&(alpha||root)){var key=(original,onlyDepth,root);if(!cutouts.TryGetValue(key,out draw)){draw=new Material(onlyDepth?occluder:mask);if(alpha){draw.SetTexture("_BaseMap",original.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",original.GetFloat("_Cutoff"));draw.SetFloat("_Cull",original.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",original.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",original.GetTextureOffset("_BaseMap"));}cutouts[key]=draw;}draw.SetFloat("_CamFar",camera3d.farClipPlane);if(root){draw.SetFloat("_RootHeight",root.接地高度);draw.SetFloat("_RootFade",root.根部淡化高度);}}commands.DrawRenderer(renderer,draw,sub,0);
                     }
                 }
             }
@@ -42,6 +47,7 @@ namespace Cultivation.WorldAuthoring
         void OnRenderImage(RenderTexture source,RenderTexture destination)
         {
             if(!composite||!normals||GraphicsSettings.currentRenderPipeline){Graphics.Blit(source,destination);return;}
+            composite.SetFloat("_UseRootFade",1);composite.SetFloat("_UseSceneDepth",场景深度遮挡?1:0);composite.SetFloat("_SceneCameraFar",camera3d.farClipPlane);
             composite.SetTexture("_MaskTex",normals);composite.SetTexture("_IDTex",ids);composite.SetVector("_MaskTex_TexelSize",new Vector4(1f/normals.width,1f/normals.height,normals.width,normals.height));Graphics.Blit(source,destination,composite);
         }
         void ReleaseTargets(){if(normals)RenderTexture.ReleaseTemporary(normals);if(ids)RenderTexture.ReleaseTemporary(ids);normals=ids=null;}

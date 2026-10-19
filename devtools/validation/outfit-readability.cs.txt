@@ -1,0 +1,8 @@
+﻿using System;
+using UnityEngine;
+foreach(string id in new[]{"app_player","app_foundation","app_goldencore","app_nascent","app_divinity","app_integration"}){
+ var p=AppearanceDatabase.取().取(id).衣服随动;
+ if(p.长发顶点.Length>0&&!p.蒙皮.isReadable)throw new Exception(id+" runtime hair CPU positions are inaccessible; Editor direct reads can hide this fault");
+ if(!p.布料蒙皮.isReadable)throw new Exception(id+" runtime cloth CPU positions are inaccessible");
+ Debug.Log("RUNTIME_MESH_READABLE "+id);
+}

@@ -137,3 +137,12 @@ devtools/**/*.cs.txt whitespace=cr-at-eol
 
 cultivation/Assets/_AsianArchitecture/Scene.unity unity-lfs
 cultivation/Assets/WorldAuthoring/Materials/GroundTextureLayers.asset unity-lfs
+
+# User-imported cloth package and new outfit sources; preserve original asset paths.
+"cultivation/Assets/MagicaCloth2/**/*.[fF][bB][xX]" unity-lfs
+"cultivation/Assets/MagicaCloth2/**/*.[pP][nN][gG]" unity-lfs
+"cultivation/Assets/MagicaCloth2/**/*.[tT][gG][aA]" unity-lfs
+"cultivation/Assets/MagicaCloth2/**/*.anim" unity-lfs
+"cultivation/Assets/Art/Characters/Tripo/RealmOutfits/**/*.fbx" unity-lfs
+"cultivation/Assets/TripoModels/*.glb" unity-lfs
+"cultivation/Assets/TripoModels/浮世万象/**/*.glb" unity-lfs

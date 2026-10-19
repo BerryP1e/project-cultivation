@@ -193,6 +193,7 @@ public static class WorldMapEditorBuilder
     public static void ConfigureSurfaceMaterial(Material material,Material original,string category,string sourcePath)
     {
         if(!material||!original)return;
+        if(category=="树木")material.enableInstancing=true;
         Texture texture=null;string property="_BaseMap";
         foreach(var candidate in new[]{"_Albedo","_BaseMap","_MainTex","_BaseColorMap"})if(original.HasProperty(candidate)&&original.GetTexture(candidate)){property=candidate;texture=original.GetTexture(candidate);break;}
         var tint=original.HasProperty("_AlbedoColor")?original.GetColor("_AlbedoColor"):original.HasProperty("_BaseColor")?original.GetColor("_BaseColor"):original.HasProperty("_Color")?original.GetColor("_Color"):Color.white;

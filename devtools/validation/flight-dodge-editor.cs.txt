@@ -16,7 +16,8 @@ AnimationCurve Curve(AnimationClip c,string n)=>AnimationUtility.GetEditorCurve(
 Quaternion Q(AnimationClip c,float t)=>new Quaternion(Curve(c,"RootQ.x").Evaluate(t),Curve(c,"RootQ.y").Evaluate(t),Curve(c,"RootQ.z").Evaluate(t),Curve(c,"RootQ.w").Evaluate(t)).normalized;
 try{
 foreach(var set in all){
-foreach(var clip in new[]{set.左旋,set.右旋,set.后闪}){
+Check(set.前旋&&set.前旋!=set.左旋&&set.前旋!=set.右旋,"distinct forward dodge "+set.功法id);
+foreach(var clip in new[]{set.左旋,set.右旋,set.后闪,set.前旋}){
 Check(clip&&clip.humanMotion&&!clip.isLooping,"humanoid nonloop "+clip.name);
 Check(AnimationUtility.GetCurveBindings(clip).Count(b=>b.propertyName.Contains("Hand."))==40,"all finger curves "+clip.name);
 Check(Curve(clip,"RootT.x").keys.All(k=>Mathf.Abs(k.value)<.0001f)&&Curve(clip,"RootT.z").keys.All(k=>Mathf.Abs(k.value)<.0001f),"no duplicate root translation "+clip.name);
@@ -36,6 +37,14 @@ Check(Quaternion.Angle(Q(clip,0),Q(clip,clip.length))<.01f,"returns to same hove
 graph.DestroyPlayable(playable);
 }
 var left=set.左旋;var right=set.右旋;
+bool sameMuscles=true;float maxTilt=0;
+foreach(var binding in AnimationUtility.GetCurveBindings(left).Where(b=>b.type==typeof(Animator)&&!b.propertyName.StartsWith("RootQ"))){
+var a=AnimationUtility.GetEditorCurve(left,binding);var b=AnimationUtility.GetEditorCurve(set.前旋,binding);
+if(b==null){sameMuscles=false;break;}for(int f=0;f<=60;f++)if(Mathf.Abs(a.Evaluate(left.length*f/60f)-b.Evaluate(left.length*f/60f))>.00001f)sameMuscles=false;
+}
+for(int f=0;f<=120;f++)maxTilt=Mathf.Max(maxTilt,Quaternion.Angle(Q(left,left.length*f/120f),Q(set.前旋,set.前旋.length*f/120f)));
+Check(sameMuscles,"forward retains original side dodge limb and torso curves "+set.功法id);
+Check(maxTilt>1&&maxTilt<25,"forward only tilts whole original rotation axis "+set.功法id+" maxTilt="+maxTilt);
 float leftTurn=0,rightTurn=0,lPrev=0,rPrev=0;var l0=Q(left,0);var r0=Q(right,0);
 for(int f=0;f<=180;f++){
 float t=left.length*f/180f;var l=Quaternion.Inverse(l0)*Q(left,t);var r=Quaternion.Inverse(r0)*Q(right,t);

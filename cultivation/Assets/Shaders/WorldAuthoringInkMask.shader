@@ -42,11 +42,12 @@ Shader "Cultivation/WorldAuthoring/InkMask"
             #pragma target 3.5
             #include "UnityCG.cginc"
             sampler2D _BaseMap;float4 _BaseMap_ST;float _Cutoff,_ID,_CamFar;
+            float _RootHeight,_RootFade;
             struct Input{float4 vertex:POSITION;float3 normal:NORMAL;float2 uv:TEXCOORD0;};
-            struct Output{float4 vertex:SV_POSITION;float3 normal:TEXCOORD0;float distance:TEXCOORD1;float2 uv:TEXCOORD2;};
+            struct Output{float4 vertex:SV_POSITION;float3 normal:TEXCOORD0;float distance:TEXCOORD1;float2 uv:TEXCOORD2;float worldY:TEXCOORD3;};
             struct Mask{half4 normals:SV_Target0;half4 id:SV_Target1;};
-            Output vert(Input v){Output o;o.vertex=UnityObjectToClipPos(v.vertex);float3 world=mul(unity_ObjectToWorld,v.vertex).xyz;o.normal=UnityObjectToWorldNormal(v.normal);o.distance=length(world-_WorldSpaceCameraPos);o.uv=TRANSFORM_TEX(v.uv,_BaseMap);return o;}
-            Mask frag(Output i){clip(tex2D(_BaseMap,i.uv).a-_Cutoff);Mask o;float3 normal=mul((float3x3)UNITY_MATRIX_V,normalize(i.normal));o.normals=half4(normal*.5+.5,saturate(i.distance/max(.001,_CamFar)));o.id=half4(_ID,0,0,1);return o;}
+            Output vert(Input v){Output o;o.vertex=UnityObjectToClipPos(v.vertex);float3 world=mul(unity_ObjectToWorld,v.vertex).xyz;o.worldY=world.y;o.normal=UnityObjectToWorldNormal(v.normal);o.distance=-mul(UNITY_MATRIX_MV,v.vertex).z;o.uv=TRANSFORM_TEX(v.uv,_BaseMap);return o;}
+            Mask frag(Output i){clip(tex2D(_BaseMap,i.uv).a-_Cutoff);Mask o;float3 normal=mul((float3x3)UNITY_MATRIX_V,normalize(i.normal));o.normals=half4(normal*.5+.5,saturate(i.distance/max(.001,_CamFar)));o.id=half4(_ID,_RootFade>0?smoothstep(0,_RootFade,i.worldY-_RootHeight):1,0,1);return o;}
             ENDCG
         }
     }

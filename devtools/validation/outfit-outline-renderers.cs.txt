@@ -1,0 +1,27 @@
+﻿using System;
+using System.Linq;
+using System.Collections;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEditor;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();var outline=Camera.main.GetComponent<GameGlobalOutline>();if(!outline)throw new Exception("Actual camera outline required");
+var flags=BindingFlags.Instance|BindingFlags.NonPublic;var collect=typeof(GameGlobalOutline).GetMethod("收列表",flags);var draw=typeof(GameGlobalOutline).GetMethod("OnPreRender",flags);var command=typeof(GameGlobalOutline).GetField("命令",flags);
+bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var node=GameObject.CreatePrimitive(PrimitiveType.Cube);node.name="OutfitOutlineValidation";node.transform.SetParent(actor.transform,false);var renderer=node.GetComponent<Renderer>();float refresh=outline.列表刷新秒;
+ int Bytes(){draw.Invoke(outline,null);return ((CommandBuffer)command.GetValue(outline)).sizeInBytes;}
+ int Materials()=>Resources.FindObjectsOfTypeAll<Material>().Count(m=>m.name.StartsWith("描边·掩码·",StringComparison.Ordinal));
+ try{
+  outline.列表刷新秒=1000;collect.Invoke(outline,null);yield return new WaitForEndOfFrame();int visible=Bytes();
+  renderer.enabled=false;int disabled=Bytes();if(disabled>=visible)throw new Exception("Cached disabled renderer still drawn");
+  renderer.enabled=true;renderer.forceRenderingOff=true;if(Bytes()!=disabled)throw new Exception("forceRenderingOff ignored");
+  renderer.forceRenderingOff=false;node.SetActive(false);if(Bytes()!=disabled)throw new Exception("Cached inactive renderer still drawn");node.SetActive(true);
+  node.name="遮挡描边·QA";collect.Invoke(outline,null);yield return new WaitForEndOfFrame();if(Bytes()!=disabled)throw new Exception("Occlusion silhouette re-entered style mask");
+  int initial=Materials();for(int f=0;f<5;f++){collect.Invoke(outline,null);yield return new WaitForEndOfFrame();}int final=Materials();if(final>initial)throw new Exception("Outline collection leaked materials: "+initial+" -> "+final);
+  Debug.Log("OUTFIT_OUTLINE visibleBytes="+visible+" disabledBytes="+disabled+" stableMaskMaterials="+final);
+ }finally{outline.列表刷新秒=refresh;UnityEngine.Object.Destroy(node);collect.Invoke(outline,null);}
+}
+IEnumerator Guard(){var e=Run();try{while(true){object current;try{if(!e.MoveNext())break;current=e.Current;}catch(Exception x){failure=x;break;}yield return current;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+60;while(!done&&EditorApplication.timeSinceStartup<end)yield return null;if(failure!=null)throw failure;if(!done)throw new Exception("Outline validation timed out");}return Wait();

@@ -95,6 +95,7 @@ public sealed class UIInkLawPreview : MonoBehaviour
             else if (any) { float scale = 2.5f / Mathf.Max(.1f, bounds.size.y); clone.transform.localPosition = -new Vector3(bounds.center.x, bounds.min.y, bounds.center.z) * scale; clone.transform.localScale *= scale; }
             actor.localRotation = Quaternion.Euler(0, 175, 0);
             actor.localScale = Vector3.one * .5f;
+            同步外观(null);
         }
         var emitter = new GameObject("AmbientToLawMotes", typeof(ParticleSystem)); emitter.layer = 31; emitter.transform.SetParent(transform, false);
         particles = emitter.GetComponent<ParticleSystem>();
@@ -141,15 +142,18 @@ public sealed class UIInkLawPreview : MonoBehaviour
         if (!appearanceSource || !clonedVisual) return;
         foreach (var skin in appearanceSource.GetComponentsInChildren<SkinnedMeshRenderer>(true))
         {
+            if(skin.name=="OutfitFabric"||skin.name=="OutfitTrousers")continue;
             string path = ""; var node = skin.transform;
             while (node != appearanceSource && node) { path = node.name + (path.Length == 0 ? "" : "/" + path); node = node.parent; }
             var destination = path.Length == 0 ? clonedVisual : clonedVisual.Find(path);
             var target = destination ? destination.GetComponent<SkinnedMeshRenderer>() : null;
             if (!target || !skin.sharedMesh) continue;
-            target.sharedMesh = skin.sharedMesh;
+            var previousTrousers=target.transform.Find("OutfitTrousers")?.GetComponent<SkinnedMeshRenderer>();
+            if(previousTrousers&&ownedMaterials.Remove(previousTrousers.sharedMaterial))Destroy(previousTrousers.sharedMaterial);
+            var oldMaterials=target.sharedMaterials;
             AppearanceClothRig.同步预览(skin, target);
             var mats = skin.sharedMaterials;
-            foreach (var old in target.sharedMaterials) if (ownedMaterials.Remove(old)) Destroy(old);
+            foreach (var old in oldMaterials) if (ownedMaterials.Remove(old)) Destroy(old);
             var replacement = new Material[mats.Length];
             for (int i = 0; i < mats.Length; i++) {
                 var material = new Material(Shader.Find("Cultivation/UI/FormationModelBrush")); ownedMaterials.Add(material);
@@ -157,6 +161,14 @@ public sealed class UIInkLawPreview : MonoBehaviour
                 replacement[i] = material;
             }
             target.sharedMaterials = replacement;
+            var fabric=target.transform.Find("OutfitFabric/OutfitFabricSurface");
+            if(fabric)fabric.GetComponent<MeshRenderer>().sharedMaterials=replacement;
+            var trousers=target.transform.Find("OutfitTrousers")?.GetComponent<SkinnedMeshRenderer>();
+            if(trousers){
+                var sourceMaterial=trousers.sharedMaterial;var ink=new Material(Shader.Find("Cultivation/UI/FormationModelBrush"));ownedMaterials.Add(ink);
+                if(sourceMaterial){if(sourceMaterial.HasProperty("_MainTex"))ink.mainTexture=sourceMaterial.mainTexture;if(sourceMaterial.HasProperty("_Color"))ink.color=sourceMaterial.color;}
+                trousers.sharedMaterial=ink;
+            }
         }
     }
     void OnEnable() { 玩家外观.外观变化 += 同步外观; 同步外观(null); }

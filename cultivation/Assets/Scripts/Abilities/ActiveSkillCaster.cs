@@ -242,7 +242,7 @@ public class ActiveSkillCaster : MonoBehaviour
             return false;
         }
 
-        // ---- 目前只有主动神通实现了；法宝 / 灵阵还是占位资产 ----
+        // 灵阵通过独立法宝「浮世万象」的 E 键入口执行，不占神通槽。
         var 神通 = 内容 as ActiveDivineAbility;
         if (神通 == null)
         {

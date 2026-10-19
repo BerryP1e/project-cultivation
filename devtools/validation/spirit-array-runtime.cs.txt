@@ -1,0 +1,102 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using UnityEditor;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated saves");
+var data=UnityEngine.Object.FindObjectOfType<UIPanelData>();data.EnsureLists();
+var original=data.灵阵编排.Select(p=>p.Copy()).ToList();var slots=data.主动技能.ToList();
+var owned=data.已拥有法宝.ToList();var bag=data.物品.ToList();var equipped=data.当前法宝;string activeProgram=data.当前灵阵编排;
+var root=new GameObject("SpiritArrayQA");root.SetActive(false);root.transform.position=new Vector3(5000,100,5000);
+var stats=root.AddComponent<PlayerCombatStats>();stats.使用调试数值=true;stats.调试数值[AttributeType.Attack]=100;stats.调试数值[AttributeType.MaxHealth]=100;stats.调试数值[AttributeType.MaxSpirit]=10000;
+var vitals=root.AddComponent<PlayerVitals>();var targeting=root.AddComponent<NpcTargeting>();targeting.enabled=false;
+var source=root.AddComponent<ActiveSkillCaster>();source.enabled=false;root.SetActive(true);source.生命=vitals;source.战斗属性=stats;source.目标管理器=targeting;source.面板数据=data;vitals.enabled=false;
+var caster=root.AddComponent<SpiritArrayCaster>();var definition=SpiritArrayRules.Templates.First(d=>d.灵阵id=="array_program_1");
+var report=new List<string>();void Check(bool condition,string name){if(!condition)throw new Exception("FAIL "+name);report.Add("PASS "+name);}
+SpiritArrayNode N(SpiritArrayOp op)=>SpiritArrayNode.Create(op);
+void Configure(params SpiritArrayNode[] nodes){caster.enabled=false;caster.enabled=true;vitals.当前灵气=1000;vitals.当前气血=100;targeting.ClearLock();SpiritArrayRules.Store(data,new SpiritArrayProgram{id=definition.灵阵id,名称="测试阵",序列=nodes.ToList()});}
+void Cast(){if(!caster.TryCast(source,definition,null,out string e))throw new Exception(e);}
+IEnumerator Wait(float seconds){float end=Time.time+seconds;while(Time.time<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}}
+var npcObject=new GameObject("ArrayTarget");npcObject.SetActive(false);npcObject.transform.position=root.transform.position+Vector3.forward*11;
+var npcDefinition=ScriptableObject.CreateInstance<NpcDefinition>();npcDefinition.id="qa_array_target";npcDefinition.对主角好感度=-100; npcDefinition.属性[AttributeType.MaxHealth]=100000;
+var npc=npcObject.AddComponent<NpcInstance>();npc.定义=npcDefinition;var box=npcObject.AddComponent<BoxCollider>();box.center=Vector3.up*1.1f;box.size=new Vector3(1.5f,2.2f,1.5f);npcObject.SetActive(true);npc.ResetHealth();
+IEnumerator Run(){
+try{
+ yield return null;foreach(var ai in npcObject.GetComponents<MonoBehaviour>())if(ai!=npc)ai.enabled=false;vitals.当前气血=100;
+ foreach(var d in SpiritArrayRules.Templates){Check(SpiritArrayRules.Validate(d.默认编排,out _),"valid default "+d.灵阵id);var copied=d.默认编排.Copy();Check(JsonUtility.ToJson(copied)==JsonUtility.ToJson(d.默认编排),"nested copy "+d.灵阵id);}
+ Configure(N(SpiritArrayOp.身前布阵),N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.强化));
+ var npcPosition=npcObject.transform.position;npcObject.transform.position=root.transform.position+new Vector3(8,4,6);targeting.Lock(npc);Cast();yield return Wait(.35f);
+ var first=GameObject.Find("SpiritArray_生成灵弹").transform;var second=GameObject.Find("SpiritArray_强化").transform;
+ var lockedDirection=(npcObject.transform.position+Vector3.up*NpcTarget.判定高度-(root.transform.position+Vector3.up*1.1f)).normalized;
+ Check(Vector3.Dot(first.forward,lockedDirection)>.9999f&&first.forward.y>.1f,"front array plane faces elevated off-axis locked target");
+ Check(Mathf.Abs(Vector3.Distance(first.position,second.position)-SpiritArrayRules.Step(SpiritArrayOp.生成灵弹))<.0015f&&Vector3.Dot((second.position-first.position).normalized,lockedDirection)>.9999f,"successive arrays use size-scaled spacing along tilted casting direction");
+ Configure(N(SpiritArrayOp.身前布阵),N(SpiritArrayOp.生成灵弹));var aim=root.transform.position+new Vector3(-6,7,4);Check(caster.TryCast(source,definition,aim,out _),"guided front cast starts");yield return null;
+ Check(Vector3.Dot(GameObject.Find("SpiritArray_生成灵弹").transform.forward,(aim-root.transform.position-Vector3.up*1.1f).normalized)>.9999f,"front-position node preserves manual 3D aim");
+ npcObject.transform.position=npcPosition;
+ Configure(N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.强化),N(SpiritArrayOp.加速));float spent=caster.SpentSpirit;Cast();
+ yield return Wait(2.6f);Check(Mathf.Abs(caster.SpentSpirit-spent-14)<.001f,"emitter plus two actual crossings spend 14");Check(caster.AppliedModifiers>=2,"swept projectile crosses strengthening and speed gates");Check(caster.HitCount>0,"projectile hits through combat pipeline");
+ Configure(N(SpiritArrayOp.生成灵弹),new SpiritArrayNode{操作=SpiritArrayOp.分裂,参数=3,外倾角=3},N(SpiritArrayOp.追踪));targeting.Lock(npc);spent=caster.SpentSpirit;int modified=caster.AppliedModifiers;Cast();
+ yield return Wait(1.65f);Check(caster.AppliedModifiers-modified==4,"split once then all three children gain homing");Check(Mathf.Abs(caster.SpentSpirit-spent-23)<.001f,"split and each homing child charged independently");
+ npcObject.transform.position=root.transform.position+Vector3.forward*100; // 高速弹在 1.6 秒前已能命中 11 米靶；存活检查使用远靶。
+ Configure(N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.修正方向));Cast();yield return Wait(1.6f);Check(caster.ActiveProjectiles>0,"direction correction retains live projectile");
+ Configure(N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.强化));vitals.当前灵气=8;spent=caster.SpentSpirit;modified=caster.AppliedModifiers;Cast();yield return Wait(1.5f);Check(caster.SpentSpirit-spent==8&&caster.AppliedModifiers==modified&&caster.ActiveProjectiles==1,"insufficient crossing mana neither modifies nor deletes projectile");
+ Configure(N(SpiritArrayOp.生成灵弹));vitals.当前灵气=7;Check(!caster.TryCast(source,definition,null,out _)&&vitals.当前灵气==7,"insufficient opening mana has no side effect");
+ npcObject.transform.position=npcPosition;
+ Configure(N(SpiritArrayOp.目标头顶),N(SpiritArrayOp.生成灵弹));Check(!caster.TryCast(source,definition,null,out _),"target-top rejects missing lock");targeting.Lock(npc);Cast();yield return Wait(.35f);Check(Vector3.Distance(GameObject.Find("SpiritArray_生成灵弹").transform.position,npc.transform.position+Vector3.up*3.6f)<.01f,"target-top origin is above locked target");
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.多重施法,外倾角=15,子阵=new List<SpiritArrayNode>{N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.生成灵弹)}},N(SpiritArrayOp.强化));spent=caster.SpentSpirit;Cast();yield return Wait(.15f);Check(caster.ActiveGates==4&&caster.SpentSpirit-spent==24,"multi opens parent and three tilted branches atomically");yield return Wait(.3f);Check(caster.ActiveGates==5,"normal multi runs following gate after branches");
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.多重施法,子阵=new List<SpiritArrayNode>{N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.生成灵弹)}},N(SpiritArrayOp.强化));vitals.当前灵气=15;Check(!caster.TryCast(source,definition,null,out _)&&caster.ActiveGates==0&&vitals.当前灵气==15,"multi insufficient mana cannot partially spawn branches");
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.反向多重,子阵=new List<SpiritArrayNode>{N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.生成灵弹)}});spent=caster.SpentSpirit;Cast();yield return Wait(.12f);Check(caster.ActiveGates==3&&caster.SpentSpirit-spent==16,"legacy reverse multi migrates to regular multi without losing children");Check(!SpiritArrayRules.可用节点.Contains(SpiritArrayOp.反向多重),"removed reverse multi absent from node library");
+ foreach(float tilt in new[]{0f,37f,-24f}){
+  SpiritArrayNode Packed(SpiritArrayOp op)=>new SpiritArrayNode{操作=op,子阵=new List<SpiritArrayNode>{new SpiritArrayNode{操作=SpiritArrayOp.顺序打包,子阵=new List<SpiritArrayNode>{N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.强化)}},N(SpiritArrayOp.加速)}};
+  Configure(new SpiritArrayNode{操作=SpiritArrayOp.多重施法,外倾角=tilt,子阵=new List<SpiritArrayNode>{Packed(SpiritArrayOp.顺序打包),Packed(SpiritArrayOp.逆向打包)}});spent=caster.SpentSpirit;Cast();yield return Wait(.15f);
+  Check(caster.ActiveGates==3,"both packed branches open first child only during first windup "+tilt);
+  var firstPlanes=UnityEngine.Object.FindObjectsOfType<Transform>().Where(t=>t.name=="SpiritArray_生成灵弹"&&Vector3.Distance(t.position,root.transform.position)<30).ToArray();
+  Check(firstPlanes.Length==2&&firstPlanes.All(t=>Mathf.Abs(Vector3.Angle(t.forward,root.transform.forward)-Mathf.Abs(tilt))<.01f),"actual planes use adjustable signed multi tilt "+tilt);
+  yield return Wait(.9f);Check(caster.ActiveGates==7&&caster.RunningSequences==0,"all children of nested forward and inverse packs finish "+tilt);
+  var all=UnityEngine.Object.FindObjectsOfType<Transform>().Where(t=>t.name.StartsWith("SpiritArray_")&&t.name!="SpiritArray_多重施法"&&Vector3.Distance(t.position,root.transform.position)<30).ToArray();
+  Check(all.Length==6,"two complete three-node branches remain rendered "+tilt);
+  foreach(var emitter in firstPlanes){
+   var candidates=all.Where(t=>t!=emitter&&Vector3.Cross(t.position-emitter.position,emitter.forward).magnitude<.01f).ToArray();
+   Check(candidates.Length==2,"packed modifiers share branch axis "+tilt);
+   float sign=Vector3.Dot(emitter.position-root.transform.position,root.transform.right)>0?1:-1;
+   Check(candidates.All(t=>Vector3.Dot(t.position-emitter.position,emitter.forward)*sign>0),"inverse layout goes backward while forward pack goes forward "+tilt);
+  }
+  Check(caster.SpentSpirit-spent==16,"both packed emitters charged once before emission "+tilt);
+  yield return Wait(.22f);var field=typeof(SpiritArrayCaster).GetField("bolts",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);var live=(System.Collections.IEnumerable)field.GetValue(caster);int count=0;foreach(var bolt in live){var velocity=(Vector3)bolt.GetType().GetField("velocity").GetValue(bolt);Check(Vector3.Dot(velocity,root.transform.forward)>0,"inverse pack preserves forward firing direction "+tilt);count++;}Check(count>=2,"both packed emitters fire "+tilt);
+ }
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.顺序打包,子阵=new List<SpiritArrayNode>{N(SpiritArrayOp.生成灵弹),N(SpiritArrayOp.生成灵弹)}});spent=caster.SpentSpirit;Cast();yield return Wait(.12f);Check(caster.ActiveGates==1&&caster.SpentSpirit-spent==8,"package pays only first node initially");yield return Wait(.3f);Check(caster.ActiveGates==2&&caster.SpentSpirit-spent==16,"package next node spends on its own turn");
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.生成灵弹,反向=true,延迟=.2f});Cast();yield return Wait(.7f);Check(GameObject.Find("SpiritArrayProjectile").transform.position.z<root.transform.position.z+1.1f,"negative emitter travels backward after fixed warmup and configured delay");
+ caster.enabled=false;caster.enabled=true;yield return null;Check(caster.ActiveGates==0&&caster.ActiveProjectiles==0,"disable cleans all visuals and sequences");
+ var save=new SaveData();SaveSystem.从角色采集(save);Check(save.灵阵编排.Any(p=>p.id==definition.灵阵id),"save collection contains edited programs");Check(SaveSystem.存档(4,save),"write isolated save");var loaded=SaveSystem.读档(4);Check(loaded!=null&&loaded.灵阵编排.Count==save.灵阵编排.Count,"save read preserves program slots");Check(JsonUtility.ToJson(loaded.灵阵编排.First(p=>p.id==definition.灵阵id))==JsonUtility.ToJson(save.灵阵编排.First(p=>p.id==definition.灵阵id)),"save roundtrip preserves nested data and parameters");
+ var treasure=PanelDatabase.取().法宝.First(t=>t&&t.法宝id==SpiritArrayTalisman.Id);Check(treasure.加载模型()&&treasure.图标,"talisman has real model and icon");
+ Check(!UIInkSpiritArrayPage.Open(data),"unequipped talisman cannot open editor");
+ var item=QuestDatabase.取().物品库.First(i=>i&&i.物品id=="item_spirit_array_talisman");data.物品.Add(item);Check(物品使用器.使用(item,data)&&data.已拥有(treasure),"learning item unlocks talisman through normal use");data.设置当前法宝(treasure);
+ var hud=UnityEngine.Object.FindObjectOfType<TreasureSkillHud>();yield return null;
+ var pointer=new PointerEventData(EventSystem.current){button=PointerEventData.InputButton.Right,position=RectTransformUtility.WorldToScreenPoint(null,hud.transform.position)};
+ Canvas.ForceUpdateCanvases();var rays=new List<RaycastResult>();EventSystem.current.RaycastAll(pointer,rays);Check(rays.Count>0&&rays[0].gameObject.GetComponentInParent<TreasureSkillHud>()==hud,"real pointer ray hits equipped treasure icon");ExecuteEvents.ExecuteHierarchy(rays[0].gameObject,pointer,ExecuteEvents.pointerClickHandler);yield return new WaitForSecondsRealtime(.2f);yield return null;
+ var view=UnityEngine.Object.FindObjectsOfType<UIInkSpiritArrayPage>(true).FirstOrDefault(v=>v.IsOpen);Check(view&&view.Draft!=null&&Time.timeScale==0,"right click equipped HUD opens paused compilation panel");
+ view.GetComponentsInChildren<Button>().First(b=>b.name=="ArrayNode").onClick.Invoke();var parameter=view.GetComponentsInChildren<InputField>().First(f=>f.name=="Parameter");parameter.text="2.25";parameter.onEndEdit.Invoke(parameter.text);Check(view.SaveDraft()&&SpiritArrayRules.Get(data,definition).序列[0].参数==2.25f,"parameter input saves edited node");view.Add(SpiritArrayOp.强化);view.GetComponentsInChildren<Button>().First(b=>b.GetComponentInChildren<Text>().text=="上移").onClick.Invoke();Check(view.Draft.序列[0].操作==SpiritArrayOp.强化,"node editor reorders actual sequence");view.GetComponentsInChildren<Button>().First(b=>b.GetComponentInChildren<Text>().text=="删除节点").onClick.Invoke();Check(view.SaveDraft()&&view.Draft.序列.Count==1,"node editor removes selected node and saves");
+ var treasureCaster=root.AddComponent<TreasureCaster>();treasureCaster.enabled=false;Check(!treasureCaster.TryCast(),"editor blocks E casting");
+ view.SelectProgram(3);view.UseCurrent();Check(data.当前灵阵编排=="array_program_4"&&data.主动技能.SequenceEqual(slots),"active program selection does not occupy ability slots");
+ view.GetComponentsInChildren<Button>().First(b=>b.name=="ArrayNode").onClick.Invoke();var tiltInput=view.GetComponentsInChildren<InputField>().First(f=>f.name=="Parameter");tiltInput.text="41";tiltInput.onEndEdit.Invoke(tiltInput.text);Check(view.SaveDraft()&&SpiritArrayRules.Get(data,SpiritArrayRules.Templates.First(d=>d.灵阵id=="array_program_4")).序列[0].外倾角==41,"real multi tilt input persists edited value");
+ yield return null;Canvas.ForceUpdateCanvases();yield return new WaitForEndOfFrame();Directory.CreateDirectory("../.local/diagnostics/spirit-array");ScreenCapture.CaptureScreenshot("../.local/diagnostics/spirit-array/editor.png");view.Close();yield return null;yield return null;
+ caster.enabled=false;UnityEngine.Object.Destroy(caster);yield return null;source.面板数据=null;source.生命=null;source.战斗属性=null;source.目标管理器=null;
+ Check(treasureCaster.TryCast()&&root.GetComponent<SpiritArrayCaster>(),"fresh E dispatcher creates executor and resolves player references");Check(treasureCaster.CooldownRemaining>0&&!treasureCaster.TryCast(),"talisman cooldown rejects immediate repeat");
+ var state=new SaveData();SaveSystem.从角色采集(state);data.当前灵阵编排="array_program_1";data.灵阵编排.Clear();typeof(SaveSystem).GetMethod("恢复面板",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{state,data});Check(data.当前灵阵编排=="array_program_4"&&data.灵阵编排.Count==state.灵阵编排.Count&&data.当前法宝==treasure,"load restores compilation, active selection and equipped talisman");
+ yield return Wait(3.1f);
+ var liveCaster=root.GetComponent<SpiritArrayCaster>();liveCaster.enabled=false;liveCaster.enabled=true;yield return null;
+ SpiritArrayRules.Store(data,new SpiritArrayProgram{id=data.当前灵阵编排,名称="引导验证",序列=new List<SpiritArrayNode>{N(SpiritArrayOp.身前布阵),N(SpiritArrayOp.生成灵弹)}});
+ var guidedPoint=root.transform.position+new Vector3(-2,2,2);Check(root.GetComponent<PlayerManualAim>().确认施放(-2,guidedPoint),"manual treasure confirmation dispatches equipped talisman instead of sword");yield return null;
+ Check(Vector3.Dot(GameObject.Find("SpiritArray_生成灵弹").transform.forward,(guidedPoint-root.transform.position-Vector3.up*1.1f).normalized)>.9999f,"actual manual treasure entry retains array plane orientation");
+ Check(UIInkSpiritArrayPage.Open(data),"reopen talisman editor");var reopened=UnityEngine.Object.FindObjectsOfType<UIInkSpiritArrayPage>(true).First(v=>v.IsOpen);data.设置当前法宝(null);yield return null;Check(!reopened.IsOpen&&Time.timeScale>0&&!UiEscRegistry.SceneInputBlockedByOthers(null),"unequip closes editor and releases pause/input lock");
+ Directory.CreateDirectory("../.local/diagnostics/spirit-array");File.WriteAllLines("../.local/diagnostics/spirit-array/runtime.txt",report);Debug.Log("ARRAY_RUNTIME_PASS "+report.Count);
+}finally{foreach(var view in UnityEngine.Object.FindObjectsOfType<UIInkSpiritArrayPage>(true))view.Close();data.灵阵编排=original;data.主动技能=slots;data.已拥有法宝=owned;data.物品=bag;data.当前法宝=equipped;data.当前灵阵编排=activeProgram;data.RaiseChanged();UnityEngine.Object.Destroy(root);UnityEngine.Object.Destroy(npcObject);UnityEngine.Object.Destroy(npcDefinition);}}
+bool done=false;Exception failure=null;
+IEnumerator Guard(){var it=Run();try{while(true){object next;try{if(!it.MoveNext())break;next=it.Current;}catch(Exception e){failure=e;break;}yield return next;}}finally{(it as IDisposable)?.Dispose();done=true;}}
+var runner=UnityEngine.Object.FindObjectOfType<玩家外观>();runner.StartCoroutine(Guard());
+IEnumerator WaitDone(){double end=EditorApplication.timeSinceStartup+170;while(!done&&EditorApplication.timeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();UnityEditorInternal.InternalEditorUtility.RepaintAllViews();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Array test timeout");}
+return WaitDone();

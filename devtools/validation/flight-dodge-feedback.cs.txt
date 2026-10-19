@@ -44,12 +44,13 @@ yield return null;Check(movement.CurrentSpeed>.1f,"following movement frame has 
 Reset();Check(dodge.尝试闪避(Vector3.left),"VFX dodge start");
 float t=Time.time;while(Time.time-t<.16f)yield return null;
 Check(fx.可见残影数>0&&fx.可见残影数<=fx.残影上限,"bounded moving afterimage pool");
-Check(GameObject.Find("DodgeWindThread_0").GetComponent<LineRenderer>().enabled,"spiral wind visible");
+var windThreads=(LineRenderer[])typeof(FlightDodgeVfx).GetField("threads",flags).GetValue(fx);
+Check(windThreads[0].enabled,"spiral wind visible");
 Material[] Bodies()=>root.GetComponentsInChildren<SkinnedMeshRenderer>().SelectMany(x=>x.sharedMaterials).ToArray();
 var original=Bodies();
 dodge.取消();yield return new WaitForSeconds(.3f);
 Check(fx.可见残影数==0,"afterimages fade out after dodge");
-Check(!GameObject.Find("DodgeWindThread_0").GetComponent<LineRenderer>().enabled,"wind ends with dodge");
+Check(!windThreads[0].enabled,"wind ends with dodge");
 Check(original.SequenceEqual(Bodies()),"shared character materials unchanged");
 Reset();dodge.慢放时长=.3f;Check(dodge.尝试闪避(Vector3.forward),"near-miss dodge start");
 var rng=Random.state;float hp=vitals.当前气血,fixedStep=Time.fixedDeltaTime;

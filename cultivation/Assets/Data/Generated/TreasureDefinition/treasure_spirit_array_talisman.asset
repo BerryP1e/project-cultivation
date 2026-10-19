@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fff59a0e3ad5ec4e92cbaf544087cdf, type: 3}
+  m_Name: treasure_spirit_array_talisman
+  m_EditorClassIdentifier: 
+  "\u6CD5\u5B9D\u540D\u79F0": "\u6D6E\u4E16\u4E07\u8C61"
+  "\u6CD5\u5B9Did": treasure_spirit_array_talisman
+  "\u54C1\u9636": 2
+  "\u56FE\u6807": {fileID: 21300000, guid: 1fe2151846ae2b04d83b9519dd4c2328, type: 3}
+  "\u4ECB\u7ECD": "\u4EE5\u4E07\u8C61\u4E3A\u9635\u3002\u88C5\u5907\u540E\u53F3\u952E\u6CD5\u5B9D\u56FE\u6807\u6253\u5F00\u7F16\u6392\u9762\u677F\uFF0CE
+    \u91CA\u653E\u5F53\u524D\u9635\u5217\uFF1B\u652F\u6301\u987A\u5E8F/\u9006\u5411\u6253\u5305\u4E0E\u53EF\u8C03\u503E\u89D2\u7684\u591A\u91CD\u65BD\u6CD5\u3002"
+  "\u6A21\u578B": {fileID: 1001859110557762490, guid: b3d3b29519c1da24fb09a26de125f27d, type: 3}
+  "\u6A21\u578B\u8D44\u6E90\u8DEF\u5F84": "\u6CD5\u5B9D/\u6D6E\u4E16\u4E07\u8C61/\u6D6E\u4E16\u4E07\u8C61"
+  "\u74F6\u53E3\u5C40\u90E8\u4F4D\u7F6E": {x: 0, y: 0.96, z: 0}
+  "\u653E\u5927\u6BD4\u4F8B": 1
+  "\u6536\u670D\u8DDD\u79BB": 0
+  "\u6700\u957F\u65BD\u653E\u65F6\u95F4": 0
+  "\u51B7\u5374\u65F6\u95F4": 3
+  "\u4F24\u5BB3\u500D\u7387": 0

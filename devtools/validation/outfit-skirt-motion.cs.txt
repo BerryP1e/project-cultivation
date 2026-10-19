@@ -1,0 +1,76 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var renderErrors=new System.Collections.Generic.HashSet<string>();Application.LogCallback onError=(m,t,k)=>{if(k==LogType.Error||k==LogType.Exception)renderErrors.Add(m);};Application.logMessageReceived+=onError;
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var old=actor.当前外观;var move=actor.GetComponent<PlayerController>();bool moving=move.enabled;var flight=actor.GetComponent<YufengFlight>();bool flying=flight.enabled;var state=flight.状态;var animation=actor.GetComponent<PlayerAnimationController>();
+ var c=Camera.main;var pos=c.transform.position;var rot=c.transform.rotation;bool ortho=c.orthographic;float size=c.orthographicSize;var actorPos=actor.transform.position;var actorRot=actor.transform.rotation;float capture=Time.captureDeltaTime;
+ var drivers=c.GetComponents<MonoBehaviour>().Where(x=>new[]{"TopDownCamera","TopDownCameraZoom","WorldMapCamera","CameraYawRotator","WorldMapInk"}.Contains(x.GetType().Name)).Select(x=>new{x,on=x.enabled}).ToArray();
+ var folder=Path.GetFullPath("../.local/diagnostics/enclosure-20261019/motion");Directory.CreateDirectory(folder);var reports=new System.Collections.Generic.List<object>();
+ try{
+  move.enabled=false;flight.enabled=false;typeof(YufengFlight).GetProperty("状态").SetValue(flight,YufengFlight.FlightState.地面);
+  foreach(var d in drivers)d.x.enabled=false;c.orthographic=true;c.orthographicSize=.95f;Time.captureDeltaTime=1f/60;
+  foreach(string id in new[]{"app_nascent","app_divinity"}){
+   var a=AppearanceDatabase.取().取(id);var saved=a.衣服随动;
+   try{
+    actor.transform.SetPositionAndRotation(actorPos+Vector3.up*5,actorRot);animation.设置外部御风(false,false);
+    a.衣服随动=saved;actor.装备(null);actor.装备(a);yield return null;
+    var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(r=>r.GetComponent<AppearanceClothRig>());var rig=body.GetComponent<AppearanceClothRig>();var p=rig.当前配置;var surface=rig.GetComponentInChildren<MeshFilter>();
+    if(p.鞋口锚点.Length!=2||p.闭襟覆盖.Length!=p.布料蒙皮.vertexCount)throw new Exception("Missing inner skirt/anchors");
+    int original=p.蒙皮.vertexCount-p.补全人体顶点数;var verts=p.蒙皮.vertices;var bw=p.蒙皮.boneWeights;var binds=p.蒙皮.bindposes;
+    if(verts.Skip(original).Any(v=>v.z>.49f)||p.补全人体顶点数!=116)throw new Exception("Unexpected torso geometry");
+    int worst=-1;float worstLimit=0,worstShell=0;float maxSeam=0,maxRim=0,maxPen=0,maxBootPush=0;long bootContacts=0;long contacts=0;int frames=0;
+    for(int stage=0;stage<4;stage++){
+     bool fly=stage>0;animation.设置外部御风(fly,stage>=2);if(stage==1)animation.触发升空();
+     for(int f=0;f<90;f++){
+      float speed=stage==0?2.52f:stage==1?0:9;move.接续御风移动(actor.transform.forward*(speed/9));actor.transform.position+=actor.transform.forward*(speed/60);
+      if(stage==3)actor.transform.rotation=Quaternion.AngleAxis(.6f,Vector3.up)*actor.transform.rotation;
+      var centre=(body.bones[26].position+body.bones[5].position)*.5f;
+      c.transform.position=centre+actor.transform.TransformDirection(f<45?new Vector3(.4f,.35f,4):new Vector3(-3,.35f,-3));c.transform.LookAt(centre);
+      yield return new WaitForEndOfFrame();frames++;contacts+=rig.细腿接触次数;bootContacts+=rig.鞋靴接触次数;maxBootPush=Math.Max(maxBootPush,rig.最大鞋靴推出距离);
+      var points=surface.sharedMesh.vertices;
+      for(int i=0;i<points.Length;i++){if(float.IsNaN(points[i].sqrMagnitude)||float.IsInfinity(points[i].sqrMagnitude))throw new Exception("Nonfinite cloth");maxSeam=Mathf.Max(maxSeam,Vector3.Distance(points[i],points[p.布料同点[i]]));}
+      for(int side=0;side<2;side++){
+       int foot=p.鞋口骨索引[side];var centreRim=Vector3.zero;
+       for(int j=0;j<8;j++){int i=original+side*58+48+j;centreRim+=body.bones[foot].TransformPoint(binds[foot].MultiplyPoint3x4(verts[i]))/8;}
+       maxRim=Mathf.Max(maxRim,Vector3.Distance(centreRim,body.bones[foot].TransformPoint(p.鞋口锚点[side])));
+      }
+      if(f%6==0)for(int i=0;i<points.Length;i++)if(p.闭襟覆盖[i]>.5f&&p.布料顶点约束[i]>.005f){
+       var point=surface.transform.TransformPoint(points[i]);
+       for(int side=0;side<2;side++)for(int seg=0;seg<2;seg++){
+        int thigh=side==0?3:12,calf=side==0?4:13,foot=p.鞋口骨索引[side];
+        var start=seg==0?body.bones[thigh].position:body.bones[calf].position;var end=seg==0?body.bones[calf].position:body.bones[foot].TransformPoint(p.鞋口锚点[side]);
+        var axis=end-start;var nearest=start+axis*Mathf.Clamp01(Vector3.Dot(point-start,axis)/Mathf.Max(axis.sqrMagnitude,1e-8f));
+        float penetration=p.细腿半径*Mathf.Abs(rig.transform.lossyScale.x)-Vector3.Distance(point,nearest);if(penetration>maxPen){maxPen=penetration;worst=i;worstLimit=p.布料顶点约束[p.布料同点[i]];worstShell=p.袍面覆盖[p.布料同点[i]];}
+       }
+      }
+
+      if(f%15==0){
+       var waistSkin=body.bones[21].localToWorldMatrix*p.布料蒙皮.bindposes[21];var inv=waistSkin.inverse;var m=surface.transform.localToWorldMatrix;
+       var bv=p.蒙皮.vertices;var cWeights=p.蒙皮.boneWeights;var bm=p.蒙皮.bindposes.Select((bind,i)=>inv*body.bones[i].localToWorldMatrix*bind).ToArray();
+       var actual=bv.Select((v,i)=>{var w=cWeights[i];return bm[w.boneIndex0].MultiplyPoint3x4(v)*w.weight0+bm[w.boneIndex1].MultiplyPoint3x4(v)*w.weight1+bm[w.boneIndex2].MultiplyPoint3x4(v)*w.weight2+bm[w.boneIndex3].MultiplyPoint3x4(v)*w.weight3;}).ToArray();
+       var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;var env=typeof(AppearanceClothRig).GetField("闭襟围合",flags).GetValue(rig);
+       var cached=(Vector3[])env.GetType().GetField("bodyPoints",flags).GetValue(env);var er=(Vector3[])env.GetType().GetField("bodyRest",flags).GetValue(env);var ew=(BoneWeight[])env.GetType().GetField("weights",flags).GetValue(env);float drift=0;
+       for(int j=0;j<cached.Length;j++){var w=ew[j];var v=er[j];var fresh=bm[w.boneIndex0].MultiplyPoint3x4(v)*w.weight0+bm[w.boneIndex1].MultiplyPoint3x4(v)*w.weight1+bm[w.boneIndex2].MultiplyPoint3x4(v)*w.weight2+bm[w.boneIndex3].MultiplyPoint3x4(v)*w.weight3;drift=Mathf.Max(drift,Vector3.Distance(fresh,cached[j]));}
+       var geometry=new{drift,after=points.Select(v=>inv.MultiplyPoint3x4(m.MultiplyPoint3x4(v))).Select(v=>new[]{v.x,v.y,v.z}),rest=p.布料蒙皮.vertices.Select(v=>new[]{v.x,v.y,v.z}),body=actual.Select(v=>new[]{v.x,v.y,v.z}),faces=p.布料蒙皮.triangles,inner=p.闭襟覆盖,bodyFaces=p.蒙皮.triangles,bodyWeights=cWeights.Select(w=>new[]{w.boneIndex0,w.boneIndex1,w.boneIndex2,w.boneIndex3}),weights=cWeights.Select(w=>new[]{w.weight0,w.weight1,w.weight2,w.weight3})};
+       File.WriteAllText(Path.Combine(folder,id+"-stage"+stage+"-frame"+f+".json"),JsonConvert.SerializeObject(geometry));
+      }
+      if(f==30||f==75){var tex=ScreenCapture.CaptureScreenshotAsTexture();File.WriteAllBytes(Path.Combine(folder,id+"-stage"+stage+"-"+f+".png"),tex.EncodeToPNG());UnityEngine.Object.Destroy(tex);}
+     }
+    }
+    if(maxSeam>.0001f||maxRim>.0001f)throw new Exception("Seam/rim regression");
+
+    var report=new{id,worst,worstLimit,worstShell,frames,bootContacts,maxBootPush,contacts,maxSeam,maxRim,maxPen,legRadius=p.细腿半径,innerVertices=p.闭襟覆盖.Count(v=>v>.5f)};reports.Add(report);Debug.Log("THIN_LEGS_REVIEW "+JsonConvert.SerializeObject(report));
+    File.WriteAllText(Path.Combine(folder,"results.json"),JsonConvert.SerializeObject(reports,Formatting.Indented));
+   }finally{actor.装备(null);a.衣服随动=saved;}
+  }
+ }finally{Time.captureDeltaTime=capture;animation.设置外部御风(false,false);move.接续御风移动(Vector3.zero);actor.transform.SetPositionAndRotation(actorPos,actorRot);move.enabled=moving;typeof(YufengFlight).GetProperty("状态").SetValue(flight,state);flight.enabled=flying;actor.装备(old);c.transform.SetPositionAndRotation(pos,rot);c.orthographic=ortho;c.orthographicSize=size;foreach(var d in drivers)d.x.enabled=d.on;}
+}
+IEnumerator Guard(){var e=Run();try{while(true){object n;try{if(!e.MoveNext())break;n=e.Current;}catch(Exception x){failure=x;break;}yield return n;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+150;while(!done&&EditorApplication.timeSinceStartup<end)yield return null;Application.logMessageReceived-=onError;if(renderErrors.Count>0)throw new Exception(string.Join(" | ",renderErrors.Take(3)));if(failure!=null)throw failure;if(!done)throw new Exception("Thin legs review timeout");}return Wait();

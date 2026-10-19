@@ -1,0 +1,28 @@
+using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEditor;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var old=actor.当前外观;GameObject node=null;
+ try{
+  node=new GameObject("OutfitOcclusionValidation");var outline=node.AddComponent<OcclusionOutline>();outline.角色=actor.transform;outline.摄像机=Camera.main;outline.enabled=true;
+  foreach(var id in new[]{"app_integration","app_goldencore","app_player"}){
+   actor.装备(AppearanceDatabase.取().取(id));yield return new WaitForEndOfFrame();
+   var copies=(List<Renderer>)typeof(OcclusionOutline).GetField("副本",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(outline);
+   if(copies.Count==0)throw new Exception("No occlusion copies generated");
+   foreach(var copy in copies){
+    var source=copy.transform.parent.GetComponent<Renderer>();if(!source||!source.enabled||!source.gameObject.activeInHierarchy)throw new Exception("Outline copy has stale or disabled source");
+    if(copy is SkinnedMeshRenderer skinned){var original=(SkinnedMeshRenderer)source;if(skinned.sharedMesh!=original.sharedMesh||!skinned.bones.SequenceEqual(original.bones))throw new Exception("Outline retained old outfit mesh or bones");}
+    else if(copy.GetComponent<MeshFilter>().sharedMesh!=source.GetComponent<MeshFilter>().sharedMesh)throw new Exception("Outline surface mesh mismatch");
+   }
+   Debug.Log("OUTFIT_OCCLUSION_SWAP "+id+" copies="+copies.Count);
+  }
+ }finally{if(node)UnityEngine.Object.Destroy(node);actor.装备(null);actor.装备(old);}
+}
+IEnumerator Guard(){var e=Run();try{while(true){object n;try{if(!e.MoveNext())break;n=e.Current;}catch(Exception x){failure=x;break;}yield return n;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+60;while(!done&&EditorApplication.timeSinceStartup<end)yield return null;if(failure!=null)throw failure;if(!done)throw new Exception("Occlusion swap timeout");}return Wait();

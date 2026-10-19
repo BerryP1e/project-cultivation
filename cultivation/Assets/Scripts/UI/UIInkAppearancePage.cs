@@ -184,6 +184,7 @@ public class UIInkAppearancePage : MonoBehaviour
     Button Action(string name, Transform parent, string value, Vector2 min, Vector2 max)
     {
         var image = UIBuildUtils.CreateImage(name, parent, Color.clear);
+        image.raycastTarget = true;
         UIBuildUtils.Place(image.rectTransform, min, max, Vector2.zero, Vector2.zero);
         var button = image.gameObject.AddComponent<Button>();
         button.targetGraphic = image;

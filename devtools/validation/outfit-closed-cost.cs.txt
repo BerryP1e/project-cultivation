@@ -1,0 +1,23 @@
+using System;
+using System.IO;
+using System.Linq;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();var old=actor.当前外观;
+var animator=actor.GetComponentInChildren<Animator>();bool animatorOn=animator.enabled;
+var reports=new System.Collections.Generic.List<object>();
+try{
+ animator.enabled=false;
+ foreach(var id in new[]{"app_nascent","app_divinity","app_integration"}){
+  actor.装备(null);actor.装备(AppearanceDatabase.取().取(id));
+  var rig=actor.玩家视觉.GetComponentsInChildren<AppearanceClothRig>().First();bool running=rig.enabled;rig.enabled=false;
+  try{
+   rig.重置随动();var times=new double[50];var sw=new System.Diagnostics.Stopwatch();
+   for(int f=0;f<55;f++){sw.Restart();rig.推进(1f/60,Time.time+f/60f);sw.Stop();if(f>=5)times[f-5]=sw.Elapsed.TotalMilliseconds;}
+   Array.Sort(times);reports.Add(new{id,median=times[25],p95=times[47],maximum=times[49],boneError=rig.下肢骨长误差});
+  }finally{rig.重置随动();rig.enabled=running;}
+ }
+}finally{actor.装备(null);actor.装备(old);animator.enabled=animatorOn;}
+var json=JsonConvert.SerializeObject(reports,Formatting.Indented);File.WriteAllText("../.local/diagnostics/closed-outfits-20261019/cost.json",json);Debug.Log("CLOSED_COST_MS "+json);

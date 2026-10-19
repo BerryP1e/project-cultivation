@@ -22,12 +22,22 @@ IEnumerator Run(){
  string recipeFlag=炼丹炉.丹方标记(learnRecipe.丹方id);
  var original=player.GetComponent<玩家外观>().当前外观;
  var cultivator=player.GetComponent<PlayerCultivation>();var actor=player.GetComponent<玩家外观>();var db=AppearanceDatabase.取();
+ var debug=UnityEngine.Object.FindObjectOfType<PlayerStatsDebugPanel>();
+ var debugItems=(System.Collections.Generic.List<ItemDefinition>)typeof(PlayerStatsDebugPanel).GetMethod("取全部物品",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(debug,null);
+ Check(debug&&debug.开关按键==KeyCode.P&&debugItems.Any(i=>i.物品id=="item_outfit_foundation")&&debugItems.Any(i=>i.物品id=="item_outfit_goldencore"),"P panel lists both new outfit items");
  Check(!actor.已拥有(db.取("app_foundation"))&&!actor.已拥有(db.取("app_goldencore")),"realm outfits locked at level one");
  foreach(var level in new[]{11,31}){
   cultivator.已解锁最高等级=level;cultivator.设置总灵气((long)(cultivator.取累计(level-1)*cultivator.难度系数)+1);
-  actor.解锁境界着装();var outfit=db.取(level==11?"app_foundation":"app_goldencore");
-  Check(cultivator.等级==level&&actor.已拥有(outfit),"permanent outfit unlock at realm "+level);
-  Check(actor.当前外观==original,"unlock does not force equipment change "+level);
+  actor.发放境界着装物品();var outfit=db.取(level==11?"app_foundation":"app_goldencore");
+  var garment=QuestDatabase.取().物品库.Single(i=>i&&i.使用效果 is 学外观效果 effect&&effect.外观id==outfit.id);
+  Check(cultivator.等级==level&&!actor.已拥有(outfit)&&bag.物品数量(garment)==1,"realm grants learning item without unlocking "+level);
+  actor.发放境界着装物品();Check(bag.物品数量(garment)==1,"realm learning item granted only once "+level);
+  Check(actor.当前外观==original,"grant does not force equipment change "+level);
+  var pendingGarmentSave=new SaveData();SaveSystem.从角色采集(pendingGarmentSave);SaveSystem.应用到角色(pendingGarmentSave);actor.发放境界着装物品();
+  Check(bag.物品数量(garment)==1&&!actor.已拥有(outfit),"saved pending garment remains one unlearned item "+level);
+  Check(garment.图标&&物品使用器.使用(garment,bag,player)&&actor.已拥有(outfit)&&bag.物品数量(garment)==0,"actual garment use unlocks and consumes one item "+level);
+  typeof(PlayerStatsDebugPanel).GetMethod("塞物品",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{garment,1,bag});
+  Check(bag.物品数量(garment)==1&&!物品使用器.使用(garment,bag,player)&&bag.物品数量(garment)==1,"P panel injects real item and duplicate use preserves it "+level);bag.移除物品(garment,1);
   Check(actor.装备(outfit),"actual body swap "+outfit.DisplayName);
   original=outfit;
   var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();
@@ -66,6 +76,9 @@ IEnumerator Run(){
  Check(DialogueDefinition.拆标记(towerSave.对话标记).Contains(recipeFlag),"save includes actual learned recipe flag");对话标记.添加("QA_未保存标记");
  load=SceneManager.LoadSceneAsync("StartScene");while(!load.isDone)yield return null;yield return Frames(4);var menu=UnityEngine.Object.FindObjectOfType<MainMenuUI>();menu.OpenSlots(false);menu.确认中央存档(4);yield return Arrive(TowerRealmTreasure.塔场景);
  Check(玩家外观.当前外观id=="app_goldencore","saved outfit restores after actual menu load");
+ var restoredActor=GameObject.Find("Player").GetComponent<玩家外观>();restoredActor.发放境界着装物品();
+ var restoredBag=UnityEngine.Object.FindObjectOfType<UIPanelData>();
+ Check(new[]{"app_foundation","app_goldencore"}.All(id=>对话标记.具备("外观赠物_"+id))&&!restoredBag.物品.Any(i=>i&&(i.物品id=="item_outfit_foundation"||i.物品id=="item_outfit_goldencore")),"learned outfit grant markers survive menu load without duplicate gifts");
  Check(炼丹炉.已学会(learnRecipe.丹方id)&&对话标记.具备(recipeFlag)&&!对话标记.具备("QA_未保存标记"),"actual menu load restores recipe flags and clears unsaved session flags");
  UnityEngine.Object.FindObjectOfType<日常循环>().导出(out int dailyDay,out int dailyMask);Check(dailyDay==towerSave.日常_天&&dailyMask==towerSave.日常_掩码,"daily checklist still restores without story manager");
  Check(TowerRealmTreasure.使用(GameObject.Find("Player")),"tower E exit after menu reload");yield return Arrive("3C_Testbed");player=GameObject.Find("Player");

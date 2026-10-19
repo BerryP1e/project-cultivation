@@ -1,0 +1,12 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated saves");
+var data=UnityEngine.Object.FindObjectOfType<UIPanelData>();var previous=data.灵阵编排.Select(p=>p.Copy()).ToList();
+try{
+ var program=new SpiritArrayProgram{id="array_program_1",名称="逆向存档验证",序列=new List<SpiritArrayNode>{new SpiritArrayNode{操作=SpiritArrayOp.多重施法,外倾角=-33,子阵=new List<SpiritArrayNode>{new SpiritArrayNode{操作=SpiritArrayOp.逆向打包,子阵=new List<SpiritArrayNode>{SpiritArrayNode.Create(SpiritArrayOp.强化),new SpiritArrayNode{操作=SpiritArrayOp.生成灵弹,参数=2.25f,延迟=1.7f}}}}}}};
+ if(!SpiritArrayRules.Validate(program,out var error))throw new Exception(error);SpiritArrayRules.Store(data,program);var saved=new SaveData();SaveSystem.从角色采集(saved);if(!SaveSystem.存档(4,saved))throw new Exception("Save failed");var loaded=SaveSystem.读档(4);var restored=loaded.灵阵编排.First(p=>p.id==program.id);if(JsonUtility.ToJson(restored)!=JsonUtility.ToJson(program))throw new Exception("Nested inverse pack roundtrip differs");
+ Debug.Log("ARRAY_INVERSE_SAVE_PASS explicit op 11, nested children, negative tilt, delay and emitter parameters preserved");
+}finally{data.灵阵编排=previous;data.RaiseChanged();}

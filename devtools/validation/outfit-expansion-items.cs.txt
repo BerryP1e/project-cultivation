@@ -1,0 +1,24 @@
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated Play");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();var cult=actor.GetComponent<PlayerCultivation>();var bag=cult.面板数据;
+var oldOwned=玩家外观.导出已获得(actor);var oldId=actor.当前外观.id;var oldBag=new List<ItemDefinition>(bag.物品);var flags=对话标记.全部标记();var oldQi=cult.总灵气;int oldLevel=cult.已解锁最高等级;
+try{
+ 玩家外观.从存档恢复("app_cunmin",new List<string>(),actor);bag.物品.Clear();
+ foreach(var a in AppearanceDatabase.取().全部)对话标记.移除("外观赠物_"+a.id);
+ string[] ids={"app_nascent","app_divinity","app_integration"};int[] levels={31,41,61};
+ for(int i=0;i<ids.Length;i++){
+  var appearance=AppearanceDatabase.取().取(ids[i]);var item=QuestDatabase.取().物品库.Find(x=>x&&x.物品id=="item_outfit_"+ids[i].Substring(4));
+  if(!appearance||!item||!(item.使用效果 is 学外观效果 effect)||effect.取外观()!=appearance)throw new Exception("Missing item/effect "+ids[i]);
+  cult.已解锁最高等级=levels[i];cult.设置总灵气((long)(cult.取累计(levels[i]-1)*cult.难度系数)+1);
+  if(cult.等级!=levels[i])throw new Exception("Wrong realm "+cult.等级);
+  string before=actor.当前外观.id;actor.发放境界着装物品();int count=bag.物品数量(item);actor.发放境界着装物品();
+  if(count!=1||bag.物品数量(item)!=1||actor.当前外观.id!=before||actor.已拥有(appearance))throw new Exception("Gift must be one item only "+ids[i]);
+  if(!物品使用器.使用(item,bag,actor.gameObject)||!actor.已拥有(appearance)||actor.当前外观!=appearance||bag.物品数量(item)!=0)throw new Exception("Learning failed "+ids[i]);
+  bag.给物品(item);if(物品使用器.使用(item,bag,actor.gameObject)||bag.物品数量(item)!=1)throw new Exception("Duplicate consumed "+ids[i]);
+ }
+ Debug.Log("OUTFIT_ITEMS_PASS: realm gifts once, learning equips/consumes, P catalog items available, duplicate preserved; 31/41/61");
+}finally{cult.已解锁最高等级=oldLevel;cult.设置总灵气(oldQi);bag.物品=oldBag;对话标记.清空();foreach(var flag in flags)对话标记.添加(flag);玩家外观.从存档恢复(oldId,oldOwned,actor);}

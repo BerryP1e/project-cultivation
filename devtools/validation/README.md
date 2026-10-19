@@ -1,5 +1,7 @@
 # 验证配方
 
+2026-10-20：`tree-spatial-aa.cs.txt` 在隔离Play使用真实Game View，对相同树木镜头切换官方SMAA，记录静止帧差与32帧微移指标，并断言没有残留PostProcessLayer。恢复原相机、时间和驱动组件，结果位于 `.local/diagnostics/outfit-trees-perf-20261020/`。指标是同机位对照，不能据此承诺全部距离完全无闪；性能和墨线遮挡证据见[本轮报告](../../docs/reports/2026-10-20衣发性能与环境描边.md)。
+
 ## 家园版本当前验收（2026-10-16）
 
 当前正式场景只有洞府、宗门野外和镇妖阁。先 setup 隔离存档，运行后 stop + teardown 核对真实存档。不能直接把历史五场景配方套到当前工程。
@@ -8,7 +10,12 @@
 | --- | --- |
 | home-idle-integration | 五种建筑令实际放置与原交互、拓境、野外悬赏、丹方/每日清单、菜单读档、塔内进出和死亡 |
 | idle-menu-runtime | 真正旧版文件保留、新菜单新档进入洞府和初始建筑令 |
-| appearance-cloth-runtime | 四套实际外观、衣服/长发、转头与站走跑施法御风、预览骨架、换装清理、传送复位及原生截图 |
+| appearance-cloth-runtime | 四套外观、独立袍面/长发、实际根节点移动转向、静止稳定、接缝、预览私有网格、换装清理、传送及原生截图 |
+| appearance-pose-follow | 正式金丹：前飞袍面相对刚性基线下弯、逐段限角、水平转向一致、暂停与停步回稳、人体骨缩放与源面数保留；需隔离 Play |
+| appearance-goldencore-visual | 前一版背片复查留档：正常 Animator/LateUpdate 六阶段、Game View、定格背片对照。总偏移阈值属于旧纯波动方案；当前围合接触网络用下方 shell 配方 |
+| appearance-goldencore-preview | 正式金丹预览私有网格和骨架，预览不改变源袍面，78/120骨来回切换及旧衣骨清理 |
+| appearance-goldencore-shell | 当前围合袍面：正常 Animator/LateUpdate 六阶段动作，正/侧/背同步帧；髋腿胶囊净空、同点闭合、有限表面；定住人体后分别测前襟/背片非刚性变化。旧 visual 的总偏移阈值不适用于接触网络；无侵入仅指测试胶囊，不代表全网格自碰撞 |
+| appearance-goldencore-hair | 金丹四组长发：发根/发梢限角，人体定格后独立运动，实际活动发顶点与原始发姿势的肩背净空对照；六阶段三视角近景并重跑围合衣服检查。不是全发束自碰撞 |
 | remote-projectile-native | 飞弹主体、持续拖尾真实网格、转向/速度/长飞行与火岩坠原生层 |
 | world-map-rendering-runtime | 四次连续龙吐息、真实 Game View 透明抓屏和缓冲释放 |
 | ability-preview-lifecycle-runtime | 隐藏/打开/销毁预览及动画图生命周期 |
@@ -122,3 +129,29 @@
 `ability-preview-lifecycle-runtime.cs.txt`：检查隐藏神通页面不提前分配预览、打开后重放待展示项，以及显示过和从未打开的页面销毁后的动画图生命周期。
 
 `world-authoring-usability.cs.txt`：独立工坊运行时验证填池恢复地表及撤销/重做、清草、外扩草地纹理、实体草封闭拓扑、整占地水岸禁摆、无效摆放不入历史、自然石根与保留间隙、模型预览及游戏机位切换。临时替换地图后在 finally 恢复原地图，清空测试历史；不写正式场景/命名地图。报告归 `.local/diagnostics/map-ux-validation-results.txt`，测试前仍建议 Ctrl+S 保存当前地图。
+
+spirit-array-runtime.cs.txt：隔离 Play 验证阵灵符认主、右键编排、E 法宝调度、0.48 米阵距、锁定目标高度角、身前节点保留引导方向、手动法宝确认入口、完整编排与当前选择恢复、序列/正反多重、扫掠穿阵、逐次灵力、伤害管线、窗口输入锁及清理。此前 56 项；本轮编排/入口回归 93 项通过，证据归 .local/diagnostics/spirit-array，不写正式存档或场景。
+
+appearance-cloth-runtime.cs.txt：隔离 Play 检查蒙皮所有权、接缝、冻结稳定性和清理。旧1953项“裤口”结论已撤回：此前测到腰带而非裤腿。该历史失败不能作为现阶段结果；后续金丹围合袍面已获用户确认，最新扩展状态见docs/guides/着装蒙皮人工校正.md。
+
+spirit-array-presentation.cs.txt：检查仪轨按功能组合、没有给所有节点套完整中心图案、空间折线/轨道运动、触发脉冲、六个独立中心素材、浮世万象全部源三角保留、13 个外围部件、核心固定及暂停漂浮。报告归 .local/diagnostics/spirit-array/。
+
+spirit-array-save.cs.txt：专门通过隔离存档文件往返检查新枚举 11 的逆向包、嵌套子阵、负倾角、启动延迟及发射参数，已通过。仪轨与模型表现检查 282 项通过；服装检查失败另记，不合并为完成。
+
+spirit-array-spacing.cs.txt：12 项通过；真实运行验证普通节点自定间距、身前/头顶起点距离与下阵距离分别生效、逆向打包和多重入口间距、参数页分别编辑及存档往返。不改写正式角色存档。
+
+spirit-array-lifecycle.cs.txt：16 项通过；实际初速 27.6 米/秒（原速 2.3 倍）、穿阵加速、功能完成后 1 秒平滑淡出、延迟发射等待、多重完整展开后消散、节点销毁。高速弹会更早命中近靶，runtime 的存活专项使用远靶；原 93 项再次通过。
+
+appearance-hand-binding.cs.txt：Editor历史18项通过；同rig重定位保留原顶点、指骨权重和三角面。该轮手部检查不代表当时金丹御风穿袍通过；后续结果以本轮维护指南和outfit-protected-parts为准。
+
+2026-10-18：outfit-expansion.cs.txt检查六套各490帧的真实Animator；状态采集独立于截图，地面阶段暂停并恢复真实御风组件。历史四机位离屏抓屏已禁用。outfit-expansion-items检查31/41/61赠物、学习装备、消耗及重复拒绝。必须隔离Play，不写正式存档；按外观results报告，旧prototype不作证据。金丹长发专项使用appearance-goldencore-hair，检查实际蒙皮点及冻结人体发梢响应。
+
+outfit-protected-parts.cs.txt：Editor检查原始/明确作者四权重、源面账目、细分同点蒙皮；元婴/化神/合体要求仅保留原鞋、生成几何0、旧细腿代理清空，筑基保留既有检查。outfit-bloom-finite.cs.txt检查NaN/Inf不进入泛光扩散，有效HDR亮部保留。
+
+2026-10-19：outfit-inner-skirt.cs.txt在隔离Play中固定同一实际行走姿势，对鞋靴接触作开/关对照；相同求解时钟、相同初始状态，要求内裙实际位移而非仅碰撞计数，截图与报告写入.local/diagnostics/boot-inner-skirt-ab，同时将Error/Exception判为失败。测试后恢复配置、动作与相机，退出Play再清除隔离存档覆盖。它不证明任意动作零穿模，也不自动代替用户观感验收。
+
+2026-10-19最新方案：元婴、化神、合体均按用户手工分区仅保留原鞋，不生成腿或内衬。outfit-protected-parts与outfit-expansion要求生成几何0及原顶点数不增加。新增outfit-closed-motion.cs.txt在隔离Play检查三套各540帧真实待机、走、跑、悬停、前飞、转向，断言Walk/Sprint/御风实际片段、骨长误差、同点接缝、鞋动画及Error/Exception；主相机截图与几何归.local/diagnostics/closed-outfits-20261019。对捕获的app_*-stage*.json运行outfit-skirt-intersections.mjs检查鞋/内裙三角相交；outfit-closed-cost单独测随动CPU耗时。旧outfit-inner-skirt、outfit-skirt-motion、skirt-geometry及enclosure目录保留已撤回撑裙方案的历史实验，不能作为当前美术验收。不得以代理顶点不穿入或单姿势三角0相交宣称全部动作已修好。
+
+outfit-camera-review.cs.txt：隔离Play中的实际主相机连续拍摄配方。仅修改OutfitId逐套执行，360帧拍站立、前飞正反面、归位、整靴与手指近景；恢复镜头、驱动组件及隔离玩家状态。不调用Camera.Render。截图归.local/diagnostics/outfit-locomotion-<id>，汇总页为.local/diagnostics/outfit-actual-review/review.html。数值检查不能替代造型查看，碰撞代理交叠不声明为零；细节见docs/reports/2026-10-18着装扩展与长发.md。
+
+2026-10-18实际游玩复核：此前整套交付结论撤回。outfit-readability.cs.txt必须直接断言运行时CPU访问所需的isReadable；Editor桥直接读取数组可能绕过普通游戏循环限制。实际合体随动正常执行约53～54ms/帧，暂时关闭约6ms；旧每帧异常状态的低耗时测量无效。固定帧数、静态图和权重检查不能替代换装后的连续性能验收，当前成熟替换方案见docs/reports/2026-10-18着装方案重评.md。

@@ -1,0 +1,58 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();var old=actor.当前外观;
+var move=actor.GetComponent<PlayerController>();bool moving=move.enabled;
+var flight=actor.GetComponent<YufengFlight>();bool flying=flight.enabled;var state=flight.状态;
+var animation=actor.GetComponent<PlayerAnimationController>();var actorPos=actor.transform.position;var actorRot=actor.transform.rotation;
+var camera=Camera.main;var cameraPos=camera.transform.position;var cameraRot=camera.transform.rotation;bool ortho=camera.orthographic;float size=camera.orthographicSize,capture=Time.captureDeltaTime;
+var drivers=camera.GetComponents<MonoBehaviour>().Where(x=>new[]{"TopDownCamera","TopDownCameraZoom","WorldMapCamera","CameraYawRotator","WorldMapInk"}.Contains(x.GetType().Name)).Select(x=>new{x,on=x.enabled}).ToArray();
+var errors=new System.Collections.Generic.HashSet<string>();Application.LogCallback onError=(m,t,k)=>{if(k==LogType.Error||k==LogType.Exception)errors.Add(m);};Application.logMessageReceived+=onError;
+bool done=false;Exception failure=null;var reports=new System.Collections.Generic.List<object>();var folder=Path.GetFullPath("../.local/diagnostics/closed-outfits-20261019");Directory.CreateDirectory(folder);
+IEnumerator Run(){try{
+ move.enabled=false;flight.enabled=false;typeof(YufengFlight).GetProperty("状态").SetValue(flight,YufengFlight.FlightState.地面);
+ foreach(var d in drivers)d.x.enabled=false;camera.orthographic=true;camera.orthographicSize=.95f;Time.captureDeltaTime=1f/60;
+ foreach(var id in new[]{"app_nascent","app_divinity","app_integration"}){
+  actor.transform.SetPositionAndRotation(actorPos+Vector3.up*5,actorRot);animation.设置外部御风(false,false);actor.装备(null);actor.装备(AppearanceDatabase.取().取(id));
+  animation.animator.Play("Locomotion",0,0);yield return null;
+  var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(x=>x.GetComponent<AppearanceClothRig>());var rig=body.GetComponent<AppearanceClothRig>();var p=rig.当前配置;var surface=rig.GetComponentInChildren<MeshFilter>();
+  if(!p.仅保留原鞋||p.补全人体顶点数!=0||p.补全人体三角数!=0||p.鞋口锚点.Length!=0)throw new Exception("Generated legs or old contact proxies returned");
+  var source=actor.当前外观.取模型().GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+  if(body.sharedMesh.vertexCount!=source.vertexCount)throw new Exception("Source-only vertex count mismatch");
+  move.接续御风移动(actor.transform.forward);float driveSpeed=move.CurrentSpeed;if(driveSpeed<.1f)throw new Exception("Input blocked in QA");int frames=0;float seam=0,shoeMotion=0,maxBoneError=0,maxWidth=0,maxSourceWidth=0;var states=new System.Collections.Generic.HashSet<string>();var initial=body.bones[5].position-body.bones[21].position;
+  for(int stage=0;stage<6;stage++){
+   animation.设置外部御风(stage>=3,stage>=4);if(stage==3)animation.触发升空();
+   for(int f=0;f<90;f++){
+    float speed=stage==1?1.4f:stage==2?4.2f:stage>=4?9:0;move.接续御风移动(actor.transform.forward*(speed/driveSpeed));actor.transform.position+=actor.transform.forward*(speed/60);
+    if(stage==5)actor.transform.rotation=Quaternion.AngleAxis(.6f,Vector3.up)*actor.transform.rotation;
+    var centre=(body.bones[26].position+body.bones[5].position)*.5f;camera.transform.position=centre+actor.transform.TransformDirection(f<65?new Vector3(.4f,.35f,4):new Vector3(-3,.35f,-3));camera.transform.LookAt(centre);
+    yield return new WaitForEndOfFrame();frames++;maxBoneError=Mathf.Max(maxBoneError,rig.下肢骨长误差);if(f>20){maxWidth=Mathf.Max(maxWidth,rig.当前腿距);maxSourceWidth=Mathf.Max(maxSourceWidth,rig.原腿距);}
+    foreach(var clip in animation.animator.GetCurrentAnimatorClipInfo(0))if(clip.weight>.1f)states.Add(stage+":"+clip.clip.name);var points=surface.sharedMesh.vertices;
+    for(int i=0;i<points.Length;i++){
+     if(float.IsNaN(points[i].sqrMagnitude)||float.IsInfinity(points[i].sqrMagnitude))throw new Exception("Invalid cloth coordinate");
+     seam=Mathf.Max(seam,Vector3.Distance(points[i],points[p.布料同点[i]]));
+    }
+    shoeMotion=Mathf.Max(shoeMotion,Vector3.Distance(initial,body.bones[5].position-body.bones[21].position));
+    if(f==50||f==80){
+var inv=(body.bones[1].localToWorldMatrix*p.蒙皮.bindposes[1]).inverse;
+var vs=p.蒙皮.vertices;var bw=p.蒙皮.boneWeights;var matrices=p.蒙皮.bindposes.Select((b,i)=>inv*body.bones[i].localToWorldMatrix*b).ToArray();
+var posed=vs.Select((v,i)=>{var w=bw[i];return matrices[w.boneIndex0].MultiplyPoint3x4(v)*w.weight0+matrices[w.boneIndex1].MultiplyPoint3x4(v)*w.weight1+matrices[w.boneIndex2].MultiplyPoint3x4(v)*w.weight2+matrices[w.boneIndex3].MultiplyPoint3x4(v)*w.weight3;});
+var geometry=new{after=points.Select(v=>inv.MultiplyPoint3x4(surface.transform.TransformPoint(v))).Select(v=>new[]{v.x,v.y,v.z}),body=posed.Select(v=>new[]{v.x,v.y,v.z}),faces=p.布料蒙皮.triangles,inner=p.闭襟覆盖,bodyFaces=p.蒙皮.triangles,bodyWeights=bw.Select(w=>new[]{w.boneIndex0,w.boneIndex1,w.boneIndex2,w.boneIndex3}),weights=bw.Select(w=>new[]{w.weight0,w.weight1,w.weight2,w.weight3})};
+File.WriteAllText(Path.Combine(folder,id+"-stage"+stage+"-"+f+".json"),JsonConvert.SerializeObject(geometry));var tex=ScreenCapture.CaptureScreenshotAsTexture();File.WriteAllBytes(Path.Combine(folder,id+"-stage"+stage+"-"+f+".png"),tex.EncodeToPNG());UnityEngine.Object.Destroy(tex);}
+   }
+  }
+  if(!states.Any(x=>x.StartsWith("1:")&&x.Contains("Walk"))||!states.Any(x=>x.StartsWith("2:")&&x.Contains("Sprint"))||!states.Any(x=>x.StartsWith("4:")&&x.Contains("御风")))throw new Exception("Missing actual motion stage "+id);if(maxBoneError>.0001f||seam>.0001f||shoeMotion<.005f)throw new Exception("Cloth seam or shoe animation regression");
+  reports.Add(new{id,frames,maxBoneError,maxWidth,maxSourceWidth,states=states.ToArray(),sourceVertices=source.vertexCount,generatedVertices=p.补全人体顶点数,generatedFaces=p.补全人体三角数,seam,shoeMotion,shoesOnly=true});
+ }
+ File.WriteAllText(Path.Combine(folder,"runtime-results.json"),JsonConvert.SerializeObject(reports,Formatting.Indented));
+}finally{
+ Time.captureDeltaTime=capture;animation.设置外部御风(false,false);move.接续御风移动(Vector3.zero);actor.transform.SetPositionAndRotation(actorPos,actorRot);move.enabled=moving;typeof(YufengFlight).GetProperty("状态").SetValue(flight,state);flight.enabled=flying;actor.装备(null);actor.装备(old);
+ camera.transform.SetPositionAndRotation(cameraPos,cameraRot);camera.orthographic=ortho;camera.orthographicSize=size;foreach(var d in drivers)d.x.enabled=d.on;
+}}
+IEnumerator Guard(){var e=Run();try{while(true){object n;try{if(!e.MoveNext())break;n=e.Current;}catch(Exception x){failure=x;break;}yield return n;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){while(!done)yield return null;Application.logMessageReceived-=onError;if(errors.Count>0)throw new Exception(string.Join(" | ",errors.Take(3)));if(failure!=null)throw failure;Debug.Log("SHOES_ONLY_RUNTIME "+JsonConvert.SerializeObject(reports));}return Wait();

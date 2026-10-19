@@ -55,7 +55,10 @@ public static class SectExchangeAssets
             else if(item.物品id.StartsWith("item_seed_"))icon=Sprite(Root+"/Items/seed-pouch");
             else if(item.物品id.StartsWith("item_dan_") || item.物品id=="item_huichundan")icon=Sprite("Assets/resources/UI/InkUI/AlchemyInteractive/pill");
             else if(item.物品id.StartsWith("item_lingtian_"))icon=Sprite(Root+"/Items/merit-token");
-            else if(item.物品id=="item_menpai_bianfu")icon=Sprite("Assets/resources/UI/InkUI/Appearance/portrait-app_player");
+            else if(item.使用效果 is 学外观效果 outfit){
+                var id=outfit.取外观()?.id;
+                icon=Sprite("Assets/resources/UI/InkUI/Appearance/icon-"+id)??Sprite("Assets/resources/UI/InkUI/Appearance/portrait-"+id);
+            }
             else if(item.物品id=="item_muzhuang")icon=Sprite(Root+"/Items/training-dummy");
             else icon=Sprite("Assets/resources/UI/InkUI/AlchemyInteractive/material-"+item.物品id);
             if(icon!=null && item.图标!=icon){item.图标=icon;EditorUtility.SetDirty(item);count++;}

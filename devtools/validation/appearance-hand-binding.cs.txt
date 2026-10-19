@@ -1,0 +1,21 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+var report=new List<string>();void Check(bool value,string name){if(!value)throw new Exception(name);report.Add("PASS "+name);}
+var reference=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/外观/修仙者.prefab").GetComponentInChildren<SkinnedMeshRenderer>(true);
+foreach(var id in new[]{"app_player","app_foundation","app_goldencore"}){
+ var app=AppearanceDatabase.取().取(id);var source=app.取模型().GetComponentInChildren<SkinnedMeshRenderer>(true);var original=source.sharedMesh.vertices;var weights=source.sharedMesh.boneWeights;
+ var identity=AppearanceMeshBinding.创建兼容网格(source,source.sharedMesh,source.bones,true);var reposed=AppearanceMeshBinding.创建兼容网格(source,reference.sharedMesh,reference.bones,true);
+ try{
+  Check(identity.vertices.Select((v,i)=>Vector3.Distance(v,original[i])).Max()<.00001f,"same-rig reposing preserves every source point "+id);
+  Check(reposed.boneWeights.SequenceEqual(weights),"hand repair retains all finger animation weights "+id);
+  Check(source.sharedMesh.vertices.SequenceEqual(original)&&source.sharedMesh.boneWeights.SequenceEqual(weights),"source mesh and weights remain unchanged "+id);
+  Check(reposed.vertices.All(p=>float.IsFinite(p.x)&&float.IsFinite(p.y)&&float.IsFinite(p.z)),"all reposed coordinates remain finite "+id);
+  Check(reposed.triangles.SequenceEqual(source.sharedMesh.triangles),"all source hand and garment faces retained "+id);
+  Check(reposed.normals.All(n=>Mathf.Abs(n.magnitude-1)<.001f),"reposed hand normals normalized "+id);
+ }finally{UnityEngine.Object.DestroyImmediate(identity);UnityEngine.Object.DestroyImmediate(reposed);}
+}
+Directory.CreateDirectory("../.local/diagnostics/outfit-cloth");File.WriteAllLines("../.local/diagnostics/outfit-cloth/hand-binding.txt",report);Debug.Log("HAND_BINDING_PASS "+report.Count);

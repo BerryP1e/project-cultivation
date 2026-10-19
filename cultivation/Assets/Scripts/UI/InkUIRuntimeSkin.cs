@@ -77,6 +77,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         string canvas = name;
         foreach (var image in GetComponentsInChildren<Image>(true))
         {
+            if (image.GetComponentInParent<UIInkSpiritArrayPage>(true)) continue;
             if (IsSaveWindow(image)) continue;
             if (!handled.Add(image.GetInstanceID())) continue;
             string n = image.name;
@@ -88,6 +89,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         }
         foreach (var button in GetComponentsInChildren<Button>(true))
         {
+            if (button.GetComponentInParent<UIInkSpiritArrayPage>(true)) continue;
             if (IsSaveWindow(button)) continue;
             if (!handled.Add(button.GetInstanceID())) continue;
             if (button.name.StartsWith("页签_") || button.name.StartsWith("功法行") || button.name.Contains("材格") || button.name == "预览方块") continue;
@@ -100,6 +102,7 @@ public class InkUIRuntimeSkin : MonoBehaviour
         bool paper = canvas != "ToastCanvas" && canvas != "DeathScreenCanvas" && canvas != "PauseMenuCanvas" && canvas != "起名界面" && canvas != "MenuCanvas" && canvas != "TowerCanvas";
         foreach (var text in GetComponentsInChildren<Text>(true))
         {
+            if (text.GetComponentInParent<UIInkSpiritArrayPage>(true)) continue;
             if (IsSaveWindow(text)) continue;
             if (!handled.Add(text.GetInstanceID())) continue;
             if (text.name.Contains("余额") || text.name.Contains("贡献") || text.name == "灵气数值" || text.name == "进度文字") UIInkNumber.Attach(text);

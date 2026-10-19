@@ -31,6 +31,15 @@ Shader "Cultivation/Bloom"
     SubShader
     {
         Cull Off ZWrite Off ZTest Always
+        CGINCLUDE
+        float3 BloomFiniteColor(float3 c)
+        {
+            // Reject NaN/Inf before they spread through the blur pyramid.
+            return float3((c.r >= 0 && c.r <= 65504) ? c.r : 0,
+                          (c.g >= 0 && c.g <= 65504) ? c.g : 0,
+                          (c.b >= 0 && c.b <= 65504) ? c.b : 0);
+        }
+        ENDCG
 
         // ============================================================
         // Pass 0 —— 亮部提取（Prefilter）
@@ -52,7 +61,7 @@ Shader "Cultivation/Bloom"
 
             half4 frag(v2f_img i) : SV_Target
             {
-                float3 c = tex2D(_MainTex, i.uv).rgb;
+                float3 c = BloomFiniteColor(tex2D(_MainTex, i.uv).rgb);
                 float  br = max(c.r, max(c.g, c.b));
 
                 // 软膝：threshold 附近过渡，而不是硬切
@@ -142,9 +151,9 @@ Shader "Cultivation/Bloom"
 
             half4 frag(v2f_img i) : SV_Target
             {
-                float3 c = tex2D(_MainTex, i.uv).rgb;
-                float3 b = tex2D(_BloomTex, i.uv).rgb;
-                return half4(c + b * _Intensity, 1.0);
+                float3 c = BloomFiniteColor(tex2D(_MainTex, i.uv).rgb);
+                float3 b = BloomFiniteColor(tex2D(_BloomTex, i.uv).rgb);
+                return half4(min(c + b * _Intensity, 65504), 1.0);
             }
             ENDCG
         }

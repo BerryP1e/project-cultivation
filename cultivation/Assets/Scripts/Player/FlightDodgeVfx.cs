@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 
 /// <summary>限量蒙皮快照残影与螺旋风丝。共享身体材质不变，快照Mesh循环复用。</summary>
-[DefaultExecutionOrder(120)]
+[DefaultExecutionOrder(21000)]
 public sealed class FlightDodgeVfx : MonoBehaviour
 {
     [Range(2, 8)] public int 残影上限 = 6;
@@ -35,6 +35,10 @@ public sealed class FlightDodgeVfx : MonoBehaviour
     public void 开始()
     {
         if (!dodge) dodge = GetComponent<PlayerFlightDodge>();
+        var current=GetComponentsInChildren<SkinnedMeshRenderer>();
+        bool changed=bodies==null||bodies.Length!=current.Length;
+        if(!changed)for(int i=0;i<current.Length;i++)if(bodies[i]!=current[i]){changed=true;break;}
+        if(changed&&effectRoot)Release();
         if (!effectRoot) Build();
         emitting = effectRoot != null;
         sampleTimer = 0; emission = 0;
@@ -148,6 +152,17 @@ public sealed class FlightDodgeVfx : MonoBehaviour
         for (int j = 0; j < bodies.Length; j++)
         {
             var body = bodies[j]; var renderer = g.renderers[j];
+            if(body&&body.name=="OutfitFabric")
+            {
+                var node=body.transform.Find("OutfitFabricSurface");var surface=node?node.GetComponent<MeshFilter>():null;
+                if(!surface||!surface.sharedMesh||!node.gameObject.activeInHierarchy){renderer.enabled=false;continue;}
+                var source=surface.sharedMesh;var mesh=g.meshes[j];mesh.Clear();mesh.vertices=source.vertices;mesh.normals=source.normals;mesh.uv=source.uv;mesh.subMeshCount=source.subMeshCount;
+                for(int sub=0;sub<source.subMeshCount;sub++)mesh.SetTriangles(source.GetTriangles(sub),sub,false);mesh.bounds=source.bounds;
+                renderer.enabled=true;renderer.transform.SetPositionAndRotation(node.position,node.rotation);renderer.transform.localScale=node.lossyScale;
+                var mat=node.GetComponent<MeshRenderer>().sharedMaterial;
+                properties.Clear();properties.SetTexture("_MainTex",mat&&mat.mainTexture?mat.mainTexture:Texture2D.whiteTexture);properties.SetColor("_Color",颜色);renderer.SetPropertyBlock(properties);
+                continue;
+            }
             if (!body || !body.enabled || !body.gameObject.activeInHierarchy || !body.sharedMesh) { renderer.enabled = false; continue; }
             renderer.enabled = true;
             body.BakeMesh(g.meshes[j]);
@@ -166,11 +181,13 @@ public sealed class FlightDodgeVfx : MonoBehaviour
         if (particles) particles.Clear();
         if (threads != null) foreach (var line in threads) line.enabled = false;
     }
-    void OnDestroy()
+    void Release()
     {
         if (ghosts != null) foreach (var g in ghosts) foreach (var mesh in g.meshes) if (mesh) Destroy(mesh);
         if (effectRoot) Destroy(effectRoot);
         if (material) Destroy(material);
         if (softDot) Destroy(softDot);
+        ghosts=null;bodies=null;effectRoot=null;material=null;softDot=null;particles=null;threads=null;cursor=0;
     }
+    void OnDestroy()=>Release();
 }

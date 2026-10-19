@@ -1,0 +1,36 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEditor;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated saves");
+var data=UnityEngine.Object.FindObjectOfType<UIPanelData>();var old=data.灵阵编排.Select(p=>p.Copy()).ToList();var oldOwned=data.已拥有法宝.ToList();var oldTreasure=data.当前法宝;
+var report=new List<string>();void Check(bool value,string message){if(!value)throw new Exception(message);report.Add("PASS "+message);}
+var root=new GameObject("ArraySpacingQA");root.SetActive(false);root.transform.position=new Vector3(5000,100,5000);var vitals=root.AddComponent<PlayerVitals>();var targeting=root.AddComponent<NpcTargeting>();targeting.enabled=false;var source=root.AddComponent<ActiveSkillCaster>();source.enabled=false;root.SetActive(true);vitals.enabled=false;source.生命=vitals;source.目标管理器=targeting;source.面板数据=data;var caster=root.AddComponent<SpiritArrayCaster>();var definition=SpiritArrayRules.Templates.First(d=>d.灵阵id=="array_program_1");
+var targetObject=new GameObject("SpacingTarget");targetObject.SetActive(false);targetObject.transform.position=root.transform.position+new Vector3(7,2,8);var nd=ScriptableObject.CreateInstance<NpcDefinition>();nd.id="qa_spacing";nd.对主角好感度=-100;nd.属性[AttributeType.MaxHealth]=100;var npc=targetObject.AddComponent<NpcInstance>();npc.定义=nd;targetObject.SetActive(true);npc.ResetHealth();
+SpiritArrayNode E()=>new SpiritArrayNode{操作=SpiritArrayOp.生成灵弹,延迟=5,自定义间距=true,节点间距=2.75f};
+void Configure(params SpiritArrayNode[] nodes){caster.enabled=false;caster.enabled=true;vitals.当前气血=100;vitals.当前灵气=1000;SpiritArrayRules.Store(data,new SpiritArrayProgram{id=definition.灵阵id,序列=nodes.ToList()});}
+void Cast(){if(!caster.TryCast(source,definition,null,out var error))throw new Exception(error);}
+IEnumerator Wait(float seconds){float end=Time.time+seconds;while(Time.time<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}}
+IEnumerator Run(){try{
+ yield return null;foreach(var ai in npc.GetComponents<MonoBehaviour>())if(ai!=npc)ai.enabled=false;
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.身前布阵,自定义起点距离=true,起点距离=3.2f,自定义间距=true,节点间距=.7f},E(),SpiritArrayNode.Create(SpiritArrayOp.强化));Cast();yield return Wait(.35f);
+ var emitter=GameObject.Find("SpiritArray_生成灵弹").transform;var modifier=GameObject.Find("SpiritArray_强化").transform;
+ Check(Vector3.Distance(emitter.position,root.transform.position+Vector3.up*1.1f+Vector3.forward*3.9f)<.002f,"front origin distance and following gap are independent and added along cast direction");Check(Mathf.Abs(Vector3.Distance(emitter.position,modifier.position)-2.75f)<.002f,"ordinary node uses custom outgoing spacing");
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.目标头顶,自定义起点距离=true,起点距离=6.4f,自定义间距=true,节点间距=1.3f},E());targeting.Lock(npc);Cast();yield return Wait(.05f);emitter=GameObject.Find("SpiritArray_生成灵弹").transform;
+ Check(Vector3.Distance(emitter.position,npc.transform.position+Vector3.up*5.1f)<.002f&&Vector3.Dot(emitter.forward,Vector3.down)>.999f,"target origin height and next gap are separate; next node expands downward");targeting.ClearLock();
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.逆向打包,自定义间距=true,节点间距=.6f,子阵=new List<SpiritArrayNode>{E(),SpiritArrayNode.Create(SpiritArrayOp.强化)}});Cast();yield return Wait(.35f);emitter=GameObject.Find("SpiritArray_生成灵弹").transform;modifier=GameObject.Find("SpiritArray_强化").transform;
+ Check(Vector3.Distance(emitter.position,root.transform.position+Vector3.up*1.1f+Vector3.forward*.5f)<.002f,"inverse pack applies its configurable leading gap backward");Check(Mathf.Abs(Vector3.Dot(modifier.position-emitter.position,Vector3.forward)+2.75f)<.002f&&Vector3.Dot(emitter.forward,Vector3.forward)>.999f,"inverse spacing preserves forward firing direction");
+ Configure(new SpiritArrayNode{操作=SpiritArrayOp.多重施法,外倾角=0,自定义间距=true,节点间距=2.2f,子阵=new List<SpiritArrayNode>{E(),E()}});Cast();yield return Wait(.05f);var multi=GameObject.Find("SpiritArray_多重施法").transform;var emitters=UnityEngine.Object.FindObjectsOfType<Transform>().Where(t=>t.name=="SpiritArray_生成灵弹"&&Vector3.Distance(t.position,root.transform.position)<20).ToArray();Check(emitters.Length==2&&emitters.All(t=>Mathf.Abs(Vector3.Dot(t.position-multi.position,Vector3.forward)-2.2f)<.002f),"multi node spacing controls branch forward offset");
+ var treasure=PanelDatabase.取().法宝.First(t=>t&&t.法宝id==SpiritArrayTalisman.Id);if(!data.已拥有(treasure))data.已拥有法宝.Add(treasure.法宝id);data.设置当前法宝(treasure);Configure(new SpiritArrayNode{操作=SpiritArrayOp.身前布阵},E());Check(UIInkSpiritArrayPage.Open(data),"open parameter editor");yield return null;var view=UnityEngine.Object.FindObjectsOfType<UIInkSpiritArrayPage>(true).First(v=>v.IsOpen);view.SelectProgram(0);view.GetComponentsInChildren<Button>().First(b=>b.name=="ArrayNode").onClick.Invoke();yield return null;
+ var gap=view.GetComponentsInChildren<InputField>().First(f=>f.name=="NextSpacing");var origin=view.GetComponentsInChildren<InputField>().First(f=>f.name=="OriginDistance");gap.text="1.25";gap.onEndEdit.Invoke(gap.text);origin.text="4.5";origin.onEndEdit.Invoke(origin.text);Check(view.SaveDraft(),"save both edited origin fields");var node=SpiritArrayRules.Get(data,definition).序列[0];Check(node.自定义间距&&node.自定义起点距离&&node.节点间距==1.25f&&node.起点距离==4.5f,"node page stores independent spacing and origin values");
+ var save=new SaveData();SaveSystem.从角色采集(save);Check(SaveSystem.存档(4,save),"write custom distances to isolated save");var loaded=SaveSystem.读档(4).灵阵编排.First(p=>p.id==definition.灵阵id).序列[0];Check(loaded.自定义间距&&loaded.自定义起点距离&&loaded.节点间距==1.25f&&loaded.起点距离==4.5f,"save roundtrip retains custom distance flags and values");
+ Canvas.ForceUpdateCanvases();yield return new WaitForEndOfFrame();Directory.CreateDirectory("../.local/diagnostics/spirit-array");ScreenCapture.CaptureScreenshot("../.local/diagnostics/spirit-array/origin-parameters.png");yield return null;view.Close();
+ node.节点间距=-1;Check(!SpiritArrayRules.Validate(new SpiritArrayProgram{序列=new List<SpiritArrayNode>{node,E()}},out _),"negative distance rejected");
+ Directory.CreateDirectory("../.local/diagnostics/spirit-array");File.WriteAllLines("../.local/diagnostics/spirit-array/spacing.txt",report);Debug.Log("ARRAY_SPACING_PASS "+report.Count);
+}finally{foreach(var view in UnityEngine.Object.FindObjectsOfType<UIInkSpiritArrayPage>(true))if(view.IsOpen)view.Close();data.灵阵编排=old;data.已拥有法宝=oldOwned;data.当前法宝=oldTreasure;data.RaiseChanged();UnityEngine.Object.Destroy(root);UnityEngine.Object.Destroy(targetObject);UnityEngine.Object.Destroy(nd);}}
+bool done=false;Exception failure=null;IEnumerator Guard(){var it=Run();try{while(true){object next;try{if(!it.MoveNext())break;next=it.Current;}catch(Exception e){failure=e;break;}yield return next;}}finally{(it as IDisposable)?.Dispose();done=true;}}
+UnityEngine.Object.FindObjectOfType<玩家外观>().StartCoroutine(Guard());IEnumerator WaitDone(){double end=EditorApplication.timeSinceStartup+60;while(!done&&EditorApplication.timeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(!done)throw new Exception("Spacing test timeout");if(failure!=null)throw failure;}return WaitDone();

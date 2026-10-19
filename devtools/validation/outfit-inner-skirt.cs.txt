@@ -1,0 +1,40 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play only");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var old=actor.当前外观;var move=actor.GetComponent<PlayerController>();bool moving=move.enabled;var flight=actor.GetComponent<YufengFlight>();bool flying=flight.enabled;var state=flight.状态;var animation=actor.GetComponent<PlayerAnimationController>();
+ var animator=animation.animator;bool animOn=animator.enabled;var c=Camera.main;var pos=c.transform.position;var rot=c.transform.rotation;bool ortho=c.orthographic;float size=c.orthographicSize;var actorPos=actor.transform.position;float capture=Time.captureDeltaTime;
+ var drivers=c.GetComponents<MonoBehaviour>().Where(x=>new[]{"TopDownCamera","TopDownCameraZoom","WorldMapCamera","CameraYawRotator","WorldMapInk"}.Contains(x.GetType().Name)).Select(x=>new{x,on=x.enabled}).ToArray();
+ var errors=new System.Collections.Generic.HashSet<string>();Application.LogCallback onError=(m,t,k)=>{if(k==LogType.Error||k==LogType.Exception)errors.Add(m);};Application.logMessageReceived+=onError;
+ var folder=Path.GetFullPath("../.local/diagnostics/boot-inner-skirt-ab");Directory.CreateDirectory(folder);var reports=new System.Collections.Generic.List<object>();
+ try{
+  move.enabled=false;flight.enabled=false;typeof(YufengFlight).GetProperty("状态").SetValue(flight,YufengFlight.FlightState.地面);foreach(var d in drivers)d.x.enabled=false;c.orthographic=true;c.orthographicSize=.95f;Time.captureDeltaTime=1f/60;actor.transform.position+=Vector3.up*5;
+  foreach(string id in new[]{"app_nascent","app_divinity"}){
+   animation.设置外部御风(false,false);animator.enabled=true;actor.装备(AppearanceDatabase.取().取(id));animator.CrossFadeInFixedTime("Locomotion",.1f,0);
+   var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(r=>r.GetComponent<AppearanceClothRig>());var rig=body.GetComponent<AppearanceClothRig>();var p=rig.当前配置;var surface=rig.GetComponentInChildren<MeshFilter>();
+   var originals=p.鞋靴半径;Vector3[] without=null,with=null;int contacts=0;
+   try{
+    move.接续御风移动(actor.transform.forward*.28f);for(int f=0;f<45;f++)yield return new WaitForEndOfFrame();animator.enabled=false;rig.enabled=false;
+    var centre=(body.bones[26].position+body.bones[5].position)*.5f;c.transform.position=centre+actor.transform.TransformDirection(new Vector3(.8f,.3f,4));c.transform.LookAt(centre);
+    for(int pass=0;pass<2;pass++){
+     p.鞋靴半径=pass==0?new float[0]:originals;rig.重置随动();
+     for(int f=0;f<75;f++){rig.推进(1f/60,100+f/60f);contacts+=rig.鞋靴接触次数;yield return new WaitForEndOfFrame();}
+     var points=surface.sharedMesh.vertices;if(pass==0)without=points;else with=points;
+     var tex=ScreenCapture.CaptureScreenshotAsTexture();File.WriteAllBytes(Path.Combine(folder,id+(pass==0?"-without-boots.png":"-with-boots.png")),tex.EncodeToPNG());UnityEngine.Object.Destroy(tex);
+    }
+    float max=0;int affected=0;for(int i=0;i<with.Length;i++)if(p.闭襟覆盖[i]>.5f){float delta=Vector3.Distance(with[i],without[i]);max=Mathf.Max(max,delta);if(delta>.005f)affected++;}
+    if(max<.005f||affected<4)throw new Exception(id+" inner skirt not displaced by boots");
+    var report=new{id,maxSkirtDeltaModelUnits=max,affectedInnerVertices=affected,bootContacts=contacts,renderErrors=errors.Count};reports.Add(report);Debug.Log("BOOT_SKIRT_AB "+JsonConvert.SerializeObject(report));
+   }finally{p.鞋靴半径=originals;rig.enabled=true;animator.enabled=animOn;}
+  }
+  File.WriteAllText(Path.Combine(folder,"results.json"),JsonConvert.SerializeObject(reports,Formatting.Indented));if(errors.Count>0)throw new Exception(string.Join(" | ",errors.Take(2)));
+ }finally{Application.logMessageReceived-=onError;Time.captureDeltaTime=capture;animator.enabled=animOn;animation.设置外部御风(false,false);move.接续御风移动(Vector3.zero);actor.transform.position=actorPos;move.enabled=moving;typeof(YufengFlight).GetProperty("状态").SetValue(flight,state);flight.enabled=flying;actor.装备(null);actor.装备(old);c.transform.SetPositionAndRotation(pos,rot);c.orthographic=ortho;c.orthographicSize=size;foreach(var d in drivers)d.x.enabled=d.on;}
+}
+IEnumerator Guard(){var e=Run();try{while(true){object n;try{if(!e.MoveNext())break;n=e.Current;}catch(Exception x){failure=x;break;}yield return n;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+100;while(!done&&EditorApplication.timeSinceStartup<end)yield return null;if(failure!=null)throw failure;if(!done)throw new Exception("AB timeout");}return Wait();

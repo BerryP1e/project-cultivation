@@ -117,7 +117,7 @@ public class 玩家外观 : MonoBehaviour
         对话标记.变化 += 处理标记变化;
         修行 = GetComponent<PlayerCultivation>();
         if (修行 != null) 修行.等级变化 += 处理境界变化;
-        解锁境界着装();
+        发放境界着装物品();
 
         // ★ 先把上一次会话记下的外观装上（跨场景保持玩家自己换的那身）。
         //   踩过的坑（用户 2026-09-27："我用村中少年的外观进镇妖塔，出来就变成宗门便服了"）：
@@ -242,18 +242,27 @@ public class 玩家外观 : MonoBehaviour
         兼容网格.Clear();
     }
 
-    void 处理境界变化(PlayerCultivation player, int before, int after) => 解锁境界着装();
+    void 处理境界变化(PlayerCultivation player, int before, int after) => 发放境界着装物品();
 
-    public void 解锁境界着装()
+    /// <summary>境界只赠送学习物品；通用存档标记防止传送、读档或转修重复领。</summary>
+    public void 发放境界着装物品()
     {
         if (!修行) 修行 = GetComponent<PlayerCultivation>();
         if (!库) 库 = AppearanceDatabase.取();
         if (!修行 || !库) return;
-        bool changed = false;
+        var items = QuestDatabase.取()?.物品库;
+        var bag = 修行.面板数据 != null ? 修行.面板数据 : FindObjectOfType<UIPanelData>();
+        if (items == null || bag == null) return;
         foreach (var outfit in 库.全部)
-            if (outfit && outfit.境界解锁等级 > 0 && 修行.等级 >= outfit.境界解锁等级 && !已拥有(outfit))
-                changed |= 获得(outfit, false);
-        if (changed) 外观变化?.Invoke(当前外观);
+        {
+            if (!outfit || outfit.境界解锁等级 <= 0 || 修行.等级 < outfit.境界解锁等级) continue;
+            string marker = "外观赠物_" + outfit.id;
+            if (对话标记.具备(marker)) continue;
+            var item = items.Find(i => i != null && i.使用效果 is 学外观效果 effect && effect.外观id == outfit.id);
+            if (item == null) { Debug.LogError("境界着装缺少学习物品：" + outfit.id); continue; }
+            bag.给物品(item);
+            对话标记.添加(marker);
+        }
     }
 
     void 处理标记变化(string 标记, bool 新增)
@@ -311,6 +320,7 @@ public class 玩家外观 : MonoBehaviour
             }
             兼容网格.Add(源网格.sharedMesh, aligned);
         }
+        bool wasEnabled=网格.enabled;网格.enabled=false;
         网格.sharedMesh = aligned;
         网格.sharedMaterials = 源网格.sharedMaterials;
         AppearanceClothRig.应用(网格, 外观.衣服随动, 人体骨);
@@ -329,6 +339,7 @@ public class 玩家外观 : MonoBehaviour
         //   ② 再看包围盒 / 剔除。详见 docs/ai/踩坑总库.md 里「模型不显示」那条。
         网格.localBounds = 源网格.localBounds;
         网格.updateWhenOffscreen = true;
+        网格.enabled=wasEnabled;
         当前外观 = 外观;
         会话外观id = 外观.id;
         if (已获得 == null) 已获得 = new System.Collections.Generic.List<AppearanceDefinition>();
@@ -344,9 +355,11 @@ public class 玩家外观 : MonoBehaviour
     {
         if (网格 != null && 原网格 != null)
         {
+            bool wasEnabled=网格.enabled;网格.enabled=false;
             AppearanceClothRig.应用(网格, null, 人体骨);
             网格.sharedMesh = 原网格;
             网格.sharedMaterials = 原材质;
+            网格.enabled=wasEnabled;
         }
         当前外观 = null;
         会话外观id = "";

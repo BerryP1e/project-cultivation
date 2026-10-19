@@ -1,0 +1,41 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json.Linq;
+if(EditorApplication.isPlaying)throw new Exception("Editor only");
+foreach(string id in new[]{"app_foundation","app_nascent","app_divinity","app_integration"}){
+ var a=AppearanceDatabase.取().取(id);var source=a.取模型().GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;var mesh=a.衣服随动.蒙皮;
+ var authored=JObject.Parse(File.ReadAllText("Assets/Art/Characters/OutfitCloth/Authoring/"+id+".json"));
+ string Key(Vector3 p)=>Mathf.RoundToInt(p.x*100000)+","+Mathf.RoundToInt(p.y*100000)+","+Mathf.RoundToInt(p.z*100000);
+ var keys=authored["vertices"].Where(v=>(bool?)v["preserveOriginalWeights"]==true).Select(v=>Key(new Vector3((float)v["x"],(float)v["y"],(float)v["z"]))).ToHashSet();
+ var points=source.vertices;var original=source.boneWeights;var actual=mesh.boneWeights;int count=0;
+ for(int i=0;i<points.Length;i++)if(keys.Contains(Key(points[i]))){count++;var x=original[i];var y=actual[i];if(x.boneIndex0!=y.boneIndex0||x.boneIndex1!=y.boneIndex1||x.boneIndex2!=y.boneIndex2||x.boneIndex3!=y.boneIndex3||Mathf.Abs(x.weight0-y.weight0)+Mathf.Abs(x.weight1-y.weight1)+Mathf.Abs(x.weight2-y.weight2)+Mathf.Abs(x.weight3-y.weight3)>1e-6f)throw new Exception(id+" original finger/boot weights changed at "+i);}
+ var locked=authored["vertices"].Where(v=>(bool?)v["preserveAuthoredWeights"]==true).ToDictionary(v=>Key(new Vector3((float)v["x"],(float)v["y"],(float)v["z"])));
+ for(int i=0;i<points.Length;i++)if(locked.TryGetValue(Key(points[i]),out var v)){count++;var x=new BoneWeight{boneIndex0=(int)v["bone0"],boneIndex1=(int)v["bone1"],boneIndex2=(int)v["bone2"],boneIndex3=(int)v["bone3"],weight0=(float)v["weight0"],weight1=(float)v["weight1"],weight2=(float)v["weight2"],weight3=(float)v["weight3"]};if(!x.Equals(actual[i]))throw new Exception(id+" authored body weight changed "+i);}
+ if(count<500)throw new Exception(id+" protected parts incomplete");
+ if(mesh.triangles.Length/3-a.衣服随动.补全人体三角数+a.衣服随动.原布料三角数+a.衣服随动.移除封底三角数!=source.triangles.Length/3)throw new Exception("Faces lost "+id);
+ var cloth=a.衣服随动.布料蒙皮.boneWeights;var same=a.衣服随动.布料同点;
+ for(int i=0;i<cloth.Length;i++){var x=cloth[i];var y=cloth[same[i]];if(x.boneIndex0!=y.boneIndex0||x.boneIndex1!=y.boneIndex1||x.boneIndex2!=y.boneIndex2||x.boneIndex3!=y.boneIndex3||Mathf.Abs(x.weight0-y.weight0)+Mathf.Abs(x.weight1-y.weight1)+Mathf.Abs(x.weight2-y.weight2)+Mathf.Abs(x.weight3-y.weight3)>1e-6f)throw new Exception(id+" cloth seam skin mismatch "+i);}
+ var reference=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/resources/外观/修仙者.prefab").GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+ var vertices=mesh.vertices;int added=source.vertexCount;
+ if(id=="app_nascent"||id=="app_divinity"||id=="app_integration"){
+  var p=a.衣服随动;
+  if((bool?)authored["useGoldenTrousers"]==true){
+   var donor=JObject.Parse(File.ReadAllText("Assets/Art/Characters/OutfitCloth/Authoring/app_goldencore.json"));bool unified=donor["lowerBodyDonorFaces"]!=null;
+   int expectedVertices=unified?723:199,expectedFaces=unified?466:142;
+   if(p.仅保留原鞋||p.闭襟覆盖.Length!=0||!p.裤装蒙皮||!p.裤装材质||p.裤装蒙皮.vertexCount!=expectedVertices||p.裤装蒙皮.triangles.Length!=expectedFaces*3||p.裤装蒙皮.bindposes.Length!=78||p.裤装蒙皮.boneWeights.Any(w=>w.boneIndex0>=78||w.boneIndex1>=78||w.boneIndex2>=78||w.boneIndex3>=78))throw new Exception(id+" reviewed trousers configuration mismatch");
+   if(p.补全人体顶点数!=0||p.补全人体三角数!=0||vertices.Length!=source.vertexCount)throw new Exception(id+" generated cylinder or torso geometry returned");
+   Debug.Log("PROTECTED_PARTS_PASS "+id+" protectedWeightVertices="+count+" sourceFacesAccounted=True userTrousers=True closedSkirt=False");continue;
+  }
+  if((bool?)authored["shoesOnly"]!=true||(bool?)authored["thinLegs"]!=false||(bool?)authored["addInnerLegs"]!=false||!p.仅保留原鞋||p.补全人体顶点数!=0||p.补全人体三角数!=0||vertices.Length!=source.vertexCount||p.鞋口锚点.Length!=0||p.鞋口骨索引.Length!=0||p.鞋靴半径.Length!=0||p.鞋趾锚点.Length!=0||p.闭襟覆盖.Length!=p.布料蒙皮.vertexCount)throw new Exception(id+" source shoes only configuration mismatch");
+  if(mesh.triangles.Any(i=>i<0||i>=source.vertexCount))throw new Exception(id+" generated limb reference returned");
+  if(p.原鞋筒锚点.Length!=2||p.原鞋筒半径.Length!=2||p.原鞋掌锚点.Length!=2||p.原鞋掌半径.Length!=2||p.原鞋筒半径.Concat(p.原鞋掌半径).Any(r=>r<=0||float.IsNaN(r)||float.IsInfinity(r)))throw new Exception(id+" original boot or sole contact missing");
+  Debug.Log("PROTECTED_PARTS_PASS "+id+" protectedWeightVertices="+count+" sourceFacesPreserved=True shoesOnly=True generatedLegs=False torsoLiner=False");continue;
+ }
+ Vector3 Centre(int start){var centre=Vector3.zero;for(int j=0;j<12;j++)centre+=vertices[start+j]/12;return centre;}
+ for(int side=0;side<2;side++)if(Vector3.Distance(Centre(added+side*60+24),reference.bindposes[side==0?4:13].inverse.GetColumn(3))>.00001f)throw new Exception(id+" inner knee is not on animation skeleton");
+ if(Vector3.Distance(Centre(added+120),reference.bindposes[22].inverse.GetColumn(3))>.00001f)throw new Exception(id+" waist lining incomplete");
+ Debug.Log("PROTECTED_PARTS_PASS "+id+" exactOriginalWeightVertices="+count+" sourceFacesPreserved=True");
+}

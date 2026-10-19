@@ -111,17 +111,23 @@ public class OcclusionOutline : MonoBehaviour
 
     void OnEnable()
     {
+        玩家外观.外观变化 -= 处理换装;
+        玩家外观.外观变化 += 处理换装;
+        解析引用();
         if (!已建立) { 解析引用(); 建立副本(); }
     }
 
     void OnDisable()
     {
+        玩家外观.外观变化 -= 处理换装;
         当前强度 = 0f;
         应用(0f);
     }
 
     void OnDestroy()
     {
+        玩家外观.外观变化 -= 处理换装;
+        清理副本();
         if (圈材质 != null) Destroy(圈材质);
         if (剪影材质 != null) Destroy(剪影材质);
     }
@@ -134,6 +140,26 @@ public class OcclusionOutline : MonoBehaviour
             var 玩家 = FindObjectOfType<PlayerVitals>();
             if (玩家 != null) 角色 = 玩家.transform;
         }
+    }
+
+    void 处理换装(AppearanceDefinition appearance) => 重建外观副本();
+
+    /// <summary>换装后重新绑定当前网格与衣骨，不能继续显示上套着装的剪影。</summary>
+    public void 重建外观副本()
+    {
+        清理副本();
+        if (isActiveAndEnabled) 建立副本();
+    }
+
+    void 清理副本()
+    {
+        foreach (var renderer in 副本) if (renderer)
+        {
+            renderer.gameObject.SetActive(false);
+            Destroy(renderer.gameObject);
+        }
+        副本.Clear();
+        已建立 = false;
     }
 
     void 建立副本()
@@ -153,8 +179,8 @@ public class OcclusionOutline : MonoBehaviour
             return;
         }
 
-        圈材质 = new Material(圈Shader) { name = "遮挡描边·圈（运行时）" };
-        剪影材质 = new Material(剪影Shader) { name = "遮挡描边·剪影（运行时）" };
+        if (!圈材质) 圈材质 = new Material(圈Shader) { name = "遮挡描边·圈（运行时）" };
+        if (!剪影材质) 剪影材质 = new Material(剪影Shader) { name = "遮挡描边·剪影（运行时）" };
         应用(0f);
 
         // ★ 先列出原件再建副本，否则遍历会把自己刚建的副本也当成原件（无限套娃）
@@ -164,7 +190,7 @@ public class OcclusionOutline : MonoBehaviour
         int 建了 = 0, 跳过 = 0;
         foreach (var 源 in 原件)
         {
-            if (源 == null) continue;
+            if (源 == null || !源.enabled || 源.forceRenderingOff || !源.gameObject.activeInHierarchy) continue;
             // 跳过副本自己（名字带前缀），以及上一轮可能残留的副本
             bool 是副本 = 源.name.StartsWith(副本名);
             for (var p = 源.transform.parent; !是副本 && p != null; p = p.parent)

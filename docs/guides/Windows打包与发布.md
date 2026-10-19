@@ -2,7 +2,13 @@
 
 目标平台为 Windows x64，使用团结 1.6.13 / 2022.3.61t14。软件包发布到 [GitHub Releases](https://github.com/BerryP1e/project-cultivation/releases)，二进制文件不进入源码仓库。
 
-## 当前测试版（2026-10-11）
+## 当前家园版本与干净重建
+
+2026-10-17 已完成干净重建：关闭编辑器后删除可重建的 Library、Temp、obj，重新导入 Assets 与 Packages，构建当前四个启用场景：StartScene、个人洞府、宗门野外、镇妖阁。最终更新包构建 0 错误、22 条警告；首次干净构建的独立程序启动与 NPC 动画检查通过。旧本机产物已按用户确认在成功后删除，完整数字与范围见[记录](../reports/2026-10-17干净重建与学习物品.md)。下面的六场景公开测试版仅是历史发布，不能作为当前源码场景清单。
+
+本次独立输出为 `Builds/Clean-Windows-x64-20261017/`。Git 历史、源美术、地图、真实存档和操作前备份保留。此包早于 10 月 17 日后续衣服与前闪修复；当前修复在编辑器中验收，未自动重新打包或发布为 GitHub Release。
+
+## 历史公开测试版（2026-10-11）
 
 [争渡 · 太初伴龙与法则系统](https://github.com/BerryP1e/project-cultivation/releases/tag/v0.1.0-alpha.20261011)：`zhengdu-2026.10.11-windows-x64.zip`，附SHA-256文件。包含太初龙栖诀五式与伴龙、真实甩尾/切式修正、统一物理命中和局部顿帧，以及九境界法则宝箱/六槽仪轨/熔炼/洗练。七主题怪物子弹与动态路径保护已补齐；独立伴龙成品替换原22个FBX，工程资产净减少68.8 MiB，既有成品动作保持不变。
 
@@ -20,11 +26,13 @@ Windows x64构建成功，0错误、18条既有素材着色器/缺失脚本警�
 
 ## 构建
 
-先保存手工场景修改并退出 Play，然后执行编辑器菜单 `Cultivation / Release / Build Windows x64`。构建工具只读取已保存的场景，不调用场景生成器，不保存或重建场景。
+先保存手工场景修改并退出 Play，然后执行编辑器菜单 `修仙 / 发布 / Build Windows x64`。构建工具只读取已保存的场景，不调用场景生成器，不保存或重建场景；会更新动态着色器包含清单与构建前动作索引。
 
 入口是 `StartScene`，采用 Build Settings 中已启用、实际存在的场景；同一场景的大小写重复项只构建一次。动态查找的自定义着色器会登记到 Graphics Settings，避免正式运行时被剥离。
 
 输出程序为 `cultivation/Builds/Windows-x64/cultivation.exe`，构建报告为 `cultivation/Builds/windows-release-report.json`。必须确认报告 `status` 为 `Succeeded` 且 `errors` 为 0。
+
+完整命令行可增加 `-releaseDirectory Builds/新的版本目录`，将 exe、数据与 windows-release-report.json 写入独立目录，保留上一版直到新包验证通过。目录必须位于当前工程的 Builds 内。重建缓存后 Library 会随导入再次增长，清缓存不能消除实际素材依赖。
 
 也可以在编辑器未占用该工程时进行命令行构建：
 

@@ -1,0 +1,25 @@
+﻿using System;
+using System.Linq;
+using System.Collections;
+using System.Reflection;
+using UnityEngine;
+using UnityEditor;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var old=actor.当前外观;
+ try{
+  foreach(var id in new[]{"app_player","app_foundation","app_goldencore","app_nascent","app_divinity","app_integration"}){
+   // This executes in the actor's ordinary game coroutine, not the Editor bridge.
+   actor.装备(AppearanceDatabase.取().取(id));
+   yield return new WaitForEndOfFrame();
+   var rig=actor.玩家视觉.GetComponentsInChildren<AppearanceClothRig>().First(r=>r.当前配置);
+   var cache=(Vector3[])typeof(AppearanceClothRig).GetField("发面原点",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(rig);
+   if(cache==null||cache.Length!=rig.当前配置.蒙皮.vertexCount)throw new Exception("Runtime vertex cache missing: "+id);
+   for(int f=0;f<3;f++)yield return new WaitForEndOfFrame();
+   Debug.Log("ORDINARY_RUNTIME_EQUIP "+id+" vertices="+cache.Length);
+  }
+ }finally{actor.装备(null);actor.装备(old);}
+}
+IEnumerator Guard(){var e=Run();try{while(true){object current;try{if(!e.MoveNext())break;current=e.Current;}catch(Exception x){failure=x;break;}yield return current;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+90;while(!done&&EditorApplication.timeSinceStartup<end)yield return null;if(failure!=null)throw failure;if(!done)throw new Exception("Runtime equip timed out");}return Wait();

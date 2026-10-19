@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>御风闪避；位移只从 PlayerController 的碰撞移动入口执行。</summary>
 [DisallowMultipleComponent]
@@ -87,7 +87,7 @@ public sealed class PlayerFlightDodge : MonoBehaviour
         var direction = worldDirection.sqrMagnitude > .0001f ? worldDirection.normalized : -(facing * Vector3.forward);
         direction.y = 0; direction.Normalize();
         var local = Quaternion.Inverse(facing) * direction;
-        var kind = local.z < -.5f ? FlightDodgeDirection.Back : local.x > .5f ? FlightDodgeDirection.Right : FlightDodgeDirection.Left;
+        var kind = local.z > .5f ? FlightDodgeDirection.Forward : local.z < -.5f ? FlightDodgeDirection.Back : local.x > 0 ? FlightDodgeDirection.Right : FlightDodgeDirection.Left;
         if (!panel) panel = FindObjectOfType<UIPanelData>();
         var clip = 动作.取(kind, panel && panel.当前功法 ? panel.当前功法.功法id : "");
         if (!clip) return false;

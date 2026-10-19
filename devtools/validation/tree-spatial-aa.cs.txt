@@ -1,0 +1,26 @@
+﻿using System;using System.IO;using System.Linq;using System.Collections;using System.Collections.Generic;using UnityEngine;using UnityEditor;using Cultivation.WorldAuthoring;using Codely.Newtonsoft.Json;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play required");
+var host=UnityEngine.Object.FindObjectOfType<玩家外观>();var camera=Camera.main;bool done=false;Exception failure=null;
+IEnumerator Run(){var position=camera.transform.position;var rotation=camera.transform.rotation;bool ortho=camera.orthographic;float size=camera.orthographicSize,timeScale=Time.timeScale;var aa=camera.GetComponent<GameSpatialAntialiasing>();bool enabled=aa.启用;
+ var drivers=camera.GetComponents<MonoBehaviour>().Where(x=>new[]{"TopDownCamera","TopDownCameraZoom","WorldMapCamera","CameraYawRotator"}.Contains(x.GetType().Name)).Select(x=>new{x,on=x.enabled}).ToArray();
+ try{Time.timeScale=0;foreach(var d in drivers)d.x.enabled=false;
+  if(camera.GetComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>())throw new Exception("Temporal layer remains");
+  var planes=GeometryUtility.CalculateFrustumPlanes(camera);var tree=WorldInkTarget.Active.Where(t=>t&&t.树木&&t.材质列表.Any(ms=>ms.Any(m=>m&&m.GetFloat("_Cutoff")>0))).SelectMany(t=>t.Renderers).Where(r=>r&&GeometryUtility.TestPlanesAABB(planes,r.bounds)).OrderByDescending(r=>r.bounds.size.sqrMagnitude).First();
+  var center=tree.bounds.center+Vector3.up*tree.bounds.extents.y*.45f;camera.orthographic=true;camera.orthographicSize=Mathf.Max(2,tree.bounds.extents.y*.7f);camera.transform.position=center+new Vector3(6,4,-8);camera.transform.LookAt(center);var start=camera.transform.position;var reports=new List<object>();
+  foreach(bool on in new[]{false,true}){
+   aa.启用=on;camera.transform.position=start;for(int f=0;f<12;f++)yield return new WaitForEndOfFrame();
+   int width=Mathf.Min(720,Screen.width),height=Mathf.Min(520,Screen.height),left=(Screen.width-width)/2,bottom=(Screen.height-height)/2;var frames=new List<float[]>();float stationary=0;
+   for(int f=0;f<32;f++){
+    camera.transform.position=start+camera.transform.right*((f<3?0:f-3)*.002f);yield return new WaitForEndOfFrame();var texture=ScreenCapture.CaptureScreenshotAsTexture();var pixels=texture.GetPixels32();var luma=new float[width*height];
+    for(int y=0;y<height;y++)for(int x=0;x<width;x++){var c=pixels[(y+bottom)*texture.width+x+left];luma[y*width+x]=(c.r*.2126f+c.g*.7152f+c.b*.0722f)/255;}
+    if(f<3&&frames.Count>0)for(int i=0;i<luma.Length;i++)stationary+=Mathf.Abs(luma[i]-frames[frames.Count-1][i])/luma.Length;
+    frames.Add(luma);if(f==3||f==17||f==31)File.WriteAllBytes("../.local/diagnostics/outfit-trees-perf-20261020/smaa-"+on+"-"+f+".png",texture.EncodeToPNG());UnityEngine.Object.Destroy(texture);
+   }
+   double flicker=0;long samples=0;for(int f=5;f<frames.Count-1;f++)for(int i=0;i<width*height;i++){flicker+=Math.Abs(frames[f+1][i]-2*frames[f][i]+frames[f-1][i]);samples++;}
+   if(stationary>0.00001f)throw new Exception("Stationary shimmer: "+stationary);
+   reports.Add(new{on,tree=tree.name,size=camera.orthographicSize,stationaryDifference=stationary/2,temporalCurvature=flicker/samples,frames=32});
+  }
+  File.WriteAllText("../.local/diagnostics/outfit-trees-perf-20261020/smaa.json",JsonConvert.SerializeObject(reports,Formatting.Indented));Debug.Log("SMAA_PASS "+JsonConvert.SerializeObject(reports));
+ }finally{aa.启用=enabled;Time.timeScale=timeScale;camera.transform.SetPositionAndRotation(position,rotation);camera.orthographic=ortho;camera.orthographicSize=size;foreach(var d in drivers)d.x.enabled=d.on;done=true;}}
+IEnumerator Guard(){var e=Run();try{while(true){object next;try{if(!e.MoveNext())break;next=e.Current;}catch(Exception x){failure=x;break;}yield return next;}}finally{(e as IDisposable)?.Dispose();done=true;}}
+host.StartCoroutine(Guard());IEnumerator Wait(){while(!done)yield return null;if(failure!=null)throw failure;}return Wait();

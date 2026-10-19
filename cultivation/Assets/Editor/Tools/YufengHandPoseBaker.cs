@@ -88,6 +88,7 @@ public static class YufengHandPoseBaker
                 Put(clip,root<0?HumanTrait.MuscleName[indices[i]]:root<3?"RootT."+"xyz"[root]:"RootQ."+"xyzw"[root-3],curves[i]);
             }
             clip.EnsureQuaternionContinuity();
+            JiubaHandPoseBaker.Apply(clip,false);
         }
         finally{graph.Destroy();Object.DestroyImmediate(target);}
     }

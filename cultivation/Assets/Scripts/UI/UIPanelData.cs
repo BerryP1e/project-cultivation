@@ -63,6 +63,8 @@ public class UIPanelData : MonoBehaviour
     }
     [Tooltip("灵阵目录。运行时从 面板库 灌")]
     public List<SpiritArrayDefinition> 灵阵 = new List<SpiritArrayDefinition>();
+    public List<SpiritArrayProgram> 灵阵编排 = new List<SpiritArrayProgram>();
+    public string 当前灵阵编排="array_program_1";
 
     [Header("坐骑")]
     [Tooltip("坐骑目录。运行时从 面板库 灌（按门槛排序）")]
@@ -231,6 +233,9 @@ public class UIPanelData : MonoBehaviour
         if (已学功法 == null) 已学功法 = new List<GongFaDefinition>();
         if (法宝 == null) 法宝 = new List<TreasureDefinition>();
         if (灵阵 == null) 灵阵 = new List<SpiritArrayDefinition>();
+        if (灵阵编排 == null) 灵阵编排 = new List<SpiritArrayProgram>();
+        foreach (var array in SpiritArrayRules.Templates)
+            if (!灵阵.Exists(a => a && a.灵阵id == array.灵阵id)) 灵阵.Add(array);
         if (坐骑 == null) 坐骑 = new List<MountDefinition>();
         if (已学坐骑 == null) 已学坐骑 = new List<string>();
         已学坐骑.RemoveAll(id => id == "mount_julong_01");
@@ -414,6 +419,8 @@ public class UIPanelData : MonoBehaviour
         法则精粹 = 0; 炉中法则.Clear();
         已拥有法宝.Clear(); 当前法宝=null; 收服系统已初始化=false;
         灵阵 = new List<SpiritArrayDefinition>();
+        灵阵编排 = new List<SpiritArrayProgram>();
+        当前灵阵编排="array_program_1";
         坐骑 = new List<MountDefinition>();
         已学坐骑.Clear();
         当前坐骑 = null;

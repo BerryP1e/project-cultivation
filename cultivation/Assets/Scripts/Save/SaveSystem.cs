@@ -196,6 +196,8 @@ public static class SaveSystem
         数据.背包物品.Clear();
         数据.法宝.Clear();
         数据.灵阵.Clear();
+        数据.灵阵编排 = new List<SpiritArrayProgram>();
+        数据.当前灵阵编排="array_program_1";
         数据.坐骑.Clear();
         数据.当前坐骑 = "";
         数据.主动技能槽.Clear();
@@ -436,6 +438,8 @@ public static class SaveSystem
             面板数据.RaiseChanged();
             Debug.Log("[存档] 已恢复战阵：上阵 " + 还原数 + " 个", 玩家);
         }
+        // 先恢复背包和已领标记，再补发达到境界但尚未领取的着装学习物品。
+        玩家.GetComponent<玩家外观>()?.发放境界着装物品();
     }
 
     /// <summary>按 id 找战阵真灵的定义：先看「已获得真灵」，再在场上 NPC 里找</summary>
@@ -602,6 +606,9 @@ public static class SaveSystem
     static void 采集面板(SaveData 数据, UIPanelData 面板)
     {
         面板.EnsureLists();
+        数据.灵阵编排 = new List<SpiritArrayProgram>();
+        foreach (var program in 面板.灵阵编排) if (program != null) 数据.灵阵编排.Add(program.Copy());
+        数据.当前灵阵编排=面板.当前灵阵编排;
         数据.已访传送点 = SpatialTravel.Copy(面板.已访传送点);
 
         数据.法则碎片 = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(new SaveData { 法则碎片 = 面板.法则碎片 })).法则碎片;
@@ -702,6 +709,13 @@ public static class SaveSystem
         }
         面板.灵阵 = 按id还原(数据.灵阵, 面板.灵阵,
             (t) => t != null ? t.灵阵id : null);
+        // 六个编排槽是当前版本入口；旧档没有这些 id 也能打开。默认资产保持只读。
+        foreach (var array in SpiritArrayRules.Templates)
+            if (!面板.灵阵.Exists(a => a && a.灵阵id == array.灵阵id)) 面板.灵阵.Add(array);
+        面板.灵阵编排 = new List<SpiritArrayProgram>();
+        面板.当前灵阵编排=面板.灵阵.Exists(a=>a&&a.灵阵id==数据.当前灵阵编排)?数据.当前灵阵编排:"array_program_1";
+        if (数据.灵阵编排 != null) foreach (var program in 数据.灵阵编排)
+            if (program != null && SpiritArrayRules.Validate(program, out _)) 面板.灵阵编排.Add(program.Copy());
         面板.已学坐骑 = new List<string>();
         if (数据.坐骑 != null)
             foreach (var id in 数据.坐骑)

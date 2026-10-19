@@ -1,0 +1,32 @@
+using System;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated Play");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var previous=actor.当前外观;GameObject holder=null;
+ try{
+  OutfitPoseFollowExperiment.停用试穿();actor.装备(AppearanceDatabase.取().取("app_goldencore"));yield return new WaitForEndOfFrame();
+  var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(r=>r.GetComponent<AppearanceClothRig>());
+  holder=new GameObject("GoldenCorePrivatePreview");holder.SetActive(false);var clone=UnityEngine.Object.Instantiate(actor.玩家视觉.gameObject,holder.transform);
+  foreach(var c in clone.GetComponentsInChildren<MonoBehaviour>(true))UnityEngine.Object.DestroyImmediate(c);
+  var copy=clone.GetComponentsInChildren<SkinnedMeshRenderer>(true).First(r=>r.name==body.name);
+  AppearanceClothRig.同步预览(body,copy);
+  var preview=copy.GetComponent<AppearanceClothRig>();var sourceSurface=body.transform.Find("OutfitFabric/OutfitFabricSurface").GetComponent<MeshFilter>();var previewSurface=copy.transform.Find("OutfitFabric/OutfitFabricSurface").GetComponent<MeshFilter>();
+  if(!preview.当前配置.姿态空间随动||previewSurface.sharedMesh==sourceSurface.sharedMesh||copy.bones.Length!=120||copy.bones.Any(b=>!b.IsChildOf(clone.transform)))throw new Exception("Preview shares source mesh/bones or lacks current profile");
+  var before=sourceSurface.sharedMesh.vertices;
+  preview.推进(1f/60,.5f);preview.推进(1f/60,.51667f);
+  if(before.Where((v,i)=>(v-sourceSurface.sharedMesh.vertices[i]).sqrMagnitude>1e-12f).Any())throw new Exception("Preview update changed source cloth");
+  actor.装备(AppearanceDatabase.取().取("app_cunmin"));AppearanceClothRig.同步预览(body,copy);
+  if(copy.bones.Length!=78)throw new Exception("Preview could not return to original skeleton");
+  UnityEngine.Object.Destroy(holder);holder=null;
+  for(int i=0;i<8;i++){actor.装备(AppearanceDatabase.取().取(i%2==0?"app_goldencore":"app_cunmin"));yield return new WaitForEndOfFrame();}
+  actor.装备(AppearanceDatabase.取().取("app_goldencore"));yield return new WaitForEndOfFrame();
+  if(actor.玩家视觉.GetComponentsInChildren<Transform>(true).Count(t=>t.name.StartsWith("OutfitCloth_"))!=42)throw new Exception("Outfit switch leaked old bones");
+  Debug.Log("GOLD_PREVIEW_PASS privateMesh=True privateBones=True previewDoesNotMutateSource=True switching78To120=True orphanBones=False");
+ }finally{if(holder)UnityEngine.Object.Destroy(holder);actor.装备(null);actor.装备(previous);}
+}
+IEnumerator Guard(){var r=Run();try{while(true){object n;try{if(!r.MoveNext())break;n=r.Current;}catch(Exception e){failure=e;break;}yield return n;}}finally{(r as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double until=EditorApplication.timeSinceStartup+60;while(!done&&EditorApplication.timeSinceStartup<until){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Preview timeout");}return Wait();

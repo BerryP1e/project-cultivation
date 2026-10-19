@@ -1,0 +1,79 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEditor;
+using Codely.Newtonsoft.Json;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated Play");
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var old=actor.当前外观;var position=actor.transform.position;var rotation=actor.transform.rotation;var move=actor.GetComponent<PlayerController>();bool moving=move.enabled;var animation=actor.GetComponent<PlayerAnimationController>();float capture=Time.captureDeltaTime;
+ var flight=actor.GetComponent<YufengFlight>();bool flightEnabled=flight.enabled;var flightState=flight.状态;
+ var cameraGo=new GameObject("OutfitExpansionCamera");var camera=cameraGo.AddComponent<Camera>();camera.enabled=false;camera.orthographic=true;camera.orthographicSize=1.15f;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.35f,.37f,.38f);camera.cullingMask=1<<31;camera.nearClipPlane=.01f;camera.farClipPlane=60;var rt=new RenderTexture(640,800,24);camera.targetTexture=rt;
+ var folder=Path.GetFullPath("../.local/diagnostics/outfit-expansion-review");Directory.CreateDirectory(folder);var reports=new List<object>();
+ var dodge=Resources.Load<FlightDodgeAnimations>(FlightDodgeAnimations.ResourcePath).取(FlightDodgeDirection.Forward,"");
+ var flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ try{
+  Time.captureDeltaTime=1f/60;move.enabled=false;flight.enabled=false;typeof(YufengFlight).GetProperty("状态").SetValue(flight,YufengFlight.FlightState.地面);OutfitPoseFollowExperiment.停用试穿();
+  foreach(string id in new[]{"app_player","app_foundation","app_goldencore","app_nascent","app_divinity","app_integration"}){
+   animation.设置外部御风(false,false);move.接续御风移动(Vector3.zero);actor.transform.SetPositionAndRotation(position,rotation);actor.装备(null);actor.装备(AppearanceDatabase.取().取(id));
+   for(int f=0;f<25;f++)yield return new WaitForEndOfFrame();
+   var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(r=>r.GetComponent<AppearanceClothRig>());var rig=body.GetComponent<AppearanceClothRig>();var p=rig.当前配置;
+   if(!p.姿态空间随动||!rig.enabled)throw new Exception(id+" pose branch not enabled");
+   foreach(var m in new[]{p.蒙皮,p.布料蒙皮})if(m.triangles.Any(i=>i<0||i>=m.vertexCount))throw new Exception(id+" invalid indices");
+   bool closedOriginal=id=="app_nascent"||id=="app_divinity"||id=="app_integration";
+   bool needsLegs=id!="app_player"&&id!="app_goldencore"&&!closedOriginal;
+   if(closedOriginal&&(!p.仅保留原鞋||p.补全人体顶点数!=0||p.补全人体三角数!=0||p.鞋口锚点.Length!=0||p.蒙皮.vertexCount!=actor.当前外观.取模型().GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh.vertexCount))throw new Exception(id+" generated legs returned despite shoes-only authoring");
+   if(needsLegs&&(p.补全人体顶点数!=145||p.补全人体三角数!=228))throw new Exception(id+" inner legs/pelvis not generated");
+   var surface=rig.GetComponentInChildren<MeshFilter>();var progress=(float[])typeof(AppearanceClothRig).GetField("衣摆进度",flags).GetValue(rig);var hem=(float[])typeof(AppearanceClothRig).GetField("衣摆权重",flags).GetValue(rig);
+   float seam=0,penetration=0,surfaceMotion=0,footChange=0,hairTip=0;var initialFoot=body.bones[5].localRotation;var stateNames=new HashSet<string>();int frames=0;
+   string[] stages={"stand","run","hover","forward","turn","dodge","stop"};int[] counts={45,75,110,90,60,50,60};var relative=position;
+   for(int stage=0;stage<stages.Length;stage++){
+    bool fly=stage>=2;animation.设置外部御风(fly,stage==3||stage==4||stage==5);
+    if(stage==2)animation.触发升空();
+    if(stage==5&&!animation.播闪避(dodge,.65f))throw new Exception(id+" forward dodge rejected");
+    for(int frame=0;frame<counts[stage];frame++){
+     float speed=stage==1?4:stage==3||stage==4||stage==5?8:0;move.接续御风移动(actor.transform.forward*(speed/8));
+     if(stage==4)actor.transform.rotation=Quaternion.AngleAxis(90f/counts[stage],Vector3.up)*actor.transform.rotation;
+     relative+=actor.transform.forward*(speed/60);actor.transform.position=new Vector3(relative.x,position.y+(fly?2.4f:0),relative.z);
+     yield return new WaitForEndOfFrame();frames++;
+     foreach(var clip in animation.animator.GetCurrentAnimatorClipInfo(0))if(clip.weight>.1f)stateNames.Add(stages[stage]+":"+clip.clip.name);
+     if(stage==1)footChange=Mathf.Max(footChange,Quaternion.Angle(initialFoot,body.bones[5].localRotation));
+     var points=surface.sharedMesh.vertices;var skeleton=(Vector3[])typeof(AppearanceClothRig).GetField("布料骨架顶点",flags).GetValue(rig);
+     for(int i=0;i<points.Length;i++){
+      if(float.IsNaN(points[i].sqrMagnitude)||float.IsInfinity(points[i].sqrMagnitude))throw new Exception(id+" nonfinite surface");
+      seam=Mathf.Max(seam,Vector3.Distance(points[i],points[p.布料同点[i]]));surfaceMotion=Mathf.Max(surfaceMotion,Vector3.Distance(points[i],skeleton[i]));
+      if(hem[i]>.95f&&progress[i]>.1f&&frame%3==0){
+       var world=surface.transform.TransformPoint(points[i]);int[,] pairs={{1,23},{3,4},{4,5},{12,13},{13,15}};float[] radii={.060f,.045f,.035f,.045f,.035f};float scale=Mathf.Abs(rig.transform.lossyScale.x);
+       for(int c=0;c<5;c++){var a=body.bones[pairs[c,0]].position;var axis=body.bones[pairs[c,1]].position-a;var nearest=a+axis*Mathf.Clamp01(Vector3.Dot(world-a,axis)/Mathf.Max(1e-8f,axis.sqrMagnitude));penetration=Mathf.Max(penetration,(radii[c]+.008f)*scale-Vector3.Distance(world,nearest));}
+      }
+     }
+     for(int i=0;i<p.衣骨.Length;i++)if(p.衣骨[i].头发){float angle=Quaternion.Angle(p.衣骨[i].局部旋转,body.bones[78+i].localRotation);hairTip=Mathf.Max(hairTip,angle);if(angle>38.01f)throw new Exception(id+" hair cone exceeded");}
+     // Manual Camera.Render in live Game View can corrupt the shared viewport on Tuanjie. Use atomic record_game_view instead.
+     bool snapshot=false && (frame==counts[stage]-1||stage==5&&(frame==10||frame==20||frame==30)||stage==3&&frame%15==0);
+     if(snapshot){
+      foreach(var clip in animation.animator.GetCurrentAnimatorClipInfo(0))if(clip.weight>.1f)stateNames.Add(stages[stage]+":"+clip.clip.name);
+      var layers=actor.玩家视觉.GetComponentsInChildren<Transform>(true).Select(t=>new{node=t.gameObject,layer=t.gameObject.layer}).ToArray();foreach(var item in layers)item.node.layer=31;
+      try{foreach(string view in new[]{"front","side","back","under"}){
+       var centre=body.bounds.center;camera.orthographicSize=1.15f;camera.backgroundColor=new Color(.35f,.37f,.38f);camera.transform.position=centre+actor.transform.TransformDirection(view=="front"?new Vector3(0,.15f,4):view=="back"?new Vector3(0,.15f,-4):view=="under"?new Vector3(2,-2.5f,3):new Vector3(4,.15f,0));camera.transform.LookAt(centre);var previous=RenderTexture.active;camera.Render();RenderTexture.active=rt;var image=new Texture2D(640,800,TextureFormat.RGBA32,false);image.ReadPixels(new Rect(0,0,640,800),0,0);image.Apply();File.WriteAllBytes(Path.Combine(folder,id+"-"+stages[stage]+"-"+frame.ToString("000")+"-"+view+".png"),image.EncodeToPNG());UnityEngine.Object.Destroy(image);RenderTexture.active=previous;GL.Viewport(new Rect(0,0,Screen.width,Screen.height));
+      }
+      if(stage==0&&id!="app_player"&&id!="app_foundation"&&id!="app_goldencore"){
+       camera.backgroundColor=Color.clear;camera.orthographicSize=.74f;var centre=(body.bones[26].position+body.bones[21].position)*.5f;camera.transform.position=centre+actor.transform.TransformDirection(new Vector3(.7f,.05f,4));camera.transform.LookAt(centre);var previous=RenderTexture.active;camera.Render();RenderTexture.active=rt;var image=new Texture2D(640,800,TextureFormat.RGBA32,false);image.ReadPixels(new Rect(0,0,640,800),0,0);image.Apply();File.WriteAllBytes(Path.Combine(folder,"portrait-"+id+".png"),image.EncodeToPNG());UnityEngine.Object.Destroy(image);RenderTexture.active=previous;GL.Viewport(new Rect(0,0,Screen.width,Screen.height));
+      }}finally{foreach(var item in layers)if(item.node)item.node.layer=item.layer;}
+     }
+    }
+    if(stage==5)animation.结束闪避(dodge);
+   }
+   if(seam>.00001f||surfaceMotion>.30f||footChange<1)throw new Exception(id+" seam/envelope/feet "+seam+" / "+surfaceMotion+" / "+footChange);
+   if(!stateNames.Any(n=>n.StartsWith("forward:")&&n.Contains("御风")))throw new Exception(id+" actual Animator did not enter forward flight");
+   // Record penetrations explicitly; a number alone is not a visual acceptance.
+   var report=new{id,frames,seam,penetration,surfaceMotion,footChange,hairTip,bodyBones=78,totalBones=body.bones.Length,addedLegVertices=p.补全人体顶点数,addedLegTriangles=p.补全人体三角数,states=stateNames.ToArray()};reports.Add(report);File.WriteAllText(Path.Combine(folder,"results.json"),JsonConvert.SerializeObject(reports,Formatting.Indented));Debug.Log("OUTFIT_REVIEW "+JsonConvert.SerializeObject(report));
+   if(actor.GetComponentsInChildren<Cloth>().Length>0)throw new Exception("Native Cloth active");
+  }
+ }finally{animation.结束闪避(dodge);animation.设置外部御风(false,false);move.接续御风移动(Vector3.zero);actor.transform.SetPositionAndRotation(position,rotation);actor.装备(null);actor.装备(old);typeof(YufengFlight).GetProperty("状态").SetValue(flight,flightState);flight.enabled=flightEnabled;move.enabled=moving;Time.captureDeltaTime=capture;UnityEngine.Object.Destroy(cameraGo);rt.Release();UnityEngine.Object.Destroy(rt);}
+}
+IEnumerator Guard(){var r=Run();try{while(true){object n;try{if(!r.MoveNext())break;n=r.Current;}catch(Exception e){failure=e;break;}yield return n;}}finally{(r as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double until=EditorApplication.timeSinceStartup+175;while(!done&&EditorApplication.timeSinceStartup<until){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Outfit review timeout");}return Wait();

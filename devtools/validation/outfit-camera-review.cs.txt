@@ -1,0 +1,35 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Collections;
+using UnityEngine;
+using UnityEditor;
+if(!EditorApplication.isPlaying||string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolated Play only");
+const string OutfitId="app_nascent";
+var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();bool done=false;Exception failure=null;
+IEnumerator Run(){
+ var c=Camera.main;var oldPos=c.transform.position;var oldRot=c.transform.rotation;bool ortho=c.orthographic;float size=c.orthographicSize;int oldMask=c.cullingMask;var layers=actor.玩家视觉.GetComponentsInChildren<Transform>(true).Select(t=>new{t,layer=t.gameObject.layer}).ToArray();var old=actor.当前外观;var move=actor.GetComponent<PlayerController>();bool enabled=move.enabled;
+ var drivers=c.GetComponents<MonoBehaviour>().Where(x=>new[]{"TopDownCamera","TopDownCameraZoom","WorldMapCamera","CameraYawRotator","WorldMapInk"}.Contains(x.GetType().Name)).Select(x=>new{x,on=x.enabled}).ToArray();
+ var animation=actor.GetComponent<PlayerAnimationController>();var folder=Path.GetFullPath("../.local/diagnostics/outfit-locomotion-"+OutfitId);Directory.CreateDirectory(folder);
+ var flight=actor.GetComponent<YufengFlight>();bool fe=flight.enabled;var state=flight.状态;
+ try{flight.enabled=false;typeof(YufengFlight).GetProperty("状态").SetValue(flight,YufengFlight.FlightState.地面);
+  foreach(var d in drivers)d.x.enabled=false;foreach(var n in layers)n.t.gameObject.layer=31;c.cullingMask=1<<31;move.enabled=false;c.orthographic=true;
+  actor.装备(AppearanceDatabase.取().取(OutfitId));
+  foreach(var t in actor.玩家视觉.GetComponentsInChildren<Transform>(true))t.gameObject.layer=31;var body=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>().First(x=>x.GetComponent<AppearanceClothRig>());
+  animation.设置外部御风(false,false);
+  for(int f=0;f<360;f++){
+   if(f==90){animation.设置外部御风(true,true);animation.触发升空();}if(f==210)animation.设置外部御风(false,false);
+   move.接续御风移动(f>=90&&f<210?actor.transform.forward:Vector3.zero);string part=f<260?"whole":f<310?"boots":"hands";
+   var centre=(body.bones[26].position+body.bones[5].position)*.5f;
+   if(part=="hands")centre=body.bones[60].position;if(part=="boots")centre=(body.bones[5].position+body.bones[15].position)*.5f;
+   c.orthographicSize=part=="whole"?1.25f:part=="hands"?.30f:.40f;c.transform.position=centre+actor.transform.TransformDirection(f>=150&&f<210?new Vector3(-2,.1f,-4):new Vector3(.3f,.1f,4));c.transform.LookAt(centre);
+   yield return new WaitForEndOfFrame();
+   if(f==65||f==135||f==195||f==250||f==285||f==340){
+    var img=ScreenCapture.CaptureScreenshotAsTexture();if(!img)throw new Exception("Actual end-of-frame capture returned null");File.WriteAllBytes(Path.Combine(folder,part+"-"+f.ToString("000")+".png"),img.EncodeToPNG());UnityEngine.Object.Destroy(img);
+   }
+  }
+  Debug.Log("MAINVIEW_CAPTURE complete; actual game camera frames; no manual Camera.Render");
+ }finally{typeof(YufengFlight).GetProperty("状态").SetValue(flight,state);flight.enabled=fe;animation.设置外部御风(false,false);move.接续御风移动(Vector3.zero);move.enabled=enabled;actor.装备(null);actor.装备(old);c.transform.SetPositionAndRotation(oldPos,oldRot);c.orthographic=ortho;c.orthographicSize=size;c.cullingMask=oldMask;foreach(var n in layers)if(n.t)n.t.gameObject.layer=n.layer;foreach(var d in drivers)d.x.enabled=d.on;}
+}
+IEnumerator Guard(){var r=Run();try{while(true){object n;try{if(!r.MoveNext())break;n=r.Current;}catch(Exception e){failure=e;break;}yield return n;}}finally{(r as IDisposable)?.Dispose();done=true;}}
+actor.StartCoroutine(Guard());IEnumerator Wait(){double end=EditorApplication.timeSinceStartup+120;while(!done&&EditorApplication.timeSinceStartup<end){EditorApplication.QueuePlayerLoopUpdate();yield return null;}if(failure!=null)throw failure;if(!done)throw new Exception("Review timeout");}return Wait();

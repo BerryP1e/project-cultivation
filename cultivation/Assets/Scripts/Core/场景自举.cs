@@ -240,6 +240,8 @@ public static class 场景自举
             //   （见 GameGlobalBloom 的注释）。
             //   同样在这里自举补，不写进场景。
             确保组件<GameGlobalBloom>(相机, 场景.name);
+            // 官方SMAA最后处理已合成的画面，UI继续保持原生分辨率。
+            确保组件<GameSpatialAntialiasing>(相机, 场景.name);
 
             // 地图统一画面由 WorldMapLook 配置；不自动挂回旧 F2 基线预览。
 

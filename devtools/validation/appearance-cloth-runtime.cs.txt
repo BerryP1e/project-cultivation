@@ -12,6 +12,7 @@ var actor=UnityEngine.Object.FindObjectOfType<玩家外观>();var player=actor.g
 bool done=false;Exception failure=null;var checks=new List<string>();
 void Check(bool condition,string message){if(!condition)throw new Exception(message);checks.Add(message);}
 IEnumerator Native(){
+ var previousCaptureDelta=Time.captureDeltaTime;Time.captureDeltaTime=1f/60;
  var previous=actor.当前外观;var movement=player.GetComponent<PlayerController>();bool enabled=movement.enabled;movement.enabled=false;
  var position=player.transform.position;var rotation=player.transform.rotation;
  var animator=actor.玩家视觉.GetComponentsInChildren<Animator>(true).First(a=>a.isHuman);
@@ -41,21 +42,44 @@ IEnumerator Native(){
    Check(id!="app_player"||outfit.衣服随动.衣骨.All(b=>!b.衣袖),"fitted sleeves never get cloth bones "+id);
    Check(rig.头发骨数==(id=="app_player"?0:12),"long hair only on foundation and golden core "+id);
    var skinWeights=body.sharedMesh.boneWeights;Check(skinWeights.All(w=>Mathf.Abs(w.weight0+w.weight1+w.weight2+w.weight3-1)<.0001f),"normalized garment weights "+id);
-   Check(body.sharedMesh.vertexCount==outfit.取模型().GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh.vertexCount,"preserved source geometry "+id);
+   var surface=body.GetComponentInChildren<MeshFilter>();var profile=outfit.衣服随动;var templatePoints=profile.布料蒙皮.vertices;
+   Check(surface&&surface.sharedMesh!=profile.布料蒙皮,"instance owns independent fabric mesh "+id);
+   Check(body.sharedMesh.triangles.Length-profile.补全人体三角数*3+profile.原布料三角数*3+profile.移除封底三角数*3==outfit.取模型().GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh.triangles.Length,"source faces accounted before refinement, including explicitly reviewed cap exclusion "+id);
+   Check(!body.GetComponentsInChildren<Cloth>().Any()&&!body.GetComponentsInChildren<Rigidbody>().Any(),"no unstable free cloth or ragdoll "+id);
+   Check(body.sharedMesh.vertexCount-profile.补全人体顶点数==outfit.取模型().GetComponentInChildren<SkinnedMeshRenderer>(true).sharedMesh.vertexCount,"preserved source geometry "+id);
    var unchanged=skinWeights.Select((w,i)=>new{w,i}).Where(x=>x.w.boneIndex0<78&&x.w.boneIndex1<78&&x.w.boneIndex2<78&&x.w.boneIndex3<78).Select(x=>x.i).ToArray();
    float maximum=0;
-   foreach(var mode in new[]{"Idle_Loop","Walk_Loop","Sprint_Loop","普攻_远程_01","御风八向_前"}) {
+   foreach(var mode in new[]{"Idle_Loop","Walk_Loop","Sprint_Loop","普攻_远程_01","御风八向_悬停","御风八向_前"}) {
     var clip=clips.First(c=>c.name.Contains(mode));var playable=AnimationClipPlayable.Create(graph,clip);playable.SetApplyFootIK(false);output.SetSourcePlayable(playable);rig.重置随动();
-    for(int frame=0;frame<36;frame++) {
-     playable.SetTime(frame/30f);graph.Evaluate(0);
-     if(id!="app_player"){var head=animator.GetBoneTransform(HumanBodyBones.Head);head.rotation=Quaternion.AngleAxis(Mathf.Sin(frame*.14f)*24,player.transform.up)*head.rotation;}
-     player.transform.position=position+new Vector3(Mathf.Sin(frame*.08f)*.3f,mode.Contains("御风")?.35f:0,frame*.025f);
-     player.transform.rotation=rotation*Quaternion.Euler(0,Mathf.Sin(frame*.08f)*25,0);
+    Vector3[] lastSurface=null;float stationaryStep=0;
+    for(int frame=0;frame<100;frame++) {
+     float f=Mathf.Min(frame,60);playable.SetTime(f/60f);graph.Evaluate(.00001f);
+     if(id!="app_player"){var head=animator.GetBoneTransform(HumanBodyBones.Head);head.rotation=Quaternion.AngleAxis(Mathf.Sin(f*.14f)*24,player.transform.up)*head.rotation;}
+     player.transform.position=position+new Vector3(Mathf.Sin(f*.03f)*.8f,mode.Contains("御风")?.8f:0,f*.025f);
+     player.transform.rotation=rotation*Quaternion.Euler(0,Mathf.Sin(f*.05f)*65,0);
      yield return new WaitForEndOfFrame();
      var bones=body.bones;
-     Check(bones.Skip(78).All(b=>b&&Quaternion.Angle(b.localRotation,outfit.衣服随动.衣骨[Array.IndexOf(bones,b)-78].局部旋转)<=(outfit.衣服随动.衣骨[Array.IndexOf(bones,b)-78].头发?6:outfit.衣服随动.单节限角)+.1f),"bounded garment angles "+id+" "+mode+" "+frame);
-     if(frame==30) {
+     Check(bones.Skip(78).Where((b,i)=>profile.衣骨[i].头发).All(b=>b&&Quaternion.Angle(b.localRotation,profile.衣骨[Array.IndexOf(bones,b)-78].局部旋转)<=6.1f),"bounded hair angles "+id+" "+mode+" "+frame);
+     var clothPoints=surface.sharedMesh.vertices;
+     // 90 帧抓图并主动复位作人体权重对照；稳定性只统计复位之前的原生帧。
+     if(frame>80&&frame<90&&lastSurface!=null)stationaryStep=Mathf.Max(stationaryStep,clothPoints.Select((v,i)=>Vector3.Distance(v,lastSurface[i])).Max());lastSurface=clothPoints;
+     if(frame==90) {
+      Check(clothPoints.All(v=>float.IsFinite(v.x)&&float.IsFinite(v.y)&&float.IsFinite(v.z))&&surface.sharedMesh.bounds.size.magnitude<4,"finite actual fabric surface "+id+" "+mode);
+      Check(clothPoints.Select((v,i)=>Vector3.Distance(v,clothPoints[profile.布料同点[i]])).Max()<.00001f,"closed UV seams "+id+" "+mode);
+      var binds=profile.布料蒙皮.bindposes;var clothWeights=profile.布料蒙皮.boneWeights;var matrix=surface.transform.worldToLocalMatrix;var transforms=body.bones.Select((b,i)=>matrix*b.localToWorldMatrix*binds[i]).ToArray();
+      var reference=new Vector3[clothPoints.Length];var sums=new Vector3[clothPoints.Length];var numbers=new int[clothPoints.Length];
+      for(int i=0;i<clothPoints.Length;i++){var w=clothWeights[i];var v=templatePoints[i];reference[i]=transforms[w.boneIndex0].MultiplyPoint3x4(v)*w.weight0+transforms[w.boneIndex1].MultiplyPoint3x4(v)*w.weight1+transforms[w.boneIndex2].MultiplyPoint3x4(v)*w.weight2+transforms[w.boneIndex3].MultiplyPoint3x4(v)*w.weight3;int group=profile.布料同点[i];sums[group]+=reference[i];numbers[group]++;}
+      float worstCorrection=0;for(int i=0;i<clothPoints.Length;i++){int group=profile.布料同点[i];float budget=profile.布料顶点约束[i]+(profile.姿态空间随动?profile.衣摆波幅:0);worstCorrection=Mathf.Max(worstCorrection,Vector3.Distance(sums[group]/numbers[group],clothPoints[i])-budget);}
+      Check(worstCorrection<.002f,"cloth contacts and authored bending remain within configured envelope "+id+" "+mode+" excess="+worstCorrection);
+      maximum=Mathf.Max(maximum,clothPoints.Select((v,i)=>Vector3.Distance(v,templatePoints[i])).Max());
       body.BakeMesh(baked);var vertices=baked.vertices;Check(vertices.All(v=>!float.IsNaN(v.x)&&!float.IsInfinity(v.y)&&!float.IsNaN(v.z))&&baked.bounds.size.magnitude<6,"finite native animated mesh "+id+" "+mode);
+      if(id=="app_foundation"){
+       int start=vertices.Length-profile.补全人体顶点数;
+       Check(profile.补全人体顶点数==120&&profile.补全人体三角数==192,"real inner leg surfaces added independently of waist ribbons");
+       var bootPoints=Enumerable.Range(0,start).Where(i=>{var w=skinWeights[i];return w.boneIndex0==5||w.boneIndex0==15;}).ToArray();
+       float gap=Enumerable.Range(0,2).Max(side=>Enumerable.Range(start+side*60+48,12).Max(i=>bootPoints.Min(j=>Vector3.Distance(vertices[i],vertices[j]))));
+       Check(gap<.12f,"new inner leg lower ring overlaps boot region "+mode+" gap="+gap);
+      }
       Capture(id+"-"+mode,body);
       if(id!="app_player")Capture(id+"-"+mode+"-hair-back",body,true);
       // 同一人体姿态，只归位额外衣骨，确认头手靴等未赋衣骨的顶点不受影响。
@@ -64,21 +88,23 @@ IEnumerator Native(){
       maximum=Mathf.Max(maximum,vertices.Select((v,i)=>Vector3.Distance(v,rest[i])).Max());
      }
     }
+    Check(stationaryStep<.008f,"settled cloth has no twitch "+id+" "+mode+" step="+stationaryStep.ToString("F5"));
     playable.Destroy();player.transform.SetPositionAndRotation(position,rotation);rig.重置随动();
    }
-   Check(maximum>.0003f&&maximum<.65f,"actual secondary deformation "+id+" max="+maximum.ToString("F4"));
+   Check(maximum>.0003f&&maximum<3,"actual independent garment deformation "+id+" max="+maximum.ToString("F4"));
    player.transform.position+=new Vector3(40,0,0);yield return new WaitForEndOfFrame();
-   Check(body.bones.Skip(78).Select((b,i)=>Quaternion.Angle(b.localRotation,outfit.衣服随动.衣骨[i].局部旋转)).Max()<.01f,"teleport resets cloth "+id);player.transform.position=position;
+   Check(body.bones.Skip(78).Select((b,i)=>new{b,i}).Where(x=>profile.衣骨[x.i].头发).All(x=>Quaternion.Angle(x.b.localRotation,profile.衣骨[x.i].局部旋转)<.01f)&&surface.sharedMesh.bounds.size.magnitude<4,"teleport resets bounded cloth "+id);player.transform.position=position;
   }
   for(int i=0;i<12;i++){actor.装备(AppearanceDatabase.取().取(new[]{"app_cunmin","app_player","app_foundation","app_goldencore"}[i%4]));yield return new WaitForEndOfFrame();}
   var all=actor.玩家视觉.GetComponentsInChildren<Transform>(true).Count(t=>t.name.StartsWith("OutfitCloth_"));Check(all==42,"switching has no orphan garment bones");
   var current=actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();
   var holder=new GameObject("PreviewBindingValidation");holder.SetActive(false);var clone=UnityEngine.Object.Instantiate(actor.玩家视觉.gameObject,holder.transform);
-  try {foreach(var c in clone.GetComponentsInChildren<MonoBehaviour>(true))UnityEngine.Object.DestroyImmediate(c);var copy=clone.GetComponentsInChildren<SkinnedMeshRenderer>(true).OrderByDescending(r=>r.bones.Length).First();AppearanceClothRig.同步预览(current,copy);Check(copy.bones.Length==120&&copy.bones.All(b=>b&&b.IsChildOf(clone.transform)),"preview owns all garment and body bones");actor.装备(AppearanceDatabase.取().取("app_cunmin"));AppearanceClothRig.同步预览(current,copy);Check(copy.bones.Length==78,"preview can change back to unrigged outfit");}
+  try {foreach(var c in clone.GetComponentsInChildren<MonoBehaviour>(true))UnityEngine.Object.DestroyImmediate(c);var copy=clone.GetComponentsInChildren<SkinnedMeshRenderer>(true).First(r=>r.name==current.name);AppearanceClothRig.同步预览(current,copy);Check(copy.bones.Length==120&&copy.bones.All(b=>b&&b.IsChildOf(clone.transform)),"preview owns all garment and body bones");var previewSurface=copy.transform.Find("OutfitFabric/OutfitFabricSurface").GetComponent<MeshFilter>();Check(previewSurface.sharedMesh!=current.GetComponentInChildren<MeshFilter>().sharedMesh,"preview owns independent fabric mesh");actor.装备(AppearanceDatabase.取().取("app_cunmin"));AppearanceClothRig.同步预览(current,copy);Check(copy.bones.Length==78,"preview can change back to unrigged outfit");}
   finally{UnityEngine.Object.Destroy(holder);}
   actor.还原();Check(actor.玩家视觉.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r=>r.bones.Length==78),"original body restores base skeleton");
   File.WriteAllLines("../.local/diagnostics/outfit-cloth/runtime-report.txt",checks);Debug.Log("APPEARANCE_CLOTH_NATIVE_PASS "+checks.Count);
  }finally {
+  Time.captureDeltaTime=previousCaptureDelta;
   if(graph.IsValid())graph.Destroy();animator.runtimeAnimatorController=controller;animator.cullingMode=state;
   foreach(var pair in layers)if(pair.Key)pair.Key.layer=pair.Value;
   actor.装备(previous);player.transform.SetPositionAndRotation(position,rotation);movement.enabled=enabled;

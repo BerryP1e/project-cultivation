@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -37,9 +37,20 @@ public static class YufengDodgeBaker
                 AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/resources/技能动作/御风八向/" + name + "/御风八向_悬停.anim"), spin, right, back)).ToArray();
             ConfigureController(AssetDatabase.LoadAssetAtPath<AnimatorController>("Assets/Animations/PlayerLocomotion.controller"));
             EditorUtility.SetDirty(catalog); AssetDatabase.SaveAssets();
-            Debug.Log("[御风闪避] 左/前、右镜像、悬浮后闪及三套持械变体已烘焙；保留源片段与场景");
+            Debug.Log("[御风闪避] 独立前倾旋身、左旋、右旋与后闪及三套持械变体已烘焙；保留源片段与场景");
         }
         finally { Object.DestroyImmediate(right); }
+    }
+
+    public static void RebuildJiuba()
+    {
+        if(EditorApplication.isPlaying)throw new InvalidOperationException("Stop Play before rebaking");
+        var spin=AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/Animations/凭虚御风/Kimodo/御风_左旋闪避.anim");
+        var back=AssetDatabase.LoadAllAssetsAtPath("Assets/resources/Animation Library/Magical-Knight_Set/Animation/Humanoid/inplace/avoid_back_inplace.fbx").OfType<AnimationClip>().First(c=>!c.name.StartsWith("__preview"));
+        var idle=AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/resources/技能动作/御风八向/八九玄功/御风八向_悬停.anim");
+        var right=Mirror(spin);
+        try{MakeSet("gongfa_jiuba_xuangong","八九玄功",idle,spin,right,back);}
+        finally{Object.DestroyImmediate(right);}
     }
 
     /// <summary>只让闪避所在Action状态独立加速，移动状态不继承其倍率。</summary>
@@ -60,11 +71,15 @@ public static class YufengDodgeBaker
         if (!idle) throw new InvalidOperationException("缺少御风持械基准 " + profile);
         return new FlightDodgeAnimations.Set { 功法id = id,
             左旋 = Adapt(left, idle, profile, "左旋", false), 右旋 = Adapt(right, idle, profile, "右旋", false),
-            后闪 = Adapt(back, idle, profile, "后闪", true) };
+            后闪 = Adapt(back, idle, profile, "后闪", true), 前旋 = Adapt(left, idle, profile, "前旋", false, true) };
     }
 
-    static AnimationClip Adapt(AnimationClip source, AnimationClip idle, string profile, string direction, bool backwards)
+    static AnimationClip Adapt(AnimationClip source, AnimationClip idle, string profile, string direction, bool backwards, bool forwards = false)
     {
+        var forward=forwards?AssetDatabase.LoadAssetAtPath<AnimationClip>(profile=="自由手"
+            ?"Assets/Animations/凭虚御风/八向御风/御风八向_前.anim"
+            :"Assets/resources/技能动作/御风八向/"+profile+"/御风八向_前.anim"):null;
+        if(forwards&&!forward)throw new InvalidOperationException("缺少御风前进基准 "+profile);
         var clip = Object.Instantiate(source); clip.name = "御风闪避_" + direction + "_" + profile; clip.frameRate = 60;
         var humanoidProperties = new System.Collections.Generic.HashSet<string>(HumanTrait.MuscleName.Select(HandMotionRetargeting.CurveName));
         foreach (var b in AnimationUtility.GetCurveBindings(clip).Where(b => b.type == typeof(Animator) && !b.propertyName.StartsWith("Root") && !humanoidProperties.Contains(b.propertyName)).ToArray())
@@ -118,6 +133,12 @@ public static class YufengDodgeBaker
             var delta = Quaternion.Inverse(firstQ) * Rotation(source, time);
             if (backwards) delta = Quaternion.Slerp(Quaternion.identity, delta, .55f);
             var q = Quaternion.Slerp(baseQ, baseQ * delta, envelope);
+            if(forwards)
+            {
+                // 保留原侧闪全部旋转/四肢，只把身体连同原旋转轴一起略微前倾。
+                var tilt=Quaternion.Slerp(Quaternion.identity,Rotation(forward,0)*Quaternion.Inverse(baseQ),envelope*.35f);
+                q=tilt*q;
+            }
             if (Quaternion.Dot(previous, q) < 0) q = new Quaternion(-q.x, -q.y, -q.z, -q.w); previous = q;
             // 不拼地面起跳高度；仅保留很轻的浮动。实际悬浮高度由御风组件控制。
             float y = idleHeight + Mathf.Clamp((Get(source, "RootT.y").Evaluate(time) - sourceHeight) * (backwards ? .12f : .5f), -.04f, .07f) * envelope;
@@ -132,6 +153,7 @@ public static class YufengDodgeBaker
         settings.loopBlendOrientation = settings.loopBlendPositionY = settings.loopBlendPositionXZ = true;
         settings.heightFromFeet = false; AnimationUtility.SetAnimationClipSettings(clip, settings);
         clip.EnsureQuaternionContinuity();
+        if(profile=="八九玄功")JiubaHandPoseBaker.Apply(clip,false);
         string path = Folder + "/" + profile + "/" + clip.name + ".anim";
         EnsureFolder(Path.GetDirectoryName(path).Replace('\\', '/'));
         var old = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);

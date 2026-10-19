@@ -45,12 +45,12 @@ public class TreasureSkillHud : MonoBehaviour, IPointerClickHandler
         icon.sprite=t != null ? t.图标 : null; icon.enabled=t != null && t.图标 != null;
         backdrop.enabled=icon.enabled;
         cooldown.sprite=icon.sprite;
-        label.text=TowerRealmTreasure.在塔内 ? "E 返回现实" : t != null && t.法宝id==TowerRealmTreasure.法宝id ? "E 进入镇妖阁" : t != null ? t.DisplayName : "未装备法宝";
+        label.text=t != null && t.法宝id==SpiritArrayTalisman.Id ? "浮世万象 · 右键编排" : TowerRealmTreasure.在塔内 ? "E 返回现实" : t != null && t.法宝id==TowerRealmTreasure.法宝id ? "E 进入镇妖阁" : t != null ? t.DisplayName : "未装备法宝";
         float left=caster.CooldownRemaining;
         cooldown.enabled=t != null && icon.sprite != null && left>0;
         cooldown.fillAmount=t != null && t.冷却时间>0 ? Mathf.Clamp01(left/t.冷却时间) : 0;
         clickAge+=Time.unscaledDeltaTime; icon.transform.localScale=Vector3.one*Mathf.Lerp(.92f,1,Mathf.SmoothStep(0,1,Mathf.Clamp01(clickAge/.16f)));
-        if(openAt>=0 && Time.unscaledTime>=openAt){openAt=-1;if(t!=null && t.法宝id==clickedTreasure && !UiEscRegistry.SceneInputBlocked){if(t.法宝id==UIPanelData.镇妖葫id)GourdFormationUI.Open(data);else if(t.法宝id==QingshanSwordTreasure.法宝id)QingshanSwordInfoUI.Open(data);}}
+        if(openAt>=0 && Time.unscaledTime>=openAt){openAt=-1;if(t!=null && t.法宝id==clickedTreasure && !UiEscRegistry.SceneInputBlocked){if(t.法宝id==UIPanelData.镇妖葫id)GourdFormationUI.Open(data);else if(t.法宝id==QingshanSwordTreasure.法宝id)QingshanSwordInfoUI.Open(data);else if(t.法宝id==SpiritArrayTalisman.Id)UIInkSpiritArrayPage.Open(data);}}
         state.text=caster.CurrentSkillState!=""?caster.CurrentSkillState:caster.CurrentPhase!=TreasureCaster.Phase.Idle ? "收服中" : left>0 ? Mathf.CeilToInt(left).ToString() : "";
     }
     public void OnPointerClick(PointerEventData e) {

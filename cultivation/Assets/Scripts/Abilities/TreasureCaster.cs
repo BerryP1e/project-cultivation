@@ -7,7 +7,7 @@ public class TreasureCaster : MonoBehaviour
 {
     public enum Phase { Idle, Outbound, Siphoning, Absorbing, Returning }
     public Phase CurrentPhase { get; private set; }
-    public float CooldownRemaining => data != null && data.当前法宝 != null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id ? (GetComponent<QingshanSwordTreasure>()?.UltimateCooldown ?? 0) : data != null && data.当前法宝 == definition ? Mathf.Max(0, readyAt-Time.time) : 0f;
+    public float CooldownRemaining => data != null && data.当前法宝 != null && data.当前法宝.法宝id==SpiritArrayTalisman.Id ? (GetComponent<SpiritArrayCaster>()?.TreasureCooldown ?? 0) : data != null && data.当前法宝 != null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id ? (GetComponent<QingshanSwordTreasure>()?.UltimateCooldown ?? 0) : data != null && data.当前法宝 == definition ? Mathf.Max(0, readyAt-Time.time) : 0f;
     public string CurrentSkillState => data != null && data.当前法宝 != null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id && (GetComponent<QingshanSwordTreasure>()?.UltimateState ?? QingshanSwordTreasure.UltimatePhase.Idle)!=QingshanSwordTreasure.UltimatePhase.Idle ? "万剑归宗" : "";
     public int DamageTicks { get; private set; }
     public Transform Gourd => gourd != null ? gourd.transform : null;
@@ -40,7 +40,7 @@ public class TreasureCaster : MonoBehaviour
         Resolve();
         bool allowed=!UiEscRegistry.SceneInputBlocked && !灵田摆放器.正在摆放 && !(GetComponent<演出锁>()?.正在锁 ?? false) && !(vitals != null && vitals.IsDead);
         if(Input.GetKeyDown(KeyCode.E) && allowed && !PlayerManualAim.AltHeld) {
-            if(TowerRealmTreasure.在塔内) { TowerRealmTreasure.使用(gameObject); return; }
+            if(TowerRealmTreasure.在塔内 && !SpiritArrayTalisman.Equipped(data)) { TowerRealmTreasure.使用(gameObject); return; }
             if(CurrentPhase == Phase.Idle || data!=null && data.当前法宝!=null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id) TryCast();
             else if(CurrentPhase == Phase.Siphoning || CurrentPhase == Phase.Outbound) BeginReturn();
         }
@@ -91,6 +91,7 @@ public class TreasureCaster : MonoBehaviour
         if(UiEscRegistry.SceneInputBlocked || 灵田摆放器.正在摆放 || (GetComponent<演出锁>()?.正在锁 ?? false) || vitals != null && vitals.IsDead) return false;
         if(data == null || data.当前法宝 == null || !data.已拥有(data.当前法宝)) { data?.ShowHint("先在法宝界面装备法宝"); return false; }
         if(data.当前法宝.法宝id==TowerRealmTreasure.法宝id) return TowerRealmTreasure.使用(gameObject);
+        if(data.当前法宝.法宝id==SpiritArrayTalisman.Id) return SpiritArrayTalisman.Cast(gameObject,data);
         if(data.当前法宝.法宝id==QingshanSwordTreasure.法宝id) { return GetComponent<QingshanSwordTreasure>()?.TryCastUltimate() ?? false; }
         if(data.当前法宝.法宝id!=UIPanelData.镇妖葫id || CurrentPhase!=Phase.Idle)return false;
         if(CooldownRemaining>0) { data.ShowHint("法宝尚在冷却"); return false; }

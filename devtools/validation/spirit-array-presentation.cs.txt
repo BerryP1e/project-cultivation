@@ -1,0 +1,34 @@
+using System;
+using System.Linq;
+using System.IO;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Requires isolated saves");
+var report=new List<string>();void Check(bool pass,string message){if(!pass)throw new Exception(message);report.Add("PASS "+message);}
+var definition=SpiritArrayRules.Templates.First();var origin=new Vector3(6000,200,6000);var visuals=new List<SpiritArrayVisual>();var nodes=new List<GameObject>();
+var rootField=typeof(SpiritArrayVisual).GetField("root",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+var cameraGo=new GameObject("ArrayPresentationCamera");var camera=cameraGo.AddComponent<Camera>();camera.enabled=false;camera.orthographic=true;camera.orthographicSize=3.9f;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.008f,.018f,.032f);camera.cullingMask=1<<31;camera.allowHDR=true;camera.nearClipPlane=.01f;camera.farClipPlane=50;
+var target=new RenderTexture(1440,1000,24);target.antiAliasing=4;camera.targetTexture=target;camera.transform.position=origin+new Vector3(3,1,-17);camera.transform.LookAt(origin);
+Directory.CreateDirectory("../.local/diagnostics/spirit-array");
+void Capture(string name){camera.Render();var old=RenderTexture.active;RenderTexture.active=target;var texture=new Texture2D(target.width,target.height,TextureFormat.RGB24,false);texture.ReadPixels(new Rect(0,0,target.width,target.height),0,0);texture.Apply();File.WriteAllBytes("../.local/diagnostics/spirit-array/"+name+".png",texture.EncodeToPNG());RenderTexture.active=old;UnityEngine.Object.Destroy(texture);}
+try{
+ var ops=new[]{SpiritArrayOp.生成灵弹,SpiritArrayOp.追踪,SpiritArrayOp.分裂,SpiritArrayOp.强化,SpiritArrayOp.加速,SpiritArrayOp.修正方向};
+ for(int i=0;i<ops.Length;i++){
+  var visual=SpiritArrayVisual.Array(definition,origin+new Vector3((i%3-1)*3.15f,i<3?1.7f:-1.7f,0),Vector3.back,ops[i]);visuals.Add(visual);var root=(GameObject)rootField.GetValue(visual);nodes.Add(root);foreach(var tr in root.GetComponentsInChildren<Transform>())tr.gameObject.layer=31;visual.Animate(1.2f,1,1);
+  Check(!root.transform.Find("ImportedCircle")&&root.GetComponentsInChildren<MeshRenderer>().Length==SpiritArrayGeometry.Count(ops[i])+1,"selected ritual motifs without full-image quad "+ops[i]);
+  Check(!root.GetComponentsInChildren<Transform>().Any(t=>t.name.StartsWith("Core_")),"reusable center glyph is not stamped onto every node "+ops[i]);
+  var particles=root.transform.Find("OrbitingParticles");var before=particles?particles.localRotation:Quaternion.identity;visual.Animate(2.2f,1,1);if(particles)Check(Quaternion.Angle(before,particles.localRotation)>10,"particles orbit rather than remaining static "+ops[i]);
+  if(ops[i]==SpiritArrayOp.修正方向){var spatial=root.transform.Find("SpatialFilaments").GetComponent<MeshFilter>().sharedMesh;Check(spatial.bounds.size.z>.4f,"direction ritual is an open spatial zigzag");}
+  var pulse=root.transform.Find("ActivationWave").GetComponent<Renderer>();var block=new MaterialPropertyBlock();pulse.GetPropertyBlock(block);Check(block.GetFloat("_Opacity")==0,"activation ring hidden before function triggers "+ops[i]);
+ }
+ Capture("geometry-idle");foreach(var visual in visuals){visual.Flash(true);visual.Animate(2.2f,1,1);}Capture("geometry-trigger");
+ foreach(var op in ops)Check(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/SpiritArrays/Centers/Core_"+op+".prefab"),"former central pattern retained as independent reusable asset "+op);
+ foreach(var root in nodes){var block=new MaterialPropertyBlock();root.transform.Find("ActivationWave").GetComponent<Renderer>().GetPropertyBlock(block);Check(block.GetFloat("_Opacity")>.8f,"successful trigger visibly activates pulse "+root.name);}
+ var treasure=PanelDatabase.取().法宝.First(t=>t&&t.法宝id==SpiritArrayTalisman.Id);Check(treasure.DisplayName=="浮世万象"&&treasure.加载模型()&&treasure.图标,"renamed artifact has imported model and matching icon");
+ var model=UnityEngine.Object.Instantiate(treasure.加载模型());nodes.Add(model);var floating=model.GetComponent<FloatingCubeCluster>();Check(floating&&floating.pieces.Length==13,"thirteen peripheral pieces; central decoration excluded");
+ var source=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TripoModels/浮世万象/浮世万象.fbx");Check(model.GetComponentsInChildren<MeshFilter>().Sum(f=>f.sharedMesh.triangles.Length)==source.GetComponentsInChildren<MeshFilter>().Sum(f=>f.sharedMesh.triangles.Length),"source model faces fully retained");
+ Check(Quaternion.Angle(treasure.加载模型().transform.localRotation,Quaternion.identity)<.01f,"FBX axis compensation preserved below preview root");
+ var core=model.GetComponentsInChildren<Transform>().First(t=>t.name=="CentralCube");var corePosition=core.localPosition;floating.Evaluate(0);var positions=floating.pieces.Select(p=>p.transform.localPosition).ToArray();var displacement=new float[floating.pieces.Length];var timeScale=Time.timeScale;try{Time.timeScale=0;for(int frame=0;frame<240;frame++){floating.Evaluate(frame/30f);for(int i=0;i<floating.pieces.Length;i++)displacement[i]=Mathf.Max(displacement[i],Vector3.Distance(floating.pieces[i].transform.localPosition,positions[i]));Check(floating.pieces.All(p=>Vector3.Distance(p.transform.localPosition,p.position)<.026f),"bounded cube drift "+frame);}Check(displacement.All(d=>d>.001f),"all peripheral pieces animate across paused preview interval");Check(core.localPosition==corePosition,"central cube remains stationary");}finally{Time.timeScale=timeScale;}
+ File.WriteAllLines("../.local/diagnostics/spirit-array/presentation.txt",report);Debug.Log("ARRAY_PRESENTATION_PASS "+report.Count);
+}finally{foreach(var visual in visuals)visual.Dispose();foreach(var node in nodes)if(node)UnityEngine.Object.Destroy(node);camera.targetTexture=null;target.Release();UnityEngine.Object.Destroy(target);UnityEngine.Object.Destroy(cameraGo);}

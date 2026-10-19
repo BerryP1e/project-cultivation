@@ -204,7 +204,21 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
         camera3d.aspect=width/(float)height;camera3d.orthographicSize=Mathf.Max(vertical,horizontal/camera3d.aspect)*1.04f;camera3d.transform.position=bounds.center+rotation*new Vector3(0,0,-22);camera3d.transform.LookAt(bounds.center);camera3d.Render();Label(humanLabel,humanRoot.position+Vector3.up*1.7f);Label(dummyLabel,dummy.position-Vector3.up*.25f);
     }
     void Label(Text label,Vector3 point){var uv=camera3d.WorldToViewportPoint(point);label.rectTransform.anchorMin=label.rectTransform.anchorMax=new Vector2(uv.x,uv.y);label.rectTransform.anchoredPosition=Vector2.zero;}
-    void 同步外观(AppearanceDefinition unused){if(!appearanceSource||!clonedVisual)return;var original=appearanceSource.GetComponentsInChildren<SkinnedMeshRenderer>(true);var copies=clonedVisual.GetComponentsInChildren<SkinnedMeshRenderer>(true);for(int i=0;i<Mathf.Min(original.Length,copies.Length);i++){AppearanceClothRig.同步预览(original[i],copies[i]);copies[i].sharedMaterials=original[i].sharedMaterials;copies[i].updateWhenOffscreen=true;}}
+    void 同步外观(AppearanceDefinition unused)
+    {
+        if(!appearanceSource||!clonedVisual)return;
+        foreach(var original in appearanceSource.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if(original.name=="OutfitFabric"||original.name=="OutfitTrousers")continue;
+            string path="";var node=original.transform;
+            while(node&&node!=appearanceSource){path=node.name+(path.Length==0?"":"/"+path);node=node.parent;}
+            var destination=path.Length==0?clonedVisual:clonedVisual.Find(path);
+            var copy=destination?destination.GetComponent<SkinnedMeshRenderer>():null;
+            if(!copy)continue;
+            AppearanceClothRig.同步预览(original,copy);
+            copy.sharedMaterials=original.sharedMaterials;copy.updateWhenOffscreen=true;
+        }
+    }
     public void OnDrag(PointerEventData e){if(e.button==PointerEventData.InputButton.Left)yaw-=e.delta.x*.2f;}
     void OnEnable(){玩家外观.外观变化+=同步外观;if(hasPendingEntry)显示(pendingEntry);if(stage)stage.gameObject.SetActive(true);同步外观(null);nextRender=Time.unscaledTime;}
     void OnDisable(){玩家外观.外观变化-=同步外观;if(stage)stage.gameObject.SetActive(false);}

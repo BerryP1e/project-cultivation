@@ -356,11 +356,10 @@ public class PlayerHud : MonoBehaviour
             }
             else if (灵阵 != null)
             {
-                正文 = "灵阵【尚未实现】\n"
-                     + "有效范围：" + 灵阵.有效范围 + " 米\n"
-                     + "持续时间：" + 灵阵.持续时间 + " 秒\n"
-                     + "目标筛选：" + 灵阵.目标筛选 + "\n"
-                     + "布置消耗灵气：" + 灵阵.布置消耗灵气 + "\n";
+                var program = SpiritArrayRules.Get(施放器.面板数据, 灵阵);
+                名 = program != null ? program.名称 : 灵阵.DisplayName;
+                正文 = "灵阵序列\n起手灵力：" + SpiritArrayCaster.FirstCost(program?.序列)
+                     + $"\n修饰按每个穿阵生成物另扣\n展开前摇：{SpiritArrayRules.前摇:0.##} 秒\n阵间距：{SpiritArrayRules.阵距:0.##} 米\n请装备浮世万象，右键编排、E 施放\n";
             }
             else if (法宝 != null)
             {
