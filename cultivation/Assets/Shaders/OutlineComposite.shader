@@ -58,7 +58,7 @@ Shader "Cultivation/OutlineComposite"
             sampler2D _IDTex;
             float4 _MaskTex_TexelSize;
             UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
-            float _UseSceneDepth,_SceneCameraFar,_UseRootFade;
+            float _UseSceneDepth,_SceneCameraFar,_UseRootFade,_SuppressFoliageEdges;
 
             fixed4 _PlayerColor;
             fixed4 _OtherColor;
@@ -81,7 +81,10 @@ Shader "Cultivation/OutlineComposite"
             {
                 float2 off = dir * _MaskTex_TexelSize.xy * radius;
                 float4 m  = tex2D(_MaskTex, uv + off);
-                float  id = tex2D(_IDTex, uv + off).r;
+                float4 neighbor = tex2D(_IDTex, uv + off);
+                // 叶片既不能收墨线，也不能把相邻的树干/建筑像素变成逐叶黑边。
+                if(_SuppressFoliageEdges>.5&&neighbor.b>.5)return 0;
+                float id = neighbor.r;
 
                 // 组不同 ⇒ 一定是两个东西的交界（背景 = 组 0，所以角色轮廓也走这条）
                 float idEdge = (abs(id - cid) > _IDThr) ? 1.0 : 0.0;

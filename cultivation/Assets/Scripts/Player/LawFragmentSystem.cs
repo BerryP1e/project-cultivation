@@ -113,9 +113,9 @@ public static class LawFragmentSystem
         if (existing == slot) return true;
         string previous = panel.法则装备[slot];
         if (existing >= 0) panel.法则装备[existing] = previous;
-        panel.法则装备[slot] = id; panel.RaiseChanged(); return true;
+        panel.法则装备[slot] = id; panel.RaiseChanged();ToastUI.提示("装备法则  "+panel.法则碎片.Find(x=>x.id==id).名称);return true;
     }
-    public static void 卸下(UIPanelData panel, int slot) { panel.法则装备[slot] = ""; panel.RaiseChanged(); }
+    public static void 卸下(UIPanelData panel, int slot) {var law=取槽(panel,slot);panel.法则装备[slot] = "";panel.RaiseChanged();if(law!=null)ToastUI.提示("卸下法则  "+law.名称);}
     public static void 汇总(UIPanelData panel, AttributeSet percent, AttributeSet flat, AttributeSet basis = null)
     {
         if (!panel) return;

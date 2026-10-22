@@ -21,6 +21,22 @@ public static class YufengDirectionalBaker
     static readonly string[] Sources = { "idle_Flying", "move_Flying_front", "move_Flying_frontR45", "move_Flying_right", "move_Flying_backR45", "move_Flying_back", "move_Flying_backL45", "move_Flying_left", "move_Flying_frontL45" };
     static readonly Vector2[] Directions = { Vector2.zero, Vector2.up, new Vector2(.7071068f,.7071068f), Vector2.right, new Vector2(.7071068f,-.7071068f), Vector2.down, new Vector2(-.7071068f,-.7071068f), Vector2.left, new Vector2(-.7071068f,.7071068f) };
 
+    [MenuItem("修仙/动画/仅修正灵剑御风姿态（不动场景）")]
+    public static void RebuildSpiritSword()
+    {
+        if(EditorApplication.isPlaying)throw new InvalidOperationException("请先停止 Play");
+        foreach(string name in Names){
+            var source=AssetDatabase.LoadAssetAtPath<AnimationClip>(Folder+"御风八向_"+name+".anim");
+            if(!source)throw new InvalidOperationException("缺少基础御风动作："+name);
+            var clip=Object.Instantiate(source);clip.name=source.name;
+            // 从当前基础御风保留身体，再恢复已定稿的右臂、握指和剑安装角度。
+            YufengHandPoseBaker.Hands(clip,true);
+            YufengHandPoseBaker.SpiritSwordCarry(clip,Resources.Load<AnimationClip>("技能动作/太虚剑决/持剑_Idle"));
+            Save(clip,Variants+"太虚剑决/"+clip.name+".anim");
+        }
+        AssetDatabase.SaveAssets();
+    }
+
     [MenuItem("修仙/动画/重建八向御风（不动场景）")]
     public static void Build()
     {
@@ -67,6 +83,7 @@ public static class YufengDirectionalBaker
                 var clip=Object.Instantiate(source);clip.name=source.name;
                 YufengHandPoseBaker.Hands(clip,profile!="灵虚剑决");
                 if(profile=="八九玄功")YufengHandPoseBaker.Carry(clip,grip);
+                if(profile=="太虚剑决")YufengHandPoseBaker.SpiritSwordCarry(clip,grip);
                 if(profile=="灵虚剑决")BakeSword(clip,grip);
                 Save(clip,Variants+profile+"/"+clip.name+".anim");
             }

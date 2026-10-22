@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Palette_65_1
-  m_Shader: {fileID: 4800000, guid: 543e526748799f942be072c9db2c5b5b, type: 3}
+  m_Shader: {fileID: 4800000, guid: 81ce04a031412364fbd15fd81a8595f7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -42,9 +42,10 @@ Material:
     m_Ints: []
     m_Floats:
     - _BoundaryBlend: 0
-    - _Cull: 0
+    - _CoverageWidth: 2
+    - _Cull: 2
     - _Cutoff: 0.47
-    - _DetailSoftness: 0
+    - _DetailSoftness: 0.5
     - _GrassBlend: 0
     - _GrassMapExposure: 1
     - _GrassMapSaturation: 0.65

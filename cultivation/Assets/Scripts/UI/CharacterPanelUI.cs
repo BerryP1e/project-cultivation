@@ -34,7 +34,7 @@ public class TabBinding
 }
 
 /// <summary>
-/// 角色面板主控。I 键唤出/收起，默认落在「境界」页；Esc 关闭。
+/// 角色面板主控。I 键唤出/收起，默认落在「背包」页；Esc 关闭。
 /// 挂在与 Canvas 同级的 UI 根节点上。
 /// </summary>
 public class CharacterPanelUI : MonoBehaviour
@@ -62,10 +62,13 @@ public class CharacterPanelUI : MonoBehaviour
     public List<TabBinding> tabs = new List<TabBinding>();
 
     [Header("默认页")]
-    public CharacterTab defaultTab = CharacterTab.境界;
+    public CharacterTab defaultTab = CharacterTab.背包;
 
     /// <summary>当前是否展开</summary>
     public bool IsOpen { get; private set; }
+    public bool 过渡中 => panelFade != null;
+    CanvasGroup panelGroup;
+    Coroutine panelFade;
 
     /// <summary>当前页签</summary>
     public CharacterTab CurrentTab { get; private set; }
@@ -79,6 +82,7 @@ public class CharacterPanelUI : MonoBehaviour
     readonly Dictionary<CanvasGroup,Vector3> hiddenHud=new Dictionary<CanvasGroup,Vector3>();
     float nextHudScan;
     void SuppressHud(){
+        if(CurrentTab==CharacterTab.背包||UIInkNavigation.启用&&(CurrentTab==CharacterTab.神通||CurrentTab==CharacterTab.法则)){RestoreHud();return;}
         foreach(var canvas in FindObjectsOfType<Canvas>(true)){
             if(canvas.name!="HudCanvas" && canvas.name!="QuestGuideCanvas" && canvas.name!="ChronicleCanvas")continue;
             var group=canvas.GetComponent<CanvasGroup>();if(group==null)group=canvas.gameObject.AddComponent<CanvasGroup>();
@@ -116,7 +120,7 @@ public class CharacterPanelUI : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(toggleKey) && (IsOpen || !UiEscRegistry.SceneInputBlocked))
+        if (Input.GetKeyDown(toggleKey) && (IsOpen || 过渡中 || !UiEscRegistry.SceneInputBlocked))
             SetOpen(!IsOpen);
 
         if (IsOpen && Input.GetKeyDown(closeKey))
@@ -127,7 +131,7 @@ public class CharacterPanelUI : MonoBehaviour
     {
         if(CurrentTab==CharacterTab.法则 && tabs.Count>4 && tabs[4].page) {
             var law=tabs[4].page.GetComponent<UIInkLawPage>();
-            if(law && law.返回上层()){UiEscRegistry.记录关闭();return;}
+            if(law && law.熔炼已打开 && law.返回上层()){UiEscRegistry.记录关闭();return;}
         }
         SetOpen(false);
     }
@@ -135,14 +139,19 @@ public class CharacterPanelUI : MonoBehaviour
     /// <summary>开关面板</summary>
     public void SetOpen(bool open, bool snap = false)
     {
+        if(panelFade!=null){StopCoroutine(panelFade);panelFade=null;}
         IsOpen = open;
-        UiEscRegistry.SetSceneInputBlocked(this,open);
+        bool closingFade=!open&&!snap&&panelRoot&&panelRoot.activeInHierarchy;
+        UiEscRegistry.SetSceneInputBlocked(this,open||closingFade);
         if(open)SuppressHud();else {RestoreHud();UIDragContext.End(true);}
 
         if (panelRoot != null)
         {
-            if (!open && !snap && panelRoot.activeInHierarchy) UIInkMotion.提笔(panelRoot.transform);
-            panelRoot.SetActive(open);
+            panelGroup=panelRoot.GetComponent<CanvasGroup>();if(!panelGroup)panelGroup=panelRoot.AddComponent<CanvasGroup>();
+            var oldMotion=panelRoot.GetComponent<UIInkMotion>();if(oldMotion)oldMotion.enabled=false;
+            panelGroup.interactable=open;panelGroup.blocksRaycasts=open||closingFade;
+            if(open)panelRoot.SetActive(true);
+            else if(!closingFade)panelRoot.SetActive(false);
         }
 
         if (open)
@@ -162,9 +171,41 @@ public class CharacterPanelUI : MonoBehaviour
         }
         else
         {
-            RestoreTimeScale();
+            if(!closingFade)RestoreTimeScale();
             UiEscRegistry.记录关闭();     // 告诉别人"我刚关过"，这一下 ESC 别再被暂停菜单消费
         }
+        if(panelRoot&&panelGroup)
+        {
+            float target=open?1:0;
+            if(snap||!isActiveAndEnabled||UIInkMotion.减少动效||Mathf.Abs(panelGroup.alpha-target)<.001f)
+            {
+                panelGroup.alpha=target;
+                if(!open)FinishClose();
+            }
+            else panelFade=StartCoroutine(FadePanel(open,open?.12f:.10f));
+        }
+        GetComponent<UIInkNavigation>()?.刷新状态();
+    }
+
+    System.Collections.IEnumerator FadePanel(bool open,float duration)
+    {
+        float from=panelGroup.alpha,elapsed=0,target=open?1:0;
+        while(elapsed<duration)
+        {
+            float t=Mathf.Clamp01(elapsed/duration);float eased=1-Mathf.Pow(1-t,3);
+            panelGroup.alpha=Mathf.Lerp(from,target,eased);
+            yield return null;elapsed+=Time.unscaledDeltaTime;
+        }
+        panelGroup.alpha=target;panelFade=null;
+        if(!open)FinishClose();
+        GetComponent<UIInkNavigation>()?.刷新状态();
+    }
+
+    void FinishClose()
+    {
+        if(panelGroup){panelGroup.interactable=false;panelGroup.blocksRaycasts=false;}
+        if(panelRoot)panelRoot.SetActive(false);
+        UiEscRegistry.SetSceneInputBlocked(this,false);RestoreTimeScale();
     }
 
     /// <summary>恢复暂停前的时间缩放。关闭面板、组件被禁用或销毁时都会调用</summary>
@@ -177,6 +218,8 @@ public class CharacterPanelUI : MonoBehaviour
 
     void OnDisable()
     {
+        if(panelFade!=null){StopCoroutine(panelFade);panelFade=null;}
+        if(!IsOpen&&panelRoot)panelRoot.SetActive(false);
         UiEscRegistry.SetSceneInputBlocked(this,false);
         RestoreHud();UIDragContext.End(true);
         RestoreTimeScale();
@@ -196,7 +239,8 @@ public class CharacterPanelUI : MonoBehaviour
         if (tab == CharacterTab.战阵) return;
         if(tab!=CurrentTab)UIDragContext.End(true);
         CurrentTab = tab;
-        int active = (int)tab;
+        bool equipment=UIInkNavigation.启用&&(tab==CharacterTab.神通||tab==CharacterTab.法则);
+        int active = equipment?(int)CharacterTab.神通:(int)tab;
 
         for (int i = 0; i < tabs.Count; i++)
         {
@@ -207,6 +251,9 @@ public class CharacterPanelUI : MonoBehaviour
         }
 
         TabChanged?.Invoke(tab);
+        if(IsOpen)SuppressHud();
+        if(!equipment&&tab==CharacterTab.法则&&tabs.Count>4&&tabs[4].page)
+            tabs[4].page.GetComponent<UIInkLawPage>()?.切换背包(true);
     }
 
     /// <summary>按索引切换（给 UnityEvent 用）</summary>

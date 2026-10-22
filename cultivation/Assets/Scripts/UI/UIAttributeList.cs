@@ -61,7 +61,7 @@ public class UIAttributeList : MonoBehaviour
             }
         }
 
-        bool inkReuse = GetComponentInParent<UIInkRealmPage>(true) != null;
+        bool inkReuse = GetComponentInParent<UIInkRealmPage>(true) != null || GetComponentInParent<UIInkBagPage>(true) != null;
         if(inkReuse && !reuseRows) foreach(Transform child in container) {
             if(spawned.Contains(child.gameObject))continue;
             child.gameObject.SetActive(false);

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfe5a25c5c7a2b24582631edd1327df2, type: 3}
+  m_Name: "\u83B7\u5F97\u6B66\u5668\u6548\u679C_item_weapon_basic_halberd"
+  m_EditorClassIdentifier: 
+  "\u8BF4\u660E": "\u83B7\u5F97\u57FA\u7840\u957F\u621F\u3002"
+  "\u6B66\u5668id": weapon_basic_halberd
+  "\u6B66\u5668": {fileID: 11400000, guid: 89830b2289904244d97b240c6a634dd7, type: 2}

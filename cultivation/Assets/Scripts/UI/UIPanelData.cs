@@ -25,6 +25,12 @@ public class UIPanelData : MonoBehaviour
 
     [Tooltip("当前正在修炼的功法，显示在「境界」页的功法展示区")]
     public GongFaDefinition 当前功法;
+    [Header("武器（与修行功法独立）")]
+    public WeaponDefinition 当前武器;
+    public List<WeaponDefinition> 已获得武器=new List<WeaponDefinition>();
+    public bool 已拥有武器(WeaponDefinition weapon)=>weapon&&已获得武器!=null&&已获得武器.Exists(w=>w&&w.武器id==weapon.武器id);
+    public bool 获得武器(WeaponDefinition weapon){EnsureLists();if(!weapon||已拥有武器(weapon))return false;已获得武器.Add(weapon);RaiseChanged();return true;}
+    public bool 装备武器(WeaponDefinition weapon){EnsureLists();if(weapon&&!已拥有武器(weapon)||当前武器==weapon)return false;当前武器=weapon;RaiseChanged();ShowHint(weapon?"装备武器  "+weapon.DisplayName:"已卸下武器");return true;}
 
     [Header("境界进度")]
     [Tooltip("当前境界已积累的吐纳经验")]
@@ -221,6 +227,7 @@ public class UIPanelData : MonoBehaviour
     {
         if (已访传送点 == null) 已访传送点 = new List<TeleportBookmark>();
         if (物品 == null) 物品 = new List<ItemDefinition>();
+        if (已获得武器 == null) 已获得武器 = new List<WeaponDefinition>();
         if (法则碎片 == null) 法则碎片 = new List<LawFragment>();
         if (法则装备 == null) 法则装备 = new List<string>();
         if (炉中法则 == null) 炉中法则 = new List<string>();
@@ -414,6 +421,7 @@ public class UIPanelData : MonoBehaviour
     {
         EnsureLists();
         物品 = new List<ItemDefinition>();
+        已获得武器.Clear();当前武器=null;
         已访传送点.Clear(); SpatialTravel.CancelPending();
         法则碎片.Clear(); for (int i = 0; i < 法则装备.Count; i++) 法则装备[i] = "";
         法则精粹 = 0; 炉中法则.Clear();
@@ -445,6 +453,7 @@ public class UIPanelData : MonoBehaviour
     public bool 玩法数据为空()
     {
         return (法则碎片 == null || 法则碎片.Count == 0)
+            && (已获得武器 == null || 已获得武器.Count == 0)
             && 法则精粹 == 0
             && (物品 == null || 物品.Count == 0)
             && (法宝 == null || 法宝.Count == 0)

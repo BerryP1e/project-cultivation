@@ -76,7 +76,7 @@ public class TopDownCameraZoom : MonoBehaviour
         if (UiEscRegistry.SceneInputBlocked) return;
 
         // ---- 滚轮输入 ----
-        ApplyScrollInput(Input.GetAxis("Mouse ScrollWheel"));
+        ApplyScrollInput(Input.mouseScrollDelta.y*scrollNotchValue);
 
         // ---- 超出软区间则平滑弹回 ----
         float target = Mathf.Clamp(ratio, softMin, softMax);
@@ -93,7 +93,7 @@ public class TopDownCameraZoom : MonoBehaviour
     public void ApplyScrollInput(float scroll)
     {
         if(!initialised)Initialise();
-        if(cameraRig==null || UiEscRegistry.SceneInputBlocked)return;
+        if(cameraRig==null || UiEscRegistry.SceneInputBlocked || TreasureSkillHud.占用滚轮)return;
         if (Mathf.Abs(scroll) > 0.00001f && scrollNotchValue > 0.00001f)
         {
             float notches = scroll / scrollNotchValue;

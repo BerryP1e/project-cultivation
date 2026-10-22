@@ -99,6 +99,8 @@ public class 跨场景数据 : MonoBehaviour
         public static bool 四御已激活;
         public static List<UnityEngine.Object> 主动技能;
         public static GongFaDefinition 当前功法;
+        public static WeaponDefinition 当前武器;
+        public static List<WeaponDefinition> 已获得武器;
         public static List<string> 已拥有法宝;
         public static TreasureDefinition 当前法宝;
         public static int 青山剑有效击杀;
@@ -124,6 +126,7 @@ public class 跨场景数据 : MonoBehaviour
             四御已激活 = 面板.四御已激活;
             主动技能 = new List<UnityEngine.Object>(面板.主动技能);
             当前功法 = 面板.当前功法;
+            当前武器=面板.当前武器;已获得武器=new List<WeaponDefinition>(面板.已获得武器);
             已拥有法宝 = new List<string>(面板.已拥有法宝); 当前法宝=面板.当前法宝;青山剑有效击杀=面板.青山剑有效击杀;
             收服系统已初始化=面板.收服系统已初始化;
             已获得真灵=new List<NpcDefinition>(面板.已获得真灵); 战阵站位=new List<NpcDefinition>(面板.战阵站位);
@@ -149,6 +152,7 @@ public class 跨场景数据 : MonoBehaviour
             面板.四御已激活 = 四御已激活 && 面板.绝对护罩剩余次数 > 0;
             面板.主动技能 = new List<UnityEngine.Object>(主动技能);
             面板.当前功法 = 当前功法;
+            面板.当前武器=当前武器;面板.已获得武器=new List<WeaponDefinition>(已获得武器??new List<WeaponDefinition>());
             面板.已拥有法宝=已拥有法宝 != null ? new List<string>(已拥有法宝) : new List<string>();
             面板.当前法宝=当前法宝;面板.青山剑有效击杀=青山剑有效击杀; 面板.收服系统已初始化=收服系统已初始化;
             面板.已获得真灵=已获得真灵 != null ? new List<NpcDefinition>(已获得真灵) : new List<NpcDefinition>();
@@ -167,6 +171,7 @@ public class 跨场景数据 : MonoBehaviour
             已访传送点 = null;
             法则碎片 = null; 法则装备 = null;
             炉中法则 = null; 法则精粹 = 0;
+            当前武器=null;已获得武器=null;
             物品 = null; 已学功法 = null; 已获得主动 = null; 已获得被动 = null;
             已停用被动 = null; 主动技能 = null; 当前功法 = null; 当前坐骑 = null;
             青山剑有效击杀=0; 已学坐骑 = null; 已拥有法宝=null; 当前法宝=null; 已获得真灵=null; 战阵站位=null; 收服系统已初始化=false;

@@ -178,6 +178,7 @@ public class GameGlobalOutline : MonoBehaviour
     static bool 可描边(Renderer r)
     {
         if (!r || !r.enabled || r.forceRenderingOff || !r.gameObject.activeInHierarchy) return false;
+        if (r.GetComponentInParent<AbilityVfxInstance>() || r.GetComponentInParent<ParticleSystem>()) return false;
         // 遮挡剪影是显示辅助，不是角色表面；不能再次进入风格描边掩码。
         for (var t = r.transform; t; t = t.parent)
             if (t.name.StartsWith("遮挡描边", System.StringComparison.Ordinal)) return false;

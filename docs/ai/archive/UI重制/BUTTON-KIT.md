@@ -1,4 +1,4 @@
-﻿# 宣纸墨卷 × 云纹鎏边 · 按钮素材 v1
+# 宣纸墨卷 × 云纹鎏边 · 按钮素材 v1
 > **管什么**：只读保存的 UI 制作原始记录；不代表当前实现。
 > **不管什么**：当前接入状态、资产位置和操作步骤见 [UI换皮](../../../guides/UI换皮.md)。
 > **本文件怎么查**：使用下方原有主题标题；先查当前指南再读本文件。
@@ -11,7 +11,7 @@
 
 - [按钮展示与状态交互](../../../../cultivation/Assets/Editor/Tools/InkUIAuthoring/button-lab.html)：三个材质 × 四个状态、长短按钮、宣纸面板装配和透明棋盘检查。
 - [完整交互原型](../../../../cultivation/Assets/Editor/Tools/InkUIAuthoring/index.html)：风格 1 的主要按钮、确认框、选中页签已应用新皮肤，面板增加细角饰。
-- [Unity 素材包](../../../../cultivation/Assets/UIResources/InkUI/Authoring/InkOrnate-Unity-Sprites.zip)：12 张无字 RGBA PNG 与对应 Sprite `.meta`。包内有 `Assets/UIResources/InkOrnate/Buttons/` 结构，可按原路径合并到工程。
+- [Unity 素材包](../../../../cultivation/Assets/Art/UI/Source/InkUI/Authoring/InkOrnate-Unity-Sprites.zip)：12 张无字 RGBA PNG 与对应 Sprite `.meta`。包内有 `Assets/UIResources/InkOrnate/Buttons/` 结构，可按原路径合并到工程。
 - `assets/buttons/`：原始透明图集、12 张独立按钮、9 张左／中／右分片、1 张独立 SVG 角饰、切片清单 `manifest.json`。
 
 所有独立按钮统一为 **520×157 px**。生成图确有真实 Alpha：外围包含 Alpha=0 像素，按钮内部含接近不透明的像素。图集透明区域的 RGB 仍保留颜色，这是正常 PNG 数据；显示与合成以 Alpha 为准。拆分脚本只裁切、补透明画布并打包，没有用颜色阈值抠图，因此没有把宣纸浅色误抠除。

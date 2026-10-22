@@ -79,7 +79,6 @@ public sealed class BasicTaichuDragon01 : MonoBehaviour
         && Vector3.Distance(transform.position, targeting.LockedNpc.transform.position) <= 配置.近战距离;
     public bool 手动出手(Vector3 point)
     {
-        if (targeting && targeting.LockedNpc && !targeting.LockedNpc.IsDead) return false;
         return StartAttack(true, point);
     }
     public bool 出手() => StartAttack(false, default);
@@ -114,7 +113,7 @@ public sealed class BasicTaichuDragon01 : MonoBehaviour
         if (specialIdle && (Moving || IdleUnavailable || !InputAllowed || 动画.当前动作 != playing)) StopIdle();
         // Current clip cleared at normal completion is different from replacement by a spell.
         if (出手动作中 && 动画.当前动作 != playing && !normallyFinished) EndAttack(false);
-        if (!出手动作中 && InputAllowed && !PlayerManualAim.AltHeld && (自动出手 || Input.GetKey(KeyCode.F) || Input.GetMouseButton(1))) 出手();
+        if (!出手动作中 && InputAllowed && 自动出手 && targeting && targeting.自动索敌可用) 出手();
     }
     void LateUpdate()
     {

@@ -16,6 +16,7 @@ public static class UIDragContext
     public static bool Dragging => Entry != null;
     public static int OriginSlot {get;private set;}=-1;
     public static UIPanelData OriginData {get;private set;}
+    public static void BeginFromEquipment(IPanelEntry entry,UIPanelData data,int slot,Transform canvasRoot,Font font){Begin(entry,canvasRoot,font);OriginSlot=slot;OriginData=data;}
     public static void BeginFromSlot(UIActiveSkillSlot slot,Transform canvasRoot,Font font){
         if(!(slot.Content is IPanelEntry entry) || entry is PassiveDivineAbility)return;
         Begin(entry,canvasRoot,font);OriginSlot=slot.index;OriginData=slot.ResolveData();

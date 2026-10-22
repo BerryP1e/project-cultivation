@@ -9,6 +9,7 @@ public class BindingChainSkillRunner : MonoBehaviour
     NpcMovementLock 移动锁;
     int 槽位;
     bool 已取消;
+    bool 跟随锁定;
     public float 每秒消耗 { get; private set; }
 
     public static float 计算消耗(float 基础, float 每级倍率, float 玩家等级, float 目标等级)
@@ -17,6 +18,7 @@ public class BindingChainSkillRunner : MonoBehaviour
     public void 初始化(ActiveSkillCaster 玩家, ActiveDivineAbility 定义, NpcInstance 锁定, int 格)
     {
         施法者 = 玩家; 神通 = 定义; 目标 = 锁定; 槽位 = 格;
+        跟随锁定=玩家.目标管理器&&玩家.目标管理器.LockedNpc==锁定;
         if (目标 == null) { 取消(); return; }
         移动锁 = 目标.GetComponent<NpcMovementLock>() ?? 目标.gameObject.AddComponent<NpcMovementLock>();
         移动锁.加锁(this);
@@ -31,7 +33,7 @@ public class BindingChainSkillRunner : MonoBehaviour
         if (已取消) return;
         if (施法者 == null || !施法者.isActiveAndEnabled || 施法者.生命 == null || 施法者.生命.IsDead
             || 目标 == null || 目标.IsDead || 施法者.槽位内容(槽位) != 神通
-            || 施法者.目标管理器 == null || 施法者.目标管理器.LockedNpc != 目标
+            || (跟随锁定 && (施法者.目标管理器 == null || 施法者.目标管理器.LockedNpc != 目标))
             || (神通.范围 > 0f && Vector3.Distance(施法者.transform.position, 目标.transform.position) > 神通.范围))
         { 取消(); return; }
         var 修炼 = 施法者.GetComponent<PlayerCultivation>();

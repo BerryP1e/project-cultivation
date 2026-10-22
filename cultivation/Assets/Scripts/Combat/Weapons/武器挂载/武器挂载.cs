@@ -79,11 +79,10 @@ public class 武器挂载 : MonoBehaviour
     /// <summary>当前挂在手上的武器实例（null = 没挂 / 已销毁）</summary>
     public GameObject 实例 { get; private set; }
 
-    bool 太虚剑 => 面板数据 != null && 面板数据.当前功法 != null
-        && 面板数据.当前功法.功法id == "gongfa_taixu_jianjue";
-    bool 灵虚剑 => 面板数据 != null && 面板数据.当前功法 != null && 面板数据.当前功法.功法id == "gongfa_lingxu_jianjue";
+    bool 太虚剑 => 面板数据 && 面板数据.当前武器 && 面板数据.当前武器.武器类型 == WeaponType.灵剑;
+    bool 灵虚剑 => 面板数据 && 面板数据.当前武器 && 面板数据.当前武器.武器类型 == WeaponType.飞剑;
     bool 独立剑 => 太虚剑 || 灵虚剑;
-    string 当前武器路径 => 灵虚剑 ? "Weapons/灵虚剑决/灵虚剑" : 太虚剑 ? "Weapons/太虚剑决_神秘人剑" : 武器资源路径;
+    string 当前武器路径 => 面板数据 && 面板数据.当前武器 ? 面板数据.当前武器.模型资源路径 : 武器资源路径;
     string 实例资源路径;
     Transform 挂点缓存;
     bool 报过找不到武器;
@@ -176,8 +175,8 @@ public class 武器挂载 : MonoBehaviour
             实例 = 创建实例(骨); 实例资源路径 = 当前武器路径;
             // Transform bindings are cached by Animator. The independent sword must be bound
             // after its hierarchy exists, including when re-equipping the same technique.
-            if (实例 != null && 灵虚剑) {
-                var animator=骨.GetComponent<Animator>();
+            if (实例 != null && 独立剑) {
+                var animator=骨.GetComponentInParent<Animator>();
                 if (animator != null) 重绑独立剑(animator);
             }
         }
@@ -189,9 +188,7 @@ public class 武器挂载 : MonoBehaviour
 
     bool 该显示()
     {
-        if (string.IsNullOrEmpty(显示条件功法id)) return true;          // 留空 = 一直显示
-        var 功法 = 面板数据 != null ? 面板数据.当前功法 : null;
-        return 功法 != null && (功法.功法id == 显示条件功法id || 独立剑);
+        return 面板数据 && 面板数据.当前武器;
     }
 
     static void 重绑独立剑(Animator animator)
@@ -206,7 +203,12 @@ public class 武器挂载 : MonoBehaviour
             else if(p.type==AnimatorControllerParameterType.Bool)bools[i]=animator.GetBool(p.nameHash);
         }
         var states=new AnimatorStateInfo[animator.layerCount];var weights=new float[states.Length];
-        for(int i=0;i<states.Length;i++){states[i]=animator.GetCurrentAnimatorStateInfo(i);weights[i]=animator.GetLayerWeight(i);}
+        for(int i=0;i<states.Length;i++){
+            // A stopped action can already be fading back to locomotion. Restoring only
+            // the old Action state loses that exit and revives its placeholder motion.
+            states[i]=animator.IsInTransition(i)?animator.GetNextAnimatorStateInfo(i):animator.GetCurrentAnimatorStateInfo(i);
+            weights[i]=animator.GetLayerWeight(i);
+        }
         animator.Rebind();
         for(int i=0;i<parameters.Length;i++) {
             var p=parameters[i];

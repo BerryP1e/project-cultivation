@@ -15,7 +15,7 @@ public sealed class VoxelPrototypeDemo : MonoBehaviour
     void Update()
     {
         if(Input.GetMouseButton(1)) { yaw+=Input.GetAxis("Mouse X")*4; pitch=Mathf.Clamp(pitch-Input.GetAxis("Mouse Y")*3,5,80); }
-        观察距离=Mathf.Clamp(观察距离-Input.mouseScrollDelta.y,3,60); 定位();
+        if(!TreasureSkillHud.占用滚轮)观察距离=Mathf.Clamp(观察距离-Input.mouseScrollDelta.y,3,60); 定位();
         if(Input.GetKeyDown(KeyCode.R)) 目标.初始化();
         if(Input.GetKeyDown(KeyCode.LeftBracket)) 破坏半径=Mathf.Max(.1f,破坏半径-.15f);
         if(Input.GetKeyDown(KeyCode.RightBracket)) 破坏半径=Mathf.Min(5,破坏半径+.15f);

@@ -232,6 +232,8 @@ public class UIInkSkin : MonoBehaviour
         UIEquipmentShowcasePage.应用(r);
         foreach(var scroll in r.GetComponentsInChildren<Scrollbar>(true)) InkUITheme.ScrollbarStyle(scroll);
         UICharacterBackdrop.应用(r);
+        UIInkBagPage.应用(r);
+        UIInkEquipmentPage.应用(r);
     }
 
     /// <summary>内板（内容分区底板）—— 名字来自 `CharacterPanelBuilder` 的分区命名</summary>

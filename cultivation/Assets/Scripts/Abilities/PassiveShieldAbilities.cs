@@ -2,6 +2,7 @@
 using UnityEngine;
 
 /// <summary>三种减伤被动互斥并持续耗蓝；主动四御优先挡住整次真实伤害。</summary>
+[DefaultExecutionOrder(12000)]
 public class PassiveShieldAbilities : MonoBehaviour
 {
     public UIPanelData 面板数据;
@@ -13,6 +14,7 @@ public class PassiveShieldAbilities : MonoBehaviour
     Vector3 固定位置;
     PlayerVitals 生命;
     GameObject 四御特效;
+    Transform 护罩锚点;
     public int 剩余棱柱 => 面板数据 != null ? Mathf.Clamp(面板数据.绝对护罩剩余次数, 0, 4) : 0;
 
     void Awake()
@@ -81,13 +83,13 @@ public class PassiveShieldAbilities : MonoBehaviour
         foreach (var 技能 in 启用)
         {
             if (!UIPanelData.是减伤护罩(技能) || 特效.ContainsKey(技能)) continue;
-            特效[技能] = AbilityVfxUtility.生成(技能.特效资源路径, transform, 固定缩放, true);
+            特效[技能] = AbilityVfxUtility.生成(技能.特效资源路径, 护罩锚点, 固定缩放, true);
         }
         foreach (var 对 in 特效)
             if (对.Value != null)
             {
                 对.Value.transform.localScale = Vector3.one * 固定缩放;
-                对.Value.transform.localPosition = 固定位置;
+                对.Value.transform.localPosition = Vector3.zero;
             }
         更新四御();
     }
@@ -113,6 +115,7 @@ public class PassiveShieldAbilities : MonoBehaviour
         }
         固定缩放 = Mathf.Clamp(身高 / 4f, .15f, 1.5f) * 尺寸倍率;
         固定位置 = 中心 - Vector3.up * 固定缩放;
+        护罩锚点=new GameObject("WorldAlignedShieldAnchor").transform;护罩锚点.SetParent(transform,false);护罩锚点.SetPositionAndRotation(transform.TransformPoint(固定位置),Quaternion.identity);
         尺寸已确定 = true;
     }
 
@@ -125,10 +128,10 @@ public class PassiveShieldAbilities : MonoBehaviour
             四御特效 = null; return;
         }
         确定尺寸();
-        if (四御特效 == null) 四御特效 = AbilityVfxUtility.生成("Abilities/AbsoluteShield", transform, 固定缩放, true);
+        if (四御特效 == null) 四御特效 = AbilityVfxUtility.生成("Abilities/AbsoluteShield", 护罩锚点, 固定缩放, true);
         if (四御特效 == null) return;
         四御特效.transform.localScale = Vector3.one * 固定缩放;
-        四御特效.transform.localPosition = 固定位置;
+        四御特效.transform.localPosition = Vector3.zero;
         var 棱柱 = 四御特效.transform.Find("Effect_09_Crystals");
         if (棱柱 != null)
             for (int i = 0; i < 棱柱.childCount; i++) 棱柱.GetChild(i).gameObject.SetActive(i < 剩余棱柱);
@@ -141,4 +144,6 @@ public class PassiveShieldAbilities : MonoBehaviour
         四御特效 = null;
     }
     void OnDisable() => 清理特效();
+    void LateUpdate(){if(护罩锚点)护罩锚点.SetPositionAndRotation(transform.TransformPoint(固定位置),Quaternion.identity);}
+    void OnDestroy(){if(护罩锚点)Destroy(护罩锚点.gameObject);}
 }

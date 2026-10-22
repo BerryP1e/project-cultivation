@@ -1,157 +1,35 @@
 # 验证配方
 
-2026-10-20：`tree-spatial-aa.cs.txt` 在隔离Play使用真实Game View，对相同树木镜头切换官方SMAA，记录静止帧差与32帧微移指标，并断言没有残留PostProcessLayer。恢复原相机、时间和驱动组件，结果位于 `.local/diagnostics/outfit-trees-perf-20261020/`。指标是同机位对照，不能据此承诺全部距离完全无闪；性能和墨线遮挡证据见[本轮报告](../../docs/reports/2026-10-20衣发性能与环境描边.md)。
+当前版本：2026-10-22。通过[Unity包装器](../unity/README.md)执行，输出写忽略的.local/diagnostics。配方是可复用检查，不代表每次提交全部重跑；当前结论见[统筹报告](../../docs/reports/2026-10-22系统与文档统筹.md)。
 
-## 家园版本当前验收（2026-10-16）
+## 最新定向检查
 
-当前正式场景只有洞府、宗门野外和镇妖阁。先 setup 隔离存档，运行后 stop + teardown 核对真实存档。不能直接把历史五场景配方套到当前工程。
+| 配方 | 模式与范围 | 最近结果 |
+| --- | --- | --- |
+| [spirit-flight-grip-editor.cs.txt](spirit-flight-grip-editor.cs.txt) | 非Play独立预览；实际玩家Avatar+武器，Rebind后检查九方向、手指/安装角、32相位胸髋和剑尖 | 261项通过 |
+| [treasure-carousel-editor.cs.txt](treasure-carousel-editor.cs.txt) | 非Play；真实图卡中间帧、连滚/反向/循环、目录刷新及生命周期 | 17项通过 |
+| [weapon-motion-editor.cs.txt](weapon-motion-editor.cs.txt) | 非Play；长戟四个平刺、飞剑地面八向、武器idle分流 | 最近79项通过 |
+| [notice-entry-runtime.cs.txt](notice-entry-runtime.cs.txt) | 隔离Play；统一通知、真实帧末淡入滑入与生命周期 | 历史通知阶段12项；未作为本轮全回归 |
+| [direct-scene-inventory-runtime.cs.txt](direct-scene-inventory-runtime.cs.txt) | 编辑器直接启动洞府，检查专用测试背包与正式/QA排除 | 按当前目录逐项比对并检查武器拥有；本轮未重跑Play |
+| [paper-close-runtime.cs.txt](paper-close-runtime.cs.txt) | 隔离Play；斜叉、悬停、按住/取消、淡出和输入恢复 | 历史11项，不代表最新全界面验收 |
 
-| 配方 | 当前覆盖 |
-| --- | --- |
-| home-idle-integration | 五种建筑令实际放置与原交互、拓境、野外悬赏、丹方/每日清单、菜单读档、塔内进出和死亡 |
-| idle-menu-runtime | 真正旧版文件保留、新菜单新档进入洞府和初始建筑令 |
-| appearance-cloth-runtime | 四套外观、独立袍面/长发、实际根节点移动转向、静止稳定、接缝、预览私有网格、换装清理、传送及原生截图 |
-| appearance-pose-follow | 正式金丹：前飞袍面相对刚性基线下弯、逐段限角、水平转向一致、暂停与停步回稳、人体骨缩放与源面数保留；需隔离 Play |
-| appearance-goldencore-visual | 前一版背片复查留档：正常 Animator/LateUpdate 六阶段、Game View、定格背片对照。总偏移阈值属于旧纯波动方案；当前围合接触网络用下方 shell 配方 |
-| appearance-goldencore-preview | 正式金丹预览私有网格和骨架，预览不改变源袍面，78/120骨来回切换及旧衣骨清理 |
-| appearance-goldencore-shell | 当前围合袍面：正常 Animator/LateUpdate 六阶段动作，正/侧/背同步帧；髋腿胶囊净空、同点闭合、有限表面；定住人体后分别测前襟/背片非刚性变化。旧 visual 的总偏移阈值不适用于接触网络；无侵入仅指测试胶囊，不代表全网格自碰撞 |
-| appearance-goldencore-hair | 金丹四组长发：发根/发梢限角，人体定格后独立运动，实际活动发顶点与原始发姿势的肩背净空对照；六阶段三视角近景并重跑围合衣服检查。不是全发束自碰撞 |
-| remote-projectile-native | 飞弹主体、持续拖尾真实网格、转向/速度/长飞行与火岩坠原生层 |
-| world-map-rendering-runtime | 四次连续龙吐息、真实 Game View 透明抓屏和缓冲释放 |
-| ability-preview-lifecycle-runtime | 隐藏/打开/销毁预览及动画图生命周期 |
-| world-maps-scenes | 当前三张地图的真实几何、资源和功能绑定 |
-| world-authoring-usability / world-authoring-wall-grass | 工坊可逆笔刷、墙体、草避让和桥岸规则 |
+武器三组合、长戟79项和宣纸页108项的阶段证据见统筹报告；未提交本机截图/完整日志。当前新武器中央显示已实现，不要运行旧“武器待开发”断言。旧硬件光标10像素/32画布断言也不适用，现为高分辨率RawImage、UV裁切和实际可见尺寸。
 
-旧 HUD 主线、五场景 Play、旧洞府地面/围挡与宗门石台配方已移至 archive/pre-home-20261016。其余条目保留各主题的制作证据；带日期的旧检查数不代表本轮重复运行。当前结果见 docs/reports/2026-10-16收尾验收.md。
+## 系统配方索引
 
----
+- 战斗：combat-pipeline、melee-impact-runtime、combat-hit-feedback、all-state-casts-runtime。
+- 家园：home-idle-integration、home-farming-runtime及home-*编辑器配方；正式地图当前三张。
+- 外观：appearance-cloth-runtime、appearance-goldencore-shell、appearance-goldencore-hair、appearance-goldencore-preview；Avatar有效不代表姿态正确。
+- 法则：law-balance、law-chest-drop、law-fragments；新纸面双环替代独立旧法则页，旧UI断言需先更新。
+- 御风：flight-dodge-editor/runtime；持握定稿以[动作登记](../../docs/guides/动作定稿与重建边界.md)为准。
+- 地图/渲染：world-map-rendering-runtime、world-authoring-map-repairs、world-map-fog-depth、tree-spatial-aa。
 
-## 各系统既有配方与历史证据
+以上为文件名前缀，可在本目录查找对应.cs.txt。太初龙栖诀、八九秘籍、旧主线/五场景及旧独立面板的配方保留源证据价值，**不再是当前玩法验收入口**；不要把其中旧成功数量累加到当前版本。
 
+## 执行与清理
 
-五场景工坊：`world-maps-scenes.cs.txt` 在停止运行的独立工坊场景中检查五图实际几何、完整变换和功能关联，临时打开的场景不保存。运行检查必须先以 editor 执行 `world-maps-play-setup.cs.txt`：记录真实存档哈希，把 `SaveSystem` 的 Editor 验证目录切到 `.local/diagnostics/world-map-validation/saves` 并创建新测试档。进入 Play 后执行 `world-maps-gameplay.cs.txt`，覆盖五场景、拓境令和独立宗门角色；停止后执行 `world-maps-play-teardown.cs.txt`，核对真实存档、清除隔离设置并返回独立工坊。不要直接在真实存档目录执行塔内检查，塔控自动存档固定写槽位0。`world-authoring-wall-grass.cs.txt` 在工坊Play验证端口吸附、固定建筑尺度、密度和画材质后草的可恢复避让。
+Editor配方不进入Play；runtime配方必须真实Play和真实帧末，不能用编辑器协程或手动渲染主相机替代。只渲染自己的隔离预览相机。
 
-渲染兼容：`world-map-rendering-compatibility.cs.txt` 在非 Play 检查筛选后的新包素材／完整建筑、材质、可恢复删除事务及真实雾与透明物体合成（当前 64 项；旧 195 项版本的全零件入库规则已按用户要求取消）。`world-map-rendering-runtime.cs.txt` 在隔离存档的个人洞府 Play 中，实际续接四喷并以 `WaitForEndOfFrame` 捕获原生 Game View，检查每帧折射颜色缓冲尺寸、HDR 辉光层级和退出释放。当前一次 359 帧／16 图／374 项通过；数量受帧率影响。不能以手动 `Camera.Render` 的单张静态图代替持续喷射画面验证；前者曾漏掉命名 GrabPass 的马赛克。停止后必须执行存档 teardown。
+自动Play前记录真实存档指纹、设QA目录；已隔离不能重复setup。结束停止Play、撤销SessionState覆盖、核对正式目录指纹及原Game View分辨率。不得重算测试后的指纹冒充原基线，也不得覆盖用户存档“恢复”。直接场景赠物是独立测试模式，不能让其覆盖QA流程。
 
-存档隔离已激活时禁止重复 setup，避免把沙盒路径和测试档哈希覆盖成“真实存档基线”。teardown 独立核对 `Application.persistentDataPath/saves` 路径及排序后的文件哈希，检查失败也撤销隔离，不擅自恢复或覆盖用户存档。若历史会话基线元数据错误，应从测试前只读备份核对真实文件，不能用当前文件重算后直接宣称未变化。
-
-局部命中反馈：`combat-hit-feedback.cs.txt` 在独立 Play 检查真实玩家/野猪的双方/单方顿帧、自动恢复及施法定格、连续命中限制、免疫和关闭表现、物理特效外侧投影。三套近战的实际接触与渲染继续由 `melee-impact-runtime.cs.txt` 检查。
-
-此目录保留当前玩法、场景、动画、特效和体素相关的可复用 C# 验证片段。用 [Unity 包装器](../unity/README.md) 执行，参数和报告放 `.local/diagnostics`。
-
-工坊收尾：`world-authoring-map-repairs.cs.txt` 在非 Play 验证完整建筑筛选、原贴图与颜色、库删减后的地图引用、三方向跨水摆桥和真实桥面碰撞，当前 444 项。`world-map-fog-depth.cs.txt` 在非 Play 使用非居中的高低三色实体检验真实深度，防止仅检查屏幕中心漏掉雾遮高楼；截图归 `map-repair/fog-asymmetric.png`。`world-map-save-runtime.cs.txt` 在隔离存档 Play 中，实际暂停菜单保存、五次主菜单选档／重新进场，检查五场景位置／朝向、附加场景采集、直接启动异场景、普通传送落点优先及新地图加载，35 项通过；运行开始时读取当前已发布村图 JSON 作为读回基线。停止后必须执行存档 teardown。普通传送不得调用新一局的读档重置。
-
-文件内容决定其运行模式：使用 Editor API 检查资产的选 editor；依赖实际 Player / Coroutine 的选 runtime 并先进入 Play。部分配方会临时移动角色、切换功法或创建测试目标；在独立 Play 回归中执行，结束后停止 Play，不保存测试场景状态。
-
-不要提交截图、完整 Console 日志、个人存档或本机连接配置。重新生成数据或保存场景不是只读验证，执行前确认实际影响。
-
-水龙炮召龙吐息：`all-state-casts-runtime.cs.txt`在独立Play检查地面、御风、实际碧水兽骑乘的水炮和两种追踪弹，共9次施放；水炮覆盖玩家玄霄A3自然播放、倒放Hit、主角43%同步龙Attack55%定格与出水、主角自然完成后吐息继续、嘴部挂点、伤害及消融。`water-dragon-breath.cs.txt`补充后侧位置、手动落点、移动目标、超距、显形中断、施法者销毁、执行体停用和无残留。报告归`.local/diagnostics/dragon-mob`，不保存场景或存档。
-
-`water-dragon-continuity.cs.txt`在Editor隔离预览检查龙模型两倍缩放、显形/姿势融合/定格/跑步循环接缝连续性及30/60/120Hz下震颤平滑退出；吐息Play配方额外检查放大后近距离炮口位于目标之前。
-
-战斗管线回归：`combat-pipeline.cs.txt`在Play检查六种伤害路由、实际扣血/护盾/过量/死亡、重复碰撞体、事件与环境配置；`melee-impact-runtime.cs.txt`使用真实功法装载和剑身求交，检查三套近战三式、挥空、命中表现及无体素破坏。两者须独立进入Play，报告和多帧渲染证据写`.local/diagnostics`，结束后停止Play。
-
-太初龙栖诀回归：`taichu-runtime.cs.txt`在独立 Play 检查实际伴龙轮廓、五式/远近循环、目标冰晶往返、三枚火弹、可打断特殊待机、普攻与主动加成隔离、取消和引导；`taichu-scenes.cs.txt`在 Editor 只读检查所有启用场景装载、腕指曲线与资源依赖。说明见 [太初龙栖诀](../../docs/guides/太初龙栖诀.md)。
-
-定稿清理后运行91项、场景/成品93项、A1覆盖716项再次通过。场景脚本检查八套独立 Generic `.anim` / Avatar，原来源目录与重建器不存在且依赖闭包无 DragonPriest FBX；仍验证实际玩家腕指、A2/Guard03朝向和CPU/GPU网格标记。源动画对照及一次性提取器仅写本机诊断，不作为维护工具保留。
-
-
-## 2026-10-11 法则与日常机会
-
-`law-fragments.cs.txt`：7262项实际Play检查法则生成/击杀/开箱/装备/属性/存档/日常/3D界面。`law-handoff.cs.txt`：最新会话接力、真灵归属、移动倍率。`taichu-contact-blend.cs.txt`：148项A1窗口和八种伴龙切换连续性；须在干净玩家场景运行，报告归 `.local/diagnostics`，不保存场景。
-
-收尾接力/真灵归属/移动倍率8项和六玩家场景/资源依赖83项检查通过。最新太初接触窗口与姿势过渡检查129项通过（帧采样项数随运行帧率变化）；五式真实战斗91项、法则7262项回归再次通过。共享编译0错误，11条既有素材/工具警告未增加。
-
-法则交互/分层动效：`law-ui-optimized.cs.txt` 在独立 Play 检查六槽双环、鼠标拖拽、背包隔离、御风悬停半尺寸人物、周围粒子吸纳和松手平滑续转；`law-art-links.cs.txt` 接续该配方检查晶体/墨纹/灵气独立运动、实时光粒及神通连接网格。当前分别29项、6项通过。后者需要前者产生的法则测试集合，不保存测试状态；所有动画使用 unscaledTime，面板暂停游戏时也应正常播放。
-
-`law-balance.cs.txt`：38项数值回归（只保留六项敏感配置、恢复普通副增幅/固定值及无专用截断、10万次高值稀有抽样、六槽总增量上限、回复参照、丹药保留和词条校准）。`law-arc-ui.cs.txt`：17项半弧收藏带回归（可见卡片池、切线/滚轮/滚动条、拖拽装备/卸下、真实射线不遮挡装备槽、半透明底与环境吸纳）。在干净3C_Testbed Play运行，脚本只修改本次Play数据；用 script-args.mjs 生成 runtime 参数，exec_runtime_script 执行，报告归本机 `.local/diagnostics`。停止Play后用 law-scenes.cs.txt 在 editor 模式审查六玩家场景依赖。
-
-`law-presentation.cs.txt`：19项展示与交互检查，覆盖整区半透明底/右侧统一水墨底、人物仪轨六槽同步1.45倍取景与实际射线、主副属性单行淡底/悬停/滚动、切换节点复用、操作说明移除及重开。沿用干净3C_Testbed Play运行方式，截图与报告仅写 `.local/diagnostics`。
-
-`law-refinement.cs.txt`：443项熔炼/洗练检查，覆盖九境界5倍基础产出/10同阶与50下阶消耗、品质增产、20次5%洗练封顶、副属性不变、装备保护、实际炉鼎射线与入炉动画、关面板时交易原子性、long余额与炉中UUID存档/跨场景、单行属性布局和生成素材。独立干净Play运行，不写正式存档，结束后丢弃测试状态。
-
-`flight-dodge-editor.cs.txt`：Edit Mode隔离预览检查12段御风闪避、实际玩家骨骼/手指、左右完整镜像、连续姿态、零XZ根位移及六场景共享控制器；808项通过。`flight-dodge-runtime.cs.txt`：使用 `exec_runtime_script` 在独立3C_Testbed Play中创建临时角色和墙，检查相机方向、直线/斜向位移、六类伤害及直接伤害免疫、随机状态、撞墙、冷却、状态中断、骑乘禁用、施法占用和待发子弹取消。报告写 `.local/diagnostics/flight-dodge`，不保存正式场景或存档；结束后停止Play。不可用 `exec_editor_script` 运行后者，该工具会先停止Play。
-
-`home-farming-runtime.cs.txt`：独立Play检查洞府连续地面扩建与通行、取消摆放退款、种子仓库事务、松土/播种/浇水/收获、满仓停工、离场数据任务、仓库面板和JSON持久化。使用3C_Testbed，关闭自动存档，不保存测试场景或正式存档；报告写 `.local/diagnostics/home`，结束后停止Play。场景一致性体检同时检查HomeAssets资源入口。
-
-`home-puppet-rig-editor.cs.txt`：非Play隔离预览检查傀儡Avatar采用真实绑定T姿势、30个手指关节、完整骨骼映射与五种动作逐帧姿势，并检查待机/走路躯干与肩部朝向。此检查用于发现“Avatar有效但基准姿势错误”的扭曲，不能只检查isValid。报告归 `.local/diagnostics/home`，不修改场景或资产。
-
-`sect-ground-editor.cs.txt`：非Play检查Sect圆角成品网格、原顶面碰撞、原物件变换（若有烘焙前本机快照）、材质、顶面拓扑和七组岩壁过渡带接缝；逐段验证顶面贴合、实际源岩壁截线贴合与过渡带内部连续，防止凸包穿出岩壁。不修改或保存场景。`home-farming-runtime.cs.txt`同时检查非松土动作原速、1.65米/秒实际移动、10秒六轮松土、四种作业的田中心位置；基站旋转315°后，检查生成及实际走回前方木板时的位置、朝向与用户运行场景放好的停靠姿态一致。
-
-`home-ground-editor.cs.txt`：非Play预览单块/两块融合草地，实际碰撞射线及五种布局的网格封闭/非流形检查，包含保留中间空洞的环形扩建。输出预览和报告到 `.local/diagnostics/home`；不修改场景或正式资产。
-
-`home-boundary-editor.cs.txt`：树石烘焙、石头X轴-90°源朝向、无额外碰撞、同布局无变化、扩建后远端实例及位置保持、还原确定布局；输出实际围挡预览。`home-boundary-runtime.cs.txt`：真实HomeWorld地面重建下的围挡实例保留、开口清理、四向寻路、重置和切场景回归。独立Play运行，关闭自动存档，结束后丢弃测试状态；报告写 `.local/diagnostics/home`。
-
-`law-chest-drop.cs.txt`：25项10%掉箱/5%条件升阶回归，包含100万次击杀抽样、实际Catalog资产、概率边界、失败掉箱不得升阶和九境界封顶。只读检查，不临时修改掉率。
-
-`taichu-a1-coverage.cs.txt`：A1命中覆盖与连续动画重启回归；复现旧表面判定漏掉矮小目标，检查0.4/0.8/1.2/2米高目标在0.6/1.5/2.4/3米距离、四种朝向的实际普攻伤害，窗口前不伤害、每招一次、友方/范围外/过高目标不误伤，以及跨过整个窗口仍补采甩尾弧线。仅修改临时Play数据和克隆配置，结束后停止Play，不写存档或场景。
-
-`law-essence-stream.cs.txt`：13项精粹汇入动效回归，覆盖左上计数、放大炉鼎的真实射线、产出与粒子数量关系、实际贴图/网格、炉火后发射、暂停播放、抵达脉冲和关闭仅清理表现。报告/截图只写 `.local/diagnostics`，修改的数据仅限当前Play。
-
-`npc-projectile-assets.cs.txt`：Editor检查七NPC主题及玩家Priest实际粒子网格、使用的材质/Shader与玄蜂箭矢；忽略未启用trails时不用的第二材质槽。`npc-projectile-resources.cs.txt`：118项Play检查24个强制资源入口、九类AI真实攻击默认配置、直接生成子弹而非延迟命中回退、飞行粒子/箭矢网格、接触/躲避/最大距离消散。不改怪物参数或正式场景。
-
-- `flight-dodge-feedback.cs.txt`：Play下 exec_runtime_script 验证闪避尾段直接融合、残影池与消散、擦身慢镜真实时长、镜头恢复/暂停优先级、扩大的飞弹和近战擦身范围以及灵虚地面身侧剑（不写存档或正式场景）。
-- `flight-dodge-blend.cs.txt`：Play下 exec_runtime_script 检查中段到结束的递增融合，覆盖八方向、30/60/120Hz、三档播放倍率、源动作独立速度、目标片段相位连续、结束不跳待机、速度交接、模型Yaw补偿和中断复位。报告归 `.local/diagnostics/flight-dodge`。
-
-- `lingxu-takeoff-scale.cs.txt`：隔离Play中验证灵虚剑的默认大小、升空/落地逐帧大小、原攻击缩放、正式模型缩放及升空混合攻击，报告归本地diagnostics。
-
-- `home-production-editor.cs.txt`：非Play验证三种建筑的源网格非凸碰撞、兽栏空腔与实际栏杆射线、五种中立家畜/原生动画、15件物品与兑换图标，以及六种退役动物清理后的聚合引用和旧档兼容。
-- `home-production-runtime.cs.txt`：Play执行生产数值、饥饿/食物偏好/繁育/容量/满仓、堆肥与炼丹事务、途中存档、实际背包转移、界面和逐帧姿态；使用exec_runtime_script，测试后停止Play，不写存档。
-- `home-production-integration.cs.txt`：Play执行真实游戏时钟、暂停、离场与重建、功德堂目录、F面板与关闭输入归还、炼丹三列间距和格选择、真实施肥扣除与冷却、摆放互斥。报告/截图归 `.local/diagnostics/home-production`。
-
-- `active-wave1-editor.cs.txt`：非Play检查五门天降定义/玉简/面板与共享表现引用、剑尖/预算/多道落雷/去蓄力、正确命名/固定插地剑、能量02前半及三段实际玩家腕指。151项通过。
-- `active-wave1-runtime.cs.txt`：独立Play检查五技能地面/御风/实际碧水兽共15次施放，实际接触、主动加成/属性、逐弹及多碰撞体去重、友方/范围、特效真实发射、雷陨24道散布与附近目标命中、鼠标落点、暂停/中断/目标消失与失败不扣费。276项通过，证据归 `.local/diagnostics/active-wave1`，不写存档或正式场景。
-- `active-wave1-stability.cs.txt`：经共享表现入口实际播放两种剑雨命中，在0.15～0.75秒连续采样剑的位置/旋转/尺寸并验证剑尖朝下；16项通过。
-- `spiral-sword-editor.cs.txt`：变形椭圆/均匀弧长、斜铺朝向、不同区域落点、强起步、曲线转直线位置/速度连续及末段方向固定、连续速率、目录/Shader/预算及剑雨落花静音；1250项通过。
-- `spiral-sword-runtime.cs.txt`：三种状态完整288次接触，真实渲染剑间距均匀且不成簇、稀疏边缘微光、引导剑/幻影、独立出剑时刻、两段施法、周围敌人实际伤害、地表范围散布、插地网格不扭转、去重/友方、手动点、暂停/中断/失去目标及失败原子性；96项通过。
-- `spiral-sword-edges.cs.txt`：20fps、移动目标新旧弹道连续性、真实粒子暂停、有限并发/288次接触、取消清理及资源错误不扣费；当前51项通过（含逐帧检查，数量随完成帧数变化）。报告和实拍归 `.local/diagnostics/spiral-sword`。
-- `thunder-palette-runtime.cs.txt`：玄霄四式匹配A1、EpicZeus动态子特效继承调色、原生粒子/灯光及共享源材质/其他技能不受影响，19项通过；不保存场景或存档。
-
-- `spiral-sword-release.cs.txt`：实际第二段动作38%下蹲节点出剑，覆盖0.5/1/1.8倍动作速度、暂停/恢复、节点前打断、无提前伤害和无积压齐射。本次459项含逐帧检查通过；报告归 `.local/diagnostics/spiral-sword/release-report.txt`，不写场景或存档。
-
-行游轮盘：`traversal-wheel-runtime.cs.txt` 在独立 Play 使用真实玩家骨架与碧水兽，333 项检查覆盖 Tab 释放、扇区/遮罩、输入锁、双向模式过渡、动态学习及内存 JSON 保存恢复，不写场景和存档。
-
-角色界面新版：`ui-unified-runtime.cs.txt` 在独立Play验证背包、法则总览/背包分层、筛选、拖拽、熔炼/精粹洗练、原3D星空装备栏及独立表现预览、未选中卡片的真实鼠标拖拽、暂停中的墨流/鼠标搅动、外观柔边底、法宝/坐骑空预览与透明模型；两种分辨率各68项通过，使用临时数据并恢复，不保存场景和存档。`new-ability-icons.cs.txt` 为Editor图标导入与引用检查，真实alpha/不同Sprite/导入参数/神通玉简共25项。旧包裹开场与随机错列的外观断言已由新版规则取代。
-
-`ui-presentation-bugs.cs.txt` 为材质、冰冢长光芒、八种飞弹主体同步/沿路空间、人物对木桩循环、实际粒子与换装专项回归（112项），仅独立Play运行。临时外观会话恢复，不写场景或存档。
-
-`julong-coordinates.cs.txt` 为Editor巨龙整体X轴+90°检查：六段动画各38个时间点、两种生成位置/朝向，真实骨骼和全部蒙皮顶点对照原FBX整体旋转；另比较六个原生控制器状态（包含循环混合），检查时长/循环/事件及碰撞体轴向。3,045,936次位置对照通过，最大蒙皮误差5.48e-6米；不保存场景或存档。报告归 `.local/diagnostics/julong-converted-qa.txt`，重烘焙方法见 `docs/guides/巨龙坐标与动画.md`。
-
-`npc-prefab-preview.cs.txt` 为Editor预制体动画预览28项检查：六片段切换/真实渲染/姿势变化、时间定位、循环与末尾停止、独立PreviewScene及游戏组件隔离、源预制体/控制器不变、销毁清理与自定义Inspector接线。截图归 `.local/diagnostics/julong-preview-*.png`，不保存场景或存档。
-
-掣电烨霆当前入口：`chedian-ghost.cs.txt`（81项）验证日常鬼火、停用预热模型、完整龙从头到尾凝形、末段立即从尾向头加速回收、1.5倍喷射、即时续吐/撤暗幕、单轮四段预算/剩余作废、冷却换槽、暂停清理及70敌人非分配查询溢出，四喷递增电流/龙头电焰与25%～100%四段颤动。`chedian-channel.cs.txt`（29项）使用真实玩家骨架验证A3持续举手、每喷后顿、上半身/左臂独立瞄准、走路/御风混合、远近普攻中断、其他技能锁与续喷穿透。`chedian-ghost-preview.cs.txt`（13项）验证暂停下隔离的鬼火→凝形吐息→回收。`chedian-editor.cs.txt` 保留17段资源/循环/坐标检查（25,245项）。旧实体伴龙配方移至 archive/chedian-solid-companion，只供历史制作参考，不运行于当前玩法。报告归 .local/diagnostics；脚本不保存场景或存档，说明见 docs/guides/掣电烨霆.md。
-
-循环与行游被动：`cultivation-passives-editor.cs.txt`验证七被动/玉简/目录与八张透明图标（35项）；`cultivation-passives-runtime.cs.txt`在独立Play验证实际百分比回复/神识、恢复粒子、学习、严格低境界风压禁行禁攻、独立禁锢、Tab子菜单/光标、真实到达记录与保存恢复（56项）。不写正式场景或存档；报告/截图归`.local/diagnostics`。原轮盘333项、龙收敛后四喷81项再次通过。
-
-
-画面升级（2026-10-14）：`rendering-study-editor.cs.txt` 生成独立 URP 样板并渲染三个视角/描边状态，检查管线、光照、抗锯齿与设置文件恢复；`rendering-legacy-water-fog.cs.txt` 在临时 Built-in 场景检查旧水兼容贴图、实际水面与体积雾；`rendering-grade-runtime.cs.txt` 在 Play 中捕获同相机两种调色，随后恢复原参数。运行前先使用旧水兼容贴图烘焙菜单；保留当前正式场景，无需保存它。
-
-`ability-preview-lifecycle-runtime.cs.txt`：检查隐藏神通页面不提前分配预览、打开后重放待展示项，以及显示过和从未打开的页面销毁后的动画图生命周期。
-
-`world-authoring-usability.cs.txt`：独立工坊运行时验证填池恢复地表及撤销/重做、清草、外扩草地纹理、实体草封闭拓扑、整占地水岸禁摆、无效摆放不入历史、自然石根与保留间隙、模型预览及游戏机位切换。临时替换地图后在 finally 恢复原地图，清空测试历史；不写正式场景/命名地图。报告归 `.local/diagnostics/map-ux-validation-results.txt`，测试前仍建议 Ctrl+S 保存当前地图。
-
-spirit-array-runtime.cs.txt：隔离 Play 验证阵灵符认主、右键编排、E 法宝调度、0.48 米阵距、锁定目标高度角、身前节点保留引导方向、手动法宝确认入口、完整编排与当前选择恢复、序列/正反多重、扫掠穿阵、逐次灵力、伤害管线、窗口输入锁及清理。此前 56 项；本轮编排/入口回归 93 项通过，证据归 .local/diagnostics/spirit-array，不写正式存档或场景。
-
-appearance-cloth-runtime.cs.txt：隔离 Play 检查蒙皮所有权、接缝、冻结稳定性和清理。旧1953项“裤口”结论已撤回：此前测到腰带而非裤腿。该历史失败不能作为现阶段结果；后续金丹围合袍面已获用户确认，最新扩展状态见docs/guides/着装蒙皮人工校正.md。
-
-spirit-array-presentation.cs.txt：检查仪轨按功能组合、没有给所有节点套完整中心图案、空间折线/轨道运动、触发脉冲、六个独立中心素材、浮世万象全部源三角保留、13 个外围部件、核心固定及暂停漂浮。报告归 .local/diagnostics/spirit-array/。
-
-spirit-array-save.cs.txt：专门通过隔离存档文件往返检查新枚举 11 的逆向包、嵌套子阵、负倾角、启动延迟及发射参数，已通过。仪轨与模型表现检查 282 项通过；服装检查失败另记，不合并为完成。
-
-spirit-array-spacing.cs.txt：12 项通过；真实运行验证普通节点自定间距、身前/头顶起点距离与下阵距离分别生效、逆向打包和多重入口间距、参数页分别编辑及存档往返。不改写正式角色存档。
-
-spirit-array-lifecycle.cs.txt：16 项通过；实际初速 27.6 米/秒（原速 2.3 倍）、穿阵加速、功能完成后 1 秒平滑淡出、延迟发射等待、多重完整展开后消散、节点销毁。高速弹会更早命中近靶，runtime 的存活专项使用远靶；原 93 项再次通过。
-
-appearance-hand-binding.cs.txt：Editor历史18项通过；同rig重定位保留原顶点、指骨权重和三角面。该轮手部检查不代表当时金丹御风穿袍通过；后续结果以本轮维护指南和outfit-protected-parts为准。
-
-2026-10-18：outfit-expansion.cs.txt检查六套各490帧的真实Animator；状态采集独立于截图，地面阶段暂停并恢复真实御风组件。历史四机位离屏抓屏已禁用。outfit-expansion-items检查31/41/61赠物、学习装备、消耗及重复拒绝。必须隔离Play，不写正式存档；按外观results报告，旧prototype不作证据。金丹长发专项使用appearance-goldencore-hair，检查实际蒙皮点及冻结人体发梢响应。
-
-outfit-protected-parts.cs.txt：Editor检查原始/明确作者四权重、源面账目、细分同点蒙皮；元婴/化神/合体要求仅保留原鞋、生成几何0、旧细腿代理清空，筑基保留既有检查。outfit-bloom-finite.cs.txt检查NaN/Inf不进入泛光扩散，有效HDR亮部保留。
-
-2026-10-19：outfit-inner-skirt.cs.txt在隔离Play中固定同一实际行走姿势，对鞋靴接触作开/关对照；相同求解时钟、相同初始状态，要求内裙实际位移而非仅碰撞计数，截图与报告写入.local/diagnostics/boot-inner-skirt-ab，同时将Error/Exception判为失败。测试后恢复配置、动作与相机，退出Play再清除隔离存档覆盖。它不证明任意动作零穿模，也不自动代替用户观感验收。
-
-2026-10-19最新方案：元婴、化神、合体均按用户手工分区仅保留原鞋，不生成腿或内衬。outfit-protected-parts与outfit-expansion要求生成几何0及原顶点数不增加。新增outfit-closed-motion.cs.txt在隔离Play检查三套各540帧真实待机、走、跑、悬停、前飞、转向，断言Walk/Sprint/御风实际片段、骨长误差、同点接缝、鞋动画及Error/Exception；主相机截图与几何归.local/diagnostics/closed-outfits-20261019。对捕获的app_*-stage*.json运行outfit-skirt-intersections.mjs检查鞋/内裙三角相交；outfit-closed-cost单独测随动CPU耗时。旧outfit-inner-skirt、outfit-skirt-motion、skirt-geometry及enclosure目录保留已撤回撑裙方案的历史实验，不能作为当前美术验收。不得以代理顶点不穿入或单姿势三角0相交宣称全部动作已修好。
-
-outfit-camera-review.cs.txt：隔离Play中的实际主相机连续拍摄配方。仅修改OutfitId逐套执行，360帧拍站立、前飞正反面、归位、整靴与手指近景；恢复镜头、驱动组件及隔离玩家状态。不调用Camera.Render。截图归.local/diagnostics/outfit-locomotion-<id>，汇总页为.local/diagnostics/outfit-actual-review/review.html。数值检查不能替代造型查看，碰撞代理交叠不声明为零；细节见docs/reports/2026-10-18着装扩展与长发.md。
-
-2026-10-18实际游玩复核：此前整套交付结论撤回。outfit-readability.cs.txt必须直接断言运行时CPU访问所需的isReadable；Editor桥直接读取数组可能绕过普通游戏循环限制。实际合体随动正常执行约53～54ms/帧，暂时关闭约6ms；旧每帧异常状态的低耗时测量无效。固定帧数、静态图和权重检查不能替代换装后的连续性能验收，当前成熟替换方案见docs/reports/2026-10-18着装方案重评.md。
+不保存正式场景、不提交截图/日志/个人数据。改变动作前检查成品GUID、全链持握与工具范围；安装动画子节点后先Animator.Rebind再采样。

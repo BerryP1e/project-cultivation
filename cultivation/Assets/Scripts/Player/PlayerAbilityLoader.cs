@@ -95,11 +95,12 @@ public class PlayerAbilityLoader : MonoBehaviour
         foreach (string id in new[] { CultivationPassiveAbilities.CycleId, CultivationPassiveAbilities.PressureId })
             if (!被动神通表.Exists(b => b != null && b.神通id == id))
                 被动神通表.Add(new 被动神通绑定 { 神通id = id, 组件类名 = new[] { "CultivationPassiveAbilities" } });
-        string[] 新被动 = { "ability_xieyan", "ability_huzhao_wuli", "ability_huzhao_teshu", "ability_huzhao_shuangchong" };
+        被动神通表.RemoveAll(b => b != null && (b.神通id == "ability_xieyan" || b.神通id == "ability_qianjie_leiyu"));
+        string[] 新被动 = { "ability_huzhao_wuli", "ability_huzhao_teshu", "ability_huzhao_shuangchong" };
         foreach (string id in 新被动)
             if (!被动神通表.Exists(b => b != null && b.神通id == id))
                 被动神通表.Add(new 被动神通绑定 { 神通id = id,
-                    组件类名 = new[] { id == "ability_xieyan" ? "DevilEyeAbility" : "PassiveShieldAbilities" } });
+                    组件类名 = new[] { "PassiveShieldAbilities" } });
         if (普攻方法表 == null) 普攻方法表 = new List<普攻方法绑定>();
         普攻方法表.RemoveAll(b=>b!=null && (b.方法id=="basic_sword_01" || b.组件类名=="QingshanSwordTreasure" || b.组件类名=="BasicSword01"));
         foreach (var 条 in 内置登记)
@@ -131,6 +132,7 @@ public class PlayerAbilityLoader : MonoBehaviour
         面板数据.EnsureLists();
 
         var 需要 = new HashSet<string>();
+        if (DevilEyeAbility.已装备(面板数据)) 需要.Add("DevilEyeAbility");
         if (面板数据.主动技能 != null)
             foreach (var slot in 面板数据.主动技能)
                 if (slot is ActiveDivineAbility active)
@@ -146,6 +148,12 @@ public class PlayerAbilityLoader : MonoBehaviour
                 if (b != null && b.方法id == 功法.普攻方法id && !string.IsNullOrEmpty(b.组件类名))
                     需要.Add(b.组件类名);
         }
+
+        var 武器 = 面板数据.当前武器;
+        if (武器 != null)
+            foreach (var b in 普攻方法表)
+                if (b != null && b.方法id == 武器.普攻方法id && !string.IsNullOrEmpty(b.组件类名))
+                    需要.Add(b.组件类名);
 
         // ---- 启用中的被动神通 ----
         if (面板数据.神通 != null)
@@ -218,6 +226,7 @@ public class PlayerAbilityLoader : MonoBehaviour
     HashSet<string> 表里登记过的能力类名()
     {
         var 名 = new HashSet<string>();
+        名.Add("DevilEyeAbility");
         foreach (var binding in 主动装备登记) 名.Add(binding[1]);
         foreach (var b in 普攻方法表)
             if (b != null && !string.IsNullOrEmpty(b.组件类名)) 名.Add(b.组件类名);

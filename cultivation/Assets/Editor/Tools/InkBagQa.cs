@@ -21,6 +21,7 @@ public static class InkBagQa
         var panel=FindObjectOfType<CharacterPanelUI>(true);
         if(command=="inspect") {
             var bag=panel.tabs[0].page.GetComponent<UIInkBagPage>();
+            if(bag&&bag.Waterfall==null)return "Paper inventory: category="+bag.Category+" entries="+bag.EntryCount+" cells="+bag.VisibleCellCount+" attributes="+bag.Attributes.container.childCount;
             var fade=bag.GetComponentInChildren<UIInkViewportFade>(true);
             var log=new StringBuilder("Channels="+fade.GetComponentInParent<Canvas>().additionalShaderChannels+" Bounds="+fade.Material.GetVector("_FadeBounds")+"\n");
             Canvas.ForceUpdateCanvases();
@@ -38,6 +39,7 @@ public static class InkBagQa
     }
     static string Validate(CharacterPanelUI panel)
     {
+        if(panel.tabs[0].page.GetComponent<UIInkBagPage>()?.Waterfall==null)return ValidatePaper(panel);
         var log=new StringBuilder(); int failures=0;
         Action<string,bool> check=(label,ok)=> { log.AppendLine((ok ? "PASS " : "FAIL ")+label); if(!ok) failures++; };
         bool opened=panel.IsOpen; var oldTab=panel.CurrentTab; bool reduced=UIInkMotion.减少动效;
@@ -100,6 +102,24 @@ public static class InkBagQa
         File.WriteAllText(Path.Combine(Application.dataPath,"../screenshots/InkUI-bag-checks-"+Screen.width+"x"+Screen.height+".txt"),result);
         return result;
     }
+    static string ValidatePaper(CharacterPanelUI panel)
+    {
+        bool opened=panel.IsOpen;var oldTab=panel.CurrentTab;var data=panel.GetComponent<UIPanelData>();var saved=new List<ItemDefinition>(data.物品);var log=new StringBuilder();int failures=0;
+        var effect=ScriptableObject.CreateInstance<InkBagQaUseEffect>();var usable=ScriptableObject.CreateInstance<ItemDefinition>();usable.物品id="paper_qa_use";usable.物品名="验收物品";usable.可使用=true;usable.使用效果=effect;
+        void Check(bool pass,string label){log.AppendLine((pass?"PASS ":"FAIL ")+label);if(!pass)failures++;}
+        try{
+            panel.SetOpen(true);panel.ShowTab(CharacterTab.背包);var bag=panel.tabs[0].page.GetComponent<UIInkBagPage>();
+            data.物品=new List<ItemDefinition>{usable,usable};data.RaiseChanged();bag.SetCategory(2);Canvas.ForceUpdateCanvases();
+            Check(bag.EntryCount==1&&data.物品数量(usable)==2,"stack aggregation");Check(bag.VisibleCellCount>=30,"six-column inventory cells");
+            Check(bag.Attributes.container.childCount>26&&bag.AttributeScroll.viewport,"complete scrollable realm attributes");
+            Check(!panel.transform.Find("CharacterNavigationDock").gameObject.activeSelf,"dock hidden while open");
+            Check(bag.transform.Find("InventoryPaper/CurrentOutfitPortrait").GetComponent<Image>().sprite,"actual outfit portrait");
+            bag.ShowTooltip(usable,true);var info=bag.GetComponentInChildren<UIEntryInfo>(true);info.actionButton.onClick.Invoke();
+            Check(effect.Uses==1&&data.物品数量(usable)==1,"original use pipeline consumes one");
+            panel.SetOpen(false);Check(Time.timeScale>0,"close restores time");
+        }finally{data.物品=saved;data.RaiseChanged();panel.SetOpen(opened);if(opened)panel.ShowTab(oldTab);Destroy(usable);Destroy(effect);}
+        log.AppendLine("Failures="+failures);return log.ToString();
+    }
     static IEnumerator Record(CharacterPanelUI panel)
     {
         string suffix=Screen.width+"x"+Screen.height;
@@ -114,10 +134,10 @@ public static class InkBagQa
             UIInkBagPage bag=null;
             for(int i=0;i<100;i++) {
                 if(i==3) { panel.SetOpen(true); panel.ShowTab(CharacterTab.背包); bag=panel.tabs[0].page.GetComponent<UIInkBagPage>(); }
-                if(i==24) bag.Waterfall.OnScroll(new PointerEventData(EventSystem.current){scrollDelta=new Vector2(0,-2)});
+                if(i==24){if(bag.Waterfall!=null)bag.Waterfall.OnScroll(new PointerEventData(EventSystem.current){scrollDelta=new Vector2(0,-2)});else bag.SetCategory(2);}
                 if(i==36) { var cells=panel.tabs[0].page.GetComponentsInChildren<UIInkWaterfallCell>(); if(cells.Length>0) cells[cells.Length/2].GetComponent<Button>().onClick.Invoke(); }
-                if(i==48) bag.Waterfall.ScrollBy(2500);
-                if(i==65) { var material=bag.Waterfall.Owner.data.物品.Find(x=>x!=null && !x.可使用); if(material!=null) bag.Waterfall.Owner.Select(material); }
+                if(i==48){if(bag.Waterfall!=null)bag.Waterfall.ScrollBy(2500);else bag.AttributeScroll.verticalNormalizedPosition=0;}
+                if(i==65) {var data=panel.GetComponent<UIPanelData>();var material=data.物品.Find(x=>x!=null && !x.可使用);if(material!=null){if(bag.Waterfall!=null)bag.Waterfall.Owner.Select(material);else bag.ShowTooltip(material,true);}}
                 if(i==80) panel.SetOpen(false);
                 yield return new WaitForSecondsRealtime(.1f); yield return new WaitForEndOfFrame();
                 frame=ScreenCapture.CaptureScreenshotAsTexture(); encoder.AddFrame(frame);

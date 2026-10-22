@@ -128,7 +128,7 @@ namespace Cultivation.WorldAuthoring
             }
             if(!over)
             {
-                distance=Mathf.Clamp(distance-Input.mouseScrollDelta.y*distance*.08f,5,Mathf.Max(100,Data.Width*1.2f));
+                if(!TreasureSkillHud.占用滚轮)distance=Mathf.Clamp(distance-Input.mouseScrollDelta.y*distance*.08f,5,Mathf.Max(100,Data.Width*1.2f));
                 if(!GameView && Input.GetMouseButton(1)){cameraYaw+=Input.GetAxis("Mouse X")*3;cameraPitch=Mathf.Clamp(cameraPitch-Input.GetAxis("Mouse Y")*2,25,78);}
                 if(!GameView&&Input.GetMouseButton(2)){var right=editorCamera.transform.right;var up=Vector3.ProjectOnPlane(editorCamera.transform.up,Vector3.up).normalized;cameraFocus-=(right*Input.GetAxis("Mouse X")+up*Input.GetAxis("Mouse Y"))*distance*.018f;}
             }

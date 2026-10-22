@@ -48,6 +48,13 @@ public class NpcTargeting : MonoBehaviour
 
     [Tooltip("神识数值来源。留空则自动取自己身上的 PlayerCombatStats")]
     public PlayerCombatStats 战斗属性;
+    UIPanelData 面板数据;
+    float 下次自动索敌时刻;
+    bool 上帧自动索敌,自动索敌已暂停;
+    public bool 自动索敌可用
+    {
+        get { if (!面板数据) 面板数据 = GetComponent<PlayerAbilityLoader>()?.面板数据 ?? FindObjectOfType<UIPanelData>(); return DevilEyeAbility.已装备(面板数据); }
+    }
 
     /// <summary>当前选中的 NPC（绿环）</summary>
     public NpcInstance Selected { get; private set; }
@@ -95,14 +102,17 @@ public class NpcTargeting : MonoBehaviour
     {
         if (射线相机 == null) { 射线相机 = Camera.main; if (射线相机 == null) return; }
 
-        维护锁定目标还活着();
-
         // 有全屏界面（设施界面等）开着时，鼠标不该穿透到场景里。
         // 否则站在炼丹炉前开着界面，右键会连建筑一起点，又开一个新界面。
         if (UiEscRegistry.SceneInputBlocked) return;
-        if(PlayerManualAim.AltHeld)return;
+        var manual = GetComponent<PlayerManualAim>();
+        if (manual && manual.本帧取消引导) return;
+        if(GetComponent<PlayerVitals>()?.IsDead ?? false)return;
+        if(GetComponent<演出锁>()?.正在锁 ?? false)return;
+        维护锁定目标还活着();
+        if(TreasureSkillHud.正在切换)return;
 
-        if (Input.GetKeyDown(选中键))
+        if (Input.GetKeyDown(选中键) && (选中键 != KeyCode.Mouse0 || !manual || !manual.enabled))
         {
             // 【点空白 = 取消选中】以前只有"点到 NPC 才做事"，点空地什么都不发生，
             // 选中的绿环就撤不掉（只有右键能撤锁定）。现在点空地也走一遍：
@@ -114,7 +124,7 @@ public class NpcTargeting : MonoBehaviour
             if (!点在界面上()) 点击选中();
         }
 
-        if (Input.GetKeyDown(锁定键))
+        if (Input.GetKeyDown(锁定键) && !点在界面上())
         {
             // 站在设施（修炼房屋/炼丹炉/炼器炉/布阵点）旁边按右键时，
             // 这一下是"开界面"而不是"锁定敌人" —— 否则想开炼丹炉结果锁了个怪。
@@ -264,8 +274,9 @@ public class NpcTargeting : MonoBehaviour
     /// </summary>
     public void Lock(NpcInstance npc, bool byPlayerClick = false)
     {
-        // ★ 记下"这个锁定是不是玩家的意图"—— 决定目标死了之后要不要自动改锁。
-        //   手动点 → 是；系统自动找的 → 继承前一次的状态（见 维护锁定目标还活着）
+        if(npc!=null&&(npc.IsDead||!在神识范围内(npc)))return;
+        if(npc!=null)自动索敌已暂停=false;
+        // 保留手动锁定来源供界面查询；是否自动续锁只由邪眼决定。
         if (byPlayerClick) 玩家指定的锁定 = true;
         else if (npc == null) 玩家指定的锁定 = false;
 
@@ -293,6 +304,7 @@ public class NpcTargeting : MonoBehaviour
     /// </summary>
     public void ClearLock()
     {
+        自动索敌已暂停=true;
         玩家指定的锁定 = false;
         Lock(null);
     }
@@ -300,11 +312,7 @@ public class NpcTargeting : MonoBehaviour
     // ============================================================ 目标死了 → 自动改锁
 
     /// <summary>
-    /// 当前锁定是不是**玩家指定的**。只有玩家指定过的锁定，目标死了才会自动改锁；
-    /// 系统自动找的下一个目标同样继承这个标记，所以会**一直续下去**。
-    ///
-    /// 【为什么要这个标记】如果无条件自动改锁，玩家明明想停手（或收工），
-    /// 一死就又被锁上一个新的，反而是在替他做决定。
+    /// 当前锁定是否由玩家指定。普通手动锁定不触发自动普攻或续锁。
     /// </summary>
     public bool 玩家指定的锁定 { get; private set; }
 
@@ -336,25 +344,15 @@ public class NpcTargeting : MonoBehaviour
     /// </summary>
     void 维护锁定目标还活着()
     {
-        if (!玩家指定的锁定) return;
-        if (Locked == null) return;              // 已经被清掉了
-        if (!Locked.IsDead) return;              // 还活着，正常打
-
-        var 下一个 = 找最近的敌对目标();
-        if (下一个 == null)
-        {
-            Debug.Log("[索敌] 锁定目标「" + Locked.DisplayName + "」已死，神识范围内没有其他敌对目标 → 解除锁定");
-            ClearLock();                          // 注意：它会清 玩家指定的锁定
-            return;
-        }
-
-        Debug.Log("[索敌] 锁定目标「" + Locked.DisplayName + "」已死 → 自动改锁「"
-                  + 下一个.DisplayName + "」（距 " + 到目标距离(下一个).ToString("0.#")
-                  + "m / 神识 " + 神识范围.ToString("0.#") + "m）");
-
-        // ★ byPlayerClick: false —— 这是系统自动找的，不是玩家点的。
-        //   玩家指定的锁定 这个标记**不会被清掉**，所以下一只死了还会继续改锁。
-        Lock(下一个, byPlayerClick: false);
+        bool auto=自动索敌可用;
+        if(auto!=上帧自动索敌){上帧自动索敌=auto;自动索敌已暂停=false;下次自动索敌时刻=0;}
+        bool died=Locked!=null&&Locked.IsDead;
+        if(died)Lock(null);
+        if(!auto||自动索敌已暂停)return;
+        if(Locked!=null&&在神识范围内(Locked))return;
+        if(!died&&Time.time<下次自动索敌时刻)return;
+        下次自动索敌时刻=Time.time+.25f;
+        Lock(找最近的敌对目标());
     }
 
     /// <summary>

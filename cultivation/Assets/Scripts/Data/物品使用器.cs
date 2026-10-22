@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// **使用物品的唯一入口**。背包页的「使用」按钮、任务奖励、NPC 给予都走这里，
@@ -42,6 +42,14 @@ public static class 物品使用器
         if (!物品.使用效果.使用(请求)) return false;
 
         面板.移除物品(物品, 1);
+        var effect=物品.使用效果;
+        string learned=effect is 学功法效果 g?g.取功法()?.DisplayName
+            :effect is 学主动神通效果 a?a.取神通()?.DisplayName
+            :effect is 学被动神通效果 p?p.取神通()?.DisplayName
+            :effect is 学坐骑效果 m?m.取坐骑()?.DisplayName
+            :effect is 学丹方效果 d?灵丹库.取(d.丹方id)?.名
+            :effect is 学外观效果 appearance?appearance.取外观()?.DisplayName:null;
+        if(!string.IsNullOrEmpty(learned))UIRewardNotice.提示((effect is 学外观效果?"解锁外观  ":"学会  ")+"「"+learned+"」");
         return true;
     }
 

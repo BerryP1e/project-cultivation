@@ -19,8 +19,8 @@ public class BasicThunder01 : MonoBehaviour
     [Tooltip("动作播到百分之多少时召雷（0.4 = 动画 40% 处）")]
     [Range(0.05f, 0.95f)] public float 出手进度 = 0.4f;
 
-    [Tooltip("出手冷却（秒）。实际冷却 = 这个值 ÷ 攻速系数，和太虚炼气诀同一套换算")]
-    public float 基础冷却 = 1.1f;
+    [HideInInspector] // 保留旧场景序列化字段；动作结束后无额外段间冷却。
+    public float 基础冷却 = 0f;
 
     [Tooltip("**自动出手**：冷却好了就自己打，不用按键")]
     public bool 自动出手 = true;
@@ -156,12 +156,12 @@ public class BasicThunder01 : MonoBehaviour
         ? Mathf.Max(0.1f, 玩家战斗属性.当前属性[AttributeType.AttackSpeed])
         : 1f;
 
-    public float 实际冷却 => 基础冷却 / Mathf.Max(0.1f, 攻速系数);
+    public float 实际冷却 => 0f;
     public float 冷却剩余 => Mathf.Max(0f, 下次可出手时间 - Time.time);
     public float 索敌半径 => PlayerCombatStats.算神识范围(玩家战斗属性, 基础索敌范围, 每点神识范围, 索敌范围上限);
 
     /// <summary>现在能不能出手：**必须锁定了目标** + 冷却好了 + 没在做动作</summary>
-    public bool 可以出手 => !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求||锁定单位 != null) && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => enabled && !BasicAttackGate.OtherAttackRunning(this) && !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求||锁定单位 != null) && 冷却剩余 <= 0f && !出手动作中;
 
     public bool 出手动作中 { get; private set; }
 
@@ -226,7 +226,7 @@ public class BasicThunder01 : MonoBehaviour
 
         // ★ 没锁定目标就不会走到这里（可以出手 里判了 锁定单位 != null），
         //   所以"没锁定时不攻击、也不进冷却"是自然成立的。
-        if (可以出手 && (自动出手 || AttackPressed())) 出手();
+        if (可以出手 && 自动出手 && 目标管理器 && 目标管理器.自动索敌可用) 出手();
     }
 
     bool AttackPressed() => 按住连发 ? Input.GetKey(攻击键) : Input.GetKeyDown(攻击键);
@@ -239,8 +239,11 @@ public class BasicThunder01 : MonoBehaviour
         当前式=出手序号%4;
         if(动作序列==null||动作序列.Length!=4)return false;
         本次动作=Resources.Load<AnimationClip>(动作序列[当前式]);
+        本次动作=WeaponCastingAnimations.Resolve(gameObject,当前式,本次动作);
         if(!动画||!本次动作||!动画.播动作(本次动作,攻速系数))return false;
         出手序号++;本次命中数=0;本次目标=目标管理器?目标管理器.LockedNpc:null;手动攻击=手动请求;
+        var point=手动攻击?手动点:本次目标.transform.position;
+        GetComponent<PlayerController>()?.对准攻击方向(point-transform.position);
 
         出手动作中 = true;
         本轮已出手 = false;
@@ -277,7 +280,7 @@ public class BasicThunder01 : MonoBehaviour
         CombatVfxPipeline.播放(CombatVfxPipeline.雷四式[当前式],point,Vector3.down,当前式==3?第四式范围/5f:缩放);
         CombatImpactPipeline.接触("basic_thunder_01",point,当前式==3?第四式范围:.6f,source:this);
 
-        var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 技能倍率);
+        var 规则 = new AttackSpec(DamageNature.特殊, AttackKind.普通攻击, false, 技能倍率);
         if(当前式==3||手动攻击){
             var seen=new HashSet<NpcInstance>();float radius=当前式==3?第四式范围:.6f;
             foreach(var col in Physics.OverlapSphere(point,Mathf.Max(.1f,radius),敌人层,QueryTriggerInteraction.Ignore)){
@@ -335,7 +338,7 @@ public class BasicThunder01 : MonoBehaviour
         // 起点那一侧也按**来源敌人的半身**抬高 → 链从双方中部对穿
         生成闪电链(起点, 下一个, 缩放, 取敌人高度(来源) * 0.5f);
 
-        var 规则 = new AttackSpec(伤害属性, 攻击类别, false, 闪电链倍率);
+        var 规则 = new AttackSpec(DamageNature.特殊, AttackKind.普通攻击, false, 闪电链倍率);
         var 结果 = 结算雷击(下一个, 规则, 缩放, 已跳数);
 
         if (打印战斗日志)

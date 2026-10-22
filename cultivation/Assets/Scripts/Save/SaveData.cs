@@ -5,8 +5,8 @@ using UnityEngine;
 /// <summary>
 /// 一份存档的数据。
 ///
-/// 现在只存最核心的一层（身份 + 位置 + 资源 + 已选功法/神通），
-/// 因为完整的属性结算系统还没做。等那个做出来后再往这里加字段，
+/// 保存角色身份、位置、成长、拥有/装备、家园生产及会话返回点。
+/// 定义按稳定ID引用，法则等随机实例保存实际结果，读档不重新抽取。
 /// 开发期间按新建存档验证；后续不再补旧存档恢复或兼容迁移。
 /// </summary>
 [Serializable]
@@ -17,7 +17,7 @@ public class SaveData
     public bool 收服系统已初始化;
     public string 当前法宝 = "";
     public int 青山剑有效击杀;
-    public const int 当前版本 = 25;   // 灵阵编排；默认资产只读，玩家序列独立保存。
+    public const int 当前版本 = 26;   // 独立武器拥有/装备；保留角色灵阵编排。
     public TeleportBookmark 镇妖阁返回点;
     public List<TeleportBookmark> 已访传送点 = new List<TeleportBookmark>();
     public List<UnityEngine.Vector2Int> 家园扩建 = new List<UnityEngine.Vector2Int>();
@@ -55,6 +55,8 @@ public class SaveData
 
     [Header("配置")]
     public string 功法id = "";
+    public string 当前武器 = "";
+    public List<string> 已获得武器 = new List<string>();
 
     [Tooltip("玩家当前穿的外观 id（`AppearanceDefinition.id`）。\n" +
              "`玩家外观.已选外观` 是 static —— 活过切场景，但**活不过读档**，所以必须存。")]

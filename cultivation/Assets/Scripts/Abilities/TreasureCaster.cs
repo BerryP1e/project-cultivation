@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>独立 E 键法宝槽；镇妖葫只收服本次施放中受到过葫芦伤害的原始目标。</summary>
+/// <summary>独立 Q 键法宝槽；镇妖葫只收服本次施放中受到过葫芦伤害的原始目标。</summary>
 [DisallowMultipleComponent]
 public class TreasureCaster : MonoBehaviour
 {
@@ -38,10 +38,14 @@ public class TreasureCaster : MonoBehaviour
     }
     void Update() {
         Resolve();
-        bool allowed=!UiEscRegistry.SceneInputBlocked && !灵田摆放器.正在摆放 && !(GetComponent<演出锁>()?.正在锁 ?? false) && !(vitals != null && vitals.IsDead);
-        if(Input.GetKeyDown(KeyCode.E) && allowed && !PlayerManualAim.AltHeld) {
+        bool allowed=!UiEscRegistry.SceneInputBlocked && !TreasureSkillHud.正在切换 && !灵田摆放器.正在摆放 && !(GetComponent<演出锁>()?.正在锁 ?? false) && !(vitals != null && vitals.IsDead);
+        if(Input.GetKeyDown(KeyCode.Q) && allowed) {
             if(TowerRealmTreasure.在塔内 && !SpiritArrayTalisman.Equipped(data)) { TowerRealmTreasure.使用(gameObject); return; }
-            if(CurrentPhase == Phase.Idle || data!=null && data.当前法宝!=null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id) TryCast();
+            if(CurrentPhase == Phase.Idle || data!=null && data.当前法宝!=null && data.当前法宝.法宝id==QingshanSwordTreasure.法宝id){
+                if(data&&data.当前法宝&&data.当前法宝.法宝id==TowerRealmTreasure.法宝id)TryCast();
+                else if(DevilEyeAbility.已装备(data))data.ShowHint("邪眼已接管自动攻击：右键锁定，击杀后续锁");
+                else GetComponent<PlayerManualAim>()?.开始引导(-2);
+            }
             else if(CurrentPhase == Phase.Siphoning || CurrentPhase == Phase.Outbound) BeginReturn();
         }
         if(CurrentPhase == Phase.Idle) return;
@@ -86,7 +90,9 @@ public class TreasureCaster : MonoBehaviour
             if(t>=1) Cleanup();
         }
     }
-    public bool TryCast() {
+    public bool TryCast() => Cast(null);
+    public bool 手动收服(NpcInstance candidate)=>Cast(candidate);
+    bool Cast(NpcInstance aimed) {
         Resolve();
         if(UiEscRegistry.SceneInputBlocked || 灵田摆放器.正在摆放 || (GetComponent<演出锁>()?.正在锁 ?? false) || vitals != null && vitals.IsDead) return false;
         if(data == null || data.当前法宝 == null || !data.已拥有(data.当前法宝)) { data?.ShowHint("先在法宝界面装备法宝"); return false; }
@@ -95,7 +101,7 @@ public class TreasureCaster : MonoBehaviour
         if(data.当前法宝.法宝id==QingshanSwordTreasure.法宝id) { return GetComponent<QingshanSwordTreasure>()?.TryCastUltimate() ?? false; }
         if(data.当前法宝.法宝id!=UIPanelData.镇妖葫id || CurrentPhase!=Phase.Idle)return false;
         if(CooldownRemaining>0) { data.ShowHint("法宝尚在冷却"); return false; }
-        var candidate=targeting != null ? targeting.Locked : null;
+        var candidate=aimed ? aimed : targeting != null ? targeting.Locked : null;
         if(candidate == null || candidate.IsDead || candidate.无敌 || candidate.定义 == null || candidate.定义.死亡后立即重生 || candidate.GetComponent<FormationSpirit>() != null) { data.ShowHint("请锁定一个可收服的目标"); return false; }
         var catalog=PanelDatabase.取();
         if(catalog == null || !catalog.真灵.Exists(d=>d != null && d.id == candidate.定义.id)) { data.ShowHint("此目标无法凝成真灵"); return false; }

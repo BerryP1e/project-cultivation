@@ -14,7 +14,7 @@ using UnityEngine;
 ///
 /// ```
 /// 选中一段动作（地面版 / 御风版）
-///   ↓ 播到本次出手进度（普通 0.4，第二段 0.2）
+///   ↓ 播到本次出手进度（普通 0.4，第二段 0.2，第四段下劈 0.8）
 ///   ↓ 从本次出手进度到原窗口结束点【逐帧】拿武器网格和锁定目标的身躯求交
 /// 碰到的那一帧 → 只结算一次【物理 + 普通攻击】伤害（打的是锁定目标）
 /// ```
@@ -70,10 +70,15 @@ public class BasicJiuba01 : MonoBehaviour
     [Tooltip("第二段长刀女 Attack2（含御风版）提前开窗的进度；只提前起点，保留原结束点。仍以武器实际接触为准，不会到进度就强制扣血")]
     [Range(0.05f, 0.4f)] public float 第二段出手进度 = 0.2f;
 
-    /// <summary>按当前动作选择判定起点，第二段不再沿用其他动作的 40%。</summary>
+    [Tooltip("第四段杨戬 Attack2（含御风版）在翻身蓄势后的下劈阶段开窗，避免提前由刀杆接触扣血。保持原结束点，攻速变化仍按动画进度同步")]
+    [Range(0.4f, 0.95f)] public float 第四段出手进度 = 0.8f;
+
+    /// <summary>按动作选择判定起点：第二段提前，第四段等到翻身后的下劈。</summary>
     public float 本次出手进度 => 当前动作路径.EndsWith("/长刀女_Attack2")
         || 当前动作路径.EndsWith("/长刀女_Attack2_御风")
-        ? Mathf.Min(出手进度, 第二段出手进度) : 出手进度;
+        ? Mathf.Min(出手进度, 第二段出手进度)
+        : 当前动作路径.EndsWith("/杨戬_Attack2") || 当前动作路径.EndsWith("/杨戬_Attack2_御风")
+            ? Mathf.Max(出手进度, 第四段出手进度) : 出手进度;
 
     [Tooltip("两次起手的最小间隔（秒），从起手开始计时，和动作并行。0 = 上一段结束立即接下一段，不额外等冷却。实际间隔跟随攻速缩短")]
     [Min(0f)] public float 基础冷却 = 0f;
@@ -167,7 +172,7 @@ public class BasicJiuba01 : MonoBehaviour
     public float 冷却 => 实际冷却;
 
     /// <summary>现在能不能出手：锁定了目标（如果要求锁定）+ **距离够得着** + 冷却好了 + 没在做动作 + 没有过场演出在锁</summary>
-    public bool 可以出手 => !CombatHitStop.正在顿帧(transform) && !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求 || !需要锁定目标 || 锁定单位 != null) && 在出手距离内 && !演出中 && 冷却剩余 <= 0f && !出手动作中;
+    public bool 可以出手 => enabled && !(GetComponent<PlayerVitals>()?.IsDead??false) && !BasicAttackGate.OtherAttackRunning(this) && !CombatHitStop.正在顿帧(transform) && !UiEscRegistry.SceneInputBlocked && !(动画 != null && 动画.施法占用中) && (手动请求 || !需要锁定目标 || 锁定单位 != null) && (手动请求 || 在出手距离内) && !演出中 && 冷却剩余 <= 0f && !出手动作中;
     bool 手动请求,手动攻击;
     Vector3 手动点;
     readonly HashSet<Vector3Int> 本轮挥砍采样=new HashSet<Vector3Int>();
@@ -291,7 +296,7 @@ public class BasicJiuba01 : MonoBehaviour
             if (刃光 != null) 刃光.停止(true);
         }
         if(出手动作中 && 手动攻击)处理手动挥砍();
-        if (出手动作中 && !本轮已结算) 推进判定();
+        if (出手动作中 && !手动攻击 && !本轮已结算) 推进判定();
 
         if (出手动作中 && (动画 == null || !动画.动作播放中))
         {
@@ -299,7 +304,7 @@ public class BasicJiuba01 : MonoBehaviour
         }
 
         // ★ 没锁定目标就不会走到这里（可以出手 里判了），所以"没锁定时不攻击、也不进冷却"自然成立
-        if (可以出手 && (自动出手 || AttackPressed())) 出手();
+        if (!GetComponent<PlayerManualAim>() && 可以出手 && 自动出手 && 目标管理器 && 目标管理器.自动索敌可用) 出手();
     }
 
     bool AttackPressed() => 按住连发 ? Input.GetKey(攻击键) : Input.GetKeyDown(攻击键);
@@ -310,6 +315,7 @@ public class BasicJiuba01 : MonoBehaviour
     public bool 出手()
     {
         if (!可以出手) return false;
+        伤害属性=DamageNature.物理;攻击类别=AttackKind.普通攻击;
         手动攻击=手动请求;本轮挥砍采样.Clear();本轮手动命中.Clear();
         if(手动攻击)GetComponent<PlayerController>()?.对准攻击方向(手动点-transform.position);
         if (刃光 == null) 刃光 = GetComponent<JiubaWeaponVfx>() ?? gameObject.AddComponent<JiubaWeaponVfx>();
@@ -326,7 +332,7 @@ public class BasicJiuba01 : MonoBehaviour
         当前是御风版 = 是御风版;
 
         var 目标 = 锁定单位;
-        if (目标 != null && 目标.根 != null)
+        if (!手动攻击 && 目标 != null && 目标.根 != null)
         {
             var movement = GetComponent<PlayerController>();
             if (movement != null) movement.对准攻击方向(目标.根.position - transform.position);
@@ -361,7 +367,7 @@ public class BasicJiuba01 : MonoBehaviour
     void 处理手动挥砍()
     {
         float p=动画?动画.动作进度:1;
-        if(动画 && 动画.动作播放中 && (p<本次出手进度 || p>Mathf.Clamp01(出手进度+判定窗口)))return;
+        if(动画 && (!动画.动作播放中 || p<本次出手进度 || p>Mathf.Clamp01(出手进度+判定窗口)))return;
         var renderers=取武器判定体();
         if(renderers!=null && 取武器线段(renderers,out var a,out var b,out var radius))
         {
@@ -583,9 +589,12 @@ public class BasicJiuba01 : MonoBehaviour
             {
                 if (!线段已标定 || 线段SMR != smr) 标定线段(smr);
                 if (!线段已标定) continue;
-                端A = 线段SMR.transform.TransformPoint(线段本地A);
-                端B = 线段SMR.transform.TransformPoint(线段本地B);
-                var 缩 = 线段SMR.transform.lossyScale;
+                var matrix = 线段随单骨
+                    ? 线段SMR.bones[0].localToWorldMatrix * 线段SMR.sharedMesh.bindposes[0]
+                    : 线段SMR.transform.localToWorldMatrix;
+                端A = matrix.MultiplyPoint3x4(线段本地A);
+                端B = matrix.MultiplyPoint3x4(线段本地B);
+                var 缩 = new Vector3(matrix.GetColumn(0).magnitude, matrix.GetColumn(1).magnitude, matrix.GetColumn(2).magnitude);
                 半径 = 线段本地半径 * Mathf.Max(Mathf.Abs(缩.x), Mathf.Max(Mathf.Abs(缩.y), Mathf.Abs(缩.z)));
                 return true;
             }
@@ -606,23 +615,25 @@ public class BasicJiuba01 : MonoBehaviour
     Vector3 线段本地A, 线段本地B;
     float 线段本地半径 = 0.15f;
     bool 线段已标定;
+    bool 线段随单骨;
 
     /// <summary>
-    /// ★ 用 `SkinnedMeshRenderer.BakeMesh` **问 Unity 要蒙皮后的真实顶点**来标定刀身线段。
-    ///
-    /// 为什么不能手算：先前用 `bone.localToWorldMatrix × bindpose × 网格包围盒` 算，
-    /// 结果与**画面上刀的位置**对不上（算出来刀在脚下一米多、与靶子差 1.8 米，而截图里刀端在胸前）
-    /// —— 那个 prefab 的渲染体被重新挂过父节点，bindpose 是原模型坐标系里烘的，手算式不再成立。
-    /// `BakeMesh` 拿到的是**引擎自己的蒙皮结果**，不会再出现"算出来的刀和看到的刀不是同一把"。
-    /// 烘一次就缓存（端点存渲染体本地坐标，每帧只做一次 TransformPoint）。
+    /// 单骨100%权重使用原网格和实际蒙皮矩阵；不能BakeMesh后再乘挂载缩放，
+    /// 否则判定刀身比画面中的刀更短，延后到真正下劈时反而会误判打空。
+    /// 其他蒙皮保留原BakeMesh退路。几何只标定一次，每帧只变换两个端点。
     /// </summary>
     void 标定线段(SkinnedMeshRenderer smr)
     {
         var 烘 = new Mesh();
         try
         {
-            if(!刚性本地网格)smr.BakeMesh(烘);
-            var 界 = 刚性本地网格 ? smr.sharedMesh.bounds : 烘.bounds;
+            线段随单骨 = !刚性本地网格 && smr.bones.Length == 1 && smr.bones[0] != null
+                && smr.sharedMesh != null && smr.sharedMesh.isReadable && smr.sharedMesh.bindposes.Length == 1;
+            if (线段随单骨)
+                foreach (var weight in smr.sharedMesh.boneWeights)
+                    if (weight.boneIndex0 != 0 || Mathf.Abs(weight.weight0 - 1f) > .00001f) { 线段随单骨 = false; break; }
+            if(!刚性本地网格 && !线段随单骨)smr.BakeMesh(烘);
+            var 界 = 刚性本地网格 || 线段随单骨 ? smr.sharedMesh.bounds : 烘.bounds;
             var 半 = 界.size * 0.5f;
             int 轴 = (半.x >= 半.y && 半.x >= 半.z) ? 0 : (半.y >= 半.z ? 1 : 2);
             var d = 轴 == 0 ? new Vector3(半.x, 0f, 0f) : (轴 == 1 ? new Vector3(0f, 半.y, 0f) : new Vector3(0f, 0f, 半.z));
@@ -632,7 +643,7 @@ public class BasicJiuba01 : MonoBehaviour
             线段SMR = smr;
             线段已标定 = true;
             if (打印战斗日志)
-                Debug.Log("[" + 方法id + "] 刀身线段已标定（BakeMesh）：本地 " + 线段本地A.ToString("F3") + " → " + 线段本地B.ToString("F3")
+                Debug.Log("[" + 方法id + "] 刀身线段已标定（" + (线段随单骨 ? "单骨蒙皮矩阵" : 刚性本地网格 ? "刚性本地网格" : "BakeMesh") + "）：本地 " + 线段本地A.ToString("F3") + " → " + 线段本地B.ToString("F3")
                           + "，长 " + Vector3.Distance(线段本地A, 线段本地B).ToString("F2") + " 米，半径 " + 线段本地半径.ToString("F3"), this);
         }
         catch (System.Exception e)

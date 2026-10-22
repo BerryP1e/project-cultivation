@@ -61,6 +61,7 @@ public class PauseMenuUI : MonoBehaviour
     void Update()
     {
         if (!Input.GetKeyDown(暂停键)) return;
+        if(!已暂停 && FindObjectOfType<PlayerManualAim>()?.本帧取消引导==true)return;
 
         // 有别的全屏界面开着时（角色面板 / 设施界面），ESC 的语义是"关那个界面"，
         // 不该弹出暂停菜单 —— 否则一次 ESC 会同时关界面 + 暂停游戏。

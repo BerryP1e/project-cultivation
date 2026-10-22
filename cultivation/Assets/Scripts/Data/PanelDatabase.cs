@@ -22,6 +22,7 @@ public class PanelDatabase : ScriptableObject
 {
     [Tooltip("所有功法定义，用于跨场景按 id 查找与读档；不是玩家已学功法")]
     public List<GongFaDefinition> 功法 = new List<GongFaDefinition>();
+    public List<WeaponDefinition> 武器 = new List<WeaponDefinition>();
 
     [Tooltip("所有神通（主动 + 被动）。由「修仙/面板/收集面板目录」自动填充")]
     public List<DivineAbilityDefinition> 神通 = new List<DivineAbilityDefinition>();

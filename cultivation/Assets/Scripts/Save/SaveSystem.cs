@@ -23,6 +23,7 @@ public static class SaveSystem
 #if UNITY_EDITOR
             var isolated = UnityEditor.SessionState.GetString(验证目录键, "");
             if (!string.IsNullOrEmpty(isolated)) return isolated;
+            if(Application.isPlaying&&DirectSceneTestInventory.Active)return Path.GetFullPath("Library/DirectSceneTest/saves");
 #endif
             return Path.Combine(Application.persistentDataPath, "saves");
         }
@@ -388,6 +389,7 @@ public static class SaveSystem
                        && (数据.已获得主动神通 == null || 数据.已获得主动神通.Count == 0)
                        && (数据.已获得被动神通 == null || 数据.已获得被动神通.Count == 0)
                        && (数据.已学功法 == null || 数据.已学功法.Count == 0)
+                       && (数据.已获得武器 == null || 数据.已获得武器.Count == 0)
                        && string.IsNullOrEmpty(数据.对话标记)
                        && string.IsNullOrEmpty(数据.任务进度)
                        && string.IsNullOrEmpty(数据.宗门任务记录);
@@ -606,6 +608,9 @@ public static class SaveSystem
     static void 采集面板(SaveData 数据, UIPanelData 面板)
     {
         面板.EnsureLists();
+        数据.当前武器=面板.当前武器?面板.当前武器.武器id:"";
+        数据.已获得武器=new List<string>();
+        foreach(var weapon in 面板.已获得武器)if(weapon&&!数据.已获得武器.Contains(weapon.武器id))数据.已获得武器.Add(weapon.武器id);
         数据.灵阵编排 = new List<SpiritArrayProgram>();
         foreach (var program in 面板.灵阵编排) if (program != null) 数据.灵阵编排.Add(program.Copy());
         数据.当前灵阵编排=面板.当前灵阵编排;
@@ -693,6 +698,12 @@ public static class SaveSystem
                 }
             }
 
+        }
+        if(!保留背包快照){
+        面板.已获得武器=new List<WeaponDefinition>();
+        if(数据.已获得武器!=null)foreach(var id in 数据.已获得武器){var w=WeaponCatalog.找(id);if(w&&!面板.已拥有武器(w))面板.已获得武器.Add(w);}
+        var restoredWeapon=WeaponCatalog.找(数据.当前武器);
+        面板.当前武器=restoredWeapon&&面板.已拥有武器(restoredWeapon)?restoredWeapon:null;
         }
         // ---- 法宝 / 灵阵 / 坐骑：按 id 在「当前场景面板自带的表」里找 ----
         bool 保留收服快照 = 跨场景数据.正在接力 && 跨场景数据.HasSnapshot;

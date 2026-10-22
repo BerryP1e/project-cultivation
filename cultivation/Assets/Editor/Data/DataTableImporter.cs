@@ -44,6 +44,7 @@ public static class DataTableImporter
     {
         new TableSpec("物品表",     typeof(ItemDefinition),          null,       null),
         new TableSpec("功法表",     typeof(GongFaDefinition),        "每级增益", "增益"),
+        new TableSpec("武器表",     typeof(WeaponDefinition),        null,       null),
         new TableSpec("主动神通表", typeof(ActiveDivineAbility),     null,       null),
         new TableSpec("被动神通表", typeof(PassiveDivineAbility),    "增益",     "增益"),
         new TableSpec("法宝表",     typeof(TreasureDefinition),      null,       null),

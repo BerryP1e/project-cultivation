@@ -75,6 +75,10 @@ public class PlayerController : MonoBehaviour
     Vector3 horizontalVelocity;
     float verticalVelocity;
     BasicJiuba01 近战普攻;
+    PlayerManualAim 鼠标瞄准;
+    PlayerAnimationController 动作动画;
+    bool 上帧在移动;
+    public bool 鼠标八向移动 {get;private set;}
     PlayerCombatStats 属性;
     PlayerFlightDodge 闪避;
     /// <summary>移动属性以 1 为原速，统一影响步行、御风与骑乘。</summary>
@@ -251,6 +255,8 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void FaceDirection(Vector3 moveDir)
     {
+        if(!动作动画)动作动画=GetComponent<PlayerAnimationController>();
+        if(动作动画&&动作动画.动作播放中)return;
         if (近战普攻 == null || !近战普攻.isActiveAndEnabled)
             foreach (var attack in GetComponents<BasicJiuba01>())
                 if (attack.isActiveAndEnabled) { 近战普攻 = attack; break; }
@@ -258,6 +264,14 @@ public class PlayerController : MonoBehaviour
         // Movement is still allowed, but must not steer an ongoing melee thrust sideways.
         if (近战普攻 != null && 近战普攻.isActiveAndEnabled && 近战普攻.出手动作中) return;
         Vector3 face = moveDir;
+        bool moving=moveDir.sqrMagnitude>.0001f;
+        if(!鼠标瞄准)鼠标瞄准=GetComponent<PlayerManualAim>();
+        if(moving&&鼠标瞄准&&鼠标瞄准.鼠标落点有效){
+            float angle=Vector3.Angle(moveDir,鼠标瞄准.鼠标方向);
+            鼠标八向移动=angle>(鼠标八向移动?35f:60f);
+            if(!上帧在移动||鼠标八向移动)face=鼠标瞄准.鼠标方向;
+        }else 鼠标八向移动=false;
+        上帧在移动=moving;
 
         var 目标 = 取锁定对象();
         if (目标 != null)
@@ -269,19 +283,8 @@ public class PlayerController : MonoBehaviour
             {
                 toTarget.Normalize();
 
-                if (moveDir.sqrMagnitude < 0.0001f ||
-                    (御风 != null && 御风.御风中 && (坐骑 == null || !坐骑.骑乘中)))
-                {
-                    // 站定或八向御风 → 正面朝向目标
-                    face = toTarget;
-                }
-                else
-                {
-                    // 移动中 → 按速度在两者之间过渡
-                    float 速度比 = Mathf.Clamp01(CurrentSpeed / Mathf.Max(0.01f, runSpeed));
-                    float k = Mathf.Clamp01(移动时转向移动方向 * Mathf.Max(0.35f, 速度比));
-                    face = Vector3.Slerp(toTarget, moveDir, k);
-                }
+                // 地面和御风均已有八向动作，锁定后走位不再拉偏攻击朝向。
+                face = toTarget;
             }
         }
 
@@ -311,8 +314,6 @@ public class PlayerController : MonoBehaviour
     {
         if (目标管理器 == null) return null;
         var t = 目标管理器.LockedNpc;
-        if (t != null && !t.IsDead) return t;
-        t = 目标管理器.SelectedNpc;
         if (t != null && !t.IsDead) return t;
         return null;
     }

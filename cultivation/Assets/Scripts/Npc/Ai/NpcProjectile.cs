@@ -55,6 +55,9 @@ public class NpcProjectile : MonoBehaviour
     [Tooltip("要不要在消散时放粒子（只想让它静静消失就关掉）")]
     public bool 消散带粒子 = true;
 
+    [Tooltip("飞弹消散半径上限（米），不随世界空间拖尾长度增大")]
+    [Min(.02f)] public float 消散半径上限 = .35f;
+
     [Header("直线飞行模式（不追踪）")]
     [Tooltip("只在「判断有没有打到」时用，**不改变飞行方向** —— 这就是「不追踪」")]
     public Transform 追踪目标;
@@ -103,6 +106,15 @@ public class NpcProjectile : MonoBehaviour
         transform.position=hit.point;击中体素=true;到达();return true;
     }
     float 已飞距离;
+    Vector3 外绕起点,外绕控制点,外绕终点;
+    float 外绕时长,外绕延迟,外绕进度;
+
+    /// <summary>先沿二次曲线外绕，再进入原有追踪/定点飞行。</summary>
+    public void 设置外绕出膛(Vector3 控制点,Vector3 终点,float 时长=.4f,float 延迟=0)
+    {
+        外绕起点=transform.position;外绕控制点=控制点;外绕终点=终点;
+        外绕时长=Mathf.Max(.05f,时长);外绕延迟=Mathf.Max(0,延迟);外绕进度=0;
+    }
 
     /// <summary>已经飞了多远（米）</summary>
     public float 飞行距离 => 已飞距离;
@@ -268,8 +280,23 @@ public class NpcProjectile : MonoBehaviour
     void 推进飞行()
     {
         if (已结束) return;
+        if(追踪&&!追踪目标){消散消失(false);return;}
 
         float 本帧能走 = 速度 * Time.deltaTime;
+
+        if(外绕时长>0 && 外绕进度<外绕时长+外绕延迟){
+            外绕进度+=Time.deltaTime;
+            float t=Mathf.Clamp01((外绕进度-外绕延迟)/外绕时长),s=1-t;
+            var next=s*s*外绕起点+2*s*t*外绕控制点+t*t*外绕终点;
+            var delta=next-transform.position;
+            if(检查环境(next))return;
+            transform.position=next;
+            if(delta.sqrMagnitude>.000001f){飞行方向=delta.normalized;transform.rotation=Quaternion.LookRotation(飞行方向);}
+            已飞距离+=delta.magnitude;补发沿路粒子(delta.magnitude);
+            if(拦截层.value!=0&&被拦住了()){拦截();return;}
+            if(最大飞行距离>0&&已飞距离>=最大飞行距离){消散消失(false);return;}
+            return;
+        }
 
         // ---- 直线模式（含追踪）：靠飞行方向推进 ----
         if (直线模式)
@@ -444,20 +471,31 @@ public class NpcProjectile : MonoBehaviour
 
         if (是被拦截) 被拦截时?.Invoke();
 
+        // 结束时不再补发烟光，原有世界空间拖尾留在原地自然淡出。
+        foreach(var ps in 全部粒子){
+            if(!ps)continue;
+            ps.Stop(false,ParticleSystemStopBehavior.StopEmitting);
+            var renderer=ps.GetComponent<ParticleSystemRenderer>();
+            if(renderer)renderer.maxParticleSize=Mathf.Min(renderer.maxParticleSize,.025f);
+        }
         if (消散带粒子)
-            NpcDissolveEffect.播放(transform.position, 取自身半径(), 消散颜色, 消散粒子数,
-                                    Mathf.Max(0.4f, 消散时长 + 0.4f));
+            NpcDissolveEffect.播放(transform.position, 取自身半径(), 消散颜色,
+                                    消散粒子数>0?Mathf.Min(32,消散粒子数):32, .65f, 飞弹消散:true);
 
         StartCoroutine(淡出然后销毁());
     }
 
     float 取自身半径()
     {
-        var rs = GetComponentsInChildren<Renderer>();
-        if (rs.Length == 0) return 0.25f;
-        var b = rs[0].bounds;
-        for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
-        return Mathf.Max(0.12f, Mathf.Max(b.extents.x, Mathf.Max(b.extents.y, b.extents.z)));
+        // 粒子/拖尾 bounds 包括飞过的整条路径，不能作为弹体体积。
+        var scale=transform.lossyScale;
+        float radius=.25f*Mathf.Max(Mathf.Abs(scale.x),Mathf.Abs(scale.y),Mathf.Abs(scale.z));
+        foreach(var renderer in GetComponentsInChildren<Renderer>()){
+            if(!renderer.enabled || renderer is ParticleSystemRenderer || renderer is TrailRenderer || renderer is LineRenderer)continue;
+            var e=renderer.bounds.extents;
+            radius=Mathf.Max(radius,Mathf.Max(e.x,e.y,e.z));
+        }
+        return Mathf.Clamp(radius,.02f,Mathf.Max(.02f,消散半径上限));
     }
 
     System.Collections.IEnumerator 淡出然后销毁()

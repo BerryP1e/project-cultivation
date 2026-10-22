@@ -29,6 +29,11 @@ public class TreasureDefinition : ScriptableObject, IPanelEntry
     public float 最长施放时间 = 30f;
     public float 冷却时间 = 6f;
     public float 伤害倍率 = .05f;
+    [Header("自动攻击法宝")]
+    public float 攻击间隔 = 3f;
+    public float 消耗灵力 = 3f;
+    public float 范围 = 20f;
+    public AttackKind 攻击类别 = AttackKind.被动神通;
     public GameObject 加载模型() => 模型 != null ? 模型 : Resources.Load<GameObject>(模型资源路径);
 
     // ---- IPanelEntry ----

@@ -107,10 +107,10 @@ public static class ManualAimChecks
         var targeting=player.GetComponent<NpcTargeting>();var animation=player.GetComponent<PlayerAnimationController>();var lockNpc=targeting.LockedNpc;
         var old=data.当前功法;var abilities=data.神通;var passives=data.已获得被动神通;var disabled=data.已停用被动;bool move=movement.enabled,collision=cc.enabled,regen=vitals.自动回复;
         var position=player.transform.position;var rotation=player.transform.rotation;float mana=vitals.当前灵气,health=vitals.当前气血;
-        var eyeDef=AssetDatabase.LoadAssetAtPath<PassiveDivineAbility>("Assets/Data/Generated/PassiveDivineAbility/ability_xieyan.asset");
+        var eyeDef=AssetDatabase.LoadAssetAtPath<TreasureDefinition>("Assets/Data/Generated/TreasureDefinition/treasure_devil_eye.asset");var oldTreasure=data.当前法宝;var oldOwned=data.已拥有法宝;
         try{
             movement.enabled=false;cc.enabled=false;vitals.自动回复=false;targeting.ClearLock();player.transform.position=new Vector3(10000,100,10000);
-            data.已获得被动神通=new List<PassiveDivineAbility>{eyeDef};data.已停用被动=new List<PassiveDivineAbility>();
+            data.当前法宝=eyeDef;data.已拥有法宝=new List<string>(oldOwned){eyeDef.法宝id};
             data.当前功法=AssetDatabase.LoadAssetAtPath<GongFaDefinition>("Assets/Data/Generated/GongFaDefinition/gongfa_lingxu_jianjue.asset");data.RaiseChanged();loader.Refresh();
             yield return new WaitForSeconds(1.2f);vitals.当前灵气=vitals.灵气上限;
             var attack=player.GetComponent<BasicLingxuSword01>();var eye=player.GetComponent<DevilEyeAbility>();
@@ -150,7 +150,7 @@ public static class ManualAimChecks
             var line=Read<LineRenderer>(aim,"senseRing");Require(line&&line.positionCount==129,"神识范围圈缺失");
             Require(Mathf.Abs(Vector3.Distance(line.GetPosition(0),player.transform.position)-sense)<.15f,"神识圈尺寸错误");
         }finally{
-            animation.停止动作();data.当前功法=old;data.神通=abilities;data.已获得被动神通=passives;data.已停用被动=disabled;data.RaiseChanged();loader.Refresh();
+            animation.停止动作();data.当前功法=old;data.神通=abilities;data.已获得被动神通=passives;data.已停用被动=disabled;data.当前法宝=oldTreasure;data.已拥有法宝=oldOwned;data.RaiseChanged();loader.Refresh();
             player.transform.SetPositionAndRotation(position,rotation);cc.enabled=collision;movement.enabled=move;vitals.自动回复=regen;vitals.当前灵气=mana;vitals.当前气血=health;
             if(lockNpc)targeting.Lock(lockNpc);
         }

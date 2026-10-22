@@ -8,6 +8,7 @@ public static class AbilityVfxUtility
         var 资源 = Resources.Load<GameObject>(路径);
         if (资源 == null) { Debug.LogWarning("[神通] 特效缺失：" + 路径); return null; }
         var 物体 = Object.Instantiate(资源, 父);
+        if(!物体.GetComponent<AbilityVfxInstance>())物体.AddComponent<AbilityVfxInstance>();
         物体.transform.localPosition = Vector3.zero;
         物体.transform.localRotation = Quaternion.identity;
         物体.transform.localScale = Vector3.one * 缩放;

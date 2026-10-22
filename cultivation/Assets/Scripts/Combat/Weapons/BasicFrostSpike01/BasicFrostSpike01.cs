@@ -15,8 +15,8 @@ public class BasicFrostSpike01 : MonoBehaviour
     [Tooltip("动作播到百分之多少时召冰刺（0.4 = 动画 40% 节点）")]
     [Range(0.05f, 0.95f)] public float 出手进度 = 0.4f;
 
-    [Tooltip("出手冷却（秒）。实际冷却 = 这个值 ÷ 攻速系数，和太虚炼气诀同一套换算")]
-    public float 基础冷却 = 1.1f;
+    [HideInInspector] // 保留旧场景序列化字段；动作结束后无额外段间冷却。
+    public float 基础冷却 = 0f;
 
     [Tooltip("**自动出手**：冷却好了、且锁定了目标，就自己打，不用按键")]
     public bool 自动出手 = true;
@@ -111,9 +111,9 @@ public class BasicFrostSpike01 : MonoBehaviour
 
     public ICombatTarget 锁定单位 => 目标管理器&&目标管理器.LockedNpc&&!目标管理器.LockedNpc.IsDead?new NpcTarget(目标管理器.LockedNpc):null;
     public float 攻速系数 => 玩家战斗属性?Mathf.Max(.1f,玩家战斗属性.当前属性[AttributeType.AttackSpeed]):1f;
-    public float 实际冷却 => 基础冷却/攻速系数;
+    public float 实际冷却 => 0f;
     public float 冷却剩余 => Mathf.Max(0,下次可出手时间-Time.time);
-    public bool 可以出手 => enabled&&!UiEscRegistry.SceneInputBlocked&&!(GetComponent<PlayerVitals>()?.IsDead??false)
+    public bool 可以出手 => enabled && !BasicAttackGate.OtherAttackRunning(this) && enabled&&!UiEscRegistry.SceneInputBlocked&&!(GetComponent<PlayerVitals>()?.IsDead??false)
         &&!(动画&&动画.施法占用中)&&!出手动作中&&冷却剩余<=0&&(手动请求||锁定单位!=null);
     public bool 出手动作中 {get;private set;}
     public int 出手序号 {get;private set;}
@@ -142,7 +142,7 @@ public class BasicFrostSpike01 : MonoBehaviour
         if(出手动作中&&动画&&动画.当前动作!=本次动作){出手动作中=false;本轮已出手=true;下次可出手时间=Time.time+实际冷却;}
         if(出手动作中&&!本轮已出手&&动画&&动画.动作进度>=本次出手节点){本轮已出手=true;召冰刺();}
         if(出手动作中&&(!动画||!动画.动作播放中)){出手动作中=false;本轮已出手=true;下次可出手时间=Time.time+实际冷却;}
-        if(可以出手&&(自动出手||(按住连发?Input.GetKey(攻击键):Input.GetKeyDown(攻击键))))出手();
+        if(可以出手&&自动出手&&目标管理器&&目标管理器.自动索敌可用)出手();
     }
     public bool 手动出手(Vector3 point){
         if(目标管理器&&目标管理器.LockedNpc)return false;
@@ -152,8 +152,11 @@ public class BasicFrostSpike01 : MonoBehaviour
     public bool 出手(){
         解析引用();if(!可以出手||动作序列==null||动作序列.Length!=4)return false;
         当前式=下次式;本次动作=Resources.Load<AnimationClip>(动作序列[当前式]);
+        本次动作=WeaponCastingAnimations.Resolve(gameObject,当前式,本次动作);
         if(!动画||!本次动作||!动画.播动作(本次动作,攻速系数))return false;
         本次目标=目标管理器?目标管理器.LockedNpc:null;手动攻击=手动请求;
+        var point=手动攻击?手动点:本次目标.transform.position;
+        GetComponent<PlayerController>()?.对准攻击方向(point-transform.position);
         出手序号++;本次命中数=0;出手动作中=true;本轮已出手=false;return true;
     }
     public void 召冰刺(){

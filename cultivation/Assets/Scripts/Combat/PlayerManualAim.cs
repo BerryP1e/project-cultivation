@@ -1,47 +1,82 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-/// <summary>Alt selects an unlocked world cast; confirmation uses the normal animation, costs and cooldowns.</summary>
+/// <summary>鼠标常驻定向；左键一次普攻，神通按住引导、松键施放。费用与冷却仍由各施放器负责。</summary>
 [DefaultExecutionOrder(-120)]
 [DisallowMultipleComponent]
 public sealed class PlayerManualAim : MonoBehaviour
 {
     public static bool AltHeld=>Input.GetKey(KeyCode.LeftAlt)||Input.GetKey(KeyCode.RightAlt);
     public bool 正在瞄准 {get;private set;}
+    public bool 本帧取消引导 {get;private set;}
     public Vector3 落点 {get;private set;}
-    public int 选择槽位 {get;private set;}=-1; // -1 basic, -2 treasure
+    public int 选择槽位 {get;private set;}=-1; // -1 cultivation, -2 treasure, -3 weapon
+    public bool 鼠标落点有效 {get;private set;}
+    public Vector3 鼠标方向 {get {var d=落点-transform.position;d.y=0;return d.normalized;}}
     NpcTargeting targeting;
     ActiveSkillCaster caster;
     LineRenderer ring, direction, senseRing, senseWash;
     Material material;
     VoxelMapPilot map;
-    bool held,cancelled;
+    bool guiding;
+    KeyCode 引导按键=KeyCode.None;
+    Object 引导内容;
+    PlayerAimWheel wheel;
     public static float SenseRange(GameObject player)
     {var targeting=player.GetComponent<NpcTargeting>();return targeting?Mathf.Min(40,targeting.神识范围):PlayerCombatStats.算神识范围(player.GetComponent<PlayerCombatStats>(),4,.8f,40);}
     public bool 可接收输入=>Time.timeScale>0 && !UiEscRegistry.SceneInputBlocked && !(GetComponent<PlayerVitals>()?.IsDead ?? true)
         && !(GetComponent<演出锁>()?.正在锁 ?? false) && !灵田摆放器.正在摆放;
     public bool 有锁定=>targeting && targeting.LockedNpc && !targeting.LockedNpc.IsDead;
-    void Awake(){targeting=GetComponent<NpcTargeting>();caster=GetComponent<ActiveSkillCaster>();}
+    void Awake(){targeting=GetComponent<NpcTargeting>();caster=GetComponent<ActiveSkillCaster>();wheel=GetComponent<PlayerAimWheel>()??gameObject.AddComponent<PlayerAimWheel>();}
+    public bool 开始引导(int slot,KeyCode 按住键=KeyCode.None)
+    {
+        if(!可接收输入)return false;
+        if(!caster)caster=GetComponent<ActiveSkillCaster>();
+        if(slot>=0 && (!caster || !(caster.槽位内容(slot) is ActiveDivineAbility)))return false;
+        选择槽位=slot;引导按键=按住键;引导内容=slot>=0?caster.槽位内容(slot):null;guiding=true;return true;
+    }
+    public void 取消引导(){guiding=false;引导按键=KeyCode.None;引导内容=null;选择槽位=-1;Hide();}
     void Update()
     {
-        if(!AltHeld){held=false;cancelled=false;Hide();return;}
-        if(!held){held=true;选择槽位=-1;}
-        if(!可接收输入 || 有锁定){Hide();return;}
-        if(!map)map=FindObjectOfType<VoxelMapPilot>();if(map && map.测试挖掘){Hide();return;}
-        if(Input.GetKeyDown(KeyCode.Escape)||Input.GetMouseButtonDown(1)){cancelled=true;Hide();return;}
-        if(Input.GetKeyDown(KeyCode.F)){选择槽位=-1;cancelled=false;}
-        if(Input.GetKeyDown(KeyCode.E)){选择槽位=-2;cancelled=false;}
-        for(int i=0;i<6;i++)if(Input.GetKeyDown((KeyCode)((int)KeyCode.Alpha1+i))||Input.GetKeyDown((KeyCode)((int)KeyCode.Keypad1+i))){选择槽位=i;cancelled=false;}
-        if(cancelled || EventSystem.current && EventSystem.current.IsPointerOverGameObject()){Hide();return;}
-        var camera=Camera.main;if(!camera){Hide();return;}
+        本帧取消引导=false;
+        鼠标落点有效=false;
+        if(!可接收输入||TreasureSkillHud.正在切换){取消引导();wheel.显示(false);return;}
+        if(!map)map=FindObjectOfType<VoxelMapPilot>();if(map && map.测试挖掘){取消引导();wheel.显示(false);return;}
+        if(guiding&&(Input.GetKeyDown(KeyCode.Escape)||Input.GetMouseButtonDown(1))){本帧取消引导=true;取消引导();UiEscRegistry.NotifyClosed();wheel.显示(false);return;}
+        // 同一帧松开旧键并按下新技能时，以新按下的技能为准。
+        bool skillShortcut=caster&&caster.处理快捷键();
+        if(guiding&&选择槽位>=0&&(!caster||引导内容!=caster.槽位内容(选择槽位)))取消引导();
+        // 不仅判断GetKeyUp，也处理一帧内快速点按或丢失的松键边沿。
+        bool release=guiding&&引导按键!=KeyCode.None&&!Input.GetKey(引导按键);
+        var camera=Camera.main;if(!camera){if(release)取消引导();else Hide();return;}
         var ray=camera.ScreenPointToRay(Input.mousePosition);
-        if(!VoxelCombatDamage.Ray(ray.origin,ray.GetPoint(200),out var hit,false,transform)){Hide();return;}
-        float range=Range();Vector3 offset=hit.point-transform.position;
-        落点=hit.point;正在瞄准=true;
-        Draw(落点,Radius(),offset.magnitude<=range+.05f,hit.normal);
-        DrawSenseRange();
-        if(Input.GetMouseButtonDown(0))确认施放(选择槽位,落点);
+        Vector3 normal=Vector3.up;
+        if(VoxelCombatDamage.Ray(ray.origin,ray.GetPoint(200),out var hit,false,transform)){落点=hit.point;normal=hit.normal;鼠标落点有效=true;}
+        else if(new Plane(Vector3.up,transform.position).Raycast(ray,out float distance)){落点=ray.GetPoint(distance);鼠标落点有效=true;}
+        wheel.显示(鼠标落点有效);
+        if(!鼠标落点有效){if(release)取消引导();else Hide();return;}
+        if(EventSystem.current && EventSystem.current.IsPointerOverGameObject()){if(release)取消引导();else Hide();return;}
+        if(guiding){
+            正在瞄准=true;var point=引导目标点();
+            Draw(point,Radius(),Vector3.Distance(point,transform.position)<=Range()+.05f,自身技能()||跟随锁定(选择槽位)?Vector3.up:normal);DrawSenseRange();
+        }else Hide();
+        if(release){
+            int slot=选择槽位;var point=引导目标点();
+            取消引导();确认施放(slot,point);return;
+        }
+        // 按住神通期间左键不再提前确认；法宝的既有鼠标确认入口保留。
+        if(guiding&&引导按键!=KeyCode.None)return;
+        if(!guiding && Input.GetKeyDown(KeyCode.E) && !skillShortcut && !Input.GetKeyDown(KeyCode.Q)){
+            确认施放(-3,落点);return;
+        }
+        bool shortcut=Input.GetKeyDown(KeyCode.E)||Input.GetKeyDown(KeyCode.Q)||skillShortcut;
+        if(Input.GetMouseButtonDown(0)&&!shortcut&&!本帧取消引导){
+            if(确认施放(guiding?选择槽位:-1,自身技能()&&guiding?transform.position:落点))取消引导();
+        }
     }
+    bool 自身技能(){var a=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;return a&&(a.结算方式==ActiveSkillKind.雷狱领域||a.结算方式==ActiveSkillKind.四御护罩);}
+    bool 跟随锁定(int slot){var a=caster?caster.槽位内容(slot) as ActiveDivineAbility:null;return 有锁定&&a&&a.结算方式!=ActiveSkillKind.闪烁位移&&a.结算方式!=ActiveSkillKind.雷狱领域&&a.结算方式!=ActiveSkillKind.四御护罩;}
+    Vector3 引导目标点()=>自身技能()?transform.position:跟随锁定(选择槽位)?targeting.LockedNpc.transform.position:落点;
     float Range()
     {
         if(选择槽位==-2)return SpiritArrayTalisman.Equipped(FindObjectOfType<UIPanelData>())?SenseRange(gameObject):GetComponent<QingshanSwordTreasure>()?.SenseRange ?? SenseRange(gameObject);
@@ -53,6 +88,7 @@ public sealed class PlayerManualAim : MonoBehaviour
     {
         if(选择槽位==-2)return SpiritArrayTalisman.Equipped(FindObjectOfType<UIPanelData>())?SpiritArrayRules.阵半径:GetComponent<QingshanSwordTreasure>()?.UltimateVoxelRadius ?? 4;
         var skill=caster?caster.槽位内容(选择槽位) as ActiveDivineAbility:null;
+        if(skill&&skill.结算方式==ActiveSkillKind.雷狱领域)return SenseRange(gameObject);
         if(!skill){var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)return dragon.引导范围(落点);var frost=GetComponent<BasicFrostSpike01>();if(frost&&frost.enabled)return frost.下次范围;var thunder=GetComponent<BasicThunder01>();return thunder&&thunder.enabled?thunder.下次范围:.6f;}
         if(skill.结算方式==ActiveSkillKind.伴龙随行)return GetComponent<CheDianYeTingCompanion>()?.Definition?.BreathRadius ?? .85f;
         if(skill.结算方式==ActiveSkillKind.追踪弹)return 2.5f;
@@ -61,23 +97,28 @@ public sealed class PlayerManualAim : MonoBehaviour
     }
     public bool 确认施放(int slot,Vector3 point)
     {
-        if(!可接收输入 || 有锁定)return false;
+        if(!可接收输入)return false;
         bool cast=false;
-        if(slot>=0)cast=caster && caster.手动施放(slot,point);
+        if(slot>=0)cast=caster && (跟随锁定(slot)?caster.锁定施放(slot):caster.手动施放(slot,point,targeting?targeting.RaycastNpcUnderMouse():null));
         else if(slot==-2){
             var data=FindObjectOfType<UIPanelData>();
-            cast=SpiritArrayTalisman.Equipped(data)?SpiritArrayTalisman.Cast(gameObject,data,point):GetComponent<QingshanSwordTreasure>()?.TryCastUltimateAt(point) ?? false;
+            if(data&&data.当前法宝&&data.当前法宝.法宝id==UIPanelData.镇妖葫id)cast=GetComponent<TreasureCaster>()?.手动收服(targeting?targeting.RaycastNpcUnderMouse():null)??false;
+            else cast=SpiritArrayTalisman.Equipped(data)?SpiritArrayTalisman.Cast(gameObject,data,point):GetComponent<QingshanSwordTreasure>()?.TryCastUltimateAt(point) ?? false;
         }
         else
         {
-            var dragon=GetComponent<BasicTaichuDragon01>();if(dragon&&dragon.enabled)cast=dragon.手动出手(point);
-            foreach(var melee in GetComponents<BasicJiuba01>())if(melee.enabled){cast=melee.手动出手(point);break;}
-            if(!cast)foreach(var ranged in GetComponents<BasicRemoteAttack01>())if(ranged.enabled){cast=ranged.手动出手(point);break;}
-            if(!cast)foreach(var thunder in GetComponents<BasicThunder01>())if(thunder.enabled){cast=thunder.手动出手(point);break;}
-            if(!cast)foreach(var frost in GetComponents<BasicFrostSpike01>())if(frost.enabled){cast=frost.手动出手(point);break;}
+            bool locked=有锁定;if(locked)point=targeting.LockedNpc.transform.position;
+            if(slot==-3){
+                foreach(var melee in GetComponents<BasicJiuba01>())if(melee.enabled){cast=locked?melee.出手():melee.手动出手(point);break;}
+            }
+            else if(slot==-1){
+            foreach(var ranged in GetComponents<BasicRemoteAttack01>())if(ranged.enabled){cast=locked?ranged.出手():ranged.手动出手(point);break;}
+            if(!cast)foreach(var thunder in GetComponents<BasicThunder01>())if(thunder.enabled){cast=locked?thunder.出手():thunder.手动出手(point);break;}
+            if(!cast)foreach(var frost in GetComponents<BasicFrostSpike01>())if(frost.enabled){cast=locked?frost.出手():frost.手动出手(point);break;}
             // 邪眼使用原始落点与自己的神识/冷却检查，不受近战射程和普攻冷却阻止。
             bool eye=GetComponent<DevilEyeAbility>()?.跟随普攻瞄准(point) ?? false;
             cast|=eye;
+            }
         }
         if(!cast)FindObjectOfType<UIPanelData>()?.ShowHint("当前招式尚未就绪，或落点超出施放距离");
         return cast;
@@ -131,6 +172,7 @@ public sealed class PlayerManualAim : MonoBehaviour
         }
     }
     void Hide(){正在瞄准=false;if(ring)ring.enabled=false;if(direction)direction.enabled=false;if(senseRing)senseRing.enabled=false;if(senseWash)senseWash.enabled=false;}
-    void OnDisable(){Hide();held=false;}
+    void OnDisable(){取消引导();鼠标落点有效=false;if(wheel)wheel.显示(false);}
+    void OnApplicationFocus(bool focused){if(!focused)取消引导();}
     void OnDestroy(){if(material)Destroy(material);}
 }

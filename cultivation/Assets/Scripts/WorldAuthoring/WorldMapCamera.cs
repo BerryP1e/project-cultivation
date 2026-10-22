@@ -12,6 +12,11 @@ namespace Cultivation.WorldAuthoring
         static readonly int Copy=Shader.PropertyToID("_WorldMistOpaqueCopy");
         void OnPreCull()
         {
+            if(!camera3d)camera3d=GetComponent<Camera>();
+            // 只在实际有MSAA样本的Forward相机启用alpha覆盖，其他相机退回原裁剪。
+            bool coverage=!GraphicsSettings.currentRenderPipeline&&camera3d.allowMSAA&&camera3d.actualRenderingPath==RenderingPath.Forward&&
+                (camera3d.targetTexture?camera3d.targetTexture.antiAliasing:QualitySettings.antiAliasing)>1;
+            Shader.SetGlobalFloat("_WorldFoliageCoverage",coverage?1:0);
             commands?.Clear();
             if(GraphicsSettings.currentRenderPipeline||!world||world.Data==null||!world.Data.cloudSea||!world.ShoreField)return;
             if(!mist){var shader=world.Palette.builtinMistShader;if(!shader)shader=Shader.Find("Cultivation/WorldAuthoring/ShoreMistBuiltin");if(!shader)return;mist=new Material(shader);}
@@ -27,6 +32,7 @@ namespace Cultivation.WorldAuthoring
             commands.Blit(BuiltinRenderTextureType.CameraTarget,Copy);commands.Blit(Copy,BuiltinRenderTextureType.CameraTarget,mist);commands.ReleaseTemporaryRT(Copy);
         }
         void OnEnable(){GetComponent<Camera>().depthTextureMode|=DepthTextureMode.Depth;}
+        void OnPostRender(){Shader.SetGlobalFloat("_WorldFoliageCoverage",0);}
         void OnDisable(){if(commands!=null){if(camera3d)camera3d.RemoveCommandBuffer(CameraEvent.BeforeForwardAlpha,commands);commands.Release();commands=null;}if(mist)Destroy(mist);mist=null;}
     }
 }

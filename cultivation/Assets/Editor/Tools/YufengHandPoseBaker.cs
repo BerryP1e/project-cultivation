@@ -50,47 +50,13 @@ public static class YufengHandPoseBaker
 
     public static void Carry(AnimationClip clip,AnimationClip reference)
     {
-        var target=Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/Tripo/better_player_test/better_player_test.fbx"));
-        target.transform.SetPositionAndRotation(Vector3.zero,Quaternion.identity);target.transform.localScale=Vector3.one;
-        var animator=target.GetComponent<Animator>();animator.runtimeAnimatorController=null;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
-        var graph=PlayableGraph.Create("YufengCarryBake");graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
-        using(var handler=new HumanPoseHandler(animator.avatar,target.transform))try
-        {
-            var output=AnimationPlayableOutput.Create(graph,"Carry",animator);
-            var ready=AnimationClipPlayable.Create(graph,reference);ready.SetApplyFootIK(false);output.SetSourcePlayable(ready);graph.Play();ready.SetTime(0);graph.Evaluate(0);
-            var hand=animator.GetBoneTransform(HumanBodyBones.RightHand);
-            var upper=animator.GetBoneTransform(HumanBodyBones.RightUpperArm);var lower=animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
-            var upperRotation=upper.rotation;var lowerRotation=lower.rotation;var handRotation=hand.rotation;
-            // 只校准持刀一侧的臂腕；躯干、左臂和八向腿部动作保持原样。
-            var indices=Enumerable.Range(0,HumanTrait.MuscleCount).Where(i=>HumanTrait.MuscleName[i].StartsWith("Right ")&&(HumanTrait.MuscleName[i].Contains(" Arm ")||HumanTrait.MuscleName[i].Contains(" Forearm ")||HumanTrait.MuscleName[i].Contains(" Hand "))).ToArray();
-            graph.DestroyPlayable(ready);
-            var playable=AnimationClipPlayable.Create(graph,clip);playable.SetApplyFootIK(false);output.SetSourcePlayable(playable);
-            var curves=Enumerable.Range(0,indices.Length+7).Select(_=>new AnimationCurve()).ToArray();int frames=Mathf.RoundToInt(clip.length*60);
-            Quaternion previous=Quaternion.identity;
-            for(int frame=0;frame<=frames;frame++)
-            {
-                float t=clip.length*frame/frames;playable.SetTime(t);graph.Evaluate(0);
-                // 保持地面参考的上臂/前臂/腕三段世界方向，不能只强扭手腕补偿刀身。
-                upper.rotation=upperRotation;lower.rotation=lowerRotation;hand.rotation=handRotation;
-                var pose=new HumanPose();handler.GetHumanPose(ref pose);
-                var q=pose.bodyRotation;
-                if(frame>0 && Quaternion.Dot(q,previous)<0)q=new Quaternion(-q.x,-q.y,-q.z,-q.w);previous=q;
-                for(int i=0;i<curves.Length;i++)
-                {
-                    int root=i-indices.Length;
-                    float value=root<0?Mathf.Clamp(pose.muscles[indices[i]],-1,1):root<3?pose.bodyPosition[root]:q[root-3];
-                    curves[i].AddKey(t,value);
-                }
-            }
-            for(int i=0;i<curves.Length;i++)
-            {
-                int root=i-indices.Length;
-                Put(clip,root<0?HumanTrait.MuscleName[indices[i]]:root<3?"RootT."+"xyz"[root]:"RootQ."+"xyzw"[root-3],curves[i]);
-            }
-            clip.EnsureQuaternionContinuity();
-            JiubaHandPoseBaker.Apply(clip,false);
-        }
-        finally{graph.Destroy();Object.DestroyImmediate(target);}
+        JiubaHandPoseBaker.Apply(clip,false);
+        JiubaCarryPoseBaker.Apply(clip);
+    }
+
+    public static void SpiritSwordCarry(AnimationClip clip,AnimationClip reference)
+    {
+        SpiritSwordFlightGripBaker.Apply(clip,reference);
     }
 
     static void Put(AnimationClip clip,string property,AnimationCurve curve)

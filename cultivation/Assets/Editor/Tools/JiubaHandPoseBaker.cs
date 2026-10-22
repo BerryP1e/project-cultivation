@@ -7,7 +7,7 @@ using UnityEngine;
 public static class JiubaHandPoseBaker
 {
     static readonly string[] Fingers={"Thumb","Index","Middle","Ring","Little"};
-    static readonly float[,] Grip={{-.35f,.08f,.16f},{-.42f,-.62f,-.35f},{-.47f,-.67f,-.40f},{-.50f,-.64f,-.38f},{-.48f,-.58f,-.34f}};
+    static readonly float[,] Grip={{-.35f,-.40f,-.30f},{-.42f,-.62f,-.35f},{-.47f,-.67f,-.40f},{-.50f,-.64f,-.38f},{-.48f,-.58f,-.34f}};
 
     public static void Apply(AnimationClip clip,bool sourceWrist=true)
     {

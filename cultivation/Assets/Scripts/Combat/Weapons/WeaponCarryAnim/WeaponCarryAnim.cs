@@ -42,11 +42,11 @@ public class WeaponCarryAnim : MonoBehaviour
     [Header("调试")]
     public bool 打印日志 = true;
 
-    bool 太虚剑 => 面板 != null && 面板.当前功法 != null && 面板.当前功法.功法id == "gongfa_taixu_jianjue";
-    bool 灵虚剑 => 面板 != null && 面板.当前功法 != null && 面板.当前功法.功法id == "gongfa_lingxu_jianjue";
+    bool 太虚剑 => 面板 && 面板.当前武器 && 面板.当前武器.武器类型 == WeaponType.灵剑;
+    bool 灵虚剑 => 面板 && 面板.当前武器 && 面板.当前武器.武器类型 == WeaponType.飞剑;
     static readonly List<替换项> 灵虚替换 = new List<替换项>
     {
-        new 替换项 { 原片段="Armature|Idle_Loop", 新片段路径="技能动作/灵虚剑决/持剑_Idle" },
+        new 替换项 { 原片段="Armature|Idle_Loop", 新片段路径="技能动作/御风八向/灵虚剑决/御风八向_悬停" },
         new 替换项 { 原片段="Armature|Walk_Loop", 新片段路径="技能动作/御风八向/灵虚剑决/御风八向_前" },
         new 替换项 { 原片段="Armature|Sprint_Loop", 新片段路径="技能动作/御风八向/灵虚剑决/御风八向_前" },
     };
@@ -100,8 +100,7 @@ public class WeaponCarryAnim : MonoBehaviour
     {
         get
         {
-            if (string.IsNullOrEmpty(显示条件功法id)) return true;
-            return 面板 != null && 面板.当前功法 != null && (面板.当前功法.功法id == 显示条件功法id || 太虚剑 || 灵虚剑);
+            return 面板 && 面板.当前武器;
         }
     }
 
@@ -115,7 +114,7 @@ public class WeaponCarryAnim : MonoBehaviour
 
     void 应用()
     {
-        string profile = 灵虚剑 ? "gongfa_lingxu_jianjue" : 太虚剑 ? "gongfa_taixu_jianjue" : 显示条件功法id;
+        string profile = 面板.当前武器.武器id;
         if (覆盖 == null || 覆盖.runtimeAnimatorController != 原始控制器 || 已应用功法 != profile)
         {
             覆盖 = new AnimatorOverrideController(原始控制器);
@@ -141,8 +140,8 @@ public class WeaponCarryAnim : MonoBehaviour
                 覆盖[项.原片段] = 新;
                 换了++;
             }
-            // 八向御风完整保留新动作，仅替换握持手指；灵虚剑另有随右手烘焙的独立剑轨迹。
-            string 御风目录 = 灵虚剑 ? "灵虚剑决" : 太虚剑 ? "太虚剑决" : profile == "gongfa_jiuba_xuangong" ? "八九玄功" : null;
+            // 使用完整定稿御风变体：灵剑包含右臂、手指及武器安装角，飞剑保留独立剑轨迹。
+            string 御风目录 = 灵虚剑 ? "灵虚剑决" : 太虚剑 ? "太虚剑决" : 面板.当前武器.武器类型 == WeaponType.长戟 ? "八九玄功" : null;
             if (御风目录 != null)
                 foreach (string 原 in 原片段名)
                     if (原.StartsWith("御风八向_"))
@@ -150,6 +149,15 @@ public class WeaponCarryAnim : MonoBehaviour
                         var 新 = Resources.Load<AnimationClip>("技能动作/御风八向/"+御风目录+"/"+原);
                         if (新 != null) { 覆盖[原] = 新; 换了++; }
                     }
+            if(御风目录!=null)foreach(string original in 原片段名){
+                if(!original.StartsWith("地面八向_"))continue;
+                // 飞剑按设定在地面也御风；每个方向各取对应片段，不能全用向前悬浮。
+                string direction=original.Substring(original.LastIndexOf('_')+1);
+                string path=灵虚剑?"技能动作/御风八向/灵虚剑决/御风八向_"+direction:"技能动作/地面八向/"+御风目录+"/"+original;
+                var replacement=Resources.Load<AnimationClip>(path);
+                // 长戟、灵剑缺少专用变体时保留原地面步态。
+                if(replacement){覆盖[original]=replacement;换了++;}
+            }
             if (打印日志)
                 Debug.Log("[WeaponCarryAnim] 已把 " + 换了 + " 条片段换成持械版（基=" + 原始控制器.name + "）", this);
         }

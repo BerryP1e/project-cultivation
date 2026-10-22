@@ -203,6 +203,15 @@ public static class WorldMapEditorBuilder
         material.SetFloat("_TextureStrength",texture?(rock?.72f:1):0);material.SetFloat("_TextureContrast",legacy?.68f:rock?.52f:1);material.SetFloat("_TextureSaturation",legacy?.72f:rock?.24f:category=="树木"?.72f:1);material.SetFloat("_TextureExposure",legacy?1.3f:rock?1.5f:1);material.SetFloat("_DetailSoftness",legacy?1.35f:0);material.SetFloat("_NoiseStrength",0);material.SetFloat("_RockBlend",rock?1:0);
         string kind=(original.name+" "+original.shader.name+" "+original.GetTag("RenderType",false)).ToLowerInvariant();bool cutout=category=="草花"||kind.Contains("leav")||kind.Contains("leaf")||kind.Contains("cutout");
         material.SetFloat("_Cutoff",cutout?(original.HasProperty("_Cutoff")?Mathf.Max(.2f,original.GetFloat("_Cutoff")):.4f):0);material.SetFloat("_Cull",cutout?0:2);material.SetFloat("_WindStrength",category=="草花"?.04f:0);
+        if(category=="树木"&&cutout)
+        {
+            var foliage=Shader.Find("Cultivation/WorldAuthoring/Foliage");if(!foliage)throw new InvalidOperationException("Missing foliage coverage shader");
+            material.shader=foliage;
+            // Forest包的叶卡已经包含反向重合面；再次双面绘制会令共面面片争抢深度。
+            bool paired=(sourcePath??"").StartsWith("Assets/Stylized Forest/",StringComparison.Ordinal);
+            material.SetFloat("_Cull",paired?2:0);material.SetFloat("_CoverageWidth",2);
+            material.SetFloat("_DetailSoftness",paired?.5f:0);
+        }
     }
     static void RockAxis(GameObject prefab,Bounds bounds,out float yaw,out float span)
     {

@@ -179,7 +179,7 @@ public sealed class UIInkLawPage : MonoBehaviour
         }
         stage.gameObject.SetActive(gameObject.activeInHierarchy);
     }
-    static Mesh CreateRing()
+    public static Mesh CreateRing()
     {
         const int slices = 64, tube = 6; var v = new Vector3[(slices + 1) * (tube + 1)]; var normals = new Vector3[v.Length]; var colors = new Color[v.Length]; var triangles = new int[slices * tube * 6]; int t = 0;
         for (int i = 0; i <= slices; i++) for (int j = 0; j <= tube; j++) { float a = i * Mathf.PI * 2 / slices, b = j * Mathf.PI * 2 / tube; int k = i * (tube + 1) + j; var radial = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0); normals[k] = radial * Mathf.Cos(b) + Vector3.forward * Mathf.Sin(b); v[k] = radial * .47f + normals[k] * .012f; colors[k] = new Color(.61f, .69f, .51f, .85f); if (i == slices || j == tube) continue; int next = k + tube + 1; triangles[t++] = k; triangles[t++] = next; triangles[t++] = k + 1; triangles[t++] = k + 1; triangles[t++] = next; triangles[t++] = next + 1; }

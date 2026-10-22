@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 通用「消散」特效 —— **纯代码生成，不依赖任何美术资产**。
@@ -34,8 +34,9 @@ public class NpcDissolveEffect : MonoBehaviour
     /// <param name="颜色">粒子颜色（会跟着各自的透明度淡出）</param>
     /// <param name="粒子数">数量，0 = 按半径自动算</param>
     /// <param name="存活">多少秒后销毁这个特效物件</param>
+    /// <param name="飞弹消散">短促小火星，并按镜头距离淡化；不用于怪物死亡</param>
     public static NpcDissolveEffect 播放(Vector3 中心, float 半径, Color 颜色,
-                                          int 粒子数 = 0, float 存活 = 0f)
+                                          int 粒子数 = 0, float 存活 = 0f, bool 飞弹消散 = false)
     {
         半径 = Mathf.Max(0.08f, 半径);
         if (粒子数 <= 0) 粒子数 = Mathf.Clamp(Mathf.RoundToInt(半径 * 260f), 24, 160);
@@ -44,7 +45,17 @@ public class NpcDissolveEffect : MonoBehaviour
         go.transform.position = 中心;
 
         var fx = go.AddComponent<NpcDissolveEffect>();
+        if(飞弹消散){
+            fx.速度系数=1.4f;
+            fx.寿命范围=new Vector2(.22f,.5f);
+            fx.大小系数=new Vector2(.08f,.18f);
+            fx.重力=.025f;
+            颜色.a*=.65f;
+            var camera=Camera.main;
+            if(camera)颜色.a*=Mathf.SmoothStep(0,1,Mathf.InverseLerp(2f,5f,Vector3.Distance(camera.transform.position,中心)));
+        }
         fx.构建(go.GetComponent<ParticleSystem>(), 半径, 颜色, 粒子数);
+        if(飞弹消散)go.GetComponent<ParticleSystemRenderer>().maxParticleSize=.025f;
 
         float 最长 = fx.寿命范围.y;
         Object.Destroy(go, 存活 > 0f ? 存活 : 最长 + 0.4f);

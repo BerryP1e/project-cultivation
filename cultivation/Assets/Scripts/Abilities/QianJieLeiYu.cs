@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>神识范围圈内按间隔结算特殊/被动伤害，在命中节点生成原生竖直 lightning-ray。由 PlayerAbilityLoader 内置注册。共享依赖位于 Art/VFX/Shared。</summary>
+/// <summary>主动展开十秒雷狱，神识范围内的敌人按主动神通管线承受雷罚。仅由施放器付费触发。</summary>
 [DisallowMultipleComponent]
 public class QianJieLeiYu : MonoBehaviour
 {
@@ -11,22 +11,13 @@ public class QianJieLeiYu : MonoBehaviour
     [Tooltip("玩家属性（算神识范围、当攻击方）。留空自动在本体找")]
     public PlayerCombatStats 战斗属性;
 
-    [Tooltip("灵气（持续消耗 / 耗尽自动关闭）。留空自动在本体找")]
+    [Tooltip("生命状态来源；灵力由主动施放器一次扣除。留空自动在本体找")]
     public PlayerVitals 灵气;
 
     [Tooltip("玩家锁定管理器（选目标用，暂时只做日志）。留空自动找")]
     public NpcTargeting 目标管理器;
 
-    [Header("触发条件")]
-    [Tooltip("启用这个被动后光环是否**常驻**（用户要求：装备了就维持）")]
-    public bool 常驻 = true;
-
-    [Tooltip("灵力耗尽时自动关闭，灵力回满后自动重开")]
-    public bool 灵力耗尽自动关闭 = true;
-
     [Header("范围（跟神识走）")]
-    [Tooltip("神通表里没填「维持消耗灵力」时，用这个兜底（点/秒）")]
-    public float 每秒消耗灵力兜底 = 1f;
 
     [Tooltip("神识为 0 时的基础半径（米）")]
     public float 基础半径 = 4f;
@@ -184,6 +175,16 @@ public class QianJieLeiYu : MonoBehaviour
 
     GameObject 光环;
     float 下次伤害时刻;
+    float 结束时刻;
+    ActiveDivineAbility 主动定义;
+    public float 剩余时长=>生效中?Mathf.Max(0,结束时刻-Time.time):0;
+    public void 施放(ActiveDivineAbility definition)
+    {
+        关闭();主动定义=definition;解析引用();
+        伤害属性=definition.伤害属性;技能倍率=definition.伤害倍率;伤害间隔=definition.伤害间隔;
+        结束时刻=Time.time+Mathf.Max(.1f,definition.持续时长);开启();
+        下次伤害时刻=Time.time+Mathf.Max(0,definition.首次造成伤害时间);
+    }
 
     /// <summary>每个敌人脚下那个**常驻**雷罚物件（雷罚常驻 模式用）</summary>
     readonly Dictionary<NpcInstance, GameObject> 雷罚实例 = new Dictionary<NpcInstance, GameObject>();
@@ -199,7 +200,6 @@ public class QianJieLeiYu : MonoBehaviour
     {
         解析引用();
         下次伤害时刻 = Time.time;          // 一开就打一次，别等一个间隔
-        if (常驻) 开启();
     }
 
     void OnDisable() { 关闭(); }
@@ -217,27 +217,8 @@ public class QianJieLeiYu : MonoBehaviour
     {
         解析引用();
 
-        // 灵气不够 → 熄火；回满了 → 自己亮起来
-        if (灵力耗尽自动关闭 && 灵气 != null)
-        {
-            if (生效中 && !灵气.有灵气) { 关闭(); return; }
-            if (!生效中 && 常驻 && 灵气.有灵气) 开启();
-        }
-        else if (常驻 && !生效中) 开启();
-
         if (!生效中) return;
-
-        // ---- 持续消耗灵力 ----
-        float 每秒 = 每秒消耗灵力;
-        if (灵气 != null && 每秒 > 0f)
-        {
-            float cost = 每秒 * Time.deltaTime;
-            if (cost > 0f)
-            {
-                灵气.扣灵气直到零(cost);
-                if (!灵气.有灵气 && 灵力耗尽自动关闭) { 关闭(); return; }
-            }
-        }
+        if(!主动定义 || !灵气 || 灵气.IsDead || Time.time>=结束时刻){关闭();return;}
 
         // ---- 光环跟着角色走 + 跟着范围缩放 ----
         维护光环();
@@ -260,26 +241,11 @@ public class QianJieLeiYu : MonoBehaviour
     {
         get
         {
-            var a = 取神通();
-            return a != null && a.维持消耗灵力 > 0f ? a.维持消耗灵力 : 每秒消耗灵力兜底;
+            return 0f;
         }
     }
 
-    PassiveDivineAbility 神通缓存;
-
-    /// <summary>表里那条【千劫雷狱】被动（按 <see cref="神通id"/> 找）</summary>
-    public PassiveDivineAbility 取神通()
-    {
-        if (神通缓存 != null) return 神通缓存;
-        var 面板 = 面板数据;
-        if (面板 == null || 面板.神通 == null) return null;
-        foreach (var a in 面板.神通)
-        {
-            var p = a as PassiveDivineAbility;
-            if (p != null && p.神通id == 神通id) { 神通缓存 = p; return p; }
-        }
-        return null;
-    }
+    public ActiveDivineAbility 取神通()=>主动定义;
 
     [Tooltip("千劫雷狱在被动神通表里的 id")]
     public string 神通id = "ability_qianjie_leiyu";
@@ -297,7 +263,7 @@ public class QianJieLeiYu : MonoBehaviour
     /// <summary>开启光环（生成特效）</summary>
     public void 开启()
     {
-        if (生效中) return;
+        if (生效中 || !主动定义 || Time.time>=结束时刻) return;
         生效中 = true;
         下次伤害时刻 = Time.time;      // 开启瞬间就打一次
         生成光环();
@@ -471,13 +437,13 @@ public class QianJieLeiYu : MonoBehaviour
         float r = 半径;
         var 命中s = Physics.OverlapSphere(transform.position, r, 敌人层, QueryTriggerInteraction.Ignore);
         var 去过重 = new HashSet<NpcInstance>();
-        var 规则 = new AttackSpec(伤害属性, AttackKind.被动神通, false, 技能倍率);
+        var 规则 = new AttackSpec(伤害属性, AttackKind.主动神通, false, 技能倍率);
 
         foreach (var c in 命中s)
         {
             if (c == null) continue;
             var npc = c.GetComponentInParent<NpcInstance>();
-            if (npc == null || npc.IsDead) continue;
+            if (npc == null || npc.IsDead || (!npc.是敌对目标 && (!目标管理器||目标管理器.LockedNpc!=npc))) continue;
             if (!去过重.Add(npc)) continue;
 
             // 雷罚：常驻模式下由 维护雷罚() 每帧负责，这里只在非常驻模式补一个
@@ -512,7 +478,7 @@ public class QianJieLeiYu : MonoBehaviour
         {
             if (c == null) continue;
             var npc = c.GetComponentInParent<NpcInstance>();
-            if (npc == null || npc.IsDead) continue;
+            if (npc == null || npc.IsDead || (!npc.是敌对目标 && (!目标管理器||目标管理器.LockedNpc!=npc))) continue;
             if (!还在范围.Add(npc)) continue;
 
             确保雷罚(npc);

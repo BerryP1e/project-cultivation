@@ -44,6 +44,7 @@ public enum ActiveSkillKind
     天降打击 = 9,
     螺旋剑雨 = 10,
     伴龙随行 = 11,
+    雷狱领域 = 12,
 }
 
 /// <summary>

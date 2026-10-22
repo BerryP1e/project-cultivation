@@ -46,6 +46,8 @@ public static class 物品效果导入
 
         switch (类型.Trim())
         {
+            case "获得武器":
+                {var e=取或建<获得武器效果>(物品.物品id);if(e.武器id!=参数id){e.武器id=参数id;e.武器=null;}e.说明=说明;EditorUtility.SetDirty(e);物品.使用效果=e;break;}
             case "获得法宝":
                 {
                     var e=取或建<获得法宝效果>(物品.物品id);

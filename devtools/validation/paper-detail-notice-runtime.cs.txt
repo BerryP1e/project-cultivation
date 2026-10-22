@@ -1,0 +1,54 @@
+﻿using System;using System.IO;using System.Linq;using System.Collections;using System.Collections.Generic;using UnityEngine;using UnityEngine.UI;using UnityEngine.EventSystems;using UnityEditor;
+IEnumerator Run(){
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolation required");
+string dir="../.local/diagnostics/realm-scroll-20261021/";var report=new List<string>();void Check(bool ok,string label){report.Add((ok?"PASS ":"FAIL ")+label);File.WriteAllLines(dir+"accept.txt",report);if(!ok)throw new Exception(label);}
+var ui=UnityEngine.Object.FindObjectOfType<CharacterPanelUI>();var data=ui.GetComponent<UIPanelData>();var bag=ui.tabs[0].page.GetComponent<UIInkBagPage>();ui.SetOpen(true);bag.SetCategory(3);
+var gameView=EditorWindow.GetWindow(typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView"));gameView.Show();gameView.Focus();
+var module=EventSystem.current.GetComponent<StandaloneInputModule>();var prev=module.inputOverride;bool moduleEnabled=module.enabled;var pointerObject=new GameObject("BagDetailPointer");var pointer=pointerObject.AddComponent<UIValidationPointerInput>();pointer.enabled=false;module.enabled=false;module.inputOverride=pointer;
+Vector2 Center(Transform t)=>RectTransformUtility.WorldToScreenPoint(null,t.TransformPoint(((RectTransform)t).rect.center));
+Rect Bounds(Transform t){var c=new Vector3[4];((RectTransform)t).GetWorldCorners(c);return Rect.MinMaxRect(c[0].x,c[0].y,c[2].x,c[2].y);}
+IEnumerator Move(Transform t){Canvas.ForceUpdateCanvases();pointer.Position=t?Center(t):Vector2.zero;module.Process();yield return null;}
+IEnumerator Click(Transform t){yield return Move(t);pointer.Down=pointer.Pressed=true;module.Process();pointer.Down=false;yield return null;pointer.Up=true;pointer.Pressed=false;module.Process();pointer.Up=false;yield return null;yield return null;}
+IEnumerator Shot(string name){yield return new WaitForEndOfFrame();var texture=ScreenCapture.CaptureScreenshotAsTexture();File.WriteAllBytes(dir+name+".png",texture.EncodeToPNG());UnityEngine.Object.Destroy(texture);}
+var temporary=new List<ScriptableObject>();
+try{
+yield return new WaitForSecondsRealtime(.8f);var sheet=bag.transform.Find("InventoryPaper");var category=sheet.Find("Category_1");var target=category.GetComponent<UIPaperButton>();
+yield return Move(null);yield return Shot("buttons-normal");
+yield return Move(category);pointer.Down=pointer.Pressed=true;module.Process();pointer.Down=false;yield return null;
+Check(bag.Category==3&&target.State==2,"pointer down darkens before changing category");
+var face=category.Find("PaperReliefFace").GetComponent<RawImage>();yield return new WaitForSecondsRealtime(.13f);Check(face.rectTransform.anchoredPosition.y<=-2.5f,"held category eases into depressed face");
+yield return Shot("buttons-held");pointer.Pressed=false;pointer.Up=true;module.Process();pointer.Up=false;yield return null;yield return null;
+Check(bag.Category==1&&target.Selected,"release inside commits selection");yield return new WaitForSecondsRealtime(.15f);Check(face.rectTransform.anchoredPosition.y>-2&&face.rectTransform.anchoredPosition.y<0,"release returns to shallow selected depth");yield return Shot("buttons-selected");
+var canceled=sheet.Find("Category_4");yield return Move(canceled);pointer.Down=pointer.Pressed=true;module.Process();pointer.Down=false;yield return null;yield return Move(null);pointer.Up=true;pointer.Pressed=false;module.Process();pointer.Up=false;yield return null;Check(bag.Category==1,"release outside cancels category change");
+bag.SetCategory(3);yield return null;yield return null;var populated=bag.GetComponentsInChildren<UIPaperInventoryCell>().Where(c=>c.Entry!=null).ToArray();var a=populated[0];var b=populated[1];var tooltip=bag.transform.Find("InventoryTooltip");
+yield return Click(a.transform);string original=tooltip.Find("ItemName").GetComponent<Text>().text;Rect fixedBounds=Bounds(tooltip);Check(a.GetComponent<UIPaperButton>().Selected,"clicked item retains four-edge highlight");
+yield return Move(b.transform);yield return new WaitForSecondsRealtime(.5f);Check(tooltip.Find("ItemName").GetComponent<Text>().text==original&&Bounds(tooltip)==fixedBounds,"hovering another item does not replace or move pinned description");
+yield return Move(null);yield return new WaitForSecondsRealtime(.5f);Check(tooltip.gameObject.activeInHierarchy&&a.GetComponent<UIPaperButton>().Selected,"pointer departure preserves pinned card and selection");yield return Shot("item-pinned");
+yield return Click(b.transform);Check(tooltip.Find("ItemName").GetComponent<Text>().text==b.Entry.DisplayName&&!a.GetComponent<UIPaperButton>().Selected&&b.GetComponent<UIPaperButton>().Selected,"click another item switches both card and selection");
+yield return Click(b.transform);Check(!b.GetComponent<UIPaperButton>().Selected,"click selected item again unpins");yield return Move(a.transform);Check(tooltip.Find("ItemName").GetComponent<Text>().text==a.Entry.DisplayName,"unpin restores ordinary hover previews");
+yield return Move(null);bag.HideTooltip();
+var empty=bag.GetComponentsInChildren<UIPaperInventoryCell>().First(c=>c.Entry==null);Check(!empty.GetComponent<UIPaperButton>().有物品&&a.GetComponent<UIPaperButton>().有物品,"occupied and empty slots have distinct backing state");
+var scroll=bag.AttributeScroll;scroll.verticalNormalizedPosition=1;yield return null;var vp=scroll.viewport;var ring=(RectTransform)sheet.Find("RealmInkSeal/BrushRing");float maxCurveError=0,maxUvError=0;int samples=0;
+for(int frame=0;frame<90;frame++){
+if(frame<45){if(frame%3==0)ExecuteEvents.Execute(scroll.gameObject,new PointerEventData(EventSystem.current){position=Center(vp),scrollDelta=new Vector2(0,-1)},ExecuteEvents.scrollHandler);}else scroll.velocity=new Vector2(0,180);
+yield return null;yield return new WaitForEndOfFrame();var center=vp.InverseTransformPoint(ring.TransformPoint(ring.rect.center));float radius=Mathf.Min(ring.rect.width,ring.rect.height)*.58f;
+foreach(RectTransform row in bag.Attributes.container){float y=vp.InverseTransformPoint(row.position).y;if(y<vp.rect.yMin+32||y>vp.rect.yMax-32)continue;float expected=Mathf.Max(vp.rect.xMin+8,center.x+Mathf.Sqrt(Mathf.Max(0,radius*radius-(y-center.y)*(y-center.y)))+4);float left=vp.InverseTransformPoint(row.TransformPoint(new Vector2(row.rect.xMin,0))).x;maxCurveError=Mathf.Max(maxCurveError,Mathf.Abs(left-expected));
+foreach(var text in row.GetComponentsInChildren<Text>()){var mesh=text.canvasRenderer.GetMesh();var vertices=mesh.vertices;var uv=new List<Vector4>();mesh.GetUVs(1,uv);for(int v=0;v<vertices.Length&&v<uv.Count;v++){float actual=vp.InverseTransformPoint(text.transform.TransformPoint(vertices[v])).y;maxUvError=Mathf.Max(maxUvError,Mathf.Abs(actual-uv[v].y));}}samples++;}}
+scroll.StopMovement();Check(samples>250&&maxCurveError<.1f,"90 rendered frames retain circle arc; samples="+samples+" error="+maxCurveError);Check(maxUvError<.1f,"wheel and inertia fade coordinates match actual mesh; error="+maxUvError);scroll.verticalNormalizedPosition=1;yield return null;
+yield return Shot("bag-final");
+// Real award and learning entry points, all data remains in isolated Play.
+data.给物品((ItemDefinition)a.Entry,2);yield return new WaitForSecondsRealtime(.35f);var notice=UnityEngine.Object.FindObjectOfType<UIRewardNotice>();Check(notice,"actual inventory award creates centered notice");var stack=notice.transform.Find("UpperCenterNotices");var first=(RectTransform)stack.GetChild(0);float firstWidth=first.rect.width;
+UIRewardNotice.提示("学会  「八九玄功」");float arrival=Time.unscaledTime;yield return new WaitForSecondsRealtime(.10f);yield return new WaitForEndOfFrame();var second=(RectTransform)stack.GetChild(1);
+float compressedGap=first.anchoredPosition.y-second.anchoredPosition.y-(first.rect.height+second.rect.height)*.5f;
+Check(compressedGap>=6&&compressedGap<16,"push keeps compressed spacing before expansion; gap="+compressedGap);
+yield return new WaitForSecondsRealtime(.28f);yield return new WaitForEndOfFrame();float finalGap=first.anchoredPosition.y-second.anchoredPosition.y-(first.rect.height+second.rect.height)*.5f;Check(Mathf.Abs(finalGap-16)<.5f,"settled notices expand smoothly to full spacing");
+Check(second.rect.width!=firstWidth,"notice width follows actual text length");Check(second.GetChild(0).GetComponent<Text>().rectTransform.offsetMin.x>=80,"notice text remains inside solid black center");Check(!first.GetComponent<CanvasGroup>().blocksRaycasts,"notices never block pointer input");yield return Shot("reward-notices");
+while(Time.unscaledTime-arrival<1.48f)yield return null;yield return new WaitForEndOfFrame();Check(first.GetComponent<CanvasGroup>().alpha>.98f&&second.GetComponent<CanvasGroup>().alpha>.98f,"all notices hold until 1.5 seconds after latest arrival");
+while(Time.unscaledTime-arrival<1.60f)yield return null;yield return new WaitForEndOfFrame();Check(first.GetComponent<CanvasGroup>().alpha<.9f&&first.GetComponent<CanvasGroup>().alpha>.05f&&Mathf.Abs(first.GetComponent<CanvasGroup>().alpha-second.GetComponent<CanvasGroup>().alpha)<.01f,"batch fades together between 1.5 and 1.7 seconds");
+while(Time.unscaledTime-arrival<1.74f)yield return null;Check(stack.childCount==0,"whole batch gone at 1.7 seconds");
+var g=ScriptableObject.CreateInstance<GongFaDefinition>();g.功法名称="清心诀 · 学习验证";var effect=ScriptableObject.CreateInstance<学功法效果>();effect.功法=g;var item=ScriptableObject.CreateInstance<ItemDefinition>();item.物品id="qa_learn_notice";item.物品名="清心诀玉简";item.可使用=true;item.使用效果=effect;temporary.Add(g);temporary.Add(effect);temporary.Add(item);data.物品.Add(item);
+Check(物品使用器.使用(item,data)&&data.已学(g)&&data.物品数量(item)==0,"actual learning pipeline succeeds and consumes one item");yield return null;Check(stack.GetComponentsInChildren<Text>().Any(t=>t.text.Contains(g.DisplayName)),"learning success creates new black notice");int count=stack.childCount;Check(!物品使用器.使用(item,data)&&stack.childCount==count,"repeat learning failure creates no success notice");
+Check(Screen.width==1920&&Screen.height==1080,"original 1080p resolution retained");Debug.Log("BAG_DETAILS_PASS "+report.Count);
+}finally{module.inputOverride=prev;module.enabled=moduleEnabled;UnityEngine.Object.Destroy(pointerObject);ui.SetOpen(false,true);foreach(var obj in temporary)UnityEngine.Object.Destroy(obj);}
+}
+UnityEngine.Object.FindObjectOfType<PlayerManualAim>().StartCoroutine(Run());

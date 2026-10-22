@@ -174,17 +174,25 @@ public class ActiveSkillCaster : MonoBehaviour
             if (充能数[i] < 上限) 冷却剩余[i] = 冷却总秒(i);
         }
 
-        if (!接收输入() || PlayerManualAim.AltHeld) return;
+    }
+
+    /// <summary>由先于移动执行的瞄准器统一读取按键，保证切换技能与松键施放的先后顺序。</summary>
+    public bool 处理快捷键()
+    {
+        if (!isActiveAndEnabled || !接收输入()) return false;
 
         int 上限2 = Mathf.Min(6, 快捷键 != null ? 快捷键.Length : 0);
         for (int i = 0; i < 上限2; i++)
         {
-            bool 按下 = Input.GetKeyDown(快捷键[i]);
-            if (!按下 && 同时支持小键盘 && i < 小键盘键.Length)
-                按下 = Input.GetKeyDown(小键盘键[i]);
+            KeyCode 按键 = 快捷键[i];
+            bool 按下 = Input.GetKeyDown(按键);
+            if (!按下 && 同时支持小键盘 && i < 小键盘键.Length){
+                按键 = 小键盘键[i];按下 = Input.GetKeyDown(按键);
+            }
 
-            if (按下) { 尝试施放(i); return; }   // 一帧只放一个
+            if (按下) { GetComponent<PlayerManualAim>()?.取消引导();尝试施放(i,按键); return true; }
         }
+        return false;
     }
 
     /// <summary>现在该不该接收快捷键</summary>
@@ -195,10 +203,22 @@ public class ActiveSkillCaster : MonoBehaviour
         return true;
     }
 
-    /// <summary>按下技能栏第 N 格（0~5）。返回是否真的放出去了。</summary>
-    public bool 尝试施放(int 槽位) => 尝试施放内部(槽位,null);
-    public bool 手动施放(int 槽位,Vector3 落点) => 尝试施放内部(槽位,落点);
-    bool 尝试施放内部(int 槽位,Vector3? 落点)
+    /// <summary>按住技能键引导，松开原键施放；已开启的持续锁链再次按键则直接关闭。</summary>
+    public bool 尝试施放(int 槽位,KeyCode 按住键=KeyCode.None)
+    {
+        if(槽位>=0&&槽位<持续锁链.Length&&持续锁链[槽位])return 尝试施放内部(槽位,null);
+        return GetComponent<PlayerManualAim>()?.开始引导(槽位,按住键)??false;
+    }
+    public bool 手动施放(int 槽位,Vector3 落点,NpcInstance 鼠标目标=null) => 尝试施放内部(槽位,落点,鼠标目标);
+    public bool 锁定施放(int 槽位)
+    {
+        if(!目标管理器)解析引用();
+        var target=目标管理器?目标管理器.LockedNpc:null;
+        if(!target||target.IsDead||!目标管理器.IsInSenseRange(target)){提示("锁定目标已离开神识范围");return false;}
+        GetComponent<PlayerController>()?.对准攻击方向(target.transform.position-transform.position);
+        return 尝试施放内部(槽位,null);
+    }
+    bool 尝试施放内部(int 槽位,Vector3? 落点,NpcInstance 鼠标目标=null)
     {
         if(UiEscRegistry.SceneInputBlocked)return false;
         if (面板数据 == null) 解析引用();
@@ -258,6 +278,11 @@ public class ActiveSkillCaster : MonoBehaviour
 
         // ---- 需要锁定 ----
         var 锁定 = 目标管理器 != null ? 目标管理器.LockedNpc : null;
+        if(神通.结算方式==ActiveSkillKind.雷狱领域||神通.结算方式==ActiveSkillKind.四御护罩){落点=transform.position;锁定=null;}
+        if(落点.HasValue&&神通.结算方式==ActiveSkillKind.持续禁锢){
+            if(!鼠标目标||鼠标目标.IsDead||Vector3.Distance(transform.position,鼠标目标.transform.position)>PlayerManualAim.SenseRange(gameObject)){提示("请指向神识范围内可禁锢的目标");return false;}
+            锁定=鼠标目标;落点=null;
+        }
         if (神通.需要锁定目标 && !落点.HasValue && (锁定 == null || 锁定.IsDead))
         {
             提示("「" + 神通.神通名称 + "」需要先右键锁定一个敌人");
@@ -372,6 +397,9 @@ public class ActiveSkillCaster : MonoBehaviour
 
     void 施放(ActiveDivineAbility 神通, NpcInstance 锁定,Vector3? 落点=null,bool 动作已播放=false)
     {
+        if(神通.结算方式==ActiveSkillKind.雷狱领域){
+            var field=GetComponent<QianJieLeiYu>()??gameObject.AddComponent<QianJieLeiYu>();field.enabled=true;field.施放(神通);return;
+        }
         if(神通.结算方式==ActiveSkillKind.定向水炮)
         {
             if(动画==null)动画=GetComponent<PlayerAnimationController>();

@@ -63,7 +63,7 @@ public sealed class LingxuFlightSword : MonoBehaviour
         if (!flight || !flight.御风中)
         {
             rear = 1;
-            // 地面使用相同御风身体动作，但剑独立垂在身侧；攻击仍由原Prop1曲线驱动。
+            // 飞剑地面同样使用御风身体姿态，剑独立垂在身侧；攻击仍由原Prop1曲线驱动。
             groundSide = Mathf.MoveTowards(groundSide, moving ? 1 : 0, Time.deltaTime / Mathf.Max(.05f, 收放时长));
             if (groundSide <= 0) return;
             float side = Mathf.SmoothStep(0, 1, groundSide);

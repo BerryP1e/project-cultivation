@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>施法节点→有限粒子弹道→扫掠接触→统一伤害/地表管线；目标相位和表现不充当伤害时钟。</summary>
@@ -16,6 +16,11 @@ public sealed class FallingSpellRunner : MonoBehaviour
     Vector3 center;
     bool released, ownsAction;
     int emitted;
+    BasicRemoteAttack01 basic;
+    float basicDamage,basicRadius;
+    Transform OwnerTransform=>basic?basic.transform:owner?owner.transform:null;
+    float HitRadius=>basic?basicRadius:pattern.命中半径>0?pattern.命中半径:ability.范围;
+    const string BasicMeteor="ability_huoyan_yun_cast";
     float releaseTime, endTime;
     readonly Dictionary<uint, Vector3> previous = new Dictionary<uint, Vector3>();
     readonly ParticleSystem.Particle[] particles = new ParticleSystem.Particle[64];
@@ -49,7 +54,29 @@ public sealed class FallingSpellRunner : MonoBehaviour
         runner.ownsAction = true;
         return true;
     }
-    bool OwnerReady => owner && owner.isActiveAndEnabled && owner.生命 && !owner.生命.IsDead;
+    public static bool 普攻陨石资源就绪()
+    {var entry=CombatVfxPipeline.配置?.查找(BasicMeteor);var config=entry?.预制体?entry.预制体.GetComponent<FallingSpellPattern>():null;return config&&config.飞行粒子;}
+    public static bool 尝试普攻陨石(BasicRemoteAttack01 source,NpcInstance locked,Vector3 point,float damage,float radius)
+    {
+        if(!source||!普攻陨石资源就绪())return false;
+        var host=new GameObject("Taixu_A3_Meteor");var runner=host.AddComponent<FallingSpellRunner>();
+        runner.basic=source;runner.target=locked;runner.basicDamage=damage;runner.basicRadius=Mathf.Max(.1f,radius);runner.center=point;
+        runner.ReleaseVisual(BasicMeteor);return true;
+    }
+    void ReleaseVisual(string id)
+    {
+        transform.position=center;
+        visual=CombatVfxPipeline.播放(id,center,Vector3.down);
+        visual.transform.SetParent(transform,true);pattern=visual.GetComponent<FallingSpellPattern>();
+        foreach(var ps in visual.GetComponentsInChildren<ParticleSystem>(true))ps.Stop(false,ParticleSystemStopBehavior.StopEmittingAndClear);
+        foreach(var ps in visual.GetComponentsInChildren<ParticleSystem>(true))if(ps.main.playOnAwake)ps.Play(false);
+        pattern.飞行粒子.Play(false);
+        if(pattern.起点闪光)pattern.起点闪光.Play(false);
+        if(pattern.召唤阵)pattern.召唤阵.Play(false);
+        released=true;releaseTime=Time.time;
+        endTime=releaseTime+(pattern.数量-1)*pattern.间隔+pattern.起点偏移.magnitude/pattern.飞行速度+6;
+    }
+    bool OwnerReady => basic?basic.isActiveAndEnabled&&!(basic.GetComponent<PlayerVitals>()?.IsDead??true):owner&&owner.isActiveAndEnabled&&owner.生命&&!owner.生命.IsDead;
     void Update()
     {
         if (!OwnerReady) { Destroy(gameObject); return; }
@@ -63,17 +90,7 @@ public sealed class FallingSpellRunner : MonoBehaviour
             // 地面落点：鼠标和移动目标取释放节点的当前位置，后续可以躲出弹道。
             if (Physics.Raycast(center + Vector3.up * 2, Vector3.down, out var floor, 5, ~0, QueryTriggerInteraction.Ignore)
                 && !floor.collider.GetComponentInParent<NpcInstance>() && !floor.collider.GetComponentInParent<PlayerVitals>()) center.y = floor.point.y;
-            transform.position = center;
-            visual = CombatVfxPipeline.播放(ability.神通id + "_cast", center, Vector3.down);
-            visual.transform.SetParent(transform, true);
-            pattern = visual.GetComponent<FallingSpellPattern>();
-            foreach (var ps in visual.GetComponentsInChildren<ParticleSystem>(true)) ps.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-            foreach (var ps in visual.GetComponentsInChildren<ParticleSystem>(true)) if (ps.main.playOnAwake) ps.Play(false);
-            pattern.飞行粒子.Play(false);
-            if (pattern.起点闪光) pattern.起点闪光.Play(false);
-            if (pattern.召唤阵) pattern.召唤阵.Play(false);
-            released = true; releaseTime = Time.time;
-            endTime = releaseTime + (pattern.数量 - 1) * pattern.间隔 + pattern.起点偏移.magnitude / pattern.飞行速度 + 6;
+            ReleaseVisual(ability.神通id+"_cast");
         }
         if (ownsAction && (!actions || actions.当前动作 != clip || !actions.动作播放中)) ReleaseAction();
         float elapsed = Time.time - releaseTime;
@@ -82,8 +99,8 @@ public sealed class FallingSpellRunner : MonoBehaviour
     }
     void Emit()
     {
-        float hitRadius = pattern.命中半径 > 0 ? pattern.命中半径 : ability.范围;
-        float spread = Mathf.Max(0, ability.范围 - hitRadius);
+        float hitRadius=HitRadius;
+        float spread=basic?0:Mathf.Max(0,ability.范围-hitRadius);
         // 第一发在目标中心；其余采用等面积黄金角分布，覆盖引导圈且不会随机全落空。
         float radius = emitted == 0 ? 0 : spread * Mathf.Sqrt((float)emitted / Mathf.Max(1, pattern.数量 - 1));
         float angle = emitted * 2.399963f;
@@ -120,7 +137,7 @@ public sealed class FallingSpellRunner : MonoBehaviour
                 for (int j = 0; j < hits; j++)
                 {
                     var collider = sweep[j].collider;
-                    if (!collider || collider.transform.IsChildOf(owner.transform) || sweep[j].distance >= nearest) continue;
+                    if (!collider || collider.transform.IsChildOf(OwnerTransform) || sweep[j].distance >= nearest) continue;
                     nearest = sweep[j].distance; point = sweep[j].point; contact = true;
                 }
             }
@@ -145,9 +162,9 @@ public sealed class FallingSpellRunner : MonoBehaviour
     void Impact(Vector3 point, Vector3 direction, int phase)
     {
         接触次数++;
-        float radius = pattern.命中半径 > 0 ? pattern.命中半径 : ability.范围;
+        float radius=HitRadius;
         var surface = point;
-        if (ability.命中特效贴地)
+        if (basic||ability.命中特效贴地)
         {
             surface.y = center.y;
             float nearest = float.PositiveInfinity;
@@ -156,15 +173,16 @@ public sealed class FallingSpellRunner : MonoBehaviour
                 if (sweep[i].collider && !sweep[i].collider.GetComponentInParent<NpcInstance>() && !sweep[i].collider.GetComponentInParent<PlayerVitals>() && sweep[i].distance < nearest)
                 { nearest = sweep[i].distance; surface = sweep[i].point; }
         }
-        CombatImpactPipeline.接触(ability.神通id, surface, radius, source: owner);
-        var spec = new AttackSpec(ability.伤害属性, ability.攻击类别, false, ability.伤害倍率);
+        CombatImpactPipeline.接触(basic?"ability_huoyan_yun":ability.神通id,surface,radius,source:basic?(object)basic:owner);
+        var spec=basic?new AttackSpec(DamageNature.特殊,AttackKind.普通攻击,false,basicDamage):new AttackSpec(ability.伤害属性,ability.攻击类别,false,ability.伤害倍率);
         var batch = new CombatHitBatch();
-        foreach (var col in Physics.OverlapSphere(point, Mathf.Max(.05f, radius), owner.敌人层, QueryTriggerInteraction.Ignore))
+        foreach (var col in Physics.OverlapSphere(point, Mathf.Max(.05f, radius),basic?~0:owner.敌人层.value,QueryTriggerInteraction.Ignore))
         {
             var npc = col.GetComponentInParent<NpcInstance>();
             if (!npc || npc.IsDead || (!npc.是敌对目标 && npc != target)) continue;
-            var result = batch.命中(new NpcTarget(npc), new CombatHitContext(owner.战斗属性, spec, owner, ability.神通id, point, direction, phase));
+            var result=batch.命中(new NpcTarget(npc),new CombatHitContext(basic?basic.玩家战斗属性:owner.战斗属性,spec,basic?(object)basic:owner,basic?basic.方法id:ability.神通id,point,direction,basic?2:phase,playHitVfx:!basic));
             if (result.状态 == CombatHitState.Duplicate) continue;
+            if(basic)basic.记录结果(new NpcTarget(npc),result);
             命中次数++; 累计伤害 += result.伤害;
         }
     }

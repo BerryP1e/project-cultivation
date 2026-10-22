@@ -9,6 +9,7 @@ namespace Cultivation.WorldAuthoring
     {
         public WorldMapRenderer world;
         public bool 场景深度遮挡=true;
+        public bool 抑制叶缘描边=true;
         Camera camera3d;CommandBuffer commands;RenderTexture normals,ids;Material mask,occluder,composite;
         readonly Dictionary<(Material,bool,WorldInkTarget),Material> cutouts=new Dictionary<(Material,bool,WorldInkTarget),Material>();
         readonly Plane[] planes=new Plane[6];
@@ -38,7 +39,7 @@ namespace Cultivation.WorldAuthoring
                         var original=materials[sub];bool onlyDepth=subject.仅遮挡(original);var draw=onlyDepth?occluder:mask;
                         // 叶片只挡住后方墨线，不参与深度/法线内部描边；仍沿源alpha裁剪，不能画成整张卡片。
                         bool alpha=original&&original.HasProperty("_Cutoff")&&original.GetFloat("_Cutoff")>0;var root=!onlyDepth&&subject.根部淡化高度>0?subject:null;
-                        if(original&&(alpha||root)){var key=(original,onlyDepth,root);if(!cutouts.TryGetValue(key,out draw)){draw=new Material(onlyDepth?occluder:mask);if(alpha){draw.SetTexture("_BaseMap",original.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",original.GetFloat("_Cutoff"));draw.SetFloat("_Cull",original.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",original.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",original.GetTextureOffset("_BaseMap"));}cutouts[key]=draw;}draw.SetFloat("_CamFar",camera3d.farClipPlane);if(root){draw.SetFloat("_RootHeight",root.接地高度);draw.SetFloat("_RootFade",root.根部淡化高度);}}commands.DrawRenderer(renderer,draw,sub,0);
+                        if(original&&(alpha||root)){var key=(original,onlyDepth,root);if(!cutouts.TryGetValue(key,out draw)){draw=new Material(onlyDepth?occluder:mask);if(alpha){draw.SetTexture("_BaseMap",original.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",original.GetFloat("_Cutoff"));draw.SetFloat("_Cull",original.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",original.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",original.GetTextureOffset("_BaseMap"));draw.SetFloat("_FoliageOccluder",onlyDepth?1:0);}cutouts[key]=draw;}draw.SetFloat("_CamFar",camera3d.farClipPlane);if(root){draw.SetFloat("_RootHeight",root.接地高度);draw.SetFloat("_RootFade",root.根部淡化高度);}}commands.DrawRenderer(renderer,draw,sub,0);
                     }
                 }
             }
@@ -47,7 +48,7 @@ namespace Cultivation.WorldAuthoring
         void OnRenderImage(RenderTexture source,RenderTexture destination)
         {
             if(!composite||!normals||GraphicsSettings.currentRenderPipeline){Graphics.Blit(source,destination);return;}
-            composite.SetFloat("_UseRootFade",1);composite.SetFloat("_UseSceneDepth",场景深度遮挡?1:0);composite.SetFloat("_SceneCameraFar",camera3d.farClipPlane);
+            composite.SetFloat("_UseRootFade",1);composite.SetFloat("_UseSceneDepth",场景深度遮挡?1:0);composite.SetFloat("_SceneCameraFar",camera3d.farClipPlane);composite.SetFloat("_SuppressFoliageEdges",抑制叶缘描边?1:0);
             composite.SetTexture("_MaskTex",normals);composite.SetTexture("_IDTex",ids);composite.SetVector("_MaskTex_TexelSize",new Vector4(1f/normals.width,1f/normals.height,normals.width,normals.height));Graphics.Blit(source,destination,composite);
         }
         void ReleaseTargets(){if(normals)RenderTexture.ReleaseTemporary(normals);if(ids)RenderTexture.ReleaseTemporary(ids);normals=ids=null;}

@@ -52,49 +52,19 @@ public class ToastUI : MonoBehaviour
     {
         if (string.IsNullOrEmpty(文本)) return;
 
-        var 根 = 取画布();
-        if (根 == null) { Debug.Log("[Toast] " + 文本); return; }
-
-        var go = new GameObject("Toast", typeof(RectTransform));
-        go.transform.SetParent(根.transform, false);
-        var t = go.AddComponent<ToastUI>();
-        t.构建(文本, 时长);
+        if(!Application.isPlaying){Debug.Log("[Toast] "+文本);return;}
+        UIRewardNotice.提示(文本);
     }
 
-    ItemDefinition 获得物品定义;
-    int 获得数量;
     public static void 获得物品(ItemDefinition item, int count)
     {
         if (!Application.isPlaying || item==null || count<=0) return;
-        foreach(var toast in 活动)
-            if(toast!=null && toast.获得物品定义==item)
-            { toast.获得数量+=count;toast.计时=0;toast.更新物品文字();return; }
-        var root=取画布();if(root==null)return;
-        var go=new GameObject("获得物品_"+item.物品id,typeof(RectTransform));go.transform.SetParent(root.transform,false);
-        var t=go.AddComponent<ToastUI>();t.尺寸=new Vector2(460,68);t.获得物品定义=item;t.获得数量=count;
-        t.构建("",3.5f);t.组.blocksRaycasts=false;t.组.interactable=false;
-        var text=go.transform.Find("文字").GetComponent<Text>();text.alignment=TextAnchor.MiddleLeft;
-        text.rectTransform.offsetMin=new Vector2(76,8);text.rectTransform.offsetMax=new Vector2(-14,-8);text.resizeTextForBestFit=true;text.resizeTextMinSize=16;text.resizeTextMaxSize=22;
-        var icon=UIBuildUtils.CreateImage("物品图标",go.transform,Color.white);icon.sprite=item.图标;icon.preserveAspect=true;
-        var rt=icon.rectTransform;rt.anchorMin=rt.anchorMax=new Vector2(0,.5f);rt.pivot=new Vector2(0,.5f);rt.anchoredPosition=new Vector2(12,0);rt.sizeDelta=new Vector2(52,52);icon.raycastTarget=false;icon.enabled=item.图标!=null;
-        t.更新物品文字();
+        UIRewardNotice.提示("获得  "+item.DisplayName+"  ×"+count);
     }
     public static void 获得法则(LawFragment law)
     {
         if (!Application.isPlaying || law == null) return;
-        var root = 取画布(); if (!root) return;
-        var go = new GameObject("获得法则_" + law.id, typeof(RectTransform)); go.transform.SetParent(root.transform, false);
-        var toast = go.AddComponent<ToastUI>(); toast.尺寸 = new Vector2(460, 68); toast.构建("获得法则  " + law.名称, 3.5f);
-        toast.组.blocksRaycasts = false; toast.组.interactable = false;
-        var label = go.transform.Find("文字").GetComponent<Text>(); label.alignment = TextAnchor.MiddleLeft;
-        label.rectTransform.offsetMin = new Vector2(76, 8); label.rectTransform.offsetMax = new Vector2(-14, -8);
-        var image = UIBuildUtils.CreateImage("法则图标", go.transform, law.颜色); image.sprite = law.图标; image.preserveAspect = true; image.raycastTarget = false;
-        var rt = image.rectTransform; rt.anchorMin = rt.anchorMax = new Vector2(0, .5f); rt.pivot = new Vector2(0, .5f); rt.anchoredPosition = new Vector2(12, 0); rt.sizeDelta = new Vector2(52, 52);
-    }
-    void 更新物品文字()
-    {
-        var text=transform.Find("文字")?.GetComponent<Text>();
-        if(text!=null)text.text="获得  "+获得物品定义.DisplayName+"  ×"+获得数量;
+        UIRewardNotice.提示("获得法则  "+law.名称);
     }
 
     static Canvas 取画布()

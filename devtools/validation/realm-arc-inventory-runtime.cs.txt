@@ -1,0 +1,53 @@
+using System;using System.IO;using System.Linq;using System.Collections;using System.Collections.Generic;using UnityEngine;using UnityEngine.UI;using UnityEngine.EventSystems;using UnityEditor;
+IEnumerator Run(){
+if(string.IsNullOrEmpty(SessionState.GetString(SaveSystem.验证目录键,"")))throw new Exception("Isolation required");
+var panel=UnityEngine.Object.FindObjectOfType<CharacterPanelUI>();var bag=panel.tabs[0].page.GetComponent<UIInkBagPage>();var data=panel.GetComponent<UIPanelData>();
+string dir="../.local/diagnostics/realm-arc-20261021/";var report=new List<string>();
+void Check(bool ok,string text){report.Add((ok?"PASS ":"FAIL ")+text);File.WriteAllLines(dir+"accept-"+Screen.width+".txt",report);if(!ok)throw new Exception(text);}
+Rect Bounds(Transform t){var corners=new Vector3[4];((RectTransform)t).GetWorldCorners(corners);return Rect.MinMaxRect(corners[0].x,corners[0].y,corners[2].x,corners[2].y);}
+Vector2 Center(Transform t)=>RectTransformUtility.WorldToScreenPoint(null,t.TransformPoint(((RectTransform)t).rect.center));
+var view=EditorWindow.GetWindow(typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView"));view.Show();view.Focus();
+var es=EventSystem.current;var module=es.GetComponent<StandaloneInputModule>();var previous=module.inputOverride;bool enabled=module.enabled;var pointerObject=new GameObject("RealmArcAcceptancePointer");var pointer=pointerObject.AddComponent<UIValidationPointerInput>();pointer.enabled=false;module.enabled=false;module.inputOverride=pointer;
+IEnumerator Click(Transform target){yield return null;Canvas.ForceUpdateCanvases();pointer.Position=Center(target);pointer.Down=pointer.Pressed=true;pointer.Up=false;module.Process();pointer.Down=false;yield return null;pointer.Pressed=false;pointer.Up=true;module.Process();pointer.Up=false;yield return null;}
+IEnumerator Shot(string name){pointer.Position=Vector2.zero;module.Process();yield return new WaitForSecondsRealtime(.2f);yield return new WaitForEndOfFrame();var tex=ScreenCapture.CaptureScreenshotAsTexture();File.WriteAllBytes(dir+name+"-"+Screen.width+".png",tex.EncodeToPNG());UnityEngine.Object.Destroy(tex);}
+try{
+panel.SetOpen(true);panel.ShowTab(CharacterTab.背包);yield return null;
+var sheet=bag.transform.Find("InventoryPaper");var ring=sheet.Find("RealmInkSeal/BrushRing").GetComponent<Image>();
+Check(ring.type==Image.Type.Filled&&ring.material.shader.name=="UI/InkCircle","original circle drawing shader retained");
+yield return new WaitForSecondsRealtime(.8f);
+Check(ring.fillAmount==1&&sheet.Find("RealmInkSeal/RealmSummary").GetComponent<CanvasGroup>().alpha==1,"circle and delayed center reveal complete while game paused");
+string[] names={"装备","学习","使用","草药","其他"};
+for(int i=0;i<5;i++){
+var button=sheet.Find("Category_"+i);var label=button.GetComponentInChildren<Text>();var icon=button.GetComponentsInChildren<Image>().First(x=>x.name=="CategoryIcon");
+Check(label.text==names[i]&&icon.sprite,"category "+names[i]+" has generated icon and no count");
+Check(Bounds(icon.transform).xMax<Bounds(label.transform).xMin,"icon precedes aligned category label "+i);
+yield return Click(button);Check(bag.Category==i,"real pointer category filter "+i);
+}
+data.RaiseChanged();yield return null;Check(Enumerable.Range(0,5).All(i=>sheet.Find("Category_"+i).GetComponentInChildren<Text>().text==names[i]),"data refresh never restores tab counts");
+var viewport=bag.AttributeScroll.viewport;var rows=bag.Attributes.container.Cast<RectTransform>().Where(t=>t.gameObject.activeSelf).ToArray();
+Check(rows.Length>26,"all realm attributes retained");Check(viewport.GetComponent<UIInkViewportFade>()&&rows.All(t=>t.GetComponent<UIInkRealmRow>()&&t.Find("Name").GetComponent<UIInkFadeCoordinates>()&&t.Find("Value").GetComponent<UIInkNumber>()),"reuse original ink hover reveal fade and animated values");
+var region=Bounds(viewport);var visible=rows.Where(t=>Bounds(t).center.y>region.yMin+15&&Bounds(t).center.y<region.yMax-15).ToArray();
+float spread=visible.Max(t=>Bounds(t).xMin)-visible.Min(t=>Bounds(t).xMin);
+Check(spread>8,"attribute labels follow circle arc; visible left spread="+spread);
+Check(rows.Max(t=>Bounds(t.Find("Value")).xMax)-rows.Min(t=>Bounds(t.Find("Value")).xMax)<1,"values stay on shared right alignment");
+Check(rows.All(t=>Bounds(t.Find("Value")).xMax<=region.xMax+1),"arc does not push values outside viewport");
+Check(rows.All(t=>t.Find("Name").GetComponent<Text>().preferredWidth<=((RectTransform)t.Find("Name")).rect.width+.5f),"long attribute names fit their curved rows");
+bag.SetCategory(3);yield return Shot("bag-top");
+float before=bag.AttributeScroll.verticalNormalizedPosition;var wheel=new PointerEventData(es){position=Center(viewport),scrollDelta=new Vector2(0,-5)};ExecuteEvents.Execute(bag.AttributeScroll.gameObject,wheel,ExecuteEvents.scrollHandler);yield return null;Check(bag.AttributeScroll.verticalNormalizedPosition<before,"original ScrollRect accepts scrolling");
+bag.AttributeScroll.verticalNormalizedPosition=0;yield return null;yield return null;
+var last=rows.Last();region=Bounds(viewport);Check(Bounds(last).center.y>region.yMin&&Bounds(last).center.y<region.yMax,"final attribute reachable at bottom");
+Check(rows.All(t=>t.Find("Name").GetComponent<Text>().preferredWidth<=((RectTransform)t.Find("Name")).rect.width+.5f),"long bottom attribute labels remain uncut");
+yield return Shot("bag-bottom");
+bag.AttributeScroll.verticalNormalizedPosition=1;yield return null;yield return null;
+var row=rows[3];pointer.Position=Vector2.zero;module.Process();yield return null;Canvas.ForceUpdateCanvases();pointer.Position=Center(row);module.Process();yield return new WaitForSecondsRealtime(.5f);module.Process();yield return null;var blot=row.Find("AttributeInk").GetComponent<Image>();Check(blot.color.a>.1f,"real pointer hover spreads row ink");
+var appearance=sheet.Find("AppearanceEntry");Check(appearance&&appearance.GetComponentsInChildren<Image>().Any(i=>i.name=="AppearanceIcon"&&i.sprite)&&appearance.GetComponentInChildren<Text>().text=="外观","robe icon and appearance label inside bag");
+Check(Mathf.Abs(Bounds(appearance).center.x-Bounds(sheet.Find("PaperClose")).center.x)<1,"appearance entry center aligned with close control");
+Check(!panel.tabs[(int)CharacterTab.外观].button.gameObject.activeSelf,"old outer appearance navigation hidden");
+yield return Click(appearance);Check(panel.CurrentTab==CharacterTab.外观&&panel.tabs[(int)CharacterTab.外观].page.activeInHierarchy,"appearance entry opens existing wardrobe via real click");yield return Shot("appearance");
+panel.SetOpen(false,true);yield return null;Check(panel.transform.Find("CharacterNavigationDock").GetComponentsInChildren<Button>().Length==4,"outside navigation remains exactly four entries");
+panel.SetOpen(true);yield return new WaitForSecondsRealtime(.8f);Check(bag.AttributeScroll.verticalNormalizedPosition>.999f,"reopen resets realm list to first attribute");
+Check(Time.timeScale==0&&UiEscRegistry.SceneInputBlocked,"new UI preserves pause and world input lock");yield return Shot("bag-final");
+Debug.Log("REALM_ARC_PASS "+report.Count+" checks at "+Screen.width+"x"+Screen.height);
+}finally{module.inputOverride=previous;module.enabled=enabled;UnityEngine.Object.Destroy(pointerObject);panel.SetOpen(false,true);}
+}
+UnityEngine.Object.FindObjectOfType<PlayerManualAim>().StartCoroutine(Run());

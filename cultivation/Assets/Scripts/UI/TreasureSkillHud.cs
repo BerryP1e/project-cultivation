@@ -1,10 +1,22 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 using UnityEngine.EventSystems;
 
-/// <summary>右下角独立法宝槽，随既有 HUD 一起隐藏，E 不占用神通 1～6。</summary>
+/// <summary>右下角独立Q法宝槽，Alt滚轮以连续循环列平滑换位。</summary>
+[DefaultExecutionOrder(-160)]
 public class TreasureSkillHud : MonoBehaviour, IPointerClickHandler
 {
+    public static bool 正在切换 {get;private set;}
+    public static bool 占用滚轮=>PlayerManualAim.AltHeld;
+    readonly List<TreasureDefinition> 已掌握=new List<TreasureDefinition>();
+    UITreasureCarousel carousel;
+    TreasureDefinition observedSelection;
+    RectTransform 槽位矩形;
+    Vector2 常规位置;
+    float 切换进度,滚轮积累;
+    int 目录版本=-1,持有数量=-1;
+    PlayerVitals 生命;
     TreasureCaster caster;
     UIPanelData data;
     Image icon, cooldown, backdrop;
@@ -33,7 +45,7 @@ public class TreasureSkillHud : MonoBehaviour, IPointerClickHandler
         var key=UIBuildUtils.CreateImage("TreasureKeycap",root.transform,new Color(.045f,.065f,.055f,.82f)); key.rectTransform.anchorMin=key.rectTransform.anchorMax=new Vector2(.25f,.16f); key.rectTransform.pivot=new Vector2(.5f,.5f);
         key.rectTransform.anchoredPosition=Vector2.zero; key.rectTransform.sizeDelta=new Vector2(38,38);
         key.sprite=StationInteractor.取圆角(); key.type=Image.Type.Sliced;
-        var text=UIBuildUtils.CreateText("KeyE",key.transform,font,"E",24,TextAnchor.MiddleCenter,new Color(.95f,.91f,.75f)); UIBuildUtils.Stretch(text.rectTransform);
+        var text=UIBuildUtils.CreateText("KeyQ",key.transform,font,"Q",24,TextAnchor.MiddleCenter,new Color(.95f,.91f,.75f)); UIBuildUtils.Stretch(text.rectTransform);
         var keyShadow=text.gameObject.AddComponent<Shadow>(); keyShadow.effectColor=new Color(0,0,0,.8f); keyShadow.effectDistance=new Vector2(1,-1);
         view.label=UIBuildUtils.CreateText("TreasureName",root.transform,font,"未装备法宝",15,TextAnchor.MiddleCenter,new Color(.94f,.92f,.83f));
         view.label.rectTransform.anchorMin=new Vector2(0,0); view.label.rectTransform.anchorMax=new Vector2(1,0); view.label.rectTransform.offsetMin=new Vector2(-15,-28); view.label.rectTransform.offsetMax=new Vector2(15,-4);
@@ -41,20 +53,55 @@ public class TreasureSkillHud : MonoBehaviour, IPointerClickHandler
     void Update() {
         if(caster==null) { Destroy(gameObject); return; }
         if(data==null) data=FindObjectOfType<UIPanelData>();
+        更新法宝切换();
         var t=data != null ? data.当前法宝 : null;
         icon.sprite=t != null ? t.图标 : null; icon.enabled=t != null && t.图标 != null;
         backdrop.enabled=icon.enabled;
         cooldown.sprite=icon.sprite;
-        label.text=t != null && t.法宝id==SpiritArrayTalisman.Id ? "浮世万象 · 右键编排" : TowerRealmTreasure.在塔内 ? "E 返回现实" : t != null && t.法宝id==TowerRealmTreasure.法宝id ? "E 进入镇妖阁" : t != null ? t.DisplayName : "未装备法宝";
+        label.text=正在切换?(t?t.DisplayName:"滚轮装备法宝"):DevilEyeAbility.已装备(data)?"邪眼 · 自动接管":t != null && t.法宝id==SpiritArrayTalisman.Id ? "浮世万象 · 右键编排" : TowerRealmTreasure.在塔内 ? "Q 返回现实" : t != null && t.法宝id==TowerRealmTreasure.法宝id ? "Q 进入镇妖阁" : t != null ? t.DisplayName : "未装备法宝";
         float left=caster.CooldownRemaining;
         cooldown.enabled=t != null && icon.sprite != null && left>0;
         cooldown.fillAmount=t != null && t.冷却时间>0 ? Mathf.Clamp01(left/t.冷却时间) : 0;
-        clickAge+=Time.unscaledDeltaTime; icon.transform.localScale=Vector3.one*Mathf.Lerp(.92f,1,Mathf.SmoothStep(0,1,Mathf.Clamp01(clickAge/.16f)));
+        clickAge+=Time.unscaledDeltaTime; icon.transform.localScale=Vector3.one*(Mathf.Lerp(.92f,1,Mathf.SmoothStep(0,1,Mathf.Clamp01(clickAge/.16f)))*Mathf.Lerp(1,1.25f,切换进度));
+        cooldown.transform.localScale=icon.transform.localScale;
+        icon.color=new Color(1,1,1,1-切换进度);label.color=new Color(.94f,.92f,.83f,1-切换进度);
+        if(切换进度>.001f)cooldown.enabled=false;
         if(openAt>=0 && Time.unscaledTime>=openAt){openAt=-1;if(t!=null && t.法宝id==clickedTreasure && !UiEscRegistry.SceneInputBlocked){if(t.法宝id==UIPanelData.镇妖葫id)GourdFormationUI.Open(data);else if(t.法宝id==QingshanSwordTreasure.法宝id)QingshanSwordInfoUI.Open(data);else if(t.法宝id==SpiritArrayTalisman.Id)UIInkSpiritArrayPage.Open(data);}}
         state.text=caster.CurrentSkillState!=""?caster.CurrentSkillState:caster.CurrentPhase!=TreasureCaster.Phase.Idle ? "收服中" : left>0 ? Mathf.CeilToInt(left).ToString() : "";
+        state.color=new Color(1,1,1,1-切换进度);
     }
     public void OnPointerClick(PointerEventData e) {
-        if(e.button!=PointerEventData.InputButton.Right || data==null || data.当前法宝==null || !data.已拥有(data.当前法宝) || UiEscRegistry.SceneInputBlocked)return;
+        if(正在切换 || e.button!=PointerEventData.InputButton.Right || data==null || data.当前法宝==null || !data.已拥有(data.当前法宝) || UiEscRegistry.SceneInputBlocked)return;
         clickedTreasure=data.当前法宝.法宝id;clickAge=0;icon.transform.localScale=Vector3.one*.92f;openAt=Time.unscaledTime+.12f;
     }
+    void 更新法宝切换()
+    {
+        if(!槽位矩形){
+            槽位矩形=(RectTransform)transform;常规位置=槽位矩形.anchoredPosition;
+            var root=UIBuildUtils.CreateRect("TreasureCarousel",transform);UIBuildUtils.Stretch(root);root.SetSiblingIndex(icon.transform.GetSiblingIndex());carousel=root.gameObject.AddComponent<UITreasureCarousel>();carousel.Initialize(label.font);
+        }
+        if(data&&(目录版本!=data.变化序号||持有数量!=data.已拥有法宝.Count)){
+            已掌握.Clear();if(data.法宝!=null)foreach(var t in data.法宝)if(t&&data.已拥有(t))已掌握.Add(t);
+            目录版本=data.变化序号;持有数量=data.已拥有法宝.Count;
+        }
+        carousel.SetItems(已掌握,data?data.当前法宝:null);
+        if(data&&observedSelection!=data.当前法宝){observedSelection=data.当前法宝;carousel.Align(observedSelection);}
+        if(!生命&&caster)生命=caster.GetComponent<PlayerVitals>();
+        bool active=占用滚轮&&data&&已掌握.Count>0&&!UiEscRegistry.SceneInputBlocked&&!灵田摆放器.正在摆放&&生命&&!生命.IsDead&&!(caster.GetComponent<演出锁>()?.正在锁??false);
+        if(active&&!正在切换){滚轮积累=0;openAt=-1;}
+        正在切换=active;
+        if(active){
+            滚轮积累+=Input.mouseScrollDelta.y;
+            int steps=(int)滚轮积累;
+            if(steps!=0){
+                滚轮积累-=steps;
+                var next=data.当前法宝?carousel.Scroll(-steps):已掌握[0];
+                data.设置当前法宝(next);observedSelection=next;clickAge=0;
+            }
+        }else 滚轮积累=0;
+        切换进度=Mathf.MoveTowards(切换进度,active||carousel.IsMoving?1:0,Time.unscaledDeltaTime*10);
+        槽位矩形.anchoredPosition=常规位置+Vector2.up*(112*Mathf.SmoothStep(0,1,切换进度));
+        carousel.Step(Time.unscaledDeltaTime,切换进度,UIInkMotion.减少动效);
+    }
+    void OnDisable(){正在切换=false;滚轮积累=切换进度=0;if(carousel){carousel.ResetMotion();carousel.Step(0,0,true);}if(槽位矩形)槽位矩形.anchoredPosition=常规位置;}
 }

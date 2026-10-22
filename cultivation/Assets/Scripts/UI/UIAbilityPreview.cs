@@ -175,6 +175,7 @@ public sealed class UIAbilityPreview : MonoBehaviour, IDragHandler
         if(active.结算方式==ActiveSkillKind.追踪弹){var v=Spawn(source,hand?hand.position:humanRoot.position+Vector3.up,Quaternion.identity,.25f,1.5f);if(v!=null){foreach(var ps in v.systems){var m=ps.main;m.simulationSpace=ParticleSystemSimulationSpace.Local;if(ps.name=="sphere-main"||ps.name=="crystals")ps.transform.localPosition=Vector3.zero;}v.from=v.root.transform.position;v.to=destination+Vector3.up*.8f;v.travel=.3f;v.impact=Resources.Load<GameObject>(string.IsNullOrEmpty(active.命中特效路径)?"CombatVFX/CombatMagic/lightning-fx/lightning-explode":active.命中特效路径);v.impactScale=.3f;}return;}
         if(falling||spiral)return;
         if(active.结算方式==ActiveSkillKind.定向水炮){var v=Spawn(source,humanRoot.position+Vector3.up*.8f,Quaternion.identity,1,1.4f);if(v!=null)AbilityVfxUtility.对准光束(v.root,v.root.transform.position,destination+Vector3.up*.8f,.035f);return;}
+        if(active.结算方式==ActiveSkillKind.雷狱领域){Spawn(source,humanRoot.position,Quaternion.Euler(-90,0,0),.3f,Mathf.Min(10,cycleLength));return;}
         var center=active.结算方式==ActiveSkillKind.四御护罩?humanRoot.position+Vector3.up*.7f:destination;
         Spawn(source,center,active.神通id=="ability_fentian_yanshu"?Quaternion.Euler(180,0,0):Quaternion.identity,active.神通id=="ability_fentian_yanshu"?.06f:active.结算方式==ActiveSkillKind.小剑阵?.16f:.3f,Mathf.Min(active.结算方式==ActiveSkillKind.小剑阵?4:3,cycleLength));
     }

@@ -152,11 +152,12 @@ public class UIInkRealmPage : MonoBehaviour
 
 public class UIInkRealmRow : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
+    public bool 宣纸;
     Image blot,stroke; float hover; bool inside;
     public void Initialize(Font font) {
         if(blot!=null)return;
         var hit=gameObject.GetComponent<Image>();if(hit==null)hit=gameObject.AddComponent<Image>();hit.color=Color.clear;
-        blot=UIBuildUtils.CreateImage("AttributeInk",transform,new Color(.38f,.45f,.39f,.4f));
+        blot=UIBuildUtils.CreateImage("AttributeInk",transform,宣纸?new Color(.18f,.32f,.27f,.02f):new Color(.38f,.45f,.39f,.4f));
         blot.sprite=Resources.Load<Sprite>("UI/InkUI/Dynamic/nav-ink-blot-4");blot.raycastTarget=false;blot.transform.SetAsFirstSibling();UIBuildUtils.Stretch(blot.rectTransform);
         stroke=UIBuildUtils.CreateImage("AttributeStroke",transform,new Color(.77f,.81f,.72f));stroke.raycastTarget=false;
         stroke.rectTransform.anchorMin=stroke.rectTransform.anchorMax=new Vector2(0,.5f);stroke.rectTransform.pivot=new Vector2(1,.5f);stroke.rectTransform.anchoredPosition=new Vector2(-7,0);
@@ -164,5 +165,5 @@ public class UIInkRealmRow : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     public void OnPointerEnter(PointerEventData e){inside=true;}
     public void OnPointerExit(PointerEventData e){inside=false;}
     void OnDisable(){inside=false;hover=0;}
-    void Update(){if(blot==null)return;hover=Mathf.MoveTowards(hover,inside?1:0,Time.unscaledDeltaTime/.12f);blot.color=new Color(.18f,.25f,.20f,.25f+hover*.45f);stroke.rectTransform.sizeDelta=new Vector2(5+hover*18,1.5f);}
+    void Update(){if(blot==null)return;hover=Mathf.MoveTowards(hover,inside?1:0,Time.unscaledDeltaTime/.12f);blot.color=宣纸?new Color(.18f,.32f,.27f,.02f+hover*.16f):new Color(.18f,.25f,.20f,.25f+hover*.45f);if(宣纸)stroke.color=new Color(.24f,.42f,.35f,.35f+hover*.5f);stroke.rectTransform.sizeDelta=new Vector2(5+hover*18,1.5f);}
 }

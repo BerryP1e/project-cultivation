@@ -91,6 +91,7 @@ public static class InkUITheme
     {
         if (!Enabled) return;
         if (button == null || button.image == null) return;
+        if(button.GetComponent<UIPaperButton>())return;
         if(button.GetComponent<UICharacterActionButton>()){UICharacterBackdrop.StyleButton(button);return;}
         // 遮罩上的 Button 仅负责点空白关闭；它不是一枚可换皮的操作按钮。
         if (button.name == "Dim" || button.name.Contains("幕布") || button.name == "暗色底" || button.name == "黑幕") return;
@@ -141,6 +142,7 @@ public static class InkUITheme
 
     public static void Scroll(ScrollRect scroll, float titleHeight = 34)
     {
+        if(scroll&&scroll.GetComponentInParent<UIInkBagPage>(true))return;
         if (!Enabled) return;
         if (scroll == null || !scroll.vertical) return;
         var bar = scroll.verticalScrollbar;
@@ -163,6 +165,7 @@ public static class InkUITheme
     public static void ScrollbarStyle(Scrollbar bar)
     {
         if(bar==null)return;
+        if(bar.GetComponentInParent<UIInkBagPage>(true))return;
         var track=bar.GetComponent<Image>();
         if(track!=null) {track.sprite=Load("Dynamic/fx-ink-blot");track.type=UnityEngine.UI.Image.Type.Simple;track.color=new Color(.22f,.28f,.25f,.55f);}
         var thumb=bar.handleRect!=null ? bar.handleRect.GetComponent<Image>() : null;

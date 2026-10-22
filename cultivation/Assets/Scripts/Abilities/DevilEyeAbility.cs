@@ -3,6 +3,9 @@
 /// <summary>邪眼在背部法环环心；轻微快速插值跟随，光束与伤害指向当前锁定单位。</summary>
 public class DevilEyeAbility : MonoBehaviour
 {
+    public const string 法宝id = "treasure_devil_eye";
+    public static bool 已装备(UIPanelData data) => data && data.当前法宝
+        && data.当前法宝.法宝id == 法宝id && data.已拥有(data.当前法宝);
     public UIPanelData 面板数据;
     public GameObject 法环 { get; private set; }
     [Header("用户标定的背部法环姿态（玩家根空间）")]
@@ -10,7 +13,7 @@ public class DevilEyeAbility : MonoBehaviour
     public Vector3 法环旋转 = new Vector3(36.46175f, 359.32650f, 359.45850f);
     public float 法环尺寸 = 1.25768f;
     Transform 挂点;
-    PassiveDivineAbility 神通;
+    TreasureDefinition 神通;
     NpcTargeting 索敌;
     PlayerCombatStats 属性;
     PlayerVitals 生命;
@@ -34,7 +37,7 @@ public class DevilEyeAbility : MonoBehaviour
         手动光束点=point;光束结束=Time.time+2.4f;CombatImpactPipeline.接触("ability_devileye",point,source:this);
         var seen=new System.Collections.Generic.HashSet<NpcInstance>();
         foreach(var col in Physics.OverlapSphere(point,.5f,~0,QueryTriggerInteraction.Ignore))
-        {var npc=col.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))CombatDamagePipeline.命中(npc,new CombatHitContext(属性,new AttackSpec(DamageNature.特殊,AttackKind.被动神通,false,神通.伤害倍率),this,神通.神通id,point,point-from));}
+        {var npc=col.GetComponentInParent<NpcInstance>();if(npc && !npc.IsDead && npc.是敌对目标 && seen.Add(npc))CombatDamagePipeline.命中(npc,new CombatHitContext(属性,new AttackSpec(DamageNature.特殊,神通.攻击类别,false,神通.伤害倍率),this,法宝id,point,point-from));}
         return true;
     }
 
@@ -47,10 +50,7 @@ public class DevilEyeAbility : MonoBehaviour
     void OnEnable() { 下次攻击 = Time.time + 1f; }
     void LateUpdate()
     {
-        神通 = null;
-        if (面板数据 != null)
-            foreach (var 技能 in 面板数据.GetEnabledPassives())
-                if (技能.结算方式 == PassiveSkillKind.邪眼) { 神通 = 技能; break; }
+        神通 = 已装备(面板数据) ? 面板数据.当前法宝 : null;
         if (神通 == null || 生命 == null || 生命.IsDead) { 清理(); return; }
         var 胸 = AbilityVfxUtility.胸骨(transform);
         if (法环 == null || 挂点 != 胸 || !挂点.gameObject.activeInHierarchy)
@@ -66,7 +66,7 @@ public class DevilEyeAbility : MonoBehaviour
             Vector3 父缩放 = 胸.lossyScale;
             法环.transform.localScale = new Vector3(世界缩放 / Mathf.Max(.001f, Mathf.Abs(父缩放.x)),
                 世界缩放 / Mathf.Max(.001f, Mathf.Abs(父缩放.y)), 世界缩放 / Mathf.Max(.001f, Mathf.Abs(父缩放.z)));
-            var 眼 = AbilityVfxUtility.生成(神通.特效资源路径, 法环.transform, .06f, true);
+            var 眼 = AbilityVfxUtility.生成("Abilities/DevilEye", 法环.transform, .06f, true);
             if (眼 != null) 眼.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             AbilityVfxUtility.生成("Abilities/DevilEyePupil", 法环.transform, 1f);
             挂点偏移 = 法环.transform.localPosition;
@@ -94,7 +94,7 @@ public class DevilEyeAbility : MonoBehaviour
         var end=AbilityVfxUtility.命中点(目标.transform);
         bool blocked=VoxelCombatDamage.Ray(法环.transform.position,end,out var contact);
         if(blocked)end=contact.point;
-        else CombatDamagePipeline.命中(目标,new CombatHitContext(属性,new AttackSpec(DamageNature.特殊,AttackKind.被动神通,false,神通.伤害倍率),this,神通.神通id,end,end-法环.transform.position));
+        else CombatDamagePipeline.命中(目标,new CombatHitContext(属性,new AttackSpec(DamageNature.特殊,神通.攻击类别,false,神通.伤害倍率),this,法宝id,end,end-法环.transform.position));
         CombatImpactPipeline.接触("ability_devileye",end,source:this);
         激光 = AbilityVfxUtility.生成("Abilities/DevilEyeLaser", null, 激光尺寸);
         if (激光 != null)

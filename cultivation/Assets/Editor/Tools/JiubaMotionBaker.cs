@@ -9,6 +9,18 @@ public static class JiubaMotionBaker
 {
     const string Folder = "Assets/resources/技能动作/八九玄功/";
     const string Library = "Assets/resources/Animation Library/1/UAL1_Standard.fbx";
+    const string KnightGeneric = "Assets/resources/Animation Library/Magical-Knight_Set/Animation/Generic/move_run_01.fbx";
+    const string KnightHuman = "Assets/resources/Animation Library/Magical-Knight_Set/Animation/Humanoid/move_run_01.fbx";
+
+    static AnimationClip GroundMove()
+    {
+        // 两份FBX字节完全相同，只有导入器的Generic/Humanoid模式不同。
+        // 使用现有Humanoid导入避免改动用户指定的Generic原资产；不允许悄悄换成另一套动作。
+        using (var sha = System.Security.Cryptography.SHA256.Create())
+            if (!sha.ComputeHash(System.IO.File.ReadAllBytes(KnightGeneric)).SequenceEqual(sha.ComputeHash(System.IO.File.ReadAllBytes(KnightHuman))))
+                throw new InvalidOperationException("Knight Generic/Humanoid source mismatch; rebuild the retarget reference from the requested Generic FBX");
+        return Load(KnightHuman);
+    }
 
     static AnimationClip Load(string path, string name = null)
     {
@@ -80,6 +92,7 @@ public static class JiubaMotionBaker
         if (EditorApplication.isPlaying) throw new InvalidOperationException("Stop Play before rebuilding animations");
         var player = GameObject.Find("Player");
         if (player == null) throw new InvalidOperationException("Open a player scene first");
+        JiubaCarryPoseBaker.校准武器();
         using (var upper = new Sampler(player))
         using (var lower = new Sampler(player))
         {
@@ -96,42 +109,89 @@ public static class JiubaMotionBaker
                 Bake(upper, lower, clip, idle, name, clip.length, false, false, false);
                 Bake(upper, lower, clip, flight, name + "_御风", clip.length, false, true, false);
             }
-            var run = Load("Assets/resources/NPC/Human/YangJian_Animation/YangJian@Run.FBX");
+            var run = GroundMove();
+            var yangIdle = Load("Assets/resources/NPC/Human/YangJian_Animation/YangJian@Idle.FBX");
             var names = new[] { "持刀_站", "持刀_走", "持刀_跑", "持刀_御风Idle", "持刀_御风前进" };
             var bases = new[] { idle, Load(Library, "Armature|Walk_Loop"), Load(Library, "Armature|Sprint_Loop"), flight,
                 Load("Assets/Animations/凭虚御风/御风_前进.anim") };
             for (int i = 0; i < names.Length; i++)
             {
-                // Ground locomotion uses YangJian's complete Run, without a Walk/Sprint
-                // lower-body blend. Keep the existing asset names for controller compatibility.
+                // 地面移动用用户指定的Knight完整步态，持戟只覆盖右臂。
+                // 保留片段名以兼容现有控制器。
                 bool groundMoving = i == 1 || i == 2;
-                Bake(upper, lower, run, bases[i], names[i], groundMoving ? run.length : bases[i].length,
-                    true, !groundMoving, !groundMoving);
+                if (groundMoving)
+                    Bake(upper, lower, run, bases[i], names[i], run.length, true, false, false);
+                else
+                {
+                    // 持械仅替换右臂；玩家胸腰和御风躯干沿用各自基础动作，
+                    // 不把杨戬为不同体型制作的脊柱后弯移植到玩家身上。
+                    var carry = UnityEngine.Object.Instantiate(bases[i]);
+                    carry.name = names[i];
+                    var settings = AnimationUtility.GetAnimationClipSettings(carry);
+                    settings.loopTime = true;
+                    AnimationUtility.SetAnimationClipSettings(carry, settings);
+                    Save(carry, names[i], yangIdle);
+                }
             }
         }
         AssetDatabase.SaveAssets();
         Debug.Log("[JiubaMotionBaker] rebuilt 13 clips; GUIDs preserved; scenes untouched");
     }
 
+    [MenuItem("修仙/动画/仅修正长戟两次前刺（不动场景）")]
+    public static void 重建前刺()
+    {
+        if(EditorApplication.isPlaying)throw new InvalidOperationException("Stop Play first");
+        var player=GameObject.Find("Player");if(!player)throw new InvalidOperationException("Player missing");
+        using(var upper=new Sampler(player))using(var lower=new Sampler(player)){
+            var idle=Load(Library,"Armature|Idle_Loop");var flight=Load("Assets/Animations/凭虚御风/御风_Idle.anim");
+            foreach(var who in new[]{"长刀女","杨戬"}){
+                string source=who=="长刀女"?"ChangDaoNv":"YangJian";
+                var clip=Load("Assets/resources/NPC/Human/"+source+"_Animation/"+source+"@Attack1.FBX");
+                Bake(upper,lower,clip,idle,who+"_Attack1",clip.length,false,false,false);
+                Bake(upper,lower,clip,flight,who+"_Attack1_御风",clip.length,false,true,false);
+            }
+        }
+        AssetDatabase.SaveAssets();
+    }
+
+    public static void 重建地面移动()
+    {
+        if(EditorApplication.isPlaying)throw new InvalidOperationException("Stop Play first");
+        var player=GameObject.Find("Player");if(!player)throw new InvalidOperationException("Player missing");
+        using(var upper=new Sampler(player))using(var lower=new Sampler(player)){
+            var run=GroundMove();foreach(string name in new[]{"持刀_走","持刀_跑"})Bake(upper,lower,run,run,name,run.length,true,false,false);
+        }
+        AssetDatabase.SaveAssets();
+    }
+
     static void Bake(Sampler upper, Sampler lower, AnimationClip source, AnimationClip basis,
         string name, float duration, bool loop, bool split, bool freeze)
     {
-        if (name == "持刀_站")
+        if (split && name.EndsWith("Attack2_御风"))
         {
-            // Preserve the player's native humanoid idle/root/feet. Sampling and converting
-            // the entire rig again changes its body reference and can turn the idle around.
-            var idle = UnityEngine.Object.Instantiate(basis);
-            idle.name = name;
-            foreach (var binding in AnimationUtility.GetCurveBindings(source))
+            // The two sweeping attacks rely on the authored hips/root turn. Splitting
+            // off those hips changes the torso/weapon relationship and twists the slash.
+            var ground = Load(Folder + name.Replace("_御风", "") + ".anim");
+            string path = Folder + name + ".anim";
+            var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+            var complete = UnityEngine.Object.Instantiate(ground); complete.name = name;
+            lower.Sample(basis, 0);
+            var flightPose = new HumanPose();
+            using (var handler = new HumanPoseHandler(lower.animator.avatar, lower.animator.transform))
+                handler.GetHumanPose(ref flightPose);
+            for (int i = 0; i < 3; i++)
             {
-                if (binding.type != typeof(Animator) || !HumanTrait.MuscleName.Contains(HandMotionRetargeting.MuscleName(binding.propertyName))) continue;
-                string muscle = binding.propertyName;
-                if (muscle.Contains("Leg") || muscle.Contains("Foot") || muscle.Contains("Toes")) continue;
-                var curve = AnimationUtility.GetEditorCurve(source, binding);
-                float value = curve.Evaluate(source.length * .5f);
-                AnimationUtility.SetEditorCurve(idle, binding, AnimationCurve.Constant(0, basis.length, value));
+                var binding = EditorCurveBinding.FloatCurve("", typeof(Animator), "RootT." + "xyz"[i]);
+                var curve = existing ? AnimationUtility.GetEditorCurve(existing, binding) : null;
+                AnimationUtility.SetEditorCurve(complete, binding, curve ?? AnimationCurve.Constant(0, duration, flightPose.bodyPosition[i]));
             }
-            HandMotionRetargeting.Apply(idle,HandMotionRetargeting.AvatarFor(source));Save(idle, name);
+            var flightSettings = AnimationUtility.GetAnimationClipSettings(ground);
+            flightSettings.loopTime = false; flightSettings.loopBlendPositionY = true; flightSettings.keepOriginalPositionY = true;
+            flightSettings.loopBlendOrientation = true; flightSettings.keepOriginalOrientation = true;
+            AnimationUtility.SetAnimationClipSettings(complete, flightSettings);
+            if (existing) { EditorUtility.CopySerialized(complete, existing); EditorUtility.SetDirty(existing); UnityEngine.Object.DestroyImmediate(complete); }
+            else AssetDatabase.CreateAsset(complete, path);
             return;
         }
         if (!split)
@@ -147,38 +207,14 @@ public static class JiubaMotionBaker
             nativeSettings.loopTime = loop;
             nativeSettings.loopBlendPositionY = true;
             nativeSettings.keepOriginalPositionY = true;
-            if (!moving)
-            {
-                // As with BingPoGuai, dropping root rotation leaves only half the thrust.
-                // Bake authored turning into the pose: player movement still stays in code.
-                nativeSettings.loopBlendOrientation = true;
-                nativeSettings.keepOriginalOrientation = true;
-            }
+            // 完整HumanPose重新编码后，身体朝向补偿也在RootQ中。
+            // 跑步同样必须烘入姿态，否则丢掉补偿只留下放大的骨盆反扭。
+            nativeSettings.loopBlendOrientation = true;
+            nativeSettings.keepOriginalOrientation = true;
             AnimationUtility.SetAnimationClipSettings(native, nativeSettings);
-            if (moving)
-            {
-                // Keep the forward/back stride, attenuate the lateral leg and foot twists
-                // that become conspicuous on the player's shorter, wider proportions.
-                foreach (var binding in AnimationUtility.GetCurveBindings(native))
-                {
-                    string muscle = binding.propertyName;
-                    if (binding.type != typeof(Animator) || (!muscle.Contains("Leg") && !muscle.Contains("Foot"))) continue;
-                    if (!muscle.Contains("In-Out")) continue;
-                    var curve = AnimationUtility.GetEditorCurve(native, binding);
-                    var keys = curve.keys;
-                    float center = (keys.Min(k => k.value) + keys.Max(k => k.value)) * .5f;
-                    for (int i = 0; i < keys.Length; i++)
-                    {
-                        keys[i].value = center + (keys[i].value - center) * .25f;
-                        keys[i].inTangent *= .25f;
-                        keys[i].outTangent *= .25f;
-                    }
-                    curve.keys = keys;
-                    AnimationUtility.SetEditorCurve(native, binding, curve);
-                }
-            }
+            // 胸腰与腿部完整保留Knight步态，不再传递杨戬骨盆和胸廓反扭。
             HandMotionRetargeting.Apply(native,HandMotionRetargeting.AvatarFor(source));
-            Save(native, name);
+            Save(native, name,source);
             return;
         }
         int count = upper.bones.Length, frames = Mathf.CeilToInt(duration * 60);
@@ -260,13 +296,23 @@ public static class JiubaMotionBaker
         }
         AnimationUtility.SetAnimationClipSettings(result, settings);
         HandMotionRetargeting.Apply(result,HandMotionRetargeting.AvatarFor(source));
-        Save(result, name);
+        Save(result, name,source);
     }
 
-    static void Save(AnimationClip result, string name)
+    static void Save(AnimationClip result, string name,AnimationClip source)
     {
         HandMotionRetargeting.Apply(result);
         JiubaHandPoseBaker.Apply(result);
+        JiubaCarryPoseBaker.Apply(result,name.Contains("Attack")?source:null);
+        if (!name.Contains("Attack"))
+        {
+            // 先按基础片段原导入语义采样，再烘入HumanPose的身体补偿；
+            // 预先改根烘焙设置会改变待机/飞行胸腰本身的参考姿态。
+            var settings = AnimationUtility.GetAnimationClipSettings(result);
+            settings.loopBlendOrientation = settings.keepOriginalOrientation = true;
+            settings.loopBlendPositionY = settings.keepOriginalPositionY = true;
+            AnimationUtility.SetAnimationClipSettings(result, settings);
+        }
         string path = Folder + name + ".anim";
         var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
         if (existing != null) { EditorUtility.CopySerialized(result, existing); EditorUtility.SetDirty(existing); UnityEngine.Object.DestroyImmediate(result); }

@@ -42,6 +42,7 @@ public static class UIInkAbilityArt
 
     public static void RefreshDetail(UIEntryInfo info)
     {
+        if(info&&info.GetComponentInParent<UIInkBagPage>(true))return;
         if (info == null || !Enabled) return;
         bool skillsPage = false;
         for (var parent = info.transform.parent; parent != null; parent = parent.parent)

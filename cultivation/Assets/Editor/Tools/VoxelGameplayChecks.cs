@@ -56,7 +56,7 @@ public static class VoxelGameplayChecks
             pilot.还原岩石();
             // Equip the actual remote method and enabled evil eye, rather than calling the voxel tool directly.
             data.当前功法=Asset<GongFaDefinition>("gongfa_taixu_lianqi");
-            var eye=Asset<PassiveDivineAbility>("ability_xieyan");data.已获得被动神通.Add(eye);data.已停用被动.Remove(eye);loader.Refresh();
+            var eye=Asset<TreasureDefinition>("treasure_devil_eye");data.已拥有法宝=new List<string>(owned){eye.法宝id};data.当前法宝=eye;loader.Refresh();
             vitals.当前灵气=vitals.灵气上限;until=Time.time+1.1f;while(Time.time<until)yield return null;
             var target=home+Vector3.forward*1.5f;Require(aim.确认施放(-1,target),"Manual remote basic rejected");
             Require(player.GetComponent<DevilEyeAbility>() && Object.FindObjectsOfType<AbilityPreciseShotVfx>().Length>0,"Evil eye did not follow basic aim");

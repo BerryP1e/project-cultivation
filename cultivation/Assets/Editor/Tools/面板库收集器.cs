@@ -44,6 +44,9 @@ public static class 面板库收集器
             库.功法.Add(AssetDatabase.LoadAssetAtPath<GongFaDefinition>(AssetDatabase.GUIDToAssetPath(g)));
         库.功法.RemoveAll(x => x == null);
         库.功法.Sort((a, b) => string.CompareOrdinal(a.功法id, b.功法id));
+        库.武器=new List<WeaponDefinition>();
+        foreach(var guid in AssetDatabase.FindAssets("t:WeaponDefinition")){var weapon=AssetDatabase.LoadAssetAtPath<WeaponDefinition>(AssetDatabase.GUIDToAssetPath(guid));if(weapon)库.武器.Add(weapon);}
+        库.武器.Sort((a,b)=>a.武器类型.CompareTo(b.武器类型));
 
         // ---- 神通：主动 + 被动 ----
         库.神通 = new List<DivineAbilityDefinition>();

@@ -1,4 +1,4 @@
-﻿# 太虚 UI 重构设计 · 2026-10-03
+# 太虚 UI 重构设计 · 2026-10-03
 > **管什么**：只读保存的 UI 制作原始记录；不代表当前实现。
 > **不管什么**：当前接入状态、资产位置和操作步骤见 [UI换皮](../../../guides/UI换皮.md)。
 > **本文件怎么查**：使用下方原有主题标题；先查当前指南再读本文件。
@@ -7,7 +7,7 @@
 
 本轮交付是完整界面方案、三套视觉模板与可操作原型，**尚未替换 Unity 的场景、Prefab 或运行时 UI**。美术概念图提供视觉方向，HTML 原型提供可检验的布局与交互，Unity 接入方案写在下文。
 
-**2026-10-03 第二轮更新**：按选定的风格 1 加入繁复云纹按钮。查看 [按钮展示](../../../../cultivation/Assets/Editor/Tools/InkUIAuthoring/button-lab.html)、[透明 PNG 与 Unity 切片说明](BUTTON-KIT.md) 和 [Unity 素材包](../../../../cultivation/Assets/UIResources/InkUI/Authoring/InkOrnate-Unity-Sprites.zip)。完整原型已应用新按钮，第一轮图册截图保留供前后对照。
+**2026-10-03 第二轮更新**：按选定的风格 1 加入繁复云纹按钮。查看 [按钮展示](../../../../cultivation/Assets/Editor/Tools/InkUIAuthoring/button-lab.html)、[透明 PNG 与 Unity 切片说明](BUTTON-KIT.md) 和 [Unity 素材包](../../../../cultivation/Assets/Art/UI/Source/InkUI/Authoring/InkOrnate-Unity-Sprites.zip)。完整原型已应用新按钮，第一轮图册截图保留供前后对照。
 
 打开 [交互原型](../../../../cultivation/Assets/Editor/Tools/InkUIAuthoring/index.html) 可切换三种皮肤；打开 [图册](../../../../cultivation/Assets/Editor/Tools/InkUIAuthoring/gallery.html) 可对照概念图和实际原型截图。所有文件本地运行，不依赖 CDN 或安装依赖。浏览器缩放建议 100%，设计审阅优先使用 1600×1080 或更大窗口。
 

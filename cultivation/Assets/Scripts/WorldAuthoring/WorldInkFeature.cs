@@ -53,6 +53,7 @@ namespace Cultivation.WorldAuthoring
                 composite = CoreUtils.CreateEngineMaterial(compositeShader);
                 mask.SetFloat("_ID", 0.25f);
                 composite.SetFloat("_PlayerID", 0.25f);
+                composite.SetFloat("_SuppressFoliageEdges",1);
                 composite.SetColor("_PlayerColor", new Color(.025f, .031f, .039f));
                 composite.SetFloat("_Radius", 1.45f);
                 composite.SetFloat("_Soft", .45f);
@@ -110,7 +111,7 @@ namespace Cultivation.WorldAuthoring
                                 {
                                     var key=(sourceMaterial,onlyDepth);if(!cutoutMasks.TryGetValue(key,out draw))
                                     {
-                                        draw=new Material(onlyDepth?occluder:mask);draw.SetTexture("_BaseMap",sourceMaterial.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",sourceMaterial.GetFloat("_Cutoff"));draw.SetFloat("_Cull",sourceMaterial.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",sourceMaterial.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",sourceMaterial.GetTextureOffset("_BaseMap"));cutoutMasks[key]=draw;
+                                        draw=new Material(onlyDepth?occluder:mask);draw.SetFloat("_FoliageOccluder",onlyDepth?1:0);draw.SetTexture("_BaseMap",sourceMaterial.GetTexture("_BaseMap"));draw.SetFloat("_Cutoff",sourceMaterial.GetFloat("_Cutoff"));draw.SetFloat("_Cull",sourceMaterial.GetFloat("_Cull"));draw.SetTextureScale("_BaseMap",sourceMaterial.GetTextureScale("_BaseMap"));draw.SetTextureOffset("_BaseMap",sourceMaterial.GetTextureOffset("_BaseMap"));cutoutMasks[key]=draw;
                                     }
                                     draw.SetFloat("_CamFar",data.cameraData.camera.farClipPlane);
                                 }

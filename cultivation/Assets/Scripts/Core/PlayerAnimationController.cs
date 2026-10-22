@@ -207,6 +207,16 @@ public class PlayerAnimationController : MonoBehaviour
         if (animator == null) return;
         if (s == YufengFlight.FlightState.升空) animator.SetTrigger(takeOffHash);
         else if (s == YufengFlight.FlightState.落地) animator.SetTrigger(landHash);
+        else if (s == YufengFlight.FlightState.地面 && !外部驱动御风)
+        {
+            // ForceLand skips the normal landing trigger. The flight idle state has no
+            // Flying=false exit, so its hovering pose otherwise survives on the ground.
+            animator.ResetTrigger(takeOffHash);
+            animator.ResetTrigger(landHash);
+            if (!actionPlaying && animator.runtimeAnimatorController != null
+                && animator.HasState(0, Animator.StringToHash("Locomotion")))
+                animator.CrossFadeInFixedTime("Locomotion", .1f, 0);
+        }
     }
 
     public bool PlayAction(AnimationClip clip, float speedScale = 1f) => 播动作(clip, speedScale);
@@ -411,7 +421,15 @@ public class PlayerAnimationController : MonoBehaviour
         if (animator != null)
         {
             animator.ResetTrigger(动作参数Hash);
-            if (wasIdle && animator.HasState(0, Animator.StringToHash("Locomotion"))) animator.CrossFade("Locomotion", .1f, 0);
+            bool inAction = animator.GetCurrentAnimatorStateInfo(0).IsName(动作状态名)
+                || (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName(动作状态名));
+            if (wasIdle || actionPlaying || inAction)
+            {
+                bool flying = 外部驱动御风 ? 外部飞行中 : 御风 != null && 御风.御风流程中;
+                bool moving = playerController != null && playerController.CurrentSpeed > .15f;
+                string state = flying ? (moving ? "Yufeng_Forward" : "Yufeng_Idle") : "Locomotion";
+                if (animator.HasState(0, Animator.StringToHash(state))) animator.CrossFadeInFixedTime(state, .1f, 0);
+            }
         }
         actionPlaying = false;
         动作已进入 = false;
@@ -783,6 +801,24 @@ public class PlayerAnimationController : MonoBehaviour
             animator.SetBool(flyMovingHash, 闪避正在衔接 || smoothSpeed > 0.15f);
         }
         更新御风方向();
+        更新地面方向();
+    }
+
+    RuntimeAnimatorController 地面参数控制器;
+    bool 支持地面八向;
+    Vector2 地面方向=Vector2.up;
+    void 更新地面方向()
+    {
+        if(地面参数控制器!=animator.runtimeAnimatorController){
+            地面参数控制器=animator.runtimeAnimatorController;bool x=false,y=false;
+            foreach(var p in animator.parameters){x|=p.name=="MoveX";y|=p.name=="MoveY";}支持地面八向=x&&y;
+        }
+        if(!支持地面八向||!playerController)return;
+        var rotation=playerController.transform.rotation*Quaternion.Euler(0,-playerController.visualYawOffset,0);
+        var velocity=Quaternion.Inverse(rotation)*playerController.水平速度;
+        if(velocity.sqrMagnitude>.0025f)地面方向=Vector2.Lerp(地面方向,new Vector2(velocity.x,velocity.z).normalized,1-Mathf.Exp(-18*Time.deltaTime));
+        else 地面方向=Vector2.up;
+        animator.SetFloat("MoveX",地面方向.x);animator.SetFloat("MoveY",地面方向.y);
     }
 
     void 更新御风方向()

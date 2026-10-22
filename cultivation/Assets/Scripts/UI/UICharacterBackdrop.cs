@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>角色页面共用的渐变幕布。波纹使用非缩放时间，暂停菜单里仍自然流动。</summary>
@@ -113,6 +113,7 @@ public sealed class UICharacterBackdrop : MonoBehaviour
     public static void StyleButton(Button button)
     {
         if(!button||!button.image)return;
+        if(button.GetComponent<UIPaperButton>())return;
         if(!button.GetComponent<UICharacterActionButton>())button.gameObject.AddComponent<UICharacterActionButton>();
         var action=button.GetComponent<UIInkActionButton>();if(action)action.enabled=false;
         var fluid=button.GetComponent<UIInkFluid>();if(fluid)fluid.enabled=false;

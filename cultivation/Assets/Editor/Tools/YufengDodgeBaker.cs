@@ -153,7 +153,7 @@ public static class YufengDodgeBaker
         settings.loopBlendOrientation = settings.loopBlendPositionY = settings.loopBlendPositionXZ = true;
         settings.heightFromFeet = false; AnimationUtility.SetAnimationClipSettings(clip, settings);
         clip.EnsureQuaternionContinuity();
-        if(profile=="八九玄功")JiubaHandPoseBaker.Apply(clip,false);
+        if(profile=="八九玄功"){JiubaHandPoseBaker.Apply(clip,false);JiubaCarryPoseBaker.Apply(clip);}
         string path = Folder + "/" + profile + "/" + clip.name + ".anim";
         EnsureFolder(Path.GetDirectoryName(path).Replace('\\', '/'));
         var old = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
